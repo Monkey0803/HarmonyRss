@@ -1,9 +1,11 @@
 /*
  * ArticleDetailView.ets — 文章详情（NavDestination 内容，纯展示）。
  *
- * 全文阅读：默认用 ArkWeb 的 Web 组件直接加载文章原文链接，这样 RSS 只给摘要时也能读到全文；
- * 链接为空、或用户想省流时，可切到「提取正文」——用解析层从 feed 内容里抽出的纯文本。
- * 只从 FeedViewModel 读取当前文章，不在视图里做业务逻辑。
+ * 阅读模式（默认 READER）：把「提取 + 净化」后的结构化正文 HTML 用受控 Reader 文档渲染，
+ *   保留段落 / 标题 / 图片 / 列表 / 代码 / 引用，离线可读（正文已缓存到本地库）。
+ * 网页原文（WEB）：ArkWeb 直接加载原文链接，作为提取失败或用户主动切换时的兜底。
+ * 纯文本（无链接且提取失败时）：退回 feed 文本。
+ * 只从 FeedViewModel 读取当前文章与正文，不在视图里做业务逻辑。
  */
 
 import { webview } from '@kit.ArkWeb';
@@ -30,24 +32,38 @@ import { settingsViewModel } from '../viewmodel/SettingsViewModel';
 import { ChoiceOption, READER_FONT_OPTIONS } from '../model/SettingsOptions';
 import { ToastUtil } from '../common/utils/ToastUtil';
 import { readerStyle } from '../service/ReaderStyle';
+import { buildReaderDocument } from '../service/ReaderDocument';
 import { appSettings } from '../model/AppSettings';
 import { ReaderTypography } from '../common/constants/SettingsConstants';
 
 const DOMAIN: number = 0x0000;
 const TAG: string = 'ArticleDetailView';
 
+/** 阅读模式：reader = 结构化正文；web = 网页原文。 */
+const MODE_READER: string = 'reader';
+const MODE_WEB: string = 'web';
+
+/** 空文章占位：@Builder 内不能声明局部变量，用辅助方法返回兜底对象避免 undefined 判空。 */
+const EMPTY_ARTICLE: Article = new Article('', '', '', '', '', '', '', 0);
+
 @ComponentV2
 export struct ArticleDetailView {
-  /** true：网页原文；false：提取正文。 */
-  @Local showWeb: boolean = true;
+  /** 当前阅读模式。 */
+  @Local viewMode: string = MODE_READER;
   @Local loading: boolean = true;
+  /** 提取失败：可退网页原文 / 纯文本。 */
+  @Local readerFailed: boolean = false;
+  /** 已提取并净化好的正文片段（由 ViewModel 提供，命中本地缓存时无需联网）。 */
+  @Local readerHtml: string = '';
   /** HdsActionBar 展开态：展开时同时显示两侧按钮。 */
   @Local isExpand: boolean = true;
+  private readerController: webview.WebviewController = new webview.WebviewController();
   private webController: webview.WebviewController = new webview.WebviewController();
   /** 提取正文模式的滚动控制器：用于恢复 / 记录阅读进度。 */
   private textScroller: Scroller = new Scroller();
   /** 网页原文只在首次加载完成时恢复一次进度，避免页面内跳转后又被拉回去。 */
   private webProgressRestored: boolean = false;
+  private readerProgressRestored: boolean = false;
 
   private hostContext(): common.UIAbilityContext {
     const context: common.Context | undefined = this.getUIContext().getHostContext();
@@ -56,6 +72,17 @@ export struct ArticleDetailView {
 
   private toast(message: ResourceStr): void {
     ToastUtil.show(this.getUIContext(), message);
+  }
+
+  /** 当前文章；不存在返回空占位（供 @Builder 直接取字段）。 */
+  private cur(): Article {
+    const article: Article | undefined = feedViewModel.currentArticle();
+    return article === undefined ? EMPTY_ARTICLE : article;
+  }
+
+  /** 是否存在当前文章。 */
+  private hasArticle(): boolean {
+    return feedViewModel.currentArticle() !== undefined;
   }
 
   /**
@@ -97,6 +124,100 @@ export struct ArticleDetailView {
     }
   }
 
+  /** 开始（或重试）提取正文。失败时退到网页原文。 */
+  private async startReader(): Promise<void> {
+    const article: Article | undefined = feedViewModel.currentArticle();
+    if (article === undefined) {
+      return;
+    }
+    this.readerFailed = false;
+    this.loading = true;
+    const webMounted: boolean = this.readerHtml.length > 0;
+    try {
+      const html: string = await feedViewModel.loadReaderHtml(article.id);
+      if (html.length > 0) {
+        this.readerHtml = html;
+        this.viewMode = MODE_READER;
+        if (webMounted) {
+          // Web 已挂载（原地切文）：直接换文档，避免销毁重建导致 controller 失效。
+          this.loadReaderDocIntoWeb();
+        }
+        // 否则由 onControllerAttached 在新 Web 挂载时加载。
+      } else {
+        this.onReaderFailed();
+      }
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.warn(DOMAIN, TAG, 'reader extract failed: %{public}d', error.code);
+      this.onReaderFailed();
+    }
+  }
+
+  /** 把当前 readerHtml 载入已挂载的 Reader Web。 */
+  private loadReaderDocIntoWeb(): void {
+    const article: Article | undefined = feedViewModel.currentArticle();
+    if (article === undefined || this.readerHtml.length === 0) {
+      return;
+    }
+    const doc: string = buildReaderDocument(this.readerHtml);
+    try {
+      this.readerController.loadData(doc, 'text/html', 'UTF-8', article.link);
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.warn(DOMAIN, TAG, 'load reader doc failed: %{public}d', error.code);
+    }
+  }
+
+  /** 提取失败：有链接就退网页原文，否则退纯文本（loading 由对应视图的 onPageEnd 收尾）。 */
+  private onReaderFailed(): void {
+    this.readerFailed = true;
+    const article: Article | undefined = feedViewModel.currentArticle();
+    if (article !== undefined && article.link.length > 0) {
+      this.viewMode = MODE_WEB;
+      this.loading = true;
+      this.toast($r('app.string.article_reader_failed'));
+    } else {
+      this.viewMode = MODE_READER;
+      this.readerHtml = '';
+      this.loading = false;
+    }
+  }
+
+  /** 切换阅读模式。 */
+  private switchMode(): void {
+    const article: Article | undefined = feedViewModel.currentArticle();
+    if (article === undefined) {
+      return;
+    }
+    if (this.viewMode === MODE_READER) {
+      if (article.link.length === 0) {
+        return;
+      }
+      this.viewMode = MODE_WEB;
+      this.loading = true;
+    } else {
+      this.viewMode = MODE_READER;
+      this.startReader();
+    }
+  }
+
+  /** 原地切换到上一篇 / 下一篇 / 下一条未读（不重新 push 路由）。 */
+  private openRelative(id: string): void {
+    if (id.length === 0) {
+      return;
+    }
+    feedViewModel.openArticle(id);
+    // 不重置 readerHtml：保持 Reader Web 挂载，随后直接换文档，避免 controller 失效。
+    this.readerFailed = false;
+    this.webProgressRestored = false;
+    this.readerProgressRestored = false;
+    this.loading = true;
+    if (this.viewMode === MODE_READER) {
+      this.startReader();
+    }
+    // 网页原文模式：Web 的 src 随 article.link 变化自动重载，等 onPageEnd 收尾。
+  }
+
   /** 溢出菜单：复制链接 / 浏览器打开 / 分享。 */
   @Builder
   ActionsMenu(article: Article) {
@@ -119,7 +240,7 @@ export struct ArticleDetailView {
 
   /**
    * 阅读排版快捷菜单：不必跳设置页就能换正文字号。
-   * 网页原文的排版只能靠注入，所以改完要立刻用 readerStyle 重新注入一次（幂等）。
+   * Reader 文档内联 CSS：改完重建文档重新加载；网页原文靠注入（幂等）。
    */
   @Builder
   FontMenu() {
@@ -139,14 +260,24 @@ export struct ArticleDetailView {
 
   private applyFontSize(id: string): void {
     settingsViewModel.setReaderFont(id);
-    if (this.showWeb) {
+    if (this.viewMode === MODE_READER && this.readerHtml.length > 0) {
+      this.loadReaderDocIntoWeb();
+    } else if (this.viewMode === MODE_WEB) {
       readerStyle.apply(this.webController);
     }
   }
 
-  /** 离开详情页：网页原文的滚动位置只能问页面要，所以在这里取一次写回。 */
+  aboutToAppear(): void {
+    this.startReader();
+  }
+
+  /** 离开详情页：按当前模式取一次滚动位置写回。 */
   aboutToDisappear(): void {
-    this.persistWebProgress();
+    if (this.viewMode === MODE_WEB) {
+      this.persistWebProgress();
+    } else {
+      this.persistReaderProgress();
+    }
   }
 
   /** 提取正文：进入页面时恢复到上次读到的位置（ArkUI Scroll 的 offset，vp）。 */
@@ -159,17 +290,16 @@ export struct ArticleDetailView {
   }
 
   /**
-   * 网页原文：首次加载完成后恢复进度；保存的也是 CSS px（window.scrollY），坐标系一致。
+   * 网页 / Reader 文档：首次加载完成后恢复进度；保存的也是 CSS px（window.scrollY），坐标系一致。
    *
-   * 注意不能只 scrollTo 一次：SPA（如 YouTube）在 onPageEnd 之后还会继续长内容，
-   * 那时文档还太短，一次性滚动会被忽略 / 被后续渲染顶掉。所以注入一段带重试的脚本，
-   * 每 250ms 校正一次，最多 3 秒，或者一旦真的落到目标位置就停。
+   * 注意不能只 scrollTo 一次：SPA 在 onPageEnd 之后还会继续长内容，那时文档还太短，
+   * 一次性滚动会被忽略 / 被后续渲染顶掉。所以注入一段带重试的脚本，每 250ms 校正一次，
+   * 最多 3 秒，或者一旦真的落到目标位置就停。
    */
-  private restoreWebProgress(): void {
-    if (this.webProgressRestored) {
+  private restoreScrollProgress(controller: webview.WebviewController, restored: boolean): void {
+    if (restored) {
       return;
     }
-    this.webProgressRestored = true;
     const article: Article | undefined = feedViewModel.currentArticle();
     if (article === undefined || article.progress <= 0) {
       return;
@@ -178,11 +308,27 @@ export struct ArticleDetailView {
     const script: string = '(function(){var y=' + target + ';var n=0;' +
       'var iv=setInterval(function(){window.scrollTo(0,y);n++;' +
       'if(n>12||window.scrollY>=y-4){clearInterval(iv);}},250);})()';
-    this.webController
+    controller
       .runJavaScript(script)
       .catch((err: BusinessError) => {
-        hilog.warn(DOMAIN, TAG, 'restore web progress failed: %{public}d', err.code);
+        hilog.warn(DOMAIN, TAG, 'restore progress failed: %{public}d', err.code);
       });
+  }
+
+  private restoreWebProgress(): void {
+    if (this.webProgressRestored) {
+      return;
+    }
+    this.webProgressRestored = true;
+    this.restoreScrollProgress(this.webController, false);
+  }
+
+  private restoreReaderProgress(): void {
+    if (this.readerProgressRestored) {
+      return;
+    }
+    this.readerProgressRestored = true;
+    this.restoreScrollProgress(this.readerController, false);
   }
 
   /**
@@ -191,232 +337,343 @@ export struct ArticleDetailView {
    */
   private persistWebProgress(): void {
     const article: Article | undefined = feedViewModel.currentArticle();
-    if (article === undefined || !this.showWeb || article.link.length === 0) {
+    if (article === undefined || article.link.length === 0) {
       return;
     }
-    this.webController.runJavaScript('window.scrollY', (err: BusinessError, value: string) => {
+    this.readScrollY(this.webController, article.id);
+  }
+
+  private persistReaderProgress(): void {
+    const article: Article | undefined = feedViewModel.currentArticle();
+    if (article === undefined || this.readerHtml.length === 0) {
+      return;
+    }
+    this.readScrollY(this.readerController, article.id);
+  }
+
+  private readScrollY(controller: webview.WebviewController, articleId: string): void {
+    controller.runJavaScript('window.scrollY', (err: BusinessError, value: string) => {
       if (err) {
-        hilog.warn(DOMAIN, TAG, 'read web progress failed: %{public}d', err.code);
+        hilog.warn(DOMAIN, TAG, 'read scrollY failed: %{public}d', err.code);
         return;
       }
       const y: number = Number(value);
       if (Number.isFinite(y) && y >= 0) {
-        feedViewModel.saveProgress(article.id, y);
+        feedViewModel.saveProgress(articleId, y);
       }
     });
   }
 
   /** 文章标题 + 来源 + 时间 + 阅读模式切换。 */
   @Builder
-  Meta(article: Article) {
-    Column({ space: $r('app.float.space_xs') }) {
-      Text(article.title)
-        .fontSize($r('app.float.font_size_body'))
-        .fontColor($r('app.color.hm_text_primary'))
-        .fontWeight(FontWeight.Medium)
-        .maxLines(2)
-        .textOverflow({ overflow: TextOverflow.Ellipsis })
-        .width('100%')
-
-      Row({ space: $r('app.float.space_s') }) {
-        Text(article.feedTitle)
-          .fontSize($r('app.float.font_size_caption'))
-          .fontColor($r('app.color.hm_brand'))
-          .maxLines(1)
+  Meta() {
+    if (this.hasArticle()) {
+      Column({ space: $r('app.float.space_xs') }) {
+        Text(this.cur().title)
+          .fontSize($r('app.float.font_size_body'))
+          .fontColor($r('app.color.hm_text_primary'))
+          .fontWeight(FontWeight.Medium)
+          .maxLines(2)
           .textOverflow({ overflow: TextOverflow.Ellipsis })
-          .layoutWeight(1)
-        if (article.author.length > 0) {
-          Text(article.author)
-            .fontSize($r('app.float.font_size_caption'))
-            .fontColor($r('app.color.hm_text_secondary'))
-            .maxLines(1)
-            .textOverflow({ overflow: TextOverflow.Ellipsis })
-        }
-        Text(DateUtil.format(article.publishedAt))
-          .fontSize($r('app.float.font_size_caption'))
-          .fontColor($r('app.color.hm_text_secondary'))
-        if (article.link.length > 0) {
-          Button(this.showWeb ? $r('app.string.article_mode_text') : $r('app.string.article_mode_web'))
-            .buttonStyle(ButtonStyleMode.TEXTUAL)
+          .width('100%')
+
+        Row({ space: $r('app.float.space_s') }) {
+          Text(this.cur().feedTitle)
             .fontSize($r('app.float.font_size_caption'))
             .fontColor($r('app.color.hm_brand'))
+            .maxLines(1)
+            .textOverflow({ overflow: TextOverflow.Ellipsis })
+            .layoutWeight(1)
+          if (this.cur().author.length > 0) {
+            Text(this.cur().author)
+              .fontSize($r('app.float.font_size_caption'))
+              .fontColor($r('app.color.hm_text_secondary'))
+              .maxLines(1)
+              .textOverflow({ overflow: TextOverflow.Ellipsis })
+          }
+          Text(DateUtil.format(this.cur().publishedAt))
+            .fontSize($r('app.float.font_size_caption'))
+            .fontColor($r('app.color.hm_text_secondary'))
+          if (this.cur().link.length > 0) {
+            Button(this.viewMode === MODE_READER
+              ? $r('app.string.article_mode_web')
+              : $r('app.string.article_mode_reader'))
+              .buttonStyle(ButtonStyleMode.TEXTUAL)
+              .fontSize($r('app.float.font_size_caption'))
+              .fontColor($r('app.color.hm_brand'))
+              .onClick(() => {
+                this.switchMode();
+              })
+          }
+
+          // 阅读排版快捷入口：就地换正文字号。
+          SymbolGlyph($r('sys.symbol.textformat'))
+            .fontSize($r('app.float.icon_size'))
+            .fontColor([$r('app.color.hm_text_secondary')])
+            .padding($r('app.float.space_xs'))
+            .bindMenu(this.FontMenu())
+
+          SymbolGlyph(this.cur().starred ? $r('sys.symbol.star_fill') : $r('sys.symbol.star'))
+            .fontSize($r('app.float.icon_size'))
+            .fontColor([this.cur().starred ? $r('app.color.hm_brand') : $r('app.color.hm_text_secondary')])
+            .padding($r('app.float.space_xs'))
             .onClick(() => {
-              this.showWeb = !this.showWeb;
-              this.loading = true;
+              feedViewModel.toggleStar(this.cur().id);
             })
+
+          SymbolGlyph($r('sys.symbol.more'))
+            .fontSize($r('app.float.icon_size'))
+            .fontColor([$r('app.color.hm_text_secondary')])
+            .padding($r('app.float.space_xs'))
+            .bindMenu(this.ActionsMenu(this.cur()))
         }
-
-        // 阅读排版快捷入口：就地换正文字号。
-        SymbolGlyph($r('sys.symbol.textformat'))
-          .fontSize($r('app.float.icon_size'))
-          .fontColor([$r('app.color.hm_text_secondary')])
-          .padding($r('app.float.space_xs'))
-          .bindMenu(this.FontMenu())
-
-        SymbolGlyph(article.starred ? $r('sys.symbol.star_fill') : $r('sys.symbol.star'))
-          .fontSize($r('app.float.icon_size'))
-          .fontColor([article.starred ? $r('app.color.hm_brand') : $r('app.color.hm_text_secondary')])
-          .padding($r('app.float.space_xs'))
-          .onClick(() => {
-            feedViewModel.toggleStar(article.id);
-          })
-
-        SymbolGlyph($r('sys.symbol.more'))
-          .fontSize($r('app.float.icon_size'))
-          .fontColor([$r('app.color.hm_text_secondary')])
-          .padding($r('app.float.space_xs'))
-          .bindMenu(this.ActionsMenu(article))
+        .width('100%')
       }
       .width('100%')
+      .padding($r('app.float.space_l'))
+      .alignItems(HorizontalAlign.Start)
+    }
+  }
+
+  /** 阅读导航：上一篇 / 下一篇 / 下一条未读（在当前筛选范围内原地切换）。 */
+  @Builder
+  NavBar() {
+    Row({ space: $r('app.float.space_s') }) {
+      Button($r('app.string.article_prev'))
+        .buttonStyle(ButtonStyleMode.TEXTUAL)
+        .fontSize($r('app.float.font_size_caption'))
+        .fontColor(feedViewModel.prevArticleId().length > 0
+          ? $r('app.color.hm_brand') : $r('app.color.hm_text_secondary'))
+        .enabled(feedViewModel.prevArticleId().length > 0)
+        .onClick(() => {
+          this.openRelative(feedViewModel.prevArticleId());
+        })
+
+      Button($r('app.string.article_next'))
+        .buttonStyle(ButtonStyleMode.TEXTUAL)
+        .fontSize($r('app.float.font_size_caption'))
+        .fontColor(feedViewModel.nextArticleId().length > 0
+          ? $r('app.color.hm_brand') : $r('app.color.hm_text_secondary'))
+        .enabled(feedViewModel.nextArticleId().length > 0)
+        .onClick(() => {
+          this.openRelative(feedViewModel.nextArticleId());
+        })
+
+      Blank()
+
+      Button($r('app.string.article_next_unread'))
+        .buttonStyle(ButtonStyleMode.TEXTUAL)
+        .fontSize($r('app.float.font_size_caption'))
+        .fontColor(feedViewModel.nextUnreadId().length > 0
+          ? $r('app.color.hm_brand') : $r('app.color.hm_text_secondary'))
+        .enabled(feedViewModel.nextUnreadId().length > 0)
+        .onClick(() => {
+          this.openRelative(feedViewModel.nextUnreadId());
+        })
     }
     .width('100%')
-    .padding($r('app.float.space_l'))
-    .alignItems(HorizontalAlign.Start)
+    .padding({ left: $r('app.float.space_l'), right: $r('app.float.space_l') })
   }
 
   /**
-   * 底部操作栏（HdsActionBar）：主按钮 = 收藏（星标切换），左 = 阅读模式切换，右 = 分享 / 浏览器打开。
+   * 底部操作栏（HdsActionBar）：主按钮 = 收藏（星标切换），左 = 阅读模式切换，右 = 分享。
    * isPrimaryIconChanged 驱动主按钮在 baseIcon / altIcon 之间切换，表达「已收藏」状态。
    */
   @Builder
-  ActionBar(article: Article) {
-    HdsActionBar({
-      startButtons: [
-        new ActionBarButton({
-          baseIcon: this.showWeb ? $r('sys.symbol.doc_text') : $r('sys.symbol.link'),
+  ActionBar() {
+    if (this.hasArticle()) {
+      HdsActionBar({
+        startButtons: [
+          new ActionBarButton({
+            baseIcon: this.viewMode === MODE_READER ? $r('sys.symbol.link') : $r('sys.symbol.doc_text'),
+            onClick: () => {
+              this.switchMode();
+            }
+          })
+        ],
+        endButtons: [
+          new ActionBarButton({
+            baseIcon: $r('sys.symbol.share'),
+            onClick: () => {
+              this.shareArticle(this.cur());
+            }
+          })
+        ],
+        primaryButton: new ActionBarButton({
+          baseIcon: $r('sys.symbol.star'),
+          altIcon: $r('sys.symbol.star_fill'),
+          hoverTips: this.cur().starred ? $r('app.string.action_unstar') : $r('app.string.action_star'),
           onClick: () => {
-            this.showWeb = !this.showWeb;
-            this.loading = true;
+            feedViewModel.toggleStar(this.cur().id);
           }
-        })
-      ],
-      endButtons: [
-        new ActionBarButton({
-          baseIcon: $r('sys.symbol.share'),
-          onClick: () => {
-            this.shareArticle(article);
-          }
-        })
-      ],
-      primaryButton: new ActionBarButton({
-        baseIcon: $r('sys.symbol.star'),
-        altIcon: $r('sys.symbol.star_fill'),
-        hoverTips: article.starred ? $r('app.string.action_unstar') : $r('app.string.action_star'),
-        onClick: () => {
-          feedViewModel.toggleStar(article.id);
-        }
-      }),
-      actionBarStyle: new ActionBarStyle({
-        isPrimaryIconChanged: article.starred
-      }),
-      isExpand: this.isExpand
-    })
-    .margin({ top: $r('app.float.space_l'), bottom: $r('app.float.space_l') })
+        }),
+        actionBarStyle: new ActionBarStyle({
+          isPrimaryIconChanged: this.cur().starred
+        }),
+        isExpand: this.isExpand
+      })
+      .margin({ top: $r('app.float.space_l'), bottom: $r('app.float.space_l') })
+    }
   }
 
-  /** 网页原文：全文阅读。 */
+  /** 加载遮罩：不透明主题面板盖住 Web 默认白底，避免深色主题转场白闪。 */
   @Builder
-  WebBody(article: Article) {
-    Stack() {
-      Web({ src: article.link, controller: this.webController })
-        .width('100%')
-        .height('100%')
-        .darkMode(WebDarkMode.Auto)
-        .javaScriptAccess(true)
-        .domStorageAccess(true)
-        .onPageEnd(() => {
-          this.loading = false;
-          // 网页原文的排版只能靠注入：按设置覆盖正文字号 / 行距。
-          readerStyle.apply(this.webController);
-          // 排版注入完成后再恢复进度，避免字号变化导致落点偏移。
-          this.restoreWebProgress();
-        })
-
-      if (this.loading) {
-        // 加载完成前用一层**不透明**的主题面板盖住 Web 的默认白底，转圈放在面板上。
-        // 否则深色主题下转场时会滑进来一整块白色，页面加载完才翻成深色（白闪）。
-        Column() {
-          LoadingProgress()
-            .width($r('app.float.web_loading_size'))
-            .height($r('app.float.web_loading_size'))
-            .color($r('app.color.hm_brand'))
-        }
-        .width('100%')
-        .height('100%')
-        .justifyContent(FlexAlign.Center)
-        .backgroundColor($r('app.color.hm_web_surface'))
-      }
+  LoadingVeil() {
+    Column() {
+      LoadingProgress()
+        .width($r('app.float.web_loading_size'))
+        .height($r('app.float.web_loading_size'))
+        .color($r('app.color.hm_brand'))
     }
     .width('100%')
-    .layoutWeight(1)
+    .height('100%')
+    .justifyContent(FlexAlign.Center)
+    .backgroundColor($r('app.color.hm_web_surface'))
   }
 
-  /** 提取正文：feed 里能拿到的纯文本 + 原文链接。 */
+  /** Reader 模式：结构化正文文档（提取失败时展示重试 / 退网页原文）。 */
   @Builder
-  TextBody(article: Article) {
-    Scroll(this.textScroller) {
-      Column({ space: $r('app.float.space_m') }) {
-        Text(article.content.length > 0 ? article.content : $r('app.string.article_no_content'))
-          .fontSize(ReaderTypography.fontSize(appSettings.readerFont))
-          .lineHeight(ReaderTypography.fontSize(appSettings.readerFont)
-            * ReaderTypography.lineHeight(appSettings.readerLine))
-          .fontColor($r('app.color.hm_text_primary'))
-          .width('100%')
+  ReaderBody() {
+    if (this.hasArticle()) {
+      Stack() {
+        if (this.readerHtml.length > 0) {
+          Web({ src: '', controller: this.readerController })
+            .width('100%')
+            .height('100%')
+            .darkMode(WebDarkMode.Auto)
+            .javaScriptAccess(true)
+            .domStorageAccess(false)
+            .horizontalScrollBarAccess(false)
+            .onControllerAttached(() => {
+              const doc: string = buildReaderDocument(this.readerHtml);
+              try {
+                this.readerController.loadData(doc, 'text/html', 'UTF-8', this.cur().link);
+              } catch (err) {
+                const error: BusinessError = err as BusinessError;
+                hilog.warn(DOMAIN, TAG, 'load reader doc failed: %{public}d', error.code);
+              }
+            })
+            .onPageEnd(() => {
+              this.loading = false;
+              this.restoreReaderProgress();
+            })
+        } else {
+          // 无正文可读（提取失败且无链接）：退纯文本。
+          this.TextBody()
+        }
 
-        if (article.link.length > 0) {
-          Column({ space: $r('app.float.space_xs') }) {
-            Text($r('app.string.article_open_link'))
-              .fontSize($r('app.float.font_size_section'))
-              .fontColor($r('app.color.hm_text_secondary'))
-            Text(article.link)
-              .fontSize($r('app.float.font_size_caption'))
-              .fontColor($r('app.color.hm_brand'))
-              .width('100%')
-          }
-          .width('100%')
-          .padding($r('app.float.space_m'))
-          .backgroundColor($r('app.color.hm_card_background'))
-          .borderRadius($r('app.float.radius_card'))
-          .alignItems(HorizontalAlign.Start)
+        if (this.loading && this.readerHtml.length > 0) {
+          this.LoadingVeil()
         }
       }
       .width('100%')
-      .padding({ left: $r('app.float.space_l'), right: $r('app.float.space_l'), bottom: $r('app.float.space_3xl') })
-      .alignItems(HorizontalAlign.Start)
+      .layoutWeight(1)
+      .clip(true)
     }
-    .width('100%')
-    .layoutWeight(1)
-    .scrollBar(BarState.Off)
-    .clip(false)
-    .align(Alignment.TopStart)
-    .onAppear(() => {
-      // 布局就绪后恢复到上次读到的位置。
-      this.restoreTextProgress();
-    })
-    .onScrollStop(() => {
-      const current: Article | undefined = feedViewModel.currentArticle();
-      if (current !== undefined) {
-        feedViewModel.saveProgress(current.id, this.textScroller.currentOffset().yOffset);
-      }
-    })
   }
 
+  /** 网页原文：全文阅读（兜底）。 */
   @Builder
-  Content(article: Article | undefined) {
-    if (article !== undefined) {
-      this.Meta(article)
-      if (article.link.length > 0 && this.showWeb) {
-        this.WebBody(article)
-      } else {
-        this.TextBody(article)
+  WebBody() {
+    if (this.hasArticle()) {
+      Stack() {
+        Web({ src: this.cur().link, controller: this.webController })
+          .width('100%')
+          .height('100%')
+          .darkMode(WebDarkMode.Auto)
+          .javaScriptAccess(true)
+          .domStorageAccess(true)
+          .onPageEnd(() => {
+            this.loading = false;
+            // 网页原文的排版只能靠注入：按设置覆盖正文字号 / 行距。
+            readerStyle.apply(this.webController);
+            // 排版注入完成后再恢复进度，避免字号变化导致落点偏移。
+            this.restoreWebProgress();
+          })
+
+        if (this.loading) {
+          this.LoadingVeil()
+        }
       }
-      this.ActionBar(article)
+      .width('100%')
+      .layoutWeight(1)
+      .clip(true)
+    }
+  }
+
+  /** 提取正文兜底：feed 里能拿到的纯文本 + 原文链接。 */
+  @Builder
+  TextBody() {
+    if (this.hasArticle()) {
+      Scroll(this.textScroller) {
+        Column({ space: $r('app.float.space_m') }) {
+          Text(this.cur().content.length > 0 ? this.cur().content : $r('app.string.article_no_content'))
+            .fontSize(ReaderTypography.fontSize(appSettings.readerFont))
+            .lineHeight(ReaderTypography.fontSize(appSettings.readerFont)
+              * ReaderTypography.lineHeight(appSettings.readerLine))
+            .fontColor($r('app.color.hm_text_primary'))
+            .width('100%')
+
+          if (this.cur().link.length > 0) {
+            Column({ space: $r('app.float.space_xs') }) {
+              Text($r('app.string.article_open_link'))
+                .fontSize($r('app.float.font_size_section'))
+                .fontColor($r('app.color.hm_text_secondary'))
+              Text(this.cur().link)
+                .fontSize($r('app.float.font_size_caption'))
+                .fontColor($r('app.color.hm_brand'))
+                .width('100%')
+            }
+            .width('100%')
+            .padding($r('app.float.space_m'))
+            .backgroundColor($r('app.color.hm_card_background'))
+            .borderRadius($r('app.float.radius_card'))
+            .alignItems(HorizontalAlign.Start)
+          }
+        }
+        .width('100%')
+        .padding({ left: $r('app.float.space_l'), right: $r('app.float.space_l'), bottom: $r('app.float.space_3xl') })
+        .alignItems(HorizontalAlign.Start)
+      }
+      .width('100%')
+      .layoutWeight(1)
+      .scrollBar(BarState.Off)
+      .clip(false)
+      .align(Alignment.TopStart)
+      .onAppear(() => {
+        this.restoreTextProgress();
+      })
+      .onScrollStop(() => {
+        const current: Article | undefined = feedViewModel.currentArticle();
+        if (current !== undefined) {
+          feedViewModel.saveProgress(current.id, this.textScroller.currentOffset().yOffset);
+        }
+      })
+    }
+  }
+
+  /**
+   * 内容切换：网页原文（有链接）或 Reader。所有子 builder 均为无参 ——
+   * ArkUI 的 @Builder 按值传参不会随参数变化刷新，因此这里统一让子 builder 自己读 ViewModel，
+   * 由 @Trace currentArticleId 驱动整页重建。
+   */
+  @Builder
+  BodySwitch() {
+    if (this.hasArticle()) {
+      if (this.viewMode === MODE_WEB && this.cur().link.length > 0) {
+        this.WebBody()
+      } else {
+        this.ReaderBody()
+      }
     }
   }
 
   build() {
     Column() {
-      this.Content(feedViewModel.currentArticle())
+      this.Meta()
+      this.NavBar()
+      this.BodySwitch()
+      this.ActionBar()
     }
     .width('100%')
     .height('100%')

@@ -485,6 +485,26 @@
       "value": "提取正文"
     },
     {
+      "name": "article_mode_reader",
+      "value": "阅读模式"
+    },
+    {
+      "name": "article_reader_failed",
+      "value": "正文提取失败，已为你打开网页原文。"
+    },
+    {
+      "name": "article_prev",
+      "value": "上一篇"
+    },
+    {
+      "name": "article_next",
+      "value": "下一篇"
+    },
+    {
+      "name": "article_next_unread",
+      "value": "下一条未读"
+    },
+    {
       "name": "err_empty_url",
       "value": "请输入订阅地址"
     },

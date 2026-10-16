@@ -18,9 +18,11 @@ export class ParsedArticle {
   readonly imageUrl: string;
   /** 作者（dc:creator / author / Atom author/name），没有则为空串。 */
   readonly author: string;
+  /** feed 自带的 HTML 正文（保留块级结构，仅去 script/style），没有则为空串。 */
+  readonly contentHtml: string;
 
   constructor(title: string, link: string, summary: string, content: string, publishedAt: number,
-    imageUrl: string, author: string = '') {
+    imageUrl: string, author: string = '', contentHtml: string = '') {
     this.title = title;
     this.link = link;
     this.summary = summary;
@@ -28,6 +30,7 @@ export class ParsedArticle {
     this.publishedAt = publishedAt;
     this.imageUrl = imageUrl;
     this.author = author;
+    this.contentHtml = contentHtml;
   }
 }
 
@@ -98,6 +101,15 @@ export function decodeEntities(input: string): string {
 export function stripTags(input: string): string {
   let out: string = input.replace(new RegExp('<[^>]*>', 'g'), ' ');
   out = out.replace(new RegExp('\\s+', 'g'), ' ');
+  return out.trim();
+}
+
+/** feed 全文的基础清理：去注释 / script / style，保留块级结构（供 Reader 提取复用）。 */
+function basicCleanHtml(input: string): string {
+  let out: string = input;
+  out = out.replace(new RegExp('<!--[\\s\\S]*?-->', 'g'), '');
+  out = out.replace(new RegExp('<script[\\s\\S]*?</script>', 'gi'), '');
+  out = out.replace(new RegExp('<style[\\s\\S]*?</style>', 'gi'), '');
   return out.trim();
 }
 
@@ -272,9 +284,19 @@ function parseArticle(block: string, isAtom: boolean): ParsedArticle {
   const summary: string = truncate(stripTags(decodeEntities(summarySource)), RssConstants.SUMMARY_MAX_CHARS);
   const bodySource: string = rawContent.length > 0 ? rawContent : rawSummary;
   const content: string = stripTags(decodeEntities(bodySource));
+  const contentHtml: string = basicCleanHtml(htmlSource(bodySource));
   const imageUrl: string = firstImageUrl(block, bodySource);
   const author: string = firstAuthor(block, isAtom);
-  return new ParsedArticle(title, link.trim(), summary, content, parseDate(dateText), imageUrl, author);
+  return new ParsedArticle(title, link.trim(), summary, content, parseDate(dateText), imageUrl, author, contentHtml);
+}
+
+/**
+ * 判断正文是「真 HTML」还是「被实体编码的 HTML」：
+ * 含真实标签（'<'）时原样返回（避免把 &quot; 解成引号而破坏属性）；
+ * 否则按实体解码（description 常把标签写成 &lt;p&gt;）。
+ */
+function htmlSource(input: string): string {
+  return input.indexOf('<') >= 0 ? input : decodeEntities(input);
 }
 
 /** 解析一份 feed 文档；既支持 RSS 2.0（item）也支持 Atom 1.0（entry）。 */

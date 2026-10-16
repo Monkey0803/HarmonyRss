@@ -82,8 +82,20 @@ export class Article {
   @Trace link: string;
   /** 纯文本摘要，用于列表。 */
   @Trace summary: string;
-  /** 纯文本正文，用于详情。 */
+  /** 纯文本正文，用于详情兜底 / 搜索。 */
   @Trace content: string;
+  /**
+   * feed 自带的 HTML 正文（content:encoded / Atom content），保留块级结构，仅做基础清理。
+   * 入库后不再变化；有它时可直接提取，无需联网抓原文。
+   */
+  contentHtml: string;
+  /**
+   * Reader 视图的结构化正文 HTML（提取 + 净化后的片段）；空串表示尚未生成。
+   * 生成后持久化到本地库，离线可读。
+   */
+  @Trace readerHtml: string;
+  /** Reader 提取状态：'none' | 'loading' | 'ready' | 'failed'。 */
+  @Trace readerState: string;
   /** 发布时间戳（毫秒）；解析不到时为 0。 */
   @Trace publishedAt: number;
   /** 配图地址（网络 URL）；空串表示没有配图。入库后不再变化。 */
@@ -101,7 +113,8 @@ export class Article {
   @Trace progress: number = 0;
 
   constructor(id: string, feedId: string, feedTitle: string, title: string, link: string,
-    summary: string, content: string, publishedAt: number, imageUrl: string = '', author: string = '') {
+    summary: string, content: string, publishedAt: number, imageUrl: string = '', author: string = '',
+    contentHtml: string = '') {
     this.id = id;
     this.feedId = feedId;
     this.feedTitle = feedTitle;
@@ -109,10 +122,13 @@ export class Article {
     this.link = link;
     this.summary = summary;
     this.content = content;
+    this.contentHtml = contentHtml;
     this.publishedAt = publishedAt;
     this.imageUrl = imageUrl;
     this.author = author;
     this.read = false;
     this.starred = false;
+    this.readerHtml = '';
+    this.readerState = 'none';
   }
 }

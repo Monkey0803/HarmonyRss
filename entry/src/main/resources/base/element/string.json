@@ -485,6 +485,26 @@
       "value": "Extracted text"
     },
     {
+      "name": "article_mode_reader",
+      "value": "Reading mode"
+    },
+    {
+      "name": "article_reader_failed",
+      "value": "Couldn't extract the article. Showing the original page."
+    },
+    {
+      "name": "article_prev",
+      "value": "Previous"
+    },
+    {
+      "name": "article_next",
+      "value": "Next"
+    },
+    {
+      "name": "article_next_unread",
+      "value": "Next unread"
+    },
+    {
       "name": "err_empty_url",
       "value": "Please enter a feed URL"
     },

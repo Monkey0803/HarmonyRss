@@ -30,6 +30,6 @@ export function toArticles(feed: FeedSource, parsed: ParsedFeed, sink: Article[]
   for (let i = 0; i < parsed.articles.length; i += 1) {
     const item: ParsedArticle = parsed.articles[i];
     sink.push(new Article(buildArticleId(feed.id, item), feed.id, feed.title, item.title, item.link,
-      item.summary, item.content, item.publishedAt, item.imageUrl, item.author));
+      item.summary, item.content, item.publishedAt, item.imageUrl, item.author, item.contentHtml));
   }
 }

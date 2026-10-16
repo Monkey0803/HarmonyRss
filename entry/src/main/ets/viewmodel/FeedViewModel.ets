@@ -12,6 +12,7 @@ import { Article, FeedGroup, FeedListItem, FeedSource } from '../model/Feed';
 import { feedStore } from '../service/FeedStore';
 import { feedService } from '../service/FeedService';
 import { articleStore } from '../service/ArticleStore';
+import { articleContentService } from '../service/ArticleContentService';
 import { ParsedArticle, ParsedFeed } from '../service/RssParser';
 import { buildOpml, OpmlEntry } from '../service/OpmlCodec';
 import { toArticles } from '../service/ArticleMapper';
@@ -67,8 +68,8 @@ export class FeedViewModel {
   /** 单源视图：非空时只看该订阅源的文章。 */
   @Trace scopeFeedId: string = '';
   @Trace scopeTitle: string = '';
-  /** 当前打开的文章 id（详情页用）。 */
-  currentArticleId: string = '';
+  /** 当前打开的文章 id（详情页用）。@Trace：详情页在原文内切换文章时需驱动重渲染。 */
+  @Trace currentArticleId: string = '';
 
   /** 全量文章（缓存 + 本次抓取），未读统计与筛选都基于它。 */
   private all: Article[] = [];
@@ -653,6 +654,19 @@ export class FeedViewModel {
     return undefined;
   }
 
+  /**
+   * 取当前文章的 Reader 正文（缓存优先 / feed 全文 / 联网提取）。
+   * 详情页只调用这里，不直接依赖 service。失败时抛出错误供界面退网页原文。
+   */
+  async loadReaderHtml(articleId: string): Promise<string> {
+    for (let i = 0; i < this.all.length; i += 1) {
+      if (this.all[i].id === articleId) {
+        return articleContentService.ensureReaderHtml(this.all[i]);
+      }
+    }
+    return '';
+  }
+
   private markRead(articleId: string): void {
     for (let i = 0; i < this.all.length; i += 1) {
       if (this.all[i].id === articleId && !this.all[i].read) {
@@ -668,25 +682,85 @@ export class FeedViewModel {
   /** 依据全量列表重算筛选结果与未读数。 */
   private publish(): void {
     const visible: Article[] = [];
-    const keyword: string = this.keyword.toLowerCase();
     for (let i = 0; i < this.all.length; i += 1) {
-      const item: Article = this.all[i];
-      if (this.scopeFeedId.length > 0 && item.feedId !== this.scopeFeedId) {
-        continue;
+      if (this.passesFilter(this.all[i])) {
+        visible.push(this.all[i]);
       }
-      if (this.filter === ArticleFilter.UNREAD && item.read) {
-        continue;
-      }
-      if (this.filter === ArticleFilter.STARRED && !item.starred) {
-        continue;
-      }
-      if (keyword.length > 0 && !matchesKeyword(item, keyword)) {
-        continue;
-      }
-      visible.push(item);
     }
     this.articles = visible;
     this.recomputeUnread();
+  }
+
+  /** 单条是否落在当前范围（订阅源 + 筛选 + 关键词）内。 */
+  private passesFilter(item: Article): boolean {
+    if (this.scopeFeedId.length > 0 && item.feedId !== this.scopeFeedId) {
+      return false;
+    }
+    if (this.filter === ArticleFilter.UNREAD && item.read) {
+      return false;
+    }
+    if (this.filter === ArticleFilter.STARRED && !item.starred) {
+      return false;
+    }
+    if (this.keyword.length > 0 && !matchesKeyword(item, this.keyword.toLowerCase())) {
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * 详情页导航用的有序列表：当前筛选结果，但**始终包含当前文章**（即使它已因标记已读
+   * 从「未读」筛选里消失），这样原地切文时才有锚点。
+   */
+  private navList(): Article[] {
+    const list: Article[] = [];
+    for (let i = 0; i < this.all.length; i += 1) {
+      const item: Article = this.all[i];
+      if (item.id === this.currentArticleId || this.passesFilter(item)) {
+        list.push(item);
+      }
+    }
+    return list;
+  }
+
+  private indexInNav(list: Article[]): number {
+    for (let i = 0; i < list.length; i += 1) {
+      if (list[i].id === this.currentArticleId) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  /** 下一篇（列表里更旧的一条）；没有返回空串。 */
+  nextArticleId(): string {
+    const list: Article[] = this.navList();
+    const index: number = this.indexInNav(list);
+    return index >= 0 && index + 1 < list.length ? list[index + 1].id : '';
+  }
+
+  /** 上一篇（列表里更新的一条）；没有返回空串。 */
+  prevArticleId(): string {
+    const list: Article[] = this.navList();
+    const index: number = this.indexInNav(list);
+    return index > 0 ? list[index - 1].id : '';
+  }
+
+  /** 下一条未读：先向后找，找不到再从列表开头循环找；没有返回空串。 */
+  nextUnreadId(): string {
+    const list: Article[] = this.navList();
+    const index: number = this.indexInNav(list);
+    for (let i = index + 1; i < list.length; i += 1) {
+      if (!list[i].read) {
+        return list[i].id;
+      }
+    }
+    for (let i = 0; i < index; i += 1) {
+      if (!list[i].read) {
+        return list[i].id;
+      }
+    }
+    return '';
   }
 
   private recomputeUnread(): void {
