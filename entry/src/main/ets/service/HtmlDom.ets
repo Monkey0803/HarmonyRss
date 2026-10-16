@@ -59,6 +59,9 @@ const VOID_ELEMENTS: string[] = [
 /** 内容整体吞噬的元素（内部 '<' 不参与解析）。 */
 const RAW_TEXT_ELEMENTS: string[] = ['script', 'style', 'textarea', 'title'];
 
+/** 未闭合时遇到同标签可隐式闭合的元素（贴近 HTML5）。 */
+const IMPLICIT_CLOSE: string[] = ['li', 'p'];
+
 /** 会被直接丢弃、连内容也不要的元素。 */
 export const DROP_WITH_CONTENT: string[] = ['script', 'style', 'noscript', 'template', 'svg', 'canvas', 'iframe'];
 
@@ -193,18 +196,18 @@ export function parseHtml(html: string): HtmlNode {
       i = end < 0 ? html.length : end + 3;
       continue;
     }
-    // doctype / 其它 <! >
-    if (html.charAt(lt + 1) === '!') {
-      const end: number = html.indexOf('>', lt);
-      i = end < 0 ? html.length : end + 1;
-      continue;
-    }
-    // CDATA
+    // CDATA（必须在通用 <! 判断之前：否则会被当成 doctype 跳掉）
     if (html.startsWith('<![CDATA[', lt)) {
       const end: number = html.indexOf(']]>', lt + 9);
       const inner: string = end < 0 ? html.substring(lt + 9) : html.substring(lt + 9, end);
       appendText(stack[stack.length - 1], inner);
       i = end < 0 ? html.length : end + 3;
+      continue;
+    }
+    // doctype / 其它 <! >
+    if (html.charAt(lt + 1) === '!') {
+      const end: number = html.indexOf('>', lt);
+      i = end < 0 ? html.length : end + 1;
       continue;
     }
     // 结束标签
@@ -221,6 +224,13 @@ export function parseHtml(html: string): HtmlNode {
     if (node.tag.length === 0) {
       i = parsed.end;
       continue;
+    }
+    // 隐式闭合：<li> / <p> 未闭合就遇到同标签，先关掉前一个（贴近 HTML5，提升真实页面结构还原）。
+    if (IMPLICIT_CLOSE.indexOf(node.tag) >= 0) {
+      const open: HtmlNode = stack[stack.length - 1];
+      if (open.tag === node.tag) {
+        stack.pop();
+      }
     }
     const parent: HtmlNode = stack[stack.length - 1];
     node.parent = parent;

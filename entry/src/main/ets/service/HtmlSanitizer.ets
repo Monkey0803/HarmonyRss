@@ -140,7 +140,11 @@ export function resolveUrl(base: string, url: string): string {
   if (trimmed.startsWith('#')) {
     return base + trimmed;
   }
-  return dirOf(base) + normalizePath(trimmed);
+  // 相对路径：拼到 base 目录后再整体归一，才能正确消掉 '..'。
+  const origin: string = originOf(base);
+  const baseDir: string = dirOf(base);
+  const basePath: string = origin.length > 0 ? baseDir.substring(origin.length) : baseDir;
+  return origin + normalizePath(basePath + trimmed);
 }
 
 /** 属性值是否可疑（内联脚本 / javascript: 协议）。 */
