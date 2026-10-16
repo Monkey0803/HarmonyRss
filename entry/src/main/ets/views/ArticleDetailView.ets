@@ -218,10 +218,27 @@ export struct ArticleDetailView {
     // 网页原文模式：Web 的 src 随 article.link 变化自动重载，等 onPageEnd 收尾。
   }
 
-  /** 溢出菜单：复制链接 / 浏览器打开 / 分享。 */
+  /** 重新提取正文：清掉缓存后重跑（不卸载 Reader Web，直接换文档）。 */
+  private retryReader(): void {
+    const article: Article | undefined = feedViewModel.currentArticle();
+    if (article === undefined) {
+      return;
+    }
+    feedViewModel.clearReaderHtml(article.id);
+    this.readerFailed = false;
+    this.readerProgressRestored = false;
+    this.viewMode = MODE_READER;
+    this.startReader();
+  }
+
+  /** 溢出菜单：重新提取 / 复制链接 / 浏览器打开 / 分享。 */
   @Builder
   ActionsMenu(article: Article) {
     Menu() {
+      MenuItem({ content: $r('app.string.action_reader_retry') })
+        .onClick(() => {
+          this.retryReader();
+        })
       MenuItem({ content: $r('app.string.action_copy_link') })
         .onClick(() => {
           this.copyLink(article);

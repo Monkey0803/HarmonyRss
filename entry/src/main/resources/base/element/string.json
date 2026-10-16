@@ -341,6 +341,10 @@
       "value": "From: %s"
     },
     {
+      "name": "action_reader_retry",
+      "value": "Re-extract article"
+    },
+    {
       "name": "action_copy_link",
       "value": "Copy link"
     },

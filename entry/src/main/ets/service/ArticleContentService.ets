@@ -15,6 +15,7 @@ import { Article } from '../model/Feed';
 import { articleStore } from './ArticleStore';
 import { extractReadable } from './Readability';
 import { imageCache } from './ImageCache';
+import { ReaderBudget } from './ReaderBudget';
 import { ReaderState, RssConstants, FeedError, FeedFetchError } from '../common/constants/RssConstants';
 
 const DOMAIN: number = 0x0000;
@@ -126,7 +127,8 @@ export class ArticleContentService {
 
     // 把正文图片内联为 data URI（离线可读）；失败/超预算的图片保留远程链接。
     const inlined: string = await imageCache.inlineImages(fresh, baseUrl);
-    this.persist(article, READER_MARKER + inlined);
+    // 最后一道总预算：超限则退回未内联的正文，保证单篇体积有界。
+    this.persist(article, READER_MARKER + ReaderBudget.fit(fresh, inlined));
     return article.readerHtml;
   }
 

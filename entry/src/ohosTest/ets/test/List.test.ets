@@ -11,6 +11,7 @@ import readabilityTest from './Readability.test';
 import rssParserTest from './RssParser.test';
 import mimeSniffTest from './MimeSniff.test';
 import readerTypographyTest from './ReaderTypography.test';
+import readerBudgetTest from './ReaderBudget.test';
 
 export default function testsuite() {
   htmlDomTest();
@@ -19,4 +20,5 @@ export default function testsuite() {
   rssParserTest();
   mimeSniffTest();
   readerTypographyTest();
+  readerBudgetTest();
 }

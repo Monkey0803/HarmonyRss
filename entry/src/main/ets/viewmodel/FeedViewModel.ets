@@ -16,7 +16,7 @@ import { articleContentService } from '../service/ArticleContentService';
 import { ParsedArticle, ParsedFeed } from '../service/RssParser';
 import { buildOpml, OpmlEntry } from '../service/OpmlCodec';
 import { toArticles } from '../service/ArticleMapper';
-import { ArticleFilter, FeedError, FeedFetchError } from '../common/constants/RssConstants';
+import { ArticleFilter, FeedError, FeedFetchError, ReaderState } from '../common/constants/RssConstants';
 import { appSettings } from '../model/AppSettings';
 import { AutoRefreshMinutes } from '../common/constants/SettingsConstants';
 
@@ -665,6 +665,18 @@ export class FeedViewModel {
       }
     }
     return '';
+  }
+
+  /** 清空某篇的 Reader 缓存，迫使下次重新提取（详情页「重新提取」用）。 */
+  clearReaderHtml(articleId: string): void {
+    for (let i = 0; i < this.all.length; i += 1) {
+      if (this.all[i].id === articleId) {
+        this.all[i].readerHtml = '';
+        this.all[i].readerState = ReaderState.NONE;
+        articleStore.setReaderHtml(articleId, '');
+        return;
+      }
+    }
   }
 
   private markRead(articleId: string): void {
