@@ -1,0 +1,640 @@
+{
+  "string": [
+    {
+      "name": "work_scheduler_desc",
+      "value": "后台定时刷新订阅源"
+    },
+    {
+      "name": "module_desc",
+      "value": "HDS 应用入口模块"
+    },
+    {
+      "name": "EntryAbility_desc",
+      "value": "HDS 应用"
+    },
+    {
+      "name": "EntryAbility_label",
+      "value": "HarmonyRss"
+    },
+    {
+      "name": "tab_home",
+      "value": "阅读"
+    },
+    {
+      "name": "tab_settings",
+      "value": "设置"
+    },
+    {
+      "name": "tab_images",
+      "value": "图片"
+    },
+    {
+      "name": "home_title",
+      "value": "阅读"
+    },
+    {
+      "name": "settings_title",
+      "value": "设置"
+    },
+    {
+      "name": "section_appearance",
+      "value": "外观"
+    },
+    {
+      "name": "section_language",
+      "value": "语言"
+    },
+    {
+      "name": "section_system",
+      "value": "系统特性"
+    },
+    {
+      "name": "section_navigation",
+      "value": "导航"
+    },
+    {
+      "name": "section_feed",
+      "value": "订阅"
+    },
+    {
+      "name": "section_reading",
+      "value": "阅读"
+    },
+    {
+      "name": "row_reader_font",
+      "value": "正文字号"
+    },
+    {
+      "name": "row_reader_line",
+      "value": "正文行距"
+    },
+    {
+      "name": "opt_font_small",
+      "value": "小"
+    },
+    {
+      "name": "opt_font_medium",
+      "value": "中"
+    },
+    {
+      "name": "opt_font_large",
+      "value": "大"
+    },
+    {
+      "name": "opt_line_compact",
+      "value": "紧凑"
+    },
+    {
+      "name": "opt_line_normal",
+      "value": "标准"
+    },
+    {
+      "name": "opt_line_loose",
+      "value": "宽松"
+    },
+    {
+      "name": "row_title_bar_scroll",
+      "value": "标题栏随内容滚动"
+    },
+    {
+      "name": "row_theme",
+      "value": "主题"
+    },
+    {
+      "name": "row_global_background",
+      "value": "全局背景图"
+    },
+    {
+      "name": "opt_bg_default",
+      "value": "默认"
+    },
+    {
+      "name": "opt_bg_aurora",
+      "value": "极光"
+    },
+    {
+      "name": "opt_bg_sunset",
+      "value": "暮色"
+    },
+    {
+      "name": "opt_bg_custom",
+      "value": "相册图片"
+    },
+    {
+      "name": "opt_bg_none",
+      "value": "无"
+    },
+    {
+      "name": "row_language",
+      "value": "语言"
+    },
+    {
+      "name": "row_immersive",
+      "value": "沉浸光感"
+    },
+    {
+      "name": "row_material_type",
+      "value": "材质类型"
+    },
+    {
+      "name": "row_material_level",
+      "value": "沉浸光感材质"
+    },
+    {
+      "name": "row_grip",
+      "value": "智感握姿"
+    },
+    {
+      "name": "row_antipeep",
+      "value": "防窥保护"
+    },
+    {
+      "name": "opt_follow_system",
+      "value": "跟随系统"
+    },
+    {
+      "name": "opt_light",
+      "value": "浅色"
+    },
+    {
+      "name": "opt_dark",
+      "value": "深色"
+    },
+    {
+      "name": "opt_chinese",
+      "value": "简体中文"
+    },
+    {
+      "name": "opt_english",
+      "value": "English"
+    },
+    {
+      "name": "opt_material_adaptive",
+      "value": "自适应"
+    },
+    {
+      "name": "opt_material_immersive",
+      "value": "沉浸式"
+    },
+    {
+      "name": "opt_material_none",
+      "value": "无材质效果"
+    },
+    {
+      "name": "opt_level_exquisite",
+      "value": "精美"
+    },
+    {
+      "name": "opt_level_gentle",
+      "value": "轻柔"
+    },
+    {
+      "name": "opt_level_smooth",
+      "value": "流畅"
+    },
+    {
+      "name": "opt_level_adaptive",
+      "value": "自适应"
+    },
+    {
+      "name": "aux_global_immersive_on",
+      "value": "全局沉浸：已开启"
+    },
+    {
+      "name": "aux_global_immersive_off",
+      "value": "全局沉浸：已关闭"
+    },
+    {
+      "name": "aux_antipeep_unsupported",
+      "value": "未生效：设备不支持防窥保护"
+    },
+    {
+      "name": "veil_message",
+      "value": "已为你隐藏屏幕内容"
+    },
+    {
+      "name": "veil_dismiss",
+      "value": "轻点任意位置继续"
+    },
+    {
+      "name": "home_refresh",
+      "value": "刷新"
+    },
+    {
+      "name": "home_feed_count",
+      "value": "%d 个订阅源"
+    },
+    {
+      "name": "home_unread_count",
+      "value": "%d 未读"
+    },
+    {
+      "name": "filter_all",
+      "value": "全部"
+    },
+    {
+      "name": "filter_unread",
+      "value": "未读"
+    },
+    {
+      "name": "filter_starred",
+      "value": "收藏"
+    },
+    {
+      "name": "home_mark_all_read",
+      "value": "全部已读"
+    },
+    {
+      "name": "mark_all_read_confirm_title",
+      "value": "全部标为已读"
+    },
+    {
+      "name": "mark_all_read_confirm_message",
+      "value": "确定把全部文章标为已读吗？"
+    },
+    {
+      "name": "dialog_confirm",
+      "value": "确定"
+    },
+    {
+      "name": "filter_empty_unread",
+      "value": "没有未读文章"
+    },
+    {
+      "name": "filter_empty_starred",
+      "value": "没有收藏文章"
+    },
+    {
+      "name": "filter_empty_search",
+      "value": "没有匹配的文章"
+    },
+    {
+      "name": "home_search_hint",
+      "value": "搜索标题 / 正文"
+    },
+    {
+      "name": "home_scope_prefix",
+      "value": "来源：%s"
+    },
+    {
+      "name": "action_copy_link",
+      "value": "复制链接"
+    },
+    {
+      "name": "action_open_browser",
+      "value": "用浏览器打开"
+    },
+    {
+      "name": "action_share",
+      "value": "分享"
+    },
+    {
+      "name": "action_reload",
+      "value": "重新加载"
+    },
+    {
+      "name": "toast_action_failed",
+      "value": "当前设备不支持该操作"
+    },
+    {
+      "name": "subs_rename",
+      "value": "重命名"
+    },
+    {
+      "name": "subs_rename_hint",
+      "value": "订阅源名称"
+    },
+    {
+      "name": "dialog_save",
+      "value": "保存"
+    },
+    {
+      "name": "group_ungrouped",
+      "value": "未分组"
+    },
+    {
+      "name": "group_move_to",
+      "value": "移动到「%s」"
+    },
+    {
+      "name": "group_clear",
+      "value": "移出分组"
+    },
+    {
+      "name": "group_new",
+      "value": "新建分组…"
+    },
+    {
+      "name": "group_hint",
+      "value": "分组名称（留空 = 移出分组）"
+    },
+    {
+      "name": "feed_move_up",
+      "value": "上移"
+    },
+    {
+      "name": "feed_move_down",
+      "value": "下移"
+    },
+    {
+      "name": "row_auto_refresh",
+      "value": "自动刷新"
+    },
+    {
+      "name": "opt_refresh_off",
+      "value": "关闭"
+    },
+    {
+      "name": "opt_refresh_15",
+      "value": "每 15 分钟"
+    },
+    {
+      "name": "opt_refresh_30",
+      "value": "每 30 分钟"
+    },
+    {
+      "name": "opt_refresh_60",
+      "value": "每小时"
+    },
+    {
+      "name": "home_manage_subs",
+      "value": "订阅管理"
+    },
+    {
+      "name": "effect_title",
+      "value": "光影效果"
+    },
+    {
+      "name": "effect_hint",
+      "value": "按住光源按钮，周围组件随之被照亮"
+    },
+    {
+      "name": "effect_source",
+      "value": "光源"
+    },
+    {
+      "name": "effect_target",
+      "value": "受光体"
+    },
+    {
+      "name": "home_empty_title",
+      "value": "还没有文章"
+    },
+    {
+      "name": "home_empty_hint",
+      "value": "下拉刷新，或先添加一个 RSS 订阅源。"
+    },
+    {
+      "name": "home_empty_action",
+      "value": "添加订阅源"
+    },
+    {
+      "name": "home_loading",
+      "value": "正在加载…"
+    },
+    {
+      "name": "subs_title",
+      "value": "订阅源管理"
+    },
+    {
+      "name": "subs_url_hint",
+      "value": "输入 RSS / Atom 订阅地址"
+    },
+    {
+      "name": "subs_add",
+      "value": "添加"
+    },
+    {
+      "name": "subs_adding",
+      "value": "添加中…"
+    },
+    {
+      "name": "subs_remove",
+      "value": "删除"
+    },
+    {
+      "name": "subs_remove_confirm_title",
+      "value": "删除订阅源"
+    },
+    {
+      "name": "subs_remove_confirm_message",
+      "value": "确定删除「%s」及其全部文章吗？"
+    },
+    {
+      "name": "dialog_cancel",
+      "value": "取消"
+    },
+    {
+      "name": "subs_empty",
+      "value": "暂无订阅源"
+    },
+    {
+      "name": "subs_import_opml",
+      "value": "导入 OPML"
+    },
+    {
+      "name": "subs_export_opml",
+      "value": "导出 OPML"
+    },
+    {
+      "name": "subs_import_result",
+      "value": "已导入 %d 个订阅源"
+    },
+    {
+      "name": "subs_import_empty",
+      "value": "文件里没有可导入的订阅源"
+    },
+    {
+      "name": "subs_import_duplicate",
+      "value": "这些订阅源都已存在"
+    },
+    {
+      "name": "subs_export_success",
+      "value": "OPML 已导出"
+    },
+    {
+      "name": "subs_export_empty",
+      "value": "还没有可导出的订阅源"
+    },
+    {
+      "name": "subs_article_count",
+      "value": "%d 篇文章"
+    },
+    {
+      "name": "subs_error_prefix",
+      "value": "上次错误："
+    },
+    {
+      "name": "article_title",
+      "value": "文章"
+    },
+    {
+      "name": "article_open_link",
+      "value": "原文链接"
+    },
+    {
+      "name": "article_no_content",
+      "value": "该条目没有正文，可打开原文链接查看。"
+    },
+    {
+      "name": "article_mode_web",
+      "value": "网页原文"
+    },
+    {
+      "name": "article_mode_text",
+      "value": "提取正文"
+    },
+    {
+      "name": "err_empty_url",
+      "value": "请输入订阅地址"
+    },
+    {
+      "name": "err_duplicate_url",
+      "value": "该订阅源已存在"
+    },
+    {
+      "name": "err_fetch_failed",
+      "value": "获取失败，请检查网络或地址。"
+    },
+    {
+      "name": "err_timeout",
+      "value": "请求超时，请检查网络后重试。"
+    },
+    {
+      "name": "err_network",
+      "value": "网络连接失败，请检查网络后重试。"
+    },
+    {
+      "name": "err_http",
+      "value": "服务器返回错误，请稍后重试。"
+    },
+    {
+      "name": "err_empty_response",
+      "value": "服务器返回空内容，该地址可能不是有效的订阅源。"
+    },
+    {
+      "name": "err_parse",
+      "value": "无法解析该地址，请确认是有效的 RSS / Atom 订阅源。"
+    },
+    {
+      "name": "row_point_light",
+      "value": "点光源效果"
+    },
+    {
+      "name": "image_title",
+      "value": "图片"
+    },
+    {
+      "name": "image_hdr",
+      "value": "HDR"
+    },
+    {
+      "name": "image_animated",
+      "value": "检测到动图格式（GIF / WebP）"
+    },
+    {
+      "name": "image_static",
+      "value": "静态图片"
+    },
+    {
+      "name": "image_hint",
+      "value": "GIF / WebP 动图由系统 Image 组件自动播放。"
+    },
+    {
+      "name": "section_branding",
+      "value": "应用图标"
+    },
+    {
+      "name": "brand_name",
+      "value": "HarmonyRss"
+    },
+    {
+      "name": "logo_classic",
+      "value": "经典"
+    },
+    {
+      "name": "logo_aurora",
+      "value": "极光"
+    },
+    {
+      "name": "logo_sunset",
+      "value": "暮色"
+    },
+    {
+      "name": "logo_mono",
+      "value": "墨黑"
+    },
+    {
+      "name": "aux_logo_launcher_hint",
+      "value": "所选 logo 会用于应用内展示；系统桌面图标需应用上架 AppGallery 后才能同步切换。"
+    },
+    {
+      "name": "toast_logo_launcher_failed",
+      "value": "桌面图标未切换：应用尚未上架或未配置动态图标。"
+    },
+    {
+      "name": "effect_flow_title",
+      "value": "双边流光"
+    },
+    {
+      "name": "effect_flow_hint",
+      "value": "两条边缘流光沿组件周界流动"
+    },
+    {
+      "name": "action_star",
+      "value": "收藏"
+    },
+    {
+      "name": "action_unstar",
+      "value": "取消收藏"
+    },
+    {
+      "name": "action_mark_read",
+      "value": "标为已读"
+    },
+    {
+      "name": "action_mark_unread",
+      "value": "标为未读"
+    },
+    {
+      "name": "snack_link_copied",
+      "value": "链接已复制"
+    },
+    {
+      "name": "snack_dismiss",
+      "value": "关闭"
+    },
+    {
+      "name": "row_notify_new",
+      "value": "新文章通知"
+    },
+    {
+      "name": "notify_new_title",
+      "value": "%d 篇新文章"
+    },
+    {
+      "name": "notify_new_text",
+      "value": "最新：%s"
+    },
+    {
+      "name": "toast_notify_denied",
+      "value": "系统未允许本应用发送通知"
+    },
+    {
+      "name": "row_effect_preview",
+      "value": "光影效果预览"
+    },
+    {
+      "name": "widget_desc",
+      "value": "最新 RSS 文章"
+    },
+    {
+      "name": "widget_title",
+      "value": "RSS 阅读"
+    },
+    {
+      "name": "widget_empty",
+      "value": "暂无文章"
+    }
+  ]
+}

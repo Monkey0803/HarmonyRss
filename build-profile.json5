@@ -1,0 +1,68 @@
+/*
+ * Template build profile.
+ *
+ * `6.1.0(23)` is a placeholder: the scaffold script replaces it with the SDK
+ * version resolved from the installed DevEco SDK (minimum 6.1.0(23), because the
+ * immersive-light `hdsMaterial` capability used by this template needs API 23).
+ *
+ * Signing is intentionally empty: let DevEco Studio (or `devecocli signature
+ * generate`) create a debug signature for the generated app. The anti-peep
+ * permission `ohos.permission.DLP_GET_HIDE_STATUS` is `system_basic`, so the
+ * certificate's `allowed-acls` must include it before the app can be installed.
+ */
+{
+  "app": {
+    "signingConfigs": [
+      {
+        "name": "default",
+        "type": "HarmonyOS",
+        "material": {
+          "certpath": "/Users/huxiaohui/.ohos/config/default_HarmonyRss_1LPrlNhmWRlnBiSo74R7GkN9GXtiexVYyDIaPSyTK28=.cer",
+          "keyAlias": "debugKey",
+          "keyPassword": "0000001B92B6F846FD40B3596E0154CDE1D401D7DF5B2529B778FC605D8BF52876C14686E6375C20DAEF6F",
+          "profile": "/Users/huxiaohui/.ohos/config/default_HarmonyRss_1LPrlNhmWRlnBiSo74R7GkN9GXtiexVYyDIaPSyTK28=.p7b",
+          "signAlg": "SHA256withECDSA",
+          "storeFile": "/Users/huxiaohui/.ohos/config/default_HarmonyRss_1LPrlNhmWRlnBiSo74R7GkN9GXtiexVYyDIaPSyTK28=.p12",
+          "storePassword": "0000001B850116037CCF7F845A2C2E9E97F235A9044F5C8F53F8601B66B8732A01BC3BCA7B14B5895D7C63"
+        }
+      }
+    ],
+    "products": [
+      {
+        "name": "default",
+        "signingConfig": "default",
+        "targetSdkVersion": "6.1.0(23)",
+        "compatibleSdkVersion": "6.1.0(23)",
+        "runtimeOS": "HarmonyOS",
+        "buildOption": {
+          "strictMode": {
+            "caseSensitiveCheck": true,
+            "useNormalizedOHMUrl": true
+          }
+        }
+      }
+    ],
+    "buildModeSet": [
+      {
+        "name": "debug"
+      },
+      {
+        "name": "release"
+      }
+    ]
+  },
+  "modules": [
+    {
+      "name": "entry",
+      "srcPath": "./entry",
+      "targets": [
+        {
+          "name": "default",
+          "applyToProducts": [
+            "default"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+# DevEco Studio / HarmonyOS 构建产物
+build/
+**/build/
+.hvigor/
+.cache/
+.preview/
+*.har
+*.hap
+*.hsp
+*.app
+
+# 依赖
+oh_modules/
+**/oh_modules/
+node_modules/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# 本机配置
+local.properties
+
+# 日志（含 .hvigor/smoke 的崩溃日志）
+*.log
+
+# macOS
+.DS_Store
+**/.DS_Store

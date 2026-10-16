@@ -1,0 +1,640 @@
+{
+  "string": [
+    {
+      "name": "module_desc",
+      "value": "HDS app entry module"
+    },
+    {
+      "name": "work_scheduler_desc",
+      "value": "Background feed refresh"
+    },
+    {
+      "name": "EntryAbility_desc",
+      "value": "HDS app"
+    },
+    {
+      "name": "EntryAbility_label",
+      "value": "HarmonyRss"
+    },
+    {
+      "name": "tab_home",
+      "value": "Read"
+    },
+    {
+      "name": "tab_settings",
+      "value": "Settings"
+    },
+    {
+      "name": "tab_images",
+      "value": "Images"
+    },
+    {
+      "name": "home_title",
+      "value": "Read"
+    },
+    {
+      "name": "settings_title",
+      "value": "Settings"
+    },
+    {
+      "name": "section_appearance",
+      "value": "Appearance"
+    },
+    {
+      "name": "section_language",
+      "value": "Language"
+    },
+    {
+      "name": "section_system",
+      "value": "System features"
+    },
+    {
+      "name": "section_navigation",
+      "value": "Navigation"
+    },
+    {
+      "name": "section_feed",
+      "value": "Feeds"
+    },
+    {
+      "name": "section_reading",
+      "value": "Reading"
+    },
+    {
+      "name": "row_reader_font",
+      "value": "Text size"
+    },
+    {
+      "name": "row_reader_line",
+      "value": "Line spacing"
+    },
+    {
+      "name": "opt_font_small",
+      "value": "Small"
+    },
+    {
+      "name": "opt_font_medium",
+      "value": "Medium"
+    },
+    {
+      "name": "opt_font_large",
+      "value": "Large"
+    },
+    {
+      "name": "opt_line_compact",
+      "value": "Compact"
+    },
+    {
+      "name": "opt_line_normal",
+      "value": "Normal"
+    },
+    {
+      "name": "opt_line_loose",
+      "value": "Loose"
+    },
+    {
+      "name": "row_title_bar_scroll",
+      "value": "Title bar scrolls with content"
+    },
+    {
+      "name": "row_theme",
+      "value": "Theme"
+    },
+    {
+      "name": "row_global_background",
+      "value": "Global background"
+    },
+    {
+      "name": "opt_bg_default",
+      "value": "Default"
+    },
+    {
+      "name": "opt_bg_aurora",
+      "value": "Aurora"
+    },
+    {
+      "name": "opt_bg_sunset",
+      "value": "Sunset"
+    },
+    {
+      "name": "opt_bg_custom",
+      "value": "Custom image"
+    },
+    {
+      "name": "opt_bg_none",
+      "value": "None"
+    },
+    {
+      "name": "row_language",
+      "value": "Language"
+    },
+    {
+      "name": "row_immersive",
+      "value": "Immersive light"
+    },
+    {
+      "name": "row_material_type",
+      "value": "Material type"
+    },
+    {
+      "name": "row_material_level",
+      "value": "Immersive material"
+    },
+    {
+      "name": "row_grip",
+      "value": "Smart grip"
+    },
+    {
+      "name": "row_antipeep",
+      "value": "Anti-peep"
+    },
+    {
+      "name": "opt_follow_system",
+      "value": "Follow system"
+    },
+    {
+      "name": "opt_light",
+      "value": "Light"
+    },
+    {
+      "name": "opt_dark",
+      "value": "Dark"
+    },
+    {
+      "name": "opt_chinese",
+      "value": "简体中文"
+    },
+    {
+      "name": "opt_english",
+      "value": "English"
+    },
+    {
+      "name": "opt_material_adaptive",
+      "value": "Adaptive"
+    },
+    {
+      "name": "opt_material_immersive",
+      "value": "Immersive"
+    },
+    {
+      "name": "opt_material_none",
+      "value": "None"
+    },
+    {
+      "name": "opt_level_exquisite",
+      "value": "Exquisite"
+    },
+    {
+      "name": "opt_level_gentle",
+      "value": "Gentle"
+    },
+    {
+      "name": "opt_level_smooth",
+      "value": "Smooth"
+    },
+    {
+      "name": "opt_level_adaptive",
+      "value": "Adaptive"
+    },
+    {
+      "name": "aux_global_immersive_on",
+      "value": "Global immersion: on"
+    },
+    {
+      "name": "aux_global_immersive_off",
+      "value": "Global immersion: off"
+    },
+    {
+      "name": "aux_antipeep_unsupported",
+      "value": "Not supported on this device"
+    },
+    {
+      "name": "veil_message",
+      "value": "Content hidden for privacy"
+    },
+    {
+      "name": "veil_dismiss",
+      "value": "Tap anywhere to continue"
+    },
+    {
+      "name": "home_refresh",
+      "value": "Refresh"
+    },
+    {
+      "name": "home_feed_count",
+      "value": "%d feeds"
+    },
+    {
+      "name": "home_unread_count",
+      "value": "%d unread"
+    },
+    {
+      "name": "filter_all",
+      "value": "All"
+    },
+    {
+      "name": "filter_unread",
+      "value": "Unread"
+    },
+    {
+      "name": "filter_starred",
+      "value": "Starred"
+    },
+    {
+      "name": "home_mark_all_read",
+      "value": "Mark all read"
+    },
+    {
+      "name": "mark_all_read_confirm_title",
+      "value": "Mark all as read"
+    },
+    {
+      "name": "mark_all_read_confirm_message",
+      "value": "Mark every article as read?"
+    },
+    {
+      "name": "dialog_confirm",
+      "value": "Confirm"
+    },
+    {
+      "name": "filter_empty_unread",
+      "value": "No unread articles"
+    },
+    {
+      "name": "filter_empty_starred",
+      "value": "No starred articles"
+    },
+    {
+      "name": "filter_empty_search",
+      "value": "No matching articles"
+    },
+    {
+      "name": "home_search_hint",
+      "value": "Search title or text"
+    },
+    {
+      "name": "home_scope_prefix",
+      "value": "From: %s"
+    },
+    {
+      "name": "action_copy_link",
+      "value": "Copy link"
+    },
+    {
+      "name": "action_open_browser",
+      "value": "Open in browser"
+    },
+    {
+      "name": "action_share",
+      "value": "Share"
+    },
+    {
+      "name": "action_reload",
+      "value": "Reload page"
+    },
+    {
+      "name": "toast_action_failed",
+      "value": "Action not supported on this device"
+    },
+    {
+      "name": "subs_rename",
+      "value": "Rename"
+    },
+    {
+      "name": "subs_rename_hint",
+      "value": "Feed name"
+    },
+    {
+      "name": "dialog_save",
+      "value": "Save"
+    },
+    {
+      "name": "group_ungrouped",
+      "value": "Ungrouped"
+    },
+    {
+      "name": "group_move_to",
+      "value": "Move to \"%s\""
+    },
+    {
+      "name": "group_clear",
+      "value": "Remove from group"
+    },
+    {
+      "name": "group_new",
+      "value": "New group..."
+    },
+    {
+      "name": "group_hint",
+      "value": "Group name (empty = none)"
+    },
+    {
+      "name": "feed_move_up",
+      "value": "Move up"
+    },
+    {
+      "name": "feed_move_down",
+      "value": "Move down"
+    },
+    {
+      "name": "row_auto_refresh",
+      "value": "Auto refresh"
+    },
+    {
+      "name": "opt_refresh_off",
+      "value": "Off"
+    },
+    {
+      "name": "opt_refresh_15",
+      "value": "Every 15 min"
+    },
+    {
+      "name": "opt_refresh_30",
+      "value": "Every 30 min"
+    },
+    {
+      "name": "opt_refresh_60",
+      "value": "Every hour"
+    },
+    {
+      "name": "home_manage_subs",
+      "value": "Feeds"
+    },
+    {
+      "name": "effect_title",
+      "value": "Light effects"
+    },
+    {
+      "name": "effect_hint",
+      "value": "Press and hold the source — nearby components light up"
+    },
+    {
+      "name": "effect_source",
+      "value": "Light source"
+    },
+    {
+      "name": "effect_target",
+      "value": "Illuminated"
+    },
+    {
+      "name": "home_empty_title",
+      "value": "No articles yet"
+    },
+    {
+      "name": "home_empty_hint",
+      "value": "Pull down to refresh, or add an RSS feed first."
+    },
+    {
+      "name": "home_empty_action",
+      "value": "Add a feed"
+    },
+    {
+      "name": "home_loading",
+      "value": "Loading…"
+    },
+    {
+      "name": "subs_title",
+      "value": "Feeds"
+    },
+    {
+      "name": "subs_url_hint",
+      "value": "Enter an RSS / Atom feed URL"
+    },
+    {
+      "name": "subs_add",
+      "value": "Add"
+    },
+    {
+      "name": "subs_adding",
+      "value": "Adding…"
+    },
+    {
+      "name": "subs_remove",
+      "value": "Remove"
+    },
+    {
+      "name": "subs_remove_confirm_title",
+      "value": "Remove this feed?"
+    },
+    {
+      "name": "subs_remove_confirm_message",
+      "value": "Remove \"%s\" and all of its articles?"
+    },
+    {
+      "name": "dialog_cancel",
+      "value": "Cancel"
+    },
+    {
+      "name": "subs_empty",
+      "value": "No feeds yet"
+    },
+    {
+      "name": "subs_import_opml",
+      "value": "Import OPML"
+    },
+    {
+      "name": "subs_export_opml",
+      "value": "Export OPML"
+    },
+    {
+      "name": "subs_import_result",
+      "value": "Imported %d feeds"
+    },
+    {
+      "name": "subs_import_empty",
+      "value": "No feed found in this file"
+    },
+    {
+      "name": "subs_import_duplicate",
+      "value": "All feeds are already subscribed"
+    },
+    {
+      "name": "subs_export_success",
+      "value": "OPML exported"
+    },
+    {
+      "name": "subs_export_empty",
+      "value": "Nothing to export"
+    },
+    {
+      "name": "subs_article_count",
+      "value": "%d articles"
+    },
+    {
+      "name": "subs_error_prefix",
+      "value": "Last error: "
+    },
+    {
+      "name": "article_title",
+      "value": "Article"
+    },
+    {
+      "name": "article_open_link",
+      "value": "Original link"
+    },
+    {
+      "name": "article_no_content",
+      "value": "This entry has no full text. Open the original link to read more."
+    },
+    {
+      "name": "article_mode_web",
+      "value": "Original page"
+    },
+    {
+      "name": "article_mode_text",
+      "value": "Extracted text"
+    },
+    {
+      "name": "err_empty_url",
+      "value": "Please enter a feed URL"
+    },
+    {
+      "name": "err_duplicate_url",
+      "value": "This feed is already subscribed"
+    },
+    {
+      "name": "err_fetch_failed",
+      "value": "Failed to load the feed. Check the network or URL."
+    },
+    {
+      "name": "err_timeout",
+      "value": "The request timed out. Check your network and try again."
+    },
+    {
+      "name": "err_network",
+      "value": "Network connection failed. Check your network and try again."
+    },
+    {
+      "name": "err_http",
+      "value": "The server returned an error. Please try again later."
+    },
+    {
+      "name": "err_empty_response",
+      "value": "The server returned no content. This address may not be a valid feed."
+    },
+    {
+      "name": "err_parse",
+      "value": "Could not parse this address as an RSS / Atom feed."
+    },
+    {
+      "name": "row_point_light",
+      "value": "Point light"
+    },
+    {
+      "name": "image_title",
+      "value": "Images"
+    },
+    {
+      "name": "image_hdr",
+      "value": "HDR"
+    },
+    {
+      "name": "image_animated",
+      "value": "Animated format (GIF / WebP) detected"
+    },
+    {
+      "name": "image_static",
+      "value": "Static image"
+    },
+    {
+      "name": "image_hint",
+      "value": "Animated GIF / WebP are auto-played by the system Image component."
+    },
+    {
+      "name": "section_branding",
+      "value": "App icon"
+    },
+    {
+      "name": "brand_name",
+      "value": "HarmonyRss"
+    },
+    {
+      "name": "logo_classic",
+      "value": "Classic"
+    },
+    {
+      "name": "logo_aurora",
+      "value": "Aurora"
+    },
+    {
+      "name": "logo_sunset",
+      "value": "Sunset"
+    },
+    {
+      "name": "logo_mono",
+      "value": "Mono"
+    },
+    {
+      "name": "aux_logo_launcher_hint",
+      "value": "The logo is shown in the app; the home-screen icon switches only after the app is published on AppGallery."
+    },
+    {
+      "name": "toast_logo_launcher_failed",
+      "value": "Home-screen icon not switched: the app is not published or has no dynamic icon configured."
+    },
+    {
+      "name": "effect_flow_title",
+      "value": "Dual-edge flow light"
+    },
+    {
+      "name": "effect_flow_hint",
+      "value": "Two edge light streams flow along the component border"
+    },
+    {
+      "name": "action_star",
+      "value": "Favorite"
+    },
+    {
+      "name": "action_unstar",
+      "value": "Unfavorite"
+    },
+    {
+      "name": "action_mark_read",
+      "value": "Mark as read"
+    },
+    {
+      "name": "action_mark_unread",
+      "value": "Mark as unread"
+    },
+    {
+      "name": "snack_link_copied",
+      "value": "Link copied"
+    },
+    {
+      "name": "snack_dismiss",
+      "value": "Dismiss"
+    },
+    {
+      "name": "row_notify_new",
+      "value": "Notify on new articles"
+    },
+    {
+      "name": "notify_new_title",
+      "value": "%d new articles"
+    },
+    {
+      "name": "notify_new_text",
+      "value": "Latest: %s"
+    },
+    {
+      "name": "toast_notify_denied",
+      "value": "Notifications are not enabled for this app"
+    },
+    {
+      "name": "row_effect_preview",
+      "value": "Light effects preview"
+    },
+    {
+      "name": "widget_desc",
+      "value": "Latest RSS articles"
+    },
+    {
+      "name": "widget_title",
+      "value": "RSS Reader"
+    },
+    {
+      "name": "widget_empty",
+      "value": "No articles yet"
+    }
+  ]
+}

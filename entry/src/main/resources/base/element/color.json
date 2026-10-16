@@ -1,0 +1,19 @@
+{
+  "color": [
+    { "name": "start_window_background", "value": "#F1F3F5" },
+    { "name": "hm_brand", "value": "#FF0A59F7" },
+    { "name": "hm_text_primary", "value": "#E6000000" },
+    { "name": "hm_text_secondary", "value": "#99000000" },
+    { "name": "hm_card_background", "value": "#F2FFFFFF" },
+    { "name": "hm_icon_primary", "value": "#E6000000" },
+    { "name": "hm_divider", "value": "#0D000000" },
+    { "name": "hm_page_transparent", "value": "#00000000" },
+    { "name": "hm_veil_background", "value": "#F2FFFFFF" },
+    { "name": "hm_effect_surface", "value": "#FF121318" },
+    { "name": "hm_on_brand", "value": "#FFFFFFFF" },
+    { "name": "hm_danger", "value": "#FFE84026" },
+    { "name": "hm_menu_item_selected", "value": "#1A0A59F7" },
+    { "name": "hm_web_surface", "value": "#FFF1F3F5" },
+    { "name": "hm_value_chip_background", "value": "#12000000" }
+  ]
+}

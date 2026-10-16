@@ -1,0 +1,132 @@
+{
+  "float": [
+    {
+      "name": "space_xxs",
+      "value": "2"
+    },
+    {
+      "name": "space_xs",
+      "value": "4"
+    },
+    {
+      "name": "space_s",
+      "value": "8"
+    },
+    {
+      "name": "space_m",
+      "value": "12"
+    },
+    {
+      "name": "space_l",
+      "value": "16"
+    },
+    {
+      "name": "space_xl",
+      "value": "20"
+    },
+    {
+      "name": "space_2xl",
+      "value": "24"
+    },
+    {
+      "name": "space_3xl",
+      "value": "32"
+    },
+    {
+      "name": "row_height",
+      "value": "56"
+    },
+    {
+      "name": "tab_item_height",
+      "value": "48"
+    },
+    {
+      "name": "tab_icon_size",
+      "value": "24"
+    },
+    {
+      "name": "tab_font_size",
+      "value": "11"
+    },
+    {
+      "name": "icon_size",
+      "value": "22"
+    },
+    {
+      "name": "icon_size_small",
+      "value": "18"
+    },
+    {
+      "name": "hero_icon_size",
+      "value": "48"
+    },
+    {
+      "name": "font_size_section",
+      "value": "14"
+    },
+    {
+      "name": "font_size_body",
+      "value": "16"
+    },
+    {
+      "name": "font_size_caption",
+      "value": "13"
+    },
+    {
+      "name": "radius_card",
+      "value": "16"
+    },
+    {
+      "name": "image_preview_height",
+      "value": "320"
+    },
+    {
+      "name": "feed_dot_size",
+      "value": "8"
+    },
+    {
+      "name": "font_size_title",
+      "value": "18"
+    },
+    {
+      "name": "tab_clearance",
+      "value": "96"
+    },
+    {
+      "name": "radius_menu_item",
+      "value": "8"
+    },
+    {
+      "name": "menu_item_height",
+      "value": "48"
+    },
+    {
+      "name": "menu_width",
+      "value": "220"
+    },
+    {
+      "name": "web_loading_size",
+      "value": "32"
+    },
+    {
+      "name": "thumb_size",
+      "value": "56"
+    },
+    {
+      "name": "icon_size_tiny",
+      "value": "12"
+    },
+    {
+      "name": "value_chip_height",
+      "value": "32"
+    },
+    {
+      "name": "radius_chip",
+      "value": "16"
+    },
+    {
+      "name": "flow_light_height",
+      "value": "96"
+    }
+  ]
+}
