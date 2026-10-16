@@ -28,3 +28,6 @@ local.properties
 # macOS
 .DS_Store
 **/.DS_Store
+
+# Agent 计划产物
+.deveco/

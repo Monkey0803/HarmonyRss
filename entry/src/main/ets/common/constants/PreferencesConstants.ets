@@ -21,6 +21,14 @@ export class PreferencesConstants {
   static readonly KEY_READER_FONT: string = 'readerFont';
   /** 阅读排版：正文行距档位。 */
   static readonly KEY_READER_LINE: string = 'readerLine';
+  /** 阅读排版：字体族。 */
+  static readonly KEY_READER_FAMILY: string = 'readerFontFamily';
+  /** 阅读排版：栏宽。 */
+  static readonly KEY_READER_WIDTH: string = 'readerWidth';
+  /** 阅读排版：对齐。 */
+  static readonly KEY_READER_ALIGN: string = 'readerAlign';
+  /** 阅读主题。 */
+  static readonly KEY_READER_THEME: string = 'readerTheme';
   /** 新文章通知开关。 */
   static readonly KEY_NOTIFY_NEW: string = 'notifyNewArticles';
   static readonly KEY_IMMERSIVE_ON: string = 'immersiveOn';

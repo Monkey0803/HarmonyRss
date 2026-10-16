@@ -73,6 +73,70 @@
       "value": "正文行距"
     },
     {
+      "name": "row_reader_family",
+      "value": "正文字体"
+    },
+    {
+      "name": "row_reader_width",
+      "value": "阅读栏宽"
+    },
+    {
+      "name": "row_reader_align",
+      "value": "正文对齐"
+    },
+    {
+      "name": "row_reader_theme",
+      "value": "阅读主题"
+    },
+    {
+      "name": "opt_family_system",
+      "value": "系统默认"
+    },
+    {
+      "name": "opt_family_serif",
+      "value": "衬线"
+    },
+    {
+      "name": "opt_family_sans",
+      "value": "无衬线"
+    },
+    {
+      "name": "opt_width_narrow",
+      "value": "窄"
+    },
+    {
+      "name": "opt_width_standard",
+      "value": "标准"
+    },
+    {
+      "name": "opt_width_wide",
+      "value": "宽"
+    },
+    {
+      "name": "opt_align_left",
+      "value": "左对齐"
+    },
+    {
+      "name": "opt_align_justify",
+      "value": "两端对齐"
+    },
+    {
+      "name": "opt_reader_theme_system",
+      "value": "跟随系统"
+    },
+    {
+      "name": "opt_reader_theme_light",
+      "value": "浅色"
+    },
+    {
+      "name": "opt_reader_theme_sepia",
+      "value": "护眼"
+    },
+    {
+      "name": "opt_reader_theme_dark",
+      "value": "暗色"
+    },
+    {
       "name": "opt_font_small",
       "value": "小"
     },
@@ -279,6 +343,10 @@
     {
       "name": "home_scope_prefix",
       "value": "来源：%s"
+    },
+    {
+      "name": "action_reader_retry",
+      "value": "重新提取正文"
     },
     {
       "name": "action_copy_link",
@@ -503,6 +571,26 @@
     {
       "name": "article_mode_text",
       "value": "提取正文"
+    },
+    {
+      "name": "article_mode_reader",
+      "value": "阅读模式"
+    },
+    {
+      "name": "article_reader_failed",
+      "value": "正文提取失败，已为你打开网页原文。"
+    },
+    {
+      "name": "article_prev",
+      "value": "上一篇"
+    },
+    {
+      "name": "article_next",
+      "value": "下一篇"
+    },
+    {
+      "name": "article_next_unread",
+      "value": "下一条未读"
     },
     {
       "name": "err_empty_url",

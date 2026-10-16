@@ -61,3 +61,26 @@ rg -n --glob '!**/build/**' --glob '*.ets' \
 - 截图确认 UI：`devecocli ui screenshot --device "<device>" --path <file.png>`
   （`verify_ui` 在未配置多模态模型时不可用，改用截图 + 人工读图）
 - 设备日志 / 崩溃：`devecocli log --device "<device>" --crash`
+
+## 单元测试（ohosTest）
+测试放在 `entry/src/ohosTest/ets/test/`，由 `entry/src/ohosTest/ets/test/List.test.ets` 聚合；
+用例通过 `TestAbility` + `OpenHarmonyTestRunner` 在设备上执行，在 `entry/build-profile.json5`
+的 `targets` 里必须保留 `ohosTest` 目标，否则不生成测试任务。
+
+```sh
+# 注意：工程目录名含非 ASCII 时 hvigor 会拒绝，需在 ASCII 路径下构建（见下）
+export DEVECO_SDK_HOME="<DevEco SDK 目录>"
+export JAVA_HOME="<DevEco 自带 JBR/Contents/Home>"
+# 1) 构建测试 HAP
+hvigorw --mode module -p module=entry@ohosTest -p product=default assembleHap -p buildMode=debug
+# 2) 安装测试 HAP（entry/build/default/outputs/ohosTest/entry-ohosTest-signed.hap）
+hdc -t <device> install -r <entry-ohosTest-signed.hap>
+# 3) 运行用例（模块名 entry_test，runner 固定为 OpenHarmonyTestRunner）
+hdc shell aa test -b com.example.harmonyrss -m entry_test -s unittest OpenHarmonyTestRunner -s timeout 60000
+```
+
+结果看 `OHOS_REPORT_RESULT: stream=Tests run: N, Failure: M ...`。
+
+**已知环境问题**：本仓库目录名 `解析` 含非 ASCII，hvigor CLI 报
+`00306003 Invalid project path`。`build_project` / `start_app` 在此目录不可用；
+需将工程软/硬拷贝到纯 ASCII 路径后再跑 hvigor（或改用 DevEco Studio 构建）。
