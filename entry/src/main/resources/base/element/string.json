@@ -69,6 +69,70 @@
       "value": "Line spacing"
     },
     {
+      "name": "row_reader_family",
+      "value": "Typeface"
+    },
+    {
+      "name": "row_reader_width",
+      "value": "Column width"
+    },
+    {
+      "name": "row_reader_align",
+      "value": "Text alignment"
+    },
+    {
+      "name": "row_reader_theme",
+      "value": "Reading theme"
+    },
+    {
+      "name": "opt_family_system",
+      "value": "Default"
+    },
+    {
+      "name": "opt_family_serif",
+      "value": "Serif"
+    },
+    {
+      "name": "opt_family_sans",
+      "value": "Sans-serif"
+    },
+    {
+      "name": "opt_width_narrow",
+      "value": "Narrow"
+    },
+    {
+      "name": "opt_width_standard",
+      "value": "Standard"
+    },
+    {
+      "name": "opt_width_wide",
+      "value": "Wide"
+    },
+    {
+      "name": "opt_align_left",
+      "value": "Left"
+    },
+    {
+      "name": "opt_align_justify",
+      "value": "Justify"
+    },
+    {
+      "name": "opt_reader_theme_system",
+      "value": "Follow system"
+    },
+    {
+      "name": "opt_reader_theme_light",
+      "value": "Light"
+    },
+    {
+      "name": "opt_reader_theme_sepia",
+      "value": "Sepia"
+    },
+    {
+      "name": "opt_reader_theme_dark",
+      "value": "Dark"
+    },
+    {
       "name": "opt_font_small",
       "value": "Small"
     },
@@ -277,6 +341,10 @@
       "value": "From: %s"
     },
     {
+      "name": "action_reader_retry",
+      "value": "Re-extract article"
+    },
+    {
       "name": "action_copy_link",
       "value": "Copy link"
     },
@@ -483,6 +551,26 @@
     {
       "name": "article_mode_text",
       "value": "Extracted text"
+    },
+    {
+      "name": "article_mode_reader",
+      "value": "Reading mode"
+    },
+    {
+      "name": "article_reader_failed",
+      "value": "Couldn't extract the article. Showing the original page."
+    },
+    {
+      "name": "article_prev",
+      "value": "Previous"
+    },
+    {
+      "name": "article_next",
+      "value": "Next"
+    },
+    {
+      "name": "article_next_unread",
+      "value": "Next unread"
     },
     {
       "name": "err_empty_url",

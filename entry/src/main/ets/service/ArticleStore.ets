@@ -12,7 +12,7 @@ import { common } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { Article } from '../model/Feed';
-import { ArticleDbConstants } from '../common/constants/RssConstants';
+import { ArticleDbConstants, ReaderState } from '../common/constants/RssConstants';
 
 const DOMAIN: number = 0x0000;
 const TAG: string = 'ArticleStore';
@@ -32,7 +32,8 @@ const SQL_CREATE: string =
   'fetched_at INTEGER NOT NULL DEFAULT 0, ' +
   'image_url TEXT NOT NULL DEFAULT \'\', ' +
   'author TEXT NOT NULL DEFAULT \'\', ' +
-  'progress INTEGER NOT NULL DEFAULT 0)';
+  'progress INTEGER NOT NULL DEFAULT 0, ' +
+  'reader_html TEXT NOT NULL DEFAULT \'\')';
 
 /** 老库补列（表已存在时 CREATE 不会加列，ALTER 失败可忽略）。 */
 const SQL_ADD_IMAGE: string =
@@ -42,6 +43,9 @@ const SQL_ADD_AUTHOR: string =
 /** 阅读进度（滚动位置，px）。 */
 const SQL_ADD_PROGRESS: string =
   'ALTER TABLE ' + ArticleDbConstants.TABLE_ARTICLES + ' ADD COLUMN progress INTEGER NOT NULL DEFAULT 0';
+/** Reader 视图的结构化正文 HTML（提取 + 净化后）。 */
+const SQL_ADD_READER: string =
+  'ALTER TABLE ' + ArticleDbConstants.TABLE_ARTICLES + ' ADD COLUMN reader_html TEXT NOT NULL DEFAULT \'\'';
 
 const SQL_INSERT: string =
   'INSERT OR IGNORE INTO ' + ArticleDbConstants.TABLE_ARTICLES +
@@ -50,7 +54,7 @@ const SQL_INSERT: string =
 
 const SQL_SELECT_ALL: string =
   'SELECT id, feed_id, feed_title, title, link, summary, content, published_at, is_read, is_starred,' +
-  ' image_url, author, progress' +
+  ' image_url, author, progress, reader_html' +
   ' FROM ' + ArticleDbConstants.TABLE_ARTICLES + ' ORDER BY published_at DESC';
 
 /** 卡片展示用的轻量快照：未读数 + 最新几条标题（不把整库读进内存）。 */
@@ -79,6 +83,7 @@ export class ArticleStore {
       this.addColumnIfNeeded(SQL_ADD_IMAGE);
       this.addColumnIfNeeded(SQL_ADD_AUTHOR);
       this.addColumnIfNeeded(SQL_ADD_PROGRESS);
+      this.addColumnIfNeeded(SQL_ADD_READER);
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       hilog.error(DOMAIN, TAG, 'open failed: %{public}d', error.code);
@@ -167,6 +172,10 @@ export class ArticleStore {
           article.starred = rs.getLong(rs.getColumnIndex('is_starred')) === 1;
           // 用 getDouble 读：老数据里可能残留小数（列是 INTEGER，但 SQLite 动态类型允许 REAL）。
           article.progress = rs.getDouble(rs.getColumnIndex('progress'));
+          article.readerHtml = rs.getString(rs.getColumnIndex('reader_html'));
+          if (article.readerHtml.length > 0) {
+            article.readerState = ReaderState.READY;
+          }
           result.push(article);
         }
       } finally {
@@ -234,6 +243,12 @@ export class ArticleStore {
     const rounded: number = Math.max(0, Math.round(progress));
     this.exec('UPDATE ' + ArticleDbConstants.TABLE_ARTICLES + ' SET progress = ? WHERE id = ?',
       [rounded, id]);
+  }
+
+  /** 写入 Reader 视图的结构化正文 HTML（离线阅读用）。 */
+  setReaderHtml(id: string, html: string): void {
+    this.exec('UPDATE ' + ArticleDbConstants.TABLE_ARTICLES + ' SET reader_html = ? WHERE id = ?',
+      [html, id]);
   }
 
   markAllRead(): void {

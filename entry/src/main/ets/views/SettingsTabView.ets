@@ -23,7 +23,7 @@ import {
   SnackBarOperationType
 } from '@kit.UIDesignKit';
 import { appSettings } from '../model/AppSettings';
-import { ChoiceOption, ChoiceSet, THEME_OPTIONS, LANGUAGE_OPTIONS, MATERIAL_TYPE_OPTIONS, MATERIAL_LEVEL_OPTIONS, BACKGROUND_OPTIONS, LOGO_OPTIONS, AUTO_REFRESH_OPTIONS, READER_FONT_OPTIONS, READER_LINE_OPTIONS } from '../model/SettingsOptions';
+import { ChoiceOption, ChoiceSet, THEME_OPTIONS, LANGUAGE_OPTIONS, MATERIAL_TYPE_OPTIONS, MATERIAL_LEVEL_OPTIONS, BACKGROUND_OPTIONS, LOGO_OPTIONS, AUTO_REFRESH_OPTIONS, READER_FONT_OPTIONS, READER_LINE_OPTIONS, READER_FAMILY_OPTIONS, READER_WIDTH_OPTIONS, READER_ALIGN_OPTIONS, READER_THEME_OPTIONS } from '../model/SettingsOptions';
 import { settingsViewModel } from '../viewmodel/SettingsViewModel';
 import { antiPeep } from '../service/AntiPeep';
 import { safeArea } from '../service/SafeAreaController';
@@ -48,6 +48,10 @@ enum SettingField {
   AUTO_REFRESH = 'autoRefresh',
   READER_FONT = 'readerFont',
   READER_LINE = 'readerLine',
+  READER_FAMILY = 'readerFamily',
+  READER_WIDTH = 'readerWidth',
+  READER_ALIGN = 'readerAlign',
+  READER_THEME = 'readerTheme',
   NOTIFY_NEW = 'notifyNew'
 }
 
@@ -90,6 +94,14 @@ struct OptionSelectRow {
         return appSettings.readerFont;
       case SettingField.READER_LINE:
         return appSettings.readerLine;
+      case SettingField.READER_FAMILY:
+        return appSettings.readerFontFamily;
+      case SettingField.READER_WIDTH:
+        return appSettings.readerWidth;
+      case SettingField.READER_ALIGN:
+        return appSettings.readerAlign;
+      case SettingField.READER_THEME:
+        return appSettings.readerTheme;
       default:
         return appSettings.themeMode;
     }
@@ -496,6 +508,46 @@ export struct SettingsTabView {
             field: SettingField.READER_LINE,
             onPick: (id: string) => {
               settingsViewModel.setReaderLine(id);
+            }
+          })
+          Divider().color($r('app.color.hm_divider'))
+          OptionSelectRow({
+            icon: $r('sys.symbol.textformat'),
+            title: $r('app.string.row_reader_family'),
+            choice: READER_FAMILY_OPTIONS,
+            field: SettingField.READER_FAMILY,
+            onPick: (id: string) => {
+              settingsViewModel.setReaderFontFamily(id);
+            }
+          })
+          Divider().color($r('app.color.hm_divider'))
+          OptionSelectRow({
+            icon: $r('sys.symbol.arrow_down_and_line_horizontal_and_arrow_up'),
+            title: $r('app.string.row_reader_width'),
+            choice: READER_WIDTH_OPTIONS,
+            field: SettingField.READER_WIDTH,
+            onPick: (id: string) => {
+              settingsViewModel.setReaderWidth(id);
+            }
+          })
+          Divider().color($r('app.color.hm_divider'))
+          OptionSelectRow({
+            icon: $r('sys.symbol.text_alignleft'),
+            title: $r('app.string.row_reader_align'),
+            choice: READER_ALIGN_OPTIONS,
+            field: SettingField.READER_ALIGN,
+            onPick: (id: string) => {
+              settingsViewModel.setReaderAlign(id);
+            }
+          })
+          Divider().color($r('app.color.hm_divider'))
+          OptionSelectRow({
+            icon: $r('sys.symbol.paintpalette'),
+            title: $r('app.string.row_reader_theme'),
+            choice: READER_THEME_OPTIONS,
+            field: SettingField.READER_THEME,
+            onPick: (id: string) => {
+              settingsViewModel.setReaderTheme(id);
             }
           })
         }

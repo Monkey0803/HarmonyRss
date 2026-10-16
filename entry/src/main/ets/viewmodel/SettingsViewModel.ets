@@ -104,6 +104,30 @@ export class SettingsViewModel {
     settingsStore.save();
   }
 
+  /** 正文字体族。 */
+  setReaderFontFamily(id: string): void {
+    appSettings.readerFontFamily = id;
+    settingsStore.save();
+  }
+
+  /** 阅读栏宽。 */
+  setReaderWidth(id: string): void {
+    appSettings.readerWidth = id;
+    settingsStore.save();
+  }
+
+  /** 正文对齐方式。 */
+  setReaderAlign(id: string): void {
+    appSettings.readerAlign = id;
+    settingsStore.save();
+  }
+
+  /** 阅读主题。 */
+  setReaderTheme(id: string): void {
+    appSettings.readerTheme = id;
+    settingsStore.save();
+  }
+
   /**
    * 新文章通知开关。开启时先申请通知授权，拿不到就回退为关闭（避免「开了却没反应」）。
    */

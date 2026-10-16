@@ -63,6 +63,30 @@ export class ArticleDbConstants {
   static readonly MAX_CACHED_ARTICLES: number = 1000;
 }
 
+/** Reader 正文提取状态（Article.readerState）。 */
+export enum ReaderState {
+  NONE = 'none',
+  LOADING = 'loading',
+  READY = 'ready',
+  FAILED = 'failed'
+}
+
+/** 正文提取 / 抓取的阈值（纯逻辑常量）。 */
+export class ReaderConstants {
+  /** 单篇 Reader HTML 长度上限，防止超长文档拖慢 Web 渲染。 */
+  static readonly MAX_READER_HTML_CHARS: number = 500 * 1024;
+  /** 正文抓取后进入提取前，允许的最大原始 HTML 长度（超出直接截断）。 */
+  static readonly MAX_SOURCE_HTML_CHARS: number = 2 * 1024 * 1024;
+  /** Readability 主容器打分阈值：低于此值退回「保留块结构」的兜底提取。 */
+  static readonly MIN_CONTENT_SCORE: number = 20;
+  /** 单篇内联图片的 base64 字符上限（约 450KB 原图），超过则保留远程链接不缓存。 */
+  static readonly MAX_INLINE_IMAGE_CHARS: number = 600 * 1024;
+  /** 单篇内联图片总量上限（所有 data URI 合计）。 */
+  static readonly MAX_INLINE_TOTAL_CHARS: number = 1200 * 1024;
+  /** 单篇最多内联的图片张数。 */
+  static readonly MAX_INLINE_IMAGES: number = 8;
+}
+
 /** OPML 导入 / 导出相关常量（文件格式的元数据，不是界面文案）。 */
 export class OpmlConstants {
   static readonly DOC_TITLE: string = 'HarmonyRss';

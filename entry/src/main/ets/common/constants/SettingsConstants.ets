@@ -83,6 +83,34 @@ export enum ReaderLineHeight {
   LOOSE = 'loose'
 }
 
+/** 正文字体族。 */
+export enum ReaderFontFamily {
+  SYSTEM = 'system',
+  SERIF = 'serif',
+  SANS = 'sans'
+}
+
+/** 阅读栏宽。 */
+export enum ReaderWidth {
+  NARROW = 'narrow',
+  STANDARD = 'standard',
+  WIDE = 'wide'
+}
+
+/** 正文对齐方式。 */
+export enum ReaderAlign {
+  LEFT = 'left',
+  JUSTIFY = 'justify'
+}
+
+/** 阅读主题（Reader 视图专用，独立于应用主题）。 */
+export enum ReaderTheme {
+  SYSTEM = 'system',
+  LIGHT = 'light',
+  SEPIA = 'sepia',
+  DARK = 'dark'
+}
+
 /** 阅读排版：档位 → 数值（偏好参数，不是固定视觉尺寸，因此不做成资源）。 */
 export class ReaderTypography {
   /** 正文字号（vp；Web 注入时按 px 使用）。 */
@@ -105,6 +133,33 @@ export class ReaderTypography {
       return 2.0;
     }
     return 1.7;
+  }
+
+  /** 字体族 CSS；system 返回空串（表示不覆盖，跟随系统/站点默认）。 */
+  static fontFamilyCss(id: string): string {
+    if (id === ReaderFontFamily.SERIF) {
+      return 'Georgia, "Times New Roman", "Songti SC", "SimSun", serif';
+    }
+    if (id === ReaderFontFamily.SANS) {
+      return '-apple-system, "HarmonyOS Sans", "PingFang SC", "Microsoft YaHei", sans-serif';
+    }
+    return '';
+  }
+
+  /** 阅读栏宽（px）。 */
+  static contentWidthPx(id: string): number {
+    if (id === ReaderWidth.NARROW) {
+      return 560;
+    }
+    if (id === ReaderWidth.WIDE) {
+      return 900;
+    }
+    return 720;
+  }
+
+  /** 文本对齐 CSS 值。 */
+  static textAlignCss(id: string): string {
+    return id === ReaderAlign.JUSTIFY ? 'justify' : 'left';
   }
 }
 
