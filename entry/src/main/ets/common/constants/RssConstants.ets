@@ -31,6 +31,8 @@ export enum FeedError {
   EMPTY_RESPONSE = 'emptyResponse',
   /** 正文不是可解析的 RSS / Atom / JSON Feed。 */
   PARSE_ERROR = 'parseError',
+  /** 用户给的地址既不是订阅源，页面里也没发现可订阅的链接（自动发现失败）。 */
+  NOT_A_FEED = 'notAFeed',
   /** 兜底：未归类的抓取失败。 */
   FETCH_FAILED = 'fetchFailed'
 }

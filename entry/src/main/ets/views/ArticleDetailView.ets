@@ -25,6 +25,7 @@ import { Article } from '../model/Feed';
 import { feedViewModel } from '../viewmodel/FeedViewModel';
 import { DateUtil } from '../common/utils/DateUtil';
 import { safeArea } from '../service/SafeAreaController';
+import { CommonConstants } from '../common/constants/CommonConstants';
 import { articleActions } from '../service/ArticleActions';
 import { settingsViewModel } from '../viewmodel/SettingsViewModel';
 import { ChoiceOption, READER_FONT_OPTIONS } from '../model/SettingsOptions';
@@ -45,7 +46,8 @@ export struct ArticleDetailView {
   @Local isExpand: boolean = true;
   private webController: webview.WebviewController = new webview.WebviewController();
   /** 提取正文模式的滚动控制器：用于恢复 / 记录阅读进度。 */
-  private textScroller: Scroller = new Scroller();
+  /** 提取正文模式的可滚动控制器（由外层 HdsNavDestination 绑定，用于标题栏材质随滚动跟手渐变 + 阅读进度）。 */
+  @Param scroller: Scroller = new Scroller();
   /** 网页原文只在首次加载完成时恢复一次进度，避免页面内跳转后又被拉回去。 */
   private webProgressRestored: boolean = false;
 
@@ -155,7 +157,7 @@ export struct ArticleDetailView {
     if (article === undefined || article.progress <= 0) {
       return;
     }
-    this.textScroller.scrollTo({ xOffset: 0, yOffset: article.progress });
+    this.scroller.scrollTo({ xOffset: 0, yOffset: article.progress });
   }
 
   /**
@@ -354,7 +356,7 @@ export struct ArticleDetailView {
   /** 提取正文：feed 里能拿到的纯文本 + 原文链接。 */
   @Builder
   TextBody(article: Article) {
-    Scroll(this.textScroller) {
+    Scroll(this.scroller) {
       Column({ space: $r('app.float.space_m') }) {
         Text(article.content.length > 0 ? article.content : $r('app.string.article_no_content'))
           .fontSize(ReaderTypography.fontSize(appSettings.readerFont))
@@ -396,7 +398,7 @@ export struct ArticleDetailView {
     .onScrollStop(() => {
       const current: Article | undefined = feedViewModel.currentArticle();
       if (current !== undefined) {
-        feedViewModel.saveProgress(current.id, this.textScroller.currentOffset().yOffset);
+        feedViewModel.saveProgress(current.id, this.scroller.currentOffset().yOffset);
       }
     })
   }
@@ -416,6 +418,9 @@ export struct ArticleDetailView {
 
   build() {
     Column() {
+      // 透明标题栏占位：首屏内容顶部预留「状态栏 + 标题栏」高度。
+      Row().width('100%').height(safeArea.topInsetVp + CommonConstants.TITLE_BAR_HEIGHT_VP)
+
       this.Content(feedViewModel.currentArticle())
     }
     .width('100%')

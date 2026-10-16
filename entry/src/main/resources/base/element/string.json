@@ -29,6 +29,10 @@
       "value": "Images"
     },
     {
+      "name": "tab_subs",
+      "value": "Feeds"
+    },
+    {
       "name": "home_title",
       "value": "Read"
     },
@@ -465,6 +469,22 @@
       "value": "Last error: "
     },
     {
+      "name": "feed_articles_title",
+      "value": "Articles"
+    },
+    {
+      "name": "feed_sort_newest",
+      "value": "Newest"
+    },
+    {
+      "name": "feed_sort_oldest",
+      "value": "Oldest"
+    },
+    {
+      "name": "home_add_feed_title",
+      "value": "Add feed"
+    },
+    {
       "name": "article_title",
       "value": "Article"
     },
@@ -515,6 +535,10 @@
     {
       "name": "err_parse",
       "value": "Could not parse this address as an RSS / Atom feed."
+    },
+    {
+      "name": "err_not_a_feed",
+      "value": "This address is not a feed, and no feed link was found on the page."
     },
     {
       "name": "row_point_light",

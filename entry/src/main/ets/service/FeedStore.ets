@@ -18,6 +18,8 @@ interface FeedRecord {
   url: string;
   siteUrl: string;
   group: string;
+  etag: string;
+  lastModified: string;
 }
 
 export class FeedStore {
@@ -81,7 +83,9 @@ export class FeedStore {
         title: feeds[i].title,
         url: feeds[i].url,
         siteUrl: feeds[i].siteUrl,
-        group: feeds[i].group
+        group: feeds[i].group,
+        etag: feeds[i].etag,
+        lastModified: feeds[i].lastModified
       };
       records.push(record);
     }
@@ -106,7 +110,11 @@ export class FeedStore {
           : url;
         const siteUrl: string = typeof record.siteUrl === 'string' ? record.siteUrl : '';
         const group: string = typeof record.group === 'string' ? record.group : '';
-        feeds.push(new FeedSource(url, title, url, siteUrl, group));
+        const feed: FeedSource = new FeedSource(url, title, url, siteUrl, group);
+        // 老数据没有这两个字段，读不到就当作「没有校验值」。
+        feed.etag = typeof record.etag === 'string' ? record.etag : '';
+        feed.lastModified = typeof record.lastModified === 'string' ? record.lastModified : '';
+        feeds.push(feed);
       }
     } catch (err) {
       const error: BusinessError = err as BusinessError;

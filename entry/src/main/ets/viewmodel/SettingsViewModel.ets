@@ -11,6 +11,7 @@ import { ThemeController } from '../service/ThemeController';
 import { LocaleController } from '../service/LocaleController';
 import { MaterialController } from '../service/MaterialController';
 import { antiPeep } from '../service/AntiPeep';
+import { gripSensor } from '../service/GripSensor';
 import { backgroundImageService } from '../service/BackgroundImageService';
 import { appIconService } from '../service/AppIconService';
 import { backgroundRefresh } from '../service/BackgroundRefresh';
@@ -39,6 +40,8 @@ export class SettingsViewModel {
     if (appSettings.antiPeepEnabled) {
       await antiPeep.setEnabled(true);
     }
+    // 智感握姿：开关开启时订阅握持手识别（设备不支持时内部粘性降级）。
+    gripSensor.setEnabled(appSettings.gripEnabled);
   }
 
   setTheme(context: common.Context, id: string): void {
@@ -151,6 +154,7 @@ export class SettingsViewModel {
 
   setGripEnabled(value: boolean): void {
     appSettings.gripEnabled = value;
+    gripSensor.setEnabled(value);
     settingsStore.save();
   }
 

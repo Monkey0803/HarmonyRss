@@ -9,7 +9,6 @@
 
 import { common } from '@kit.AbilityKit';
 import {
-  BlurStrategy,
   DynamicHideParams,
   HideMode,
   HdsTabs,
@@ -19,19 +18,21 @@ import {
   HdsNavigationTitle,
   HdsNavigationTitleMode,
   HdsNavDestinationTitleMode,
-  HdsNavigationBackgroundStyle,
   HdsNavigationTitleBarStyle,
   ScrollEffectOptions,
+  ScrollEffectType,
   TitleBarContentOptions,
   TitleBarStyleOptions,
   HdsNavigationTitleBarOptions,
   HdsTabsFloatingStyle,
   SystemMaterialParams
 } from '@kit.UIDesignKit';
+import { LengthMetrics } from '@kit.ArkUI';
 import { appSettings } from '../model/AppSettings';
 import { settingsViewModel } from '../viewmodel/SettingsViewModel';
 import { MaterialController } from '../service/MaterialController';
 import { antiPeep } from '../service/AntiPeep';
+import { gripSensor } from '../service/GripSensor';
 import { safeArea } from '../service/SafeAreaController';
 import { backgroundImageService } from '../service/BackgroundImageService';
 import { CommonConstants } from '../common/constants/CommonConstants';
@@ -45,6 +46,7 @@ import { ImageTabView } from '../views/ImageTabView';
 import { PrivacyVeil } from '../views/PrivacyVeil';
 import { ArticleDetailView } from '../views/ArticleDetailView';
 import { SubscriptionsView } from '../views/SubscriptionsView';
+import { FeedArticlesView } from '../views/FeedArticlesView';
 import { EffectPreviewView } from '../views/EffectPreviewView';
 import { feedViewModel } from '../viewmodel/FeedViewModel';
 
@@ -56,7 +58,11 @@ struct Index {
   private tabsController: HdsTabsController = new HdsTabsController();
   /** 每个页签独立的 Scroller：绑定给 HdsNavigation 做滚动联动，互不干扰。 */
   private homeScroller: Scroller = new Scroller();
+  private subsScroller: Scroller = new Scroller();
   private settingsScroller: Scroller = new Scroller();
+  /** 目的页各自的 Scroller：绑定给对应 HdsNavDestination，让标题栏材质随其滚动跟手渐变。 */
+  private feedArticlesScroller: Scroller = new Scroller();
+  private articleScroller: Scroller = new Scroller();
 
   /**
    * 各目的页自己的转场状态（自右滑入 + 淡入）。
@@ -65,8 +71,8 @@ struct Index {
    */
   @Local articleSlideX: string = '0%';
   @Local articleAlpha: number = 1;
-  @Local subsSlideX: string = '0%';
-  @Local subsAlpha: number = 1;
+  @Local feedSlideX: string = '0%';
+  @Local feedAlpha: number = 1;
   @Local effectSlideX: string = '0%';
   @Local effectAlpha: number = 1;
 
@@ -78,6 +84,7 @@ struct Index {
 
   aboutToDisappear(): void {
     antiPeep.stop();
+    gripSensor.stop();
   }
 
   /** 回到前台（或页面重新显示）时，按设置的自动刷新间隔决定是否抓取。 */
@@ -91,7 +98,24 @@ struct Index {
 
   /** 只绑定当前页签的 Scroller，避免多页签互相干扰导致滚动模糊失效。 */
   private currentScroller(): Scroller {
-    return this.currentTab === TabIndex.SETTINGS ? this.settingsScroller : this.homeScroller;
+    if (this.currentTab === TabIndex.SUBSCRIPTIONS) {
+      return this.subsScroller;
+    }
+    if (this.currentTab === TabIndex.SETTINGS) {
+      return this.settingsScroller;
+    }
+    return this.homeScroller;
+  }
+
+  /** 根标题：随当前页签变化。 */
+  private rootTitle(): ResourceStr {
+    if (this.currentTab === TabIndex.SUBSCRIPTIONS) {
+      return $r('app.string.subs_title');
+    }
+    if (this.currentTab === TabIndex.SETTINGS) {
+      return $r('app.string.settings_title');
+    }
+    return $r('app.string.home_title');
   }
 
   /**
@@ -111,42 +135,53 @@ struct Index {
   }
 
   /**
-   * 根标题栏样式：**完全不画背景**（不用滚动动态效果、不做模糊、不加沉浸光感材质），
-   * 起始态与滚动后背景都是全透明 —— 滚动时标题栏不会再出现一层背景。
+   * 标题栏样式（全 App 统一）：沉浸光感材质（hdsMaterial）+ 跟手线性渐变。
+   *
+   * - 静止态（originalStyle）：背景全透明，标题栏与页面融为一体。
+   * - 滚动后（scrollEffectStyle）：露出沉浸光感材质背板（comp_background_gray 底色 + 材质）。
+   * - enableScrollEffect: true + GRADIENT_BLUR：标题栏样式随内容区滚动偏移**线性跟手**过渡
+   *   （0 → TITLE_MATERIAL_FADE_VP），与底部悬浮页签栏同源材质。
+   *
+   * 需要各页用 bindToScrollable 绑定其可滚动容器，标题栏才能拿到滚动偏移。
    */
-  private passThroughStyle(): TitleBarStyleOptions {
-    const background: HdsNavigationBackgroundStyle = { backgroundColor: Color.Transparent };
-    const titleBarStyle: HdsNavigationTitleBarStyle = { backgroundStyle: background };
-    const scrollEffectOpts: ScrollEffectOptions = { enableScrollEffect: false };
+  private materialTitleStyle(): TitleBarStyleOptions {
+    const original: HdsNavigationTitleBarStyle = {
+      backgroundStyle: { backgroundColor: Color.Transparent }
+    };
+    const scrolled: HdsNavigationTitleBarStyle = {
+      backgroundStyle: { backgroundColor: $r('sys.color.comp_background_gray') }
+    };
+    const scrollEffectOpts: ScrollEffectOptions = {
+      enableScrollEffect: true,
+      scrollEffectType: ScrollEffectType.GRADIENT_BLUR,
+      blurEffectiveStartOffset: LengthMetrics.vp(0),
+      blurEffectiveEndOffset: LengthMetrics.vp(CommonConstants.TITLE_MATERIAL_FADE_VP)
+    };
     const style: TitleBarStyleOptions = {
       scrollEffectOpts: scrollEffectOpts,
-      blurStrategy: BlurStrategy.DISABLE,
-      originalStyle: titleBarStyle,
-      scrollEffectStyle: titleBarStyle
+      originalStyle: original,
+      scrollEffectStyle: scrolled,
+      systemMaterialEffect: this.materialParams()
     };
     return style;
   }
 
   /**
-   * 标题栏配置（HdsNavigation / HdsNavDestination 共用）。
+   * 标题栏配置（HdsNavigation / HdsNavDestination 共用，全 App 一套样式）。
    *
    * avoidLayoutSafeArea: true —— 标题栏自身避让系统状态栏（标题文字不被状态栏 / 挖孔遮挡）。
-   * enableComponentSafeArea: true —— 标题栏成为组件级安全区，**内容区由 HDS 自动排到标题栏下方**
-   *   （不再由界面自己估算标题栏高度，避免首屏内容与标题栏重叠）。
-   *   内容要「穿透」到标题栏下方，则靠可滚动容器上的 clip(false) + cachedCount 实现
-   *   （见 views/HomeTabView.ets、views/SettingsTabView.ets）。
+   * enableComponentSafeArea: false —— 标题栏作为「浮层」叠在内容之上，内容区铺满可滚动区域，
+   *   滚动时内容穿过标题栏下方被材质衬托（各页在内容顶部补一个「状态栏 + 标题栏」高的占位，
+   *   保证首屏不被遮挡）。
    */
-  private titleOptions(mainTitle: ResourceStr, transparentBar: boolean): HdsNavigationTitleBarOptions {
+  private titleOptions(mainTitle: ResourceStr): HdsNavigationTitleBarOptions {
     const title: HdsNavigationTitle = { mainTitle: mainTitle };
     const content: TitleBarContentOptions = { title: title };
-    const style: TitleBarStyleOptions = transparentBar
-      ? this.passThroughStyle()
-      : { systemMaterialEffect: this.materialParams() };
     const options: HdsNavigationTitleBarOptions = {
       avoidLayoutSafeArea: true,
-      enableComponentSafeArea: true,
+      enableComponentSafeArea: false,
       content: content,
-      style: style
+      style: this.materialTitleStyle()
     };
     return options;
   }
@@ -253,11 +288,12 @@ struct Index {
   pageMap(name: string, pageInfos: Object) {
     if (name === RouterConstants.PAGE_ARTICLE) {
       HdsNavDestination() {
-        ArticleDetailView()
+        ArticleDetailView({ scroller: this.articleScroller })
       }
-      .titleBar(this.titleOptions($r('app.string.article_title'), false))
+      .titleBar(this.titleOptions($r('app.string.article_title')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
       .backgroundColor($r('app.color.hm_page_transparent'))
+      .bindToScrollable([this.articleScroller])
       .translate({ x: this.articleSlideX })
       .opacity(this.articleAlpha)
       .customTransition((operation: NavigationOperation, isEnter: boolean): Array<NavDestinationTransition> | undefined => {
@@ -269,29 +305,32 @@ struct Index {
             this.articleAlpha = value;
           });
       })
-    } else if (name === RouterConstants.PAGE_SUBSCRIPTIONS) {
+    } else if (name === RouterConstants.PAGE_FEED_ARTICLES) {
       HdsNavDestination() {
-        SubscriptionsView({ navPathStack: this.navPathStack })
+        FeedArticlesView({ navPathStack: this.navPathStack, scroller: this.feedArticlesScroller })
       }
-      .titleBar(this.titleOptions($r('app.string.subs_title'), false))
+      .titleBar(this.titleOptions(feedViewModel.detailFeedTitle.length > 0
+        ? feedViewModel.detailFeedTitle
+        : $r('app.string.feed_articles_title')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
       .backgroundColor($r('app.color.hm_page_transparent'))
-      .translate({ x: this.subsSlideX })
-      .opacity(this.subsAlpha)
+      .bindToScrollable([this.feedArticlesScroller])
+      .translate({ x: this.feedSlideX })
+      .opacity(this.feedAlpha)
       .customTransition((operation: NavigationOperation, isEnter: boolean): Array<NavDestinationTransition> | undefined => {
         return this.slideFadeTransition(operation, isEnter,
           (value: string) => {
-            this.subsSlideX = value;
+            this.feedSlideX = value;
           },
           (value: number) => {
-            this.subsAlpha = value;
+            this.feedAlpha = value;
           });
       })
     } else if (name === RouterConstants.PAGE_EFFECT) {
       HdsNavDestination() {
         EffectPreviewView()
       }
-      .titleBar(this.titleOptions($r('app.string.effect_title'), false))
+      .titleBar(this.titleOptions($r('app.string.effect_title')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
       .backgroundColor($r('app.color.hm_page_transparent'))
       .translate({ x: this.effectSlideX })
@@ -318,6 +357,11 @@ struct Index {
             HomeTabView({ navPathStack: this.navPathStack, scroller: this.homeScroller })
           }
           .tabBar(this.barBuilder($r('sys.symbol.house'), $r('app.string.tab_home'), this.currentTab === TabIndex.HOME))
+
+          TabContent() {
+            SubscriptionsView({ navPathStack: this.navPathStack, scroller: this.subsScroller })
+          }
+          .tabBar(this.barBuilder($r('sys.symbol.folder'), $r('app.string.tab_subs'), this.currentTab === TabIndex.SUBSCRIPTIONS))
 
           TabContent() {
             SettingsTabView({ navPathStack: this.navPathStack, scroller: this.settingsScroller })
@@ -347,9 +391,7 @@ struct Index {
         .height('100%')
         .backgroundColor($r('app.color.hm_page_transparent'))
       }
-      .titleBar(this.titleOptions(this.currentTab === TabIndex.HOME
-        ? $r('app.string.home_title')
-        : $r('app.string.settings_title'), true))
+      .titleBar(this.titleOptions(this.rootTitle()))
       // 紧凑标题栏（默认 FREE 是大标题模式，标题上下留白很大）。
       .titleMode(HdsNavigationTitleMode.MINI)
       // 根页面没有上一级：MINI 模式下会默认显示返回键，这里隐藏。
