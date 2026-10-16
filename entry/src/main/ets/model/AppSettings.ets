@@ -5,7 +5,7 @@
  * 单例（appSettings），界面直接 import 读写即可，不需要在组件间层层传参。
  */
 
-import { THEME_OPTIONS, LANGUAGE_OPTIONS, MATERIAL_TYPE_OPTIONS, MATERIAL_LEVEL_OPTIONS, BACKGROUND_OPTIONS, LOGO_OPTIONS, AUTO_REFRESH_OPTIONS, READER_FONT_OPTIONS, READER_LINE_OPTIONS } from './SettingsOptions';
+import { THEME_OPTIONS, LANGUAGE_OPTIONS, MATERIAL_TYPE_OPTIONS, MATERIAL_LEVEL_OPTIONS, BACKGROUND_OPTIONS, LOGO_OPTIONS, AUTO_REFRESH_OPTIONS, READER_FONT_OPTIONS, READER_LINE_OPTIONS, READER_FAMILY_OPTIONS, READER_WIDTH_OPTIONS, READER_ALIGN_OPTIONS, READER_THEME_OPTIONS } from './SettingsOptions';
 
 @ObservedV2
 export class AppSettings {
@@ -39,6 +39,14 @@ export class AppSettings {
   @Trace readerFont: string = READER_FONT_OPTIONS.defaultValue;
   /** 正文行距：'compact' | 'normal' | 'loose'。 */
   @Trace readerLine: string = READER_LINE_OPTIONS.defaultValue;
+  /** 正文字体：'system' | 'serif' | 'sans'。 */
+  @Trace readerFontFamily: string = READER_FAMILY_OPTIONS.defaultValue;
+  /** 阅读栏宽：'narrow' | 'standard' | 'wide'。 */
+  @Trace readerWidth: string = READER_WIDTH_OPTIONS.defaultValue;
+  /** 正文对齐：'left' | 'justify'。 */
+  @Trace readerAlign: string = READER_ALIGN_OPTIONS.defaultValue;
+  /** 阅读主题：'system' | 'light' | 'sepia' | 'dark'。 */
+  @Trace readerTheme: string = READER_THEME_OPTIONS.defaultValue;
   /** 后台抓取到新文章时是否发系统通知。 */
   @Trace notifyNewArticles: boolean = false;
 }

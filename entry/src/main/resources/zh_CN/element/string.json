@@ -69,6 +69,70 @@
       "value": "正文行距"
     },
     {
+      "name": "row_reader_family",
+      "value": "正文字体"
+    },
+    {
+      "name": "row_reader_width",
+      "value": "阅读栏宽"
+    },
+    {
+      "name": "row_reader_align",
+      "value": "正文对齐"
+    },
+    {
+      "name": "row_reader_theme",
+      "value": "阅读主题"
+    },
+    {
+      "name": "opt_family_system",
+      "value": "系统默认"
+    },
+    {
+      "name": "opt_family_serif",
+      "value": "衬线"
+    },
+    {
+      "name": "opt_family_sans",
+      "value": "无衬线"
+    },
+    {
+      "name": "opt_width_narrow",
+      "value": "窄"
+    },
+    {
+      "name": "opt_width_standard",
+      "value": "标准"
+    },
+    {
+      "name": "opt_width_wide",
+      "value": "宽"
+    },
+    {
+      "name": "opt_align_left",
+      "value": "左对齐"
+    },
+    {
+      "name": "opt_align_justify",
+      "value": "两端对齐"
+    },
+    {
+      "name": "opt_reader_theme_system",
+      "value": "跟随系统"
+    },
+    {
+      "name": "opt_reader_theme_light",
+      "value": "浅色"
+    },
+    {
+      "name": "opt_reader_theme_sepia",
+      "value": "护眼"
+    },
+    {
+      "name": "opt_reader_theme_dark",
+      "value": "暗色"
+    },
+    {
       "name": "opt_font_small",
       "value": "小"
     },

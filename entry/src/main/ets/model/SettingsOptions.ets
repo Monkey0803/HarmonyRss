@@ -5,7 +5,7 @@
  * 状态文件可读，SDK 枚举重排也不会错位；读到旧值 / 脏值统一退回默认项。控件（下拉菜单）只认 label。
  */
 
-import { ThemeMode, AppLanguage, MaterialKind, MaterialGrade, BackgroundKind, LogoKind, AutoRefreshInterval, ReaderFontSize, ReaderLineHeight } from '../common/constants/SettingsConstants';
+import { ThemeMode, AppLanguage, MaterialKind, MaterialGrade, BackgroundKind, LogoKind, AutoRefreshInterval, ReaderFontSize, ReaderLineHeight, ReaderFontFamily, ReaderWidth, ReaderAlign, ReaderTheme } from '../common/constants/SettingsConstants';
 
 /** 一个可选项：语义 id + 展示文案。 */
 export class ChoiceOption {
@@ -127,3 +127,31 @@ export const READER_LINE_OPTIONS: ChoiceSet = new ChoiceSet([
   new ChoiceOption(ReaderLineHeight.NORMAL, $r('app.string.opt_line_normal')),
   new ChoiceOption(ReaderLineHeight.LOOSE, $r('app.string.opt_line_loose'))
 ], ReaderLineHeight.NORMAL);
+
+/** 正文字体：系统默认 / 衬线 / 无衬线。 */
+export const READER_FAMILY_OPTIONS: ChoiceSet = new ChoiceSet([
+  new ChoiceOption(ReaderFontFamily.SYSTEM, $r('app.string.opt_family_system')),
+  new ChoiceOption(ReaderFontFamily.SERIF, $r('app.string.opt_family_serif')),
+  new ChoiceOption(ReaderFontFamily.SANS, $r('app.string.opt_family_sans'))
+], ReaderFontFamily.SYSTEM);
+
+/** 阅读栏宽：窄 / 标准 / 宽。 */
+export const READER_WIDTH_OPTIONS: ChoiceSet = new ChoiceSet([
+  new ChoiceOption(ReaderWidth.NARROW, $r('app.string.opt_width_narrow')),
+  new ChoiceOption(ReaderWidth.STANDARD, $r('app.string.opt_width_standard')),
+  new ChoiceOption(ReaderWidth.WIDE, $r('app.string.opt_width_wide'))
+], ReaderWidth.STANDARD);
+
+/** 正文对齐：左对齐 / 两端对齐。 */
+export const READER_ALIGN_OPTIONS: ChoiceSet = new ChoiceSet([
+  new ChoiceOption(ReaderAlign.LEFT, $r('app.string.opt_align_left')),
+  new ChoiceOption(ReaderAlign.JUSTIFY, $r('app.string.opt_align_justify'))
+], ReaderAlign.LEFT);
+
+/** 阅读主题：跟随系统 / 浅色 / 护眼 / 暗色。 */
+export const READER_THEME_OPTIONS: ChoiceSet = new ChoiceSet([
+  new ChoiceOption(ReaderTheme.SYSTEM, $r('app.string.opt_reader_theme_system')),
+  new ChoiceOption(ReaderTheme.LIGHT, $r('app.string.opt_reader_theme_light')),
+  new ChoiceOption(ReaderTheme.SEPIA, $r('app.string.opt_reader_theme_sepia')),
+  new ChoiceOption(ReaderTheme.DARK, $r('app.string.opt_reader_theme_dark'))
+], ReaderTheme.SYSTEM);
