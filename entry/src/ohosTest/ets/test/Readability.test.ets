@@ -44,6 +44,15 @@ export default function readabilityTest() {
       expect(out).assertContain('https://site.com/pic.png');
     });
 
+    it('recovers_lazy_image_url', 0, () => {
+      const html: string = page(
+        '<p>' + LONG + '</p><img src="data:image/gif;base64,R0lGOD" data-src="/real.png"><p>' + LONG2 + '</p>',
+        ''
+      );
+      const out: string = extractReadable(html, 'https://site.com/post/index.html');
+      expect(out).assertContain('https://site.com/real.png');
+    });
+
     it('falls_back_for_thin_content', 0, () => {
       const out: string = extractReadable('<p>short</p>', '');
       expect(out.length > 0).assertTrue();

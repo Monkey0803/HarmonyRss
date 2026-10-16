@@ -24,7 +24,7 @@ const TAG: string = 'ArticleContentService';
  * Reader HTML 版本标记（存在正文片段开头）。
  * 缓存命中要求带标记：旧版本（无标记、未内联图片）会在联网时重新生成一次。
  */
-const READER_MARKER: string = '<!--hrv3-->';
+const READER_MARKER: string = '<!--hrv4-->';
 
 /** @ohos.net.http 的错误码 = 2300000 + curl 错误码。 */
 const HTTP_ERROR_BASE: number = 2300000;

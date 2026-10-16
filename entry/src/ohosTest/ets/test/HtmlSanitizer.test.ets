@@ -56,5 +56,33 @@ export default function htmlSanitizerTest() {
     it('escape_html_basics', 0, () => {
       expect(escapeHtml('<a>&"')).assertEqual('&lt;a&gt;&amp;&quot;');
     });
+
+    it('prefers_data_src_over_placeholder', 0, () => {
+      const out: string = sanitize('<img src="data:image/gif;base64,R0lGOD" data-src="/real.png">', 'https://s.com/p');
+      expect(out).assertContain('src="https://s.com/real.png"');
+    });
+
+    it('falls_back_to_data_original', 0, () => {
+      const out: string = sanitize('<img src="" data-original="/o.png">', 'https://s.com/p');
+      expect(out).assertContain('src="https://s.com/o.png"');
+    });
+
+    it('uses_srcset_first_candidate', 0, () => {
+      const out: string = sanitize('<img srcset="/a.png 1x, /b.png 2x">', 'https://s.com/p');
+      expect(out).assertContain('src="https://s.com/a.png"');
+    });
+
+    it('keeps_alt_and_title', 0, () => {
+      const out: string = sanitize('<img src="/x.png" alt="pic" title="t">', 'https://s.com/p');
+      expect(out).assertContain('alt="pic"');
+      expect(out).assertContain('title="t"');
+      expect(out).assertContain('loading="lazy"');
+    });
+
+    it('drops_picture_source_but_keeps_img', 0, () => {
+      const out: string = sanitize('<picture><source srcset="/hi.webp"><img src="/lo.jpg"></picture>', 'https://s.com/p');
+      expect(out.indexOf('<source')).assertEqual(-1);
+      expect(out).assertContain('src="https://s.com/lo.jpg"');
+    });
   });
 }

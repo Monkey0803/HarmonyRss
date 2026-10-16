@@ -16,7 +16,7 @@ const ALLOWED_TAGS: string[] = [
   'ul', 'ol', 'li', 'dl', 'dt', 'dd',
   'blockquote', 'pre', 'code', 'kbd', 'samp',
   'strong', 'b', 'em', 'i', 'u', 's', 'sub', 'sup', 'mark', 'small',
-  'figure', 'figcaption', 'img', 'picture', 'source',
+  'figure', 'figcaption', 'img', 'picture',
   'a', 'table', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td', 'caption', 'colgroup', 'col'
 ];
 
@@ -154,6 +154,102 @@ function isDangerousValue(value: string): boolean {
     || lower.indexOf('data:text/html') === 0;
 }
 
+/** 真正的图片地址：排除空串与 data:/about:/blob: 占位（懒加载常用 1×1 占位图）。 */
+function isRealImageUrl(value: string): boolean {
+  const text: string = value.trim();
+  if (text.length === 0) {
+    return false;
+  }
+  const lower: string = text.toLowerCase();
+  return lower.indexOf('data:') !== 0 && lower.indexOf('about:') !== 0 && lower.indexOf('blob:') !== 0;
+}
+
+/** 取 srcset 里的第一个候选地址（"a.png 1x, b.png 2x" → "a.png"）。 */
+function firstUrlFromSrcset(value: string): string {
+  const text: string = value.trim();
+  if (text.length === 0) {
+    return '';
+  }
+  const comma: number = text.indexOf(',');
+  const first: string = comma < 0 ? text : text.substring(0, comma);
+  let end: number = 0;
+  while (end < first.length) {
+    const c: string = first.charAt(end);
+    if (c === ' ' || c === '\t' || c === '\n' || c === '\r') {
+      break;
+    }
+    end += 1;
+  }
+  return first.substring(0, end).trim();
+}
+
+/**
+ * 选出 `<img>` 的真实图片地址，兼容 JS 懒加载：
+ * src → data-src → data-original → data-lazy-src → data-actualsrc → srcset/data-srcset 首项。
+ * 首选「非占位」的地址（懒加载常用 data: 占位图放在 src 上）。
+ */
+function pickImageUrl(node: HtmlNode): string {
+  const direct: string[] = [
+    node.attr('src'),
+    node.attr('data-src'),
+    node.attr('data-original'),
+    node.attr('data-lazy-src'),
+    node.attr('data-actualsrc'),
+    node.attr('data-original-src')
+  ];
+  for (let i = 0; i < direct.length; i += 1) {
+    if (isRealImageUrl(direct[i])) {
+      return direct[i].trim();
+    }
+  }
+  const srcset: string[] = [
+    firstUrlFromSrcset(node.attr('data-srcset')),
+    firstUrlFromSrcset(node.attr('srcset'))
+  ];
+  for (let i = 0; i < srcset.length; i += 1) {
+    if (isRealImageUrl(srcset[i])) {
+      return srcset[i];
+    }
+  }
+  // 兜底：连占位也留着（至少不丢图）。
+  for (let i = 0; i < direct.length; i += 1) {
+    if (direct[i].trim().length > 0) {
+      return direct[i].trim();
+    }
+  }
+  return '';
+}
+
+/** `<img>` 的安全属性：统一用选出的 src，并把相对地址绝对化。 */
+function serializeImage(node: HtmlNode, baseUrl: string): string {
+  let out: string = '<img';
+  const chosen: string = pickImageUrl(node);
+  if (chosen.length > 0) {
+    const resolved: string = resolveUrl(baseUrl, chosen);
+    if (resolved.length > 0) {
+      out += ' src="' + decodeAndEscape(resolved) + '"';
+    }
+  }
+  const alt: string = node.attr('alt');
+  if (alt.length > 0) {
+    out += ' alt="' + decodeAndEscape(alt) + '"';
+  }
+  const title: string = node.attr('title');
+  if (title.length > 0) {
+    out += ' title="' + decodeAndEscape(title) + '"';
+  }
+  const width: string = node.attr('width');
+  if (width.length > 0) {
+    out += ' width="' + decodeAndEscape(width) + '"';
+  }
+  const height: string = node.attr('height');
+  if (height.length > 0) {
+    out += ' height="' + decodeAndEscape(height) + '"';
+  }
+  out += ' loading="lazy">';
+  return out;
+}
+
 /** 序列化一个节点子树为安全 HTML 片段。 */
 export function sanitizeNode(node: HtmlNode, baseUrl: string): string {
   if (node.isText()) {
@@ -162,6 +258,10 @@ export function sanitizeNode(node: HtmlNode, baseUrl: string): string {
   const tag: string = node.tag;
   if (isDropTag(tag)) {
     return '';
+  }
+  if (tag === 'img') {
+    // img 单独处理：合并懒加载属性、绝对化地址。
+    return serializeImage(node, baseUrl);
   }
   const inner: string = sanitizeChildren(node, baseUrl);
   if (!isAllowedTag(tag)) {
@@ -207,9 +307,6 @@ function serializeAttrs(node: HtmlNode, baseUrl: string): string {
       }
     }
     out += ' ' + attr.name + '="' + decodeAndEscape(value) + '"';
-  }
-  if (node.tag === 'img' && out.indexOf(' loading=') < 0) {
-    out += ' loading="lazy"';
   }
   return out;
 }
