@@ -43,6 +43,11 @@ const TAG: string = 'ArticleDetailView';
 const MODE_READER: string = 'reader';
 const MODE_WEB: string = 'web';
 
+/** 横向滑动手势的触发距离（vp）：左滑下一篇、右滑上一篇。 */
+const SWIPE_DISTANCE_VP: number = 60;
+/** 过度滚动触发「触底检测」的最小位移（vp）。 */
+const OVERSCROLL_TRIGGER_VP: number = 24;
+
 /** 空文章占位：@Builder 内不能声明局部变量，用辅助方法返回兜底对象避免 undefined 判空。 */
 const EMPTY_ARTICLE: Article = new Article('', '', '', '', '', '', '', 0);
 
@@ -64,6 +69,10 @@ export struct ArticleDetailView {
   /** 网页原文只在首次加载完成时恢复一次进度，避免页面内跳转后又被拉回去。 */
   private webProgressRestored: boolean = false;
   private readerProgressRestored: boolean = false;
+  /** 已滑到文末：不再写回滚动进度，让下次打开从头开始。 */
+  private finished: boolean = false;
+  /** 触底检测在途标记（避免过度滚动事件重复触发 runJavaScript）。 */
+  private bottomCheckPending: boolean = false;
 
   private hostContext(): common.UIAbilityContext {
     const context: common.Context | undefined = this.getUIContext().getHostContext();
@@ -132,6 +141,7 @@ export struct ArticleDetailView {
     }
     this.readerFailed = false;
     this.loading = true;
+    this.finished = false;
     const webMounted: boolean = this.readerHtml.length > 0;
     try {
       const html: string = await feedViewModel.loadReaderHtml(article.id);
@@ -211,6 +221,7 @@ export struct ArticleDetailView {
     this.readerFailed = false;
     this.webProgressRestored = false;
     this.readerProgressRestored = false;
+    this.finished = false;
     this.loading = true;
     if (this.viewMode === MODE_READER) {
       this.startReader();
@@ -227,8 +238,45 @@ export struct ArticleDetailView {
     feedViewModel.clearReaderHtml(article.id);
     this.readerFailed = false;
     this.readerProgressRestored = false;
+    this.finished = false;
     this.viewMode = MODE_READER;
     this.startReader();
+  }
+
+  /** 横向滑动：左滑下一篇、右滑上一篇（竖向留给正文滚动）。 */
+  private onHorizontalPan(deltaX: number): void {
+    if (deltaX < 0) {
+      this.openRelative(feedViewModel.nextArticleId());
+    } else {
+      this.openRelative(feedViewModel.prevArticleId());
+    }
+  }
+
+  /**
+   * 过度滚动（触顶/触底）时检测是否已到文末；到达则标记「已读完」。
+   * 不依赖过度滚动的正负号（不同内核方向约定不一致），统一用网页里的 scrollY 判定。
+   */
+  private checkReachedBottom(controller: webview.WebviewController): void {
+    if (this.finished || this.bottomCheckPending) {
+      return;
+    }
+    this.bottomCheckPending = true;
+    controller.runJavaScript(
+      '(window.scrollY + window.innerHeight >= document.body.scrollHeight - 8) ? "1" : "0"',
+      (err: BusinessError, value: string) => {
+        this.bottomCheckPending = false;
+        if (err) {
+          return;
+        }
+        if (value.indexOf('1') < 0) {
+          return;
+        }
+        const article: Article | undefined = feedViewModel.currentArticle();
+        if (article !== undefined) {
+          this.finished = true;
+          feedViewModel.markFinished(article.id);
+        }
+      });
   }
 
   /** 溢出菜单：重新提取 / 复制链接 / 浏览器打开 / 分享。 */
@@ -354,7 +402,7 @@ export struct ArticleDetailView {
    */
   private persistWebProgress(): void {
     const article: Article | undefined = feedViewModel.currentArticle();
-    if (article === undefined || article.link.length === 0) {
+    if (article === undefined || article.link.length === 0 || this.finished) {
       return;
     }
     this.readScrollY(this.webController, article.id);
@@ -362,7 +410,7 @@ export struct ArticleDetailView {
 
   private persistReaderProgress(): void {
     const article: Article | undefined = feedViewModel.currentArticle();
-    if (article === undefined || this.readerHtml.length === 0) {
+    if (article === undefined || this.readerHtml.length === 0 || this.finished) {
       return;
     }
     this.readScrollY(this.readerController, article.id);
@@ -574,6 +622,20 @@ export struct ArticleDetailView {
               this.loading = false;
               this.restoreReaderProgress();
             })
+            .onOverScroll((event: OnOverScrollEvent) => {
+              if (Math.abs(event.yOffset) >= OVERSCROLL_TRIGGER_VP) {
+                this.checkReachedBottom(this.readerController);
+              }
+            })
+            // 横向滑动切上一篇/下一篇：绑在 Web 上（横向不与 Web 竖向滚动竞争）。
+            // 横向滑动切文：priorityGesture + IgnoreInternal 才能抢在 ArkWeb 内部手势之前。
+            .priorityGesture(
+              PanGesture({ direction: PanDirection.Horizontal, distance: SWIPE_DISTANCE_VP })
+                .onActionEnd((event: GestureEvent) => {
+                  this.onHorizontalPan(event.offsetX);
+                }),
+              GestureMask.IgnoreInternal
+            )
         } else {
           // 无正文可读（提取失败且无链接）：退纯文本。
           this.TextBody()
@@ -607,6 +669,20 @@ export struct ArticleDetailView {
             // 排版注入完成后再恢复进度，避免字号变化导致落点偏移。
             this.restoreWebProgress();
           })
+          .onOverScroll((event: OnOverScrollEvent) => {
+            if (Math.abs(event.yOffset) >= OVERSCROLL_TRIGGER_VP) {
+              this.checkReachedBottom(this.webController);
+            }
+          })
+          // 横向滑动切上一篇/下一篇：绑在 Web 上（横向不与 Web 竖向滚动竞争）。
+          // 横向滑动切文：priorityGesture + IgnoreInternal 才能抢在 ArkWeb 内部手势之前。
+          .priorityGesture(
+            PanGesture({ direction: PanDirection.Horizontal, distance: SWIPE_DISTANCE_VP })
+              .onActionEnd((event: GestureEvent) => {
+                this.onHorizontalPan(event.offsetX);
+              }),
+            GestureMask.IgnoreInternal
+          )
 
         if (this.loading) {
           this.LoadingVeil()

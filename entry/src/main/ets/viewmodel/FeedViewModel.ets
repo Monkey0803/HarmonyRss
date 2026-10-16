@@ -679,6 +679,15 @@ export class FeedViewModel {
     }
   }
 
+  /**
+   * 标记「已读完」（滚动到底）：确保已读，并把阅读进度归零 ——
+   * 已读完的文章下次打开从头开始，而不是停在文末。
+   */
+  markFinished(articleId: string): void {
+    this.markRead(articleId);
+    this.saveProgress(articleId, 0);
+  }
+
   private markRead(articleId: string): void {
     for (let i = 0; i < this.all.length; i += 1) {
       if (this.all[i].id === articleId && !this.all[i].read) {
