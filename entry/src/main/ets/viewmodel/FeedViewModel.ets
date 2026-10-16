@@ -10,7 +10,8 @@ import { common } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { Article, FeedGroup, FeedListItem, FeedSource } from '../model/Feed';
 import { feedStore } from '../service/FeedStore';
-import { feedService } from '../service/FeedService';
+import { feedService, FeedFetchResult, ResolvedFeed } from '../service/FeedService';
+import { feedDiscovery } from '../service/FeedDiscovery';
 import { articleStore } from '../service/ArticleStore';
 import { articleContentService } from '../service/ArticleContentService';
 import { ParsedArticle, ParsedFeed } from '../service/RssParser';
@@ -68,6 +69,11 @@ export class FeedViewModel {
   /** 单源视图：非空时只看该订阅源的文章。 */
   @Trace scopeFeedId: string = '';
   @Trace scopeTitle: string = '';
+  /** 单源文章列表页：当前查看的订阅源 id / 标题。 */
+  @Trace detailFeedId: string = '';
+  @Trace detailFeedTitle: string = '';
+  /** 单源文章列表页的数据（按发布时间倒序；升/降序由视图本地切换）。 */
+  @Trace feedArticles: Article[] = [];
   /** 当前打开的文章 id（详情页用）。@Trace：详情页在原文内切换文章时需驱动重渲染。 */
   @Trace currentArticleId: string = '';
 
@@ -150,8 +156,22 @@ export class FeedViewModel {
     for (let i = 0; i < targets.length; i += 1) {
       const feed: FeedSource = targets[i];
       try {
-        const parsed: ParsedFeed = await feedService.fetchFeed(feed.url);
-        toArticles(feed, parsed, fresh);
+        const result: FeedFetchResult =
+          await feedService.fetchFeed(feed.url, feed.etag, feed.lastModified);
+        this.rememberValidators(feed, result.etag, result.lastModified);
+        if (result.notModified) {
+          // 304：内容没变，连解析都省了。
+          console.info('feed not modified (304): ' + feed.url);
+          feed.lastError = '';
+          continue;
+        }
+        if (result.parsed === undefined) {
+          failed += 1;
+          feed.lastError = 'document is not a feed';
+          this.lastFailureCode = FeedError.PARSE_ERROR;
+          continue;
+        }
+        toArticles(feed, result.parsed, fresh);
         feed.lastError = '';
       } catch (err) {
         const error: BusinessError = err as BusinessError;
@@ -161,6 +181,12 @@ export class FeedViewModel {
       }
     }
     return failed;
+  }
+
+  /** 记下本次响应的校验值，供下次条件请求（If-None-Match / If-Modified-Since）使用。 */
+  private rememberValidators(feed: FeedSource, etag: string, lastModified: string): void {
+    feed.etag = etag;
+    feed.lastModified = lastModified;
   }
 
   /** 抓取收尾：新条目入库 → 重新读库 → 重新出列表与未读数。 */
@@ -229,6 +255,27 @@ export class FeedViewModel {
     this.scopeFeedId = '';
     this.scopeTitle = '';
     this.publish();
+  }
+
+  /** 打开单个订阅源的文章列表页：记录目标源并刷新单源列表。 */
+  openFeed(feed: FeedSource): void {
+    this.detailFeedId = feed.id;
+    this.detailFeedTitle = feed.title;
+    this.publish();
+  }
+
+  /** 取某个订阅源的全部文章（保持 loadRecent 的发布时间倒序）。 */
+  private collectFeedArticles(): Article[] {
+    const result: Article[] = [];
+    if (this.detailFeedId.length === 0) {
+      return result;
+    }
+    for (let i = 0; i < this.all.length; i += 1) {
+      if (this.all[i].feedId === this.detailFeedId) {
+        result.push(this.all[i]);
+      }
+    }
+    return result;
   }
 
   /** 重命名订阅源：同步更新本地库里的来源名。 */  renameFeed(feedId: string, title: string): void {
@@ -543,14 +590,25 @@ export class FeedViewModel {
     }
     this.loading = true;
     try {
-      const parsed: ParsedFeed = await feedService.fetchFeed(trimmed);
-      const title: string = parsed.title.length > 0 ? parsed.title : trimmed;
-      const feed: FeedSource = new FeedSource(trimmed, title, trimmed, parsed.siteUrl);
+      // 可能是 feed 地址，也可能是站点主页 —— 后者要靠自动发现找出真正的 feed。
+      const resolved: ResolvedFeed | undefined = await this.resolveFeed(trimmed);
+      if (resolved === undefined) {
+        this.errorCode = FeedError.NOT_A_FEED;
+        return false;
+      }
+      // 发现出来的地址可能已经订阅过（用户贴了主页，而该 feed 已在列表里）。
+      if (this.hasUrl(this.feeds, resolved.url)) {
+        this.errorCode = FeedError.DUPLICATE_URL;
+        return false;
+      }
+      const title: string = resolved.parsed.title.length > 0 ? resolved.parsed.title : resolved.url;
+      const feed: FeedSource = new FeedSource(resolved.url, title, resolved.url, resolved.parsed.siteUrl);
+      this.rememberValidators(feed, resolved.etag, resolved.lastModified);
       const nextFeeds: FeedSource[] = this.feeds.slice();
       nextFeeds.push(feed);
       this.feeds = nextFeeds;
       const fresh: Article[] = [];
-      toArticles(feed, parsed, fresh);
+      toArticles(feed, resolved.parsed, fresh);
       articleStore.insertNew(fresh);
       this.all = await articleStore.loadRecent();
       this.publish();
@@ -566,6 +624,39 @@ export class FeedViewModel {
     } finally {
       this.loading = false;
     }
+  }
+
+  /**
+   * 把用户输入的地址解析成可订阅的 feed：
+   *   1) 先直接当 feed 抓一次（绝大多数情况一次成功）；
+   *   2) 抓回来的是 HTML（站点主页）就从页面里找 <link rel="alternate" …> 候选，逐个试。
+   * 全部失败返回 undefined，由调用方映射成「该地址不是订阅源」。
+   */
+  private async resolveFeed(url: string): Promise<ResolvedFeed | undefined> {
+    let direct: FeedFetchResult;
+    try {
+      direct = await feedService.fetchFeed(url);
+    } catch (err) {
+      // 网络 / 协议类错误原样上抛：让界面显示「网络错误」，而不是误报成「不是订阅源」。
+      const error: Error = err as Error;
+      throw error;
+    }
+    if (direct.parsed !== undefined) {
+      return new ResolvedFeed(url, direct.parsed, direct.etag, direct.lastModified);
+    }
+    const candidates: string[] = feedDiscovery.candidateUrls(direct.rawBody, url);
+    for (let i = 0; i < candidates.length; i += 1) {
+      try {
+        const result: FeedFetchResult = await feedService.fetchFeed(candidates[i]);
+        if (result.parsed !== undefined) {
+          return new ResolvedFeed(candidates[i], result.parsed, result.etag, result.lastModified);
+        }
+      } catch (err) {
+        // 单个候选失败就试下一个；全部试完仍失败才算「不是订阅源」。
+        continue;
+      }
+    }
+    return undefined;
   }
 
   /** 删除订阅源及其文章（含本地缓存）。 */
@@ -709,6 +800,7 @@ export class FeedViewModel {
       }
     }
     this.articles = visible;
+    this.feedArticles = this.collectFeedArticles();
     this.recomputeUnread();
   }
 

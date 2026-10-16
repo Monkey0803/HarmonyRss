@@ -29,6 +29,10 @@
       "value": "图片"
     },
     {
+      "name": "tab_subs",
+      "value": "订阅源"
+    },
+    {
       "name": "home_title",
       "value": "阅读"
     },
@@ -533,6 +537,22 @@
       "value": "上次错误："
     },
     {
+      "name": "feed_articles_title",
+      "value": "文章"
+    },
+    {
+      "name": "feed_sort_newest",
+      "value": "最新在前"
+    },
+    {
+      "name": "feed_sort_oldest",
+      "value": "最早在前"
+    },
+    {
+      "name": "home_add_feed_title",
+      "value": "添加订阅源"
+    },
+    {
       "name": "article_title",
       "value": "文章"
     },
@@ -603,6 +623,10 @@
     {
       "name": "err_parse",
       "value": "无法解析该地址，请确认是有效的 RSS / Atom 订阅源。"
+    },
+    {
+      "name": "err_not_a_feed",
+      "value": "该地址不是订阅源，页面里也没有找到可订阅的链接。"
     },
     {
       "name": "row_point_light",

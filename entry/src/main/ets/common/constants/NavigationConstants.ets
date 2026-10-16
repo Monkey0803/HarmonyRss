@@ -5,6 +5,7 @@
  */
 export enum TabIndex {
   HOME = 0,
-  SETTINGS = 1,
-  IMAGES = 2
+  SUBSCRIPTIONS = 1,
+  SETTINGS = 2,
+  IMAGES = 3
 }

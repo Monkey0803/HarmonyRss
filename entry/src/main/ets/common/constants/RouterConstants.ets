@@ -7,8 +7,8 @@
 export class RouterConstants {
   /** 文章详情页。 */
   static readonly PAGE_ARTICLE: string = 'article';
-  /** 订阅源管理页。 */
-  static readonly PAGE_SUBSCRIPTIONS: string = 'subscriptions';
+  /** 单个订阅源的文章列表页。 */
+  static readonly PAGE_FEED_ARTICLES: string = 'feedArticles';
   /** 点光源效果预览页。 */
   static readonly PAGE_EFFECT: string = 'effect';
 }

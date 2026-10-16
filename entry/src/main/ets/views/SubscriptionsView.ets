@@ -1,8 +1,9 @@
 /*
- * SubscriptionsView.ets — 订阅源管理（NavDestination 内容，纯展示 + 事件上报）。
+ * SubscriptionsView.ets — 订阅源管理（订阅源页签内容，纯展示 + 事件上报）。
  *
  * 顶部输入订阅地址并添加（添加前会先抓一次校验可用性）；支持 OPML 导入 / 导出（系统文档选择器）；
  * 下方列出已有订阅源（含未读数）并可删除（删除前确认）。
+ * 点击某个订阅源 → 推入该源的单源文章列表页（NavDestination）。
  */
 
 import { common } from '@kit.AbilityKit';
@@ -11,13 +12,16 @@ import { feedViewModel } from '../viewmodel/FeedViewModel';
 import { FeedError } from '../common/constants/RssConstants';
 import { FeedErrorText } from '../common/utils/FeedErrorText';
 import { safeArea } from '../service/SafeAreaController';
+import { CommonConstants } from '../common/constants/CommonConstants';
 import { ToastUtil } from '../common/utils/ToastUtil';
 import { opmlService } from '../service/OpmlService';
 import { OpmlEntry, parseOpml } from '../service/OpmlCodec';
+import { RouterConstants } from '../common/constants/RouterConstants';
 
 @ComponentV2
 export struct SubscriptionsView {
   @Param navPathStack: NavPathStack = new NavPathStack();
+  @Param scroller: Scroller = new Scroller();
   @Local inputUrl: string = '';
   @Local submitting: boolean = false;
   /** 就地重命名：正在编辑的订阅源 id 与草稿名。 */
@@ -336,8 +340,8 @@ export struct SubscriptionsView {
       .alignItems(HorizontalAlign.Start)
       .onClick(() => {
         if (this.editingId !== feed.id && this.groupEditId !== feed.id) {
-          feedViewModel.scopeToFeed(feed);
-          this.navPathStack.pop();
+          feedViewModel.openFeed(feed);
+          this.navPathStack.pushPath(new NavPathInfo(RouterConstants.PAGE_FEED_ARTICLES, ''));
         }
       })
 
@@ -366,6 +370,9 @@ export struct SubscriptionsView {
 
   build() {
     Column({ space: $r('app.float.space_m') }) {
+      // 透明标题栏占位：固定页头（输入区）整体下移，避免被透明标题栏遮挡。
+      Row().width('100%').height(safeArea.topInsetVp + CommonConstants.TITLE_BAR_HEIGHT_VP)
+
       this.Editor()
 
       if (feedViewModel.feeds.length === 0) {
@@ -375,7 +382,7 @@ export struct SubscriptionsView {
           .layoutWeight(1)
           .padding($r('app.float.space_2xl'))
       } else {
-        List() {
+        List({ scroller: this.scroller }) {
           ForEach(feedViewModel.displayRows(), (row: FeedListItem) => {
             ListItem() {
               if (row.isGroup) {
@@ -399,8 +406,8 @@ export struct SubscriptionsView {
             feedViewModel.reorderByDrag(itemIndex, insertIndex);
           }
         })
-        // 无页签栏的详情页：列表底部按系统导航条高度内缩。
-        .padding({ bottom: safeArea.bottomInsetVp })
+        // 悬浮页签栏下的可滚动内容：底部预留 = 页签栏避让高度 + 系统导航条高度。
+        .padding({ bottom: safeArea.contentBottomInsetVp })
       }
     }
     .width('100%')

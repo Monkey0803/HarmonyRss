@@ -26,6 +26,13 @@ export class FeedSource {
   @Trace group: string;
   /** 最近一次抓取的错误描述；空串表示正常。 */
   @Trace lastError: string;
+  /**
+   * HTTP 条件请求的校验值：上一次响应的 ETag / Last-Modified。
+   * 下次抓取带上它们，服务器返回 304 就不用重下整份文档（省流量、省电）。
+   * 空串表示该源没提供 / 尚未抓过。
+   */
+  etag: string = '';
+  lastModified: string = '';
 
   constructor(id: string, title: string, url: string, siteUrl: string, group: string = '') {
     this.id = id;

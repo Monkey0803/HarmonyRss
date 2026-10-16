@@ -20,6 +20,8 @@ const TAG: string = 'SafeAreaController';
 
 @ObservedV2
 export class SafeAreaController {
+  /** 顶部系统状态栏高度（vp）。 */
+  @Trace topInsetVp: number = 0;
   /** 底部系统导航条高度（vp）。 */
   @Trace bottomInsetVp: number = 0;
   /** 可滚动内容底部预留量（vp）= 悬浮页签栏避让高度 + 系统导航条高度。 */
@@ -73,6 +75,16 @@ export class SafeAreaController {
     const mainWindow: window.Window | undefined = this.mainWindow;
     if (mainWindow === undefined) {
       return;
+    }
+    try {
+      const statusBar: window.AvoidArea = mainWindow.getWindowAvoidArea(window.AvoidAreaType.TYPE_SYSTEM);
+      this.topInsetVp = statusBar.visible
+        ? mainWindow.getUIContext().px2vp(statusBar.topRect.height)
+        : 0;
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.error(DOMAIN, TAG, 'getWindowAvoidArea(TYPE_SYSTEM) failed: %{public}d', error.code);
+      this.topInsetVp = 0;
     }
     try {
       const indicator: window.AvoidArea =

@@ -14,10 +14,9 @@ import { common } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { Article, FeedSource } from '../model/Feed';
 import { feedStore } from '../service/FeedStore';
-import { feedService } from '../service/FeedService';
+import { feedService, FeedFetchResult } from '../service/FeedService';
 import { articleStore } from '../service/ArticleStore';
 import { toArticles } from '../service/ArticleMapper';
-import { ParsedFeed } from '../service/RssParser';
 import { settingsStore } from '../service/SettingsStore';
 import { appSettings } from '../model/AppSettings';
 import { notifyService } from '../service/NotifyService';
@@ -56,8 +55,14 @@ export default class RssWorkScheduler extends WorkSchedulerExtensionAbility {
     for (let i = 0; i < feeds.length; i += 1) {
       const feed: FeedSource = feeds[i];
       try {
-        const parsed: ParsedFeed = await feedService.fetchFeed(feed.url);
-        toArticles(feed, parsed, fresh);
+        const result: FeedFetchResult =
+          await feedService.fetchFeed(feed.url, feed.etag, feed.lastModified);
+        // 把新的校验值写回订阅源，下一次（界面或后台）就能命中 304。
+        feed.etag = result.etag;
+        feed.lastModified = result.lastModified;
+        if (result.parsed !== undefined) {
+          toArticles(feed, result.parsed, fresh);
+        }
       } catch (err) {
         const error: Error = err as Error;
         hilog.warn(DOMAIN, TAG, 'fetch failed: %{public}s', error.message);
@@ -65,6 +70,8 @@ export default class RssWorkScheduler extends WorkSchedulerExtensionAbility {
     }
     articleStore.insertNew(fresh);
     articleStore.prune();
+    // 校验值变了要落盘，否则下次条件请求拿不到（扩展与界面共用同一份偏好库）。
+    feedStore.save(feeds);
     hilog.info(DOMAIN, TAG, 'background refresh done, fetched: %{public}d', fresh.length);
 
     if (appSettings.notifyNewArticles) {

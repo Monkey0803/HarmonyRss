@@ -9,6 +9,10 @@ export class CommonConstants {
   static readonly DEFAULT_TAB_INDEX: number = 0;
   /** 标题栏随内容滚动时，开始隐藏标题栏的滚动距离阈值（vp）——行为参数，不是视觉尺寸。 */
   static readonly TITLE_HIDE_OFFSET_VP: number = 10;
+  /** HDS 紧凑标题栏（MINI）高度（vp）——HDS 规范固定值，用于透明标题栏下的首屏顶部占位。 */
+  static readonly TITLE_BAR_HEIGHT_VP: number = 56;
+  /** 标题栏沉浸光感材质的渐显滚动距离（vp）：内容滚过该距离后材质完全生效——行为参数。 */
+  static readonly TITLE_MATERIAL_FADE_VP: number = 24;
   /** App logo 在设置页预览瓦片中的边长（vp）。 */
   static readonly LOGO_TILE_SIZE: number = 46;
   /** App logo 预览瓦片圆角（vp）。 */

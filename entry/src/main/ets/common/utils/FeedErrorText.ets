@@ -27,6 +27,9 @@ export class FeedErrorText {
     if (code === FeedError.PARSE_ERROR) {
       return $r('app.string.err_parse');
     }
+    if (code === FeedError.NOT_A_FEED) {
+      return $r('app.string.err_not_a_feed');
+    }
     return $r('app.string.err_fetch_failed');
   }
 }
