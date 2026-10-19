@@ -233,25 +233,30 @@ export struct HomeTabView {
       }
 
       Row({ space: $r('app.float.space_s') }) {
-        // 页签型分段按钮：背景板材质见 SegmentButtonV2 文档「设置背景板材质」示例。
-        TabSegmentButtonV2({
-          items: this.filterItems,
-          selectedIndex: filterIndexOf(feedViewModel.filter),
-          onItemClicked: (index: number) => {
-            feedViewModel.setFilter(filterAt(index));
-          },
-          // 特殊系统资源值：让文字颜色随背景板材质自动反色。
-          itemFontColor: this.safeColor($r('sys.color.font_primary')),
-          itemSelectedFontColor: this.safeColor(Color.Black),
-          backgroundSystemMaterial: this.filterBarMaterial()
-        })
-
-        Blank()
+        // 分段控件不支持通用属性，会吃掉所在区域的「最大可用宽度」，直接放进 Row 会把右侧按钮挤成 0 宽。
+        // 因此套一层 layoutWeight(1) 的容器：它按固定尺寸的按钮量完后再取剩余宽度，按钮宽度得以保留。
+        Row() {
+          // 页签型分段按钮：背景板材质见 SegmentButtonV2 文档「设置背景板材质」示例。
+          TabSegmentButtonV2({
+            items: this.filterItems,
+            selectedIndex: filterIndexOf(feedViewModel.filter),
+            onItemClicked: (index: number) => {
+              feedViewModel.setFilter(filterAt(index));
+            },
+            // 特殊系统资源值：让文字颜色随背景板材质自动反色。
+            itemFontColor: this.safeColor($r('sys.color.font_primary')),
+            itemSelectedFontColor: this.safeColor(Color.Black),
+            backgroundSystemMaterial: this.filterBarMaterial()
+          })
+        }
+        .layoutWeight(1)
+        .alignItems(VerticalAlign.Center)
 
         Button($r('app.string.home_mark_all_read'))
           .buttonStyle(ButtonStyleMode.TEXTUAL)
           .fontSize($r('app.float.font_size_caption'))
           .fontColor($r('app.color.hm_text_secondary'))
+          .flexShrink(0)
           .enabled(feedViewModel.unreadTotal > 0)
           .onClick(() => {
             this.confirmMarkAllRead();
