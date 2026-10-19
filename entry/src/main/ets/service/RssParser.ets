@@ -134,7 +134,12 @@ function cleanValue(raw: string): string {
   return value.trim();
 }
 
-/** 读取某个标签的文本内容（首个匹配）。 */
+/**
+ * 读取某个标签的文本内容（首个匹配）。
+ *
+ * 找结束标签时会统计同名开标签的嵌套层数（depth），保证 `<title>a<title>b</title></title>`
+ * 这类畸形/嵌套结构也能取到正确的一段，而不是在第一个 `</title>` 就截断。
+ */
 function readTagText(xml: string, tag: string): string {
   const openToken: string = '<' + tag;
   const closeToken: string = '</' + tag + '>';
@@ -146,11 +151,84 @@ function readTagText(xml: string, tag: string): string {
   if (openEnd < 0) {
     return '';
   }
-  const end: number = xml.indexOf(closeToken, openEnd);
-  if (end < 0) {
+  // 自闭合（如 <link ... />）没有文本内容
+  if (openEnd > 0 && xml.charAt(openEnd - 1) === '/') {
     return '';
   }
-  return cleanValue(xml.substring(openEnd + 1, end));
+  let depth: number = 1;
+  let cursor: number = openEnd + 1;
+  while (cursor < xml.length) {
+    const nextOpen: number = xml.indexOf(openToken, cursor);
+    const nextClose: number = xml.indexOf(closeToken, cursor);
+    if (nextClose < 0) {
+      return '';
+    }
+    if (nextOpen >= 0 && nextOpen < nextClose) {
+      const nextOpenEnd: number = xml.indexOf('>', nextOpen);
+      if (nextOpenEnd > 0 && xml.charAt(nextOpenEnd - 1) !== '/') {
+        depth += 1;
+      }
+      cursor = nextOpenEnd >= 0 ? nextOpenEnd + 1 : nextClose;
+      continue;
+    }
+    depth -= 1;
+    if (depth === 0) {
+      return cleanValue(xml.substring(openEnd + 1, nextClose));
+    }
+    cursor = nextClose + closeToken.length;
+  }
+  return '';
+}
+
+/**
+ * 解析 Atom 的 link：优先 rel="alternate"（正文地址），其次没有 rel 的，
+ * 最后才退回第一个带 href 的 —— 很多 feed 的第一个 link 是 rel="self"（feed 自身地址）。
+ */
+function readAtomLink(xml: string): string {
+  let fallback: string = '';
+  let searchFrom: number = 0;
+  while (searchFrom < xml.length) {
+    const start: number = xml.indexOf('<link', searchFrom);
+    if (start < 0) {
+      break;
+    }
+    const openEnd: number = xml.indexOf('>', start);
+    if (openEnd < 0) {
+      break;
+    }
+    const header: string = xml.substring(start, openEnd + 1);
+    const href: string = attrOf(header, 'href');
+    const rel: string = attrOf(header, 'rel');
+    if (href.length > 0) {
+      if (rel === 'alternate') {
+        return href;
+      }
+      if (rel.length === 0 && fallback.length === 0) {
+        fallback = href;
+      } else if (fallback.length === 0) {
+        fallback = href;
+      }
+    }
+    searchFrom = openEnd + 1;
+  }
+  return fallback;
+}
+
+/** 从单个标签文本里取属性值（找不到返回空串）。 */
+function attrOf(tagText: string, attr: string): string {
+  const attrToken: string = attr + '=';
+  const attrIndex: number = tagText.indexOf(attrToken);
+  if (attrIndex < 0) {
+    return '';
+  }
+  let rest: string = tagText.substring(attrIndex + attrToken.length).trim();
+  const quote: string = rest.charAt(0);
+  if (quote !== '"' && quote !== '\'') {
+    return '';
+  }
+  rest = rest.substring(1);
+  const endQuote: number = rest.indexOf(quote);
+  return endQuote < 0 ? '' : rest.substring(0, endQuote);
 }
 
 /** 读取某个标签的属性值（首个匹配），如 <link href="..."/>。 */
@@ -267,7 +345,7 @@ function firstAuthor(block: string, isAtom: boolean): string {
 
 function parseArticle(block: string, isAtom: boolean): ParsedArticle {
   const title: string = stripTags(decodeEntities(readTagText(block, 'title')));
-  let link: string = isAtom ? readTagAttr(block, 'link', 'href') : readTagText(block, 'link');
+  let link: string = isAtom ? readAtomLink(block) : readTagText(block, 'link');
   if (link.length === 0) {
     link = readTagText(block, 'guid');
   }
@@ -311,7 +389,7 @@ export function parseFeed(xml: string): ParsedFeed {
   const head: string = xml.substring(0, headIndex >= 0 ? headIndex : xml.length);
 
   const title: string = stripTags(decodeEntities(readTagText(head, 'title')));
-  const siteUrl: string = isAtom ? readTagAttr(head, 'link', 'href') : readTagText(head, 'link');
+  const siteUrl: string = isAtom ? readAtomLink(head) : readTagText(head, 'link');
 
   const articles: ParsedArticle[] = [];
   const limit: number = blocks.length < RssConstants.MAX_ARTICLES_PER_FEED

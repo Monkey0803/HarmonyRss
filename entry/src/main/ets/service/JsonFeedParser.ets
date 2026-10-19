@@ -69,7 +69,7 @@ function toArticle(item: JsonFeedItemRaw): ParsedArticle {
   }
   const author: string = item.author === undefined ? '' : asString(item.author.name);
   return new ParsedArticle(asString(item.title), link, summarize(summarySource), content,
-    parseDate(asString(item.date_published)), asString(item.image), author);
+    parseDate(asString(item.date_published)), asString(item.image), author, html);
 }
 
 /** 解析 JSON Feed 文档。 */

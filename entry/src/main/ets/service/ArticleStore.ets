@@ -34,7 +34,8 @@ const SQL_CREATE: string =
   'author TEXT NOT NULL DEFAULT \'\', ' +
   'progress INTEGER NOT NULL DEFAULT 0, ' +
   'progress_ratio REAL NOT NULL DEFAULT 0, ' +
-  'reader_html TEXT NOT NULL DEFAULT \'\')';
+  'reader_html TEXT NOT NULL DEFAULT \'\', ' +
+  'content_html TEXT NOT NULL DEFAULT \'\')';
 
 /** 老库补列（表已存在时 CREATE 不会加列，ALTER 失败可忽略）。 */
 const SQL_ADD_IMAGE: string =
@@ -47,6 +48,9 @@ const SQL_ADD_PROGRESS: string =
 /** 阅读进度比例（0–1）：换排版后恢复位置用。 */
 const SQL_ADD_PROGRESS_RATIO: string =
   'ALTER TABLE ' + ArticleDbConstants.TABLE_ARTICLES + ' ADD COLUMN progress_ratio REAL NOT NULL DEFAULT 0';
+/** feed 自带的 HTML 正文（content:encoded / Atom content / JSON Feed content_html）。 */
+const SQL_ADD_CONTENT_HTML: string =
+  'ALTER TABLE ' + ArticleDbConstants.TABLE_ARTICLES + ' ADD COLUMN content_html TEXT NOT NULL DEFAULT \'\'';
 /** Reader 视图的结构化正文 HTML（提取 + 净化后）。 */
 const SQL_ADD_READER: string =
   'ALTER TABLE ' + ArticleDbConstants.TABLE_ARTICLES + ' ADD COLUMN reader_html TEXT NOT NULL DEFAULT \'\'';
@@ -54,11 +58,11 @@ const SQL_ADD_READER: string =
 const SQL_INSERT: string =
   'INSERT OR IGNORE INTO ' + ArticleDbConstants.TABLE_ARTICLES +
   ' (id, feed_id, feed_title, title, link, summary, content, published_at, is_read, is_starred, fetched_at,' +
-  ' image_url, author) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+  ' image_url, author, content_html) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
 
 const SQL_SELECT_ALL: string =
   'SELECT id, feed_id, feed_title, title, link, summary, content, published_at, is_read, is_starred,' +
-  ' image_url, author, progress, progress_ratio, reader_html' +
+  ' image_url, author, progress, progress_ratio, reader_html, content_html' +
   ' FROM ' + ArticleDbConstants.TABLE_ARTICLES + ' ORDER BY published_at DESC';
 
 /** 卡片展示用的轻量快照：未读数 + 最新几条标题（不把整库读进内存）。 */
@@ -89,6 +93,7 @@ export class ArticleStore {
       this.addColumnIfNeeded(SQL_ADD_PROGRESS);
       this.addColumnIfNeeded(SQL_ADD_PROGRESS_RATIO);
       this.addColumnIfNeeded(SQL_ADD_READER);
+      this.addColumnIfNeeded(SQL_ADD_CONTENT_HTML);
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       hilog.error(DOMAIN, TAG, 'open failed: %{public}d', error.code);
@@ -179,6 +184,8 @@ export class ArticleStore {
           article.progress = rs.getDouble(rs.getColumnIndex('progress'));
           article.progressRatio = rs.getDouble(rs.getColumnIndex('progress_ratio'));
           article.readerHtml = rs.getString(rs.getColumnIndex('reader_html'));
+          // feed 自带全文落盘：冷启动后仍能本地提纯，省掉一次网络抓取
+          article.contentHtml = rs.getString(rs.getColumnIndex('content_html'));
           if (article.readerHtml.length > 0) {
             article.readerState = ReaderState.READY;
           }
@@ -209,7 +216,7 @@ export class ArticleStore {
           store.executeSync(SQL_INSERT, [
             item.id, item.feedId, item.feedTitle, item.title, item.link,
             item.summary, item.content, item.publishedAt,
-            item.read ? 1 : 0, item.starred ? 1 : 0, now, item.imageUrl, item.author
+            item.read ? 1 : 0, item.starred ? 1 : 0, now, item.imageUrl, item.author, item.contentHtml
           ]);
         }
         store.commit();

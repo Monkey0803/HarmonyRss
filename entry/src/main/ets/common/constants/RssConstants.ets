@@ -8,8 +8,12 @@ export class RssConstants {
   static readonly CONNECT_TIMEOUT_MS: number = 8000;
   /** 读取超时（毫秒）。 */
   static readonly READ_TIMEOUT_MS: number = 12000;
-  /** 每个订阅源最多解析的条目数。 */
-  static readonly MAX_ARTICLES_PER_FEED: number = 40;
+  /**
+   * 每个订阅源最多解析的条目数。
+   * 提到 100：不少站点一次就吐上百条，之前 40 条会让「最新」之外的内容永远看不到；
+   * 代价是单次解析/入库更大，靠列表后续做分页 + 本地缓存上限兜住。
+   */
+  static readonly MAX_ARTICLES_PER_FEED: number = 100;
   /** 列表摘要最大字符数。 */
   static readonly SUMMARY_MAX_CHARS: number = 160;
   /** 请求 Accept 头：优先索取 feed 文档。 */
