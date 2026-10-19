@@ -80,6 +80,16 @@ export class MaterialController {
     return hdsMaterial.MaterialLevel.ADAPTIVE;
   }
 
+  /**
+   * 沉浸光感是否真的会渲染：全局（metadata）开启 + 应用内总开关打开 + 设备支持。
+   *
+   * 用来决定「需不需要给浮层补一层兜底底色」：材质会渲染时，任何背景色都会盖在材质之上
+   * （见沉浸光感 FAQ「背景色或背景模糊遮挡材质效果」），所以要留透明；材质不可用时才补底色。
+   */
+  static immersiveActive(immersiveOn: boolean): boolean {
+    return immersiveOn && MaterialController.immersiveSupported() && MaterialController.globalEnabled();
+  }
+
   /** 组装下发到 HdsTabs / HdsNavigation 的材质参数。总开关关掉时用 NONE。 */
   static params(typeId: string, levelId: string, immersiveOn: boolean): SystemMaterialParams {
     const result: SystemMaterialParams = {

@@ -16,7 +16,7 @@ import { ArticleListItem } from './ArticleListItem';
 import { RouterConstants } from '../common/constants/RouterConstants';
 import { ArticleFilter, FeedError } from '../common/constants/RssConstants';
 import { FeedErrorText } from '../common/utils/FeedErrorText';
-import { ColorMetrics, SegmentButtonV2Items, TabSegmentButtonV2, uiMaterial } from '@kit.ArkUI';
+import { ColorMetrics, SegmentButtonV2Items, TabSegmentButtonV2 } from '@kit.ArkUI';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { safeArea } from '../service/SafeAreaController';
@@ -236,17 +236,19 @@ export struct HomeTabView {
         // 分段控件不支持通用属性，会吃掉所在区域的「最大可用宽度」，直接放进 Row 会把右侧按钮挤成 0 宽。
         // 因此套一层 layoutWeight(1) 的容器：它按固定尺寸的按钮量完后再取剩余宽度，按钮宽度得以保留。
         Row() {
-          // 页签型分段按钮：背景板材质见 SegmentButtonV2 文档「设置背景板材质」示例。
+          // 页签型分段按钮。刻意不传 backgroundSystemMaterial：沉浸光感是区域级能力，
+          // 只有 Navigation/NavDestination 标题栏与底部 TabBar 等生效区域里的组件才吃材质，
+          // 分段控件在内容区，传了只会打 "Material inactive: out of scope"，背板仍是组件自带背景
+          // （官方给生效范围外组件的替代方案就是通用背景属性，见沉浸光感 FAQ）。
           TabSegmentButtonV2({
             items: this.filterItems,
             selectedIndex: filterIndexOf(feedViewModel.filter),
             onItemClicked: (index: number) => {
               feedViewModel.setFilter(filterAt(index));
             },
-            // 特殊系统资源值：让文字颜色随背景板材质自动反色。
+            // 特殊系统资源值：未选中态跟随主题文字色。
             itemFontColor: this.safeColor($r('sys.color.font_primary')),
-            itemSelectedFontColor: this.safeColor(Color.Black),
-            backgroundSystemMaterial: this.filterBarMaterial()
+            itemSelectedFontColor: this.safeColor(Color.Black)
           })
         }
         .layoutWeight(1)
@@ -331,11 +333,10 @@ export struct HomeTabView {
   }
 
   /**
-   * 分段按钮的配色 / 背景板材质。
+   * 分段按钮的文本配色。
    *
-   * `ColorMetrics.resourceColor` 与 `uiMaterial.ImmersiveMaterial` 都标注了可能抛异常，
-   * ArkTS 要求调用点必须 catch。这三项在 TabSegmentButtonV2 里都是**可选参数**，
-   * 所以失败时返回 undefined 即可优雅退回组件默认样式。
+   * `ColorMetrics.resourceColor` 标注了可能抛异常，ArkTS 要求调用点必须 catch；
+   * 这两个参数在 TabSegmentButtonV2 里都是可选的，失败时返回 undefined 退回组件默认样式。
    */
   private safeColor(value: ResourceColor): ColorMetrics | undefined {
     try {
@@ -343,21 +344,6 @@ export struct HomeTabView {
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       hilog.error(DOMAIN, TAG, 'resourceColor failed: %{public}d', error.code);
-      return undefined;
-    }
-  }
-
-  private filterBarMaterial(): uiMaterial.ImmersiveMaterial | undefined {
-    try {
-      return new uiMaterial.ImmersiveMaterial({
-        style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
-        colorInvert: true,
-        interactive: true,
-        lightEffect: { color: $r('sys.color.interactive_click') }
-      });
-    } catch (err) {
-      const error: BusinessError = err as BusinessError;
-      hilog.error(DOMAIN, TAG, 'ImmersiveMaterial failed: %{public}d', error.code);
       return undefined;
     }
   }

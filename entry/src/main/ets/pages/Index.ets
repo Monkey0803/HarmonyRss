@@ -148,21 +148,35 @@ struct Index {
   }
 
   /**
+   * 标题栏背板底色。
+   *
+   * 沉浸光感的视觉层级在 backgroundColor 之下：材质会渲染时底色必须留透明，否则会盖住材质
+   * （见沉浸光感 FAQ「背景色或背景模糊遮挡材质效果」）；材质不可用（总开关关闭 / 设备不支持）时
+   * 才补一层系统灰底，保证内容从标题栏下方穿过时标题仍看得清。
+   */
+  private titleBackdropColor(): ResourceColor {
+    return MaterialController.immersiveActive(appSettings.immersiveOn)
+      ? Color.Transparent
+      : $r('sys.color.comp_background_gray');
+  }
+
+  /**
    * 标题栏样式（全 App 统一）：沉浸光感材质（hdsMaterial）+ 跟手线性渐变。
    *
    * - 静止态（originalStyle）：背景全透明，标题栏与页面融为一体。
-   * - 滚动后（scrollEffectStyle）：露出沉浸光感材质背板（comp_background_gray 底色 + 材质）。
+   * - 滚动后（scrollEffectStyle）：露出沉浸光感材质背板（底色见 titleBackdropColor）。
    * - enableScrollEffect: true + GRADIENT_BLUR：标题栏样式随内容区滚动偏移**线性跟手**过渡
    *   （0 → TITLE_MATERIAL_FADE_VP），与底部悬浮页签栏同源材质。
    *
    * 需要各页用 bindToScrollable 绑定其可滚动容器，标题栏才能拿到滚动偏移。
    */
   private materialTitleStyle(): TitleBarStyleOptions {
+    const backdrop: ResourceColor = this.titleBackdropColor();
     const original: HdsNavigationTitleBarStyle = {
       backgroundStyle: { backgroundColor: Color.Transparent }
     };
     const scrolled: HdsNavigationTitleBarStyle = {
-      backgroundStyle: { backgroundColor: $r('sys.color.comp_background_gray') }
+      backgroundStyle: { backgroundColor: backdrop }
     };
     const scrollEffectOpts: ScrollEffectOptions = {
       enableScrollEffect: true,
@@ -208,7 +222,7 @@ struct Index {
    */
   private stickyTitleStyle(): TitleBarStyleOptions {
     const scrolled: HdsNavigationTitleBarStyle = {
-      backgroundStyle: { backgroundColor: $r('sys.color.comp_background_gray') }
+      backgroundStyle: { backgroundColor: this.titleBackdropColor() }
     };
     const style: TitleBarStyleOptions = {
       originalStyle: scrolled,
