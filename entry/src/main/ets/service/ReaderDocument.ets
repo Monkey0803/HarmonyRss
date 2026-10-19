@@ -60,13 +60,12 @@ function paletteOf(id: string): ReaderPalette {
 
 /** 正文字号（px）。 */
 function fontSize(): number {
-  return ReaderTypography.fontSize(appSettings.readerFont);
+  return ReaderTypography.fontSizePx(appSettings.readerFontScale);
 }
 
 /** 行高（px）。 */
 function lineHeight(): number {
-  return ReaderTypography.fontSize(appSettings.readerFont)
-    * ReaderTypography.lineHeight(appSettings.readerLine);
+  return fontSize() * ReaderTypography.lineHeightOf(appSettings.readerLineScale);
 }
 
 /** body 规则（底色 / 字色 / 字体 / 字号行距）。 */

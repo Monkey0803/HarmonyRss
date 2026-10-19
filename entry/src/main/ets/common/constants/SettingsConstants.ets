@@ -111,21 +111,62 @@ export enum ReaderTheme {
   DARK = 'dark'
 }
 
-/** 阅读排版：档位 → 数值（偏好参数，不是固定视觉尺寸，因此不做成资源）。 */
+/**
+ * 阅读排版：连续档位 → 数值（偏好参数，不是固定视觉尺寸，因此不做成资源）。
+ *
+ * 字号与行距改成**连续值**（详情页「阅读排版」面板用 Slider 调），
+ * 旧的 small/medium/large、compact/normal/loose 只作为快捷预设与老设置的迁移锚点。
+ */
 export class ReaderTypography {
-  /** 正文字号（vp；Web 注入时按 px 使用）。 */
-  static fontSize(id: string): number {
-    if (id === ReaderFontSize.SMALL) {
-      return 15;
-    }
-    if (id === ReaderFontSize.LARGE) {
-      return 20;
-    }
-    return 17;
+  /** 字号基准（px）：scale = 1 时正文字号。 */
+  static readonly FONT_BASE_PX: number = 17;
+  /** 字号连续取值范围。 */
+  static readonly FONT_SCALE_MIN: number = 0.8;
+  static readonly FONT_SCALE_MAX: number = 1.6;
+  /** 行距连续取值范围（行高倍数）。 */
+  static readonly LINE_SCALE_MIN: number = 1.2;
+  static readonly LINE_SCALE_MAX: number = 2.2;
+
+  /** 字号倍数 → 正文字号（px；Web 注入时按 px 使用）。 */
+  static fontSizePx(scale: number): number {
+    const clamped: number = Math.min(ReaderTypography.FONT_SCALE_MAX,
+      Math.max(ReaderTypography.FONT_SCALE_MIN, scale));
+    return Math.round(ReaderTypography.FONT_BASE_PX * clamped * 10) / 10;
   }
 
-  /** 行高倍数。 */
-  static lineHeight(id: string): number {
+  /** 行距倍数（做一次范围收敛，避免脏值把排版撑坏）。 */
+  static lineHeightOf(scale: number): number {
+    return Math.min(ReaderTypography.LINE_SCALE_MAX, Math.max(ReaderTypography.LINE_SCALE_MIN, scale));
+  }
+
+  /** 字号预设 → 倍数（设置页快捷档位 / 老设置迁移）。 */
+  static fontScaleOfPreset(id: string): number {
+    if (id === ReaderFontSize.SMALL) {
+      return 0.9;
+    }
+    if (id === ReaderFontSize.LARGE) {
+      return 1.2;
+    }
+    return 1.0;
+  }
+
+  /** 倍数 → 最接近的字号预设（设置页档位行要显示当前档位）。 */
+  static fontPresetOfScale(scale: number): string {
+    const presets: string[] = [ReaderFontSize.SMALL, ReaderFontSize.MEDIUM, ReaderFontSize.LARGE];
+    let best: string = ReaderFontSize.MEDIUM;
+    let bestGap: number = Number.MAX_VALUE;
+    for (const id of presets) {
+      const gap: number = Math.abs(ReaderTypography.fontScaleOfPreset(id) - scale);
+      if (gap < bestGap) {
+        bestGap = gap;
+        best = id;
+      }
+    }
+    return best;
+  }
+
+  /** 行距预设 → 倍数。 */
+  static lineScaleOfPreset(id: string): number {
     if (id === ReaderLineHeight.COMPACT) {
       return 1.4;
     }
@@ -133,6 +174,21 @@ export class ReaderTypography {
       return 2.0;
     }
     return 1.7;
+  }
+
+  /** 倍数 → 最接近的行距预设。 */
+  static linePresetOfScale(scale: number): string {
+    const presets: string[] = [ReaderLineHeight.COMPACT, ReaderLineHeight.NORMAL, ReaderLineHeight.LOOSE];
+    let best: string = ReaderLineHeight.NORMAL;
+    let bestGap: number = Number.MAX_VALUE;
+    for (const id of presets) {
+      const gap: number = Math.abs(ReaderTypography.lineScaleOfPreset(id) - scale);
+      if (gap < bestGap) {
+        bestGap = gap;
+        best = id;
+      }
+    }
+    return best;
   }
 
   /** 字体族 CSS；system 返回空串（表示不覆盖，跟随系统/站点默认）。 */

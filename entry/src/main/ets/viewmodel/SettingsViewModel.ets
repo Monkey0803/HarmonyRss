@@ -5,6 +5,7 @@
  */
 
 import { common } from '@kit.AbilityKit';
+import { ReaderTypography } from '../common/constants/SettingsConstants';
 import { appSettings } from '../model/AppSettings';
 import { settingsStore } from '../service/SettingsStore';
 import { ThemeController } from '../service/ThemeController';
@@ -101,14 +102,36 @@ export class SettingsViewModel {
     backgroundRefresh.sync(context);
   }
 
-  /** 正文字号档位。 */
+  /**
+   * 正文字号倍数（连续值，详情页「阅读排版」面板的 Slider 用）。
+   * 拖动过程中只改内存值做实时预览，落盘由调用方在松手时调 persistReaderTypography()。
+   */
+  setReaderFontScale(scale: number): void {
+    appSettings.readerFontScale = scale;
+    appSettings.readerFont = ReaderTypography.fontPresetOfScale(scale);
+  }
+
+  /** 正文行距倍数（连续值）。 */
+  setReaderLineScale(scale: number): void {
+    appSettings.readerLineScale = scale;
+    appSettings.readerLine = ReaderTypography.linePresetOfScale(scale);
+  }
+
+  /** 连续排版参数落盘（Slider 松手 / 面板关闭时调一次，避免拖动过程频繁写盘）。 */
+  persistReaderTypography(): void {
+    settingsStore.save();
+  }
+
+  /** 正文字号档位（快捷预设：写进连续倍数，两者保持一致）。 */
   setReaderFont(id: string): void {
+    appSettings.readerFontScale = ReaderTypography.fontScaleOfPreset(id);
     appSettings.readerFont = id;
     settingsStore.save();
   }
 
-  /** 正文行距档位。 */
+  /** 正文行距档位（快捷预设）。 */
   setReaderLine(id: string): void {
+    appSettings.readerLineScale = ReaderTypography.lineScaleOfPreset(id);
     appSettings.readerLine = id;
     settingsStore.save();
   }

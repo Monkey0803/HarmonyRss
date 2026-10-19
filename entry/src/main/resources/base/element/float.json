@@ -117,6 +117,10 @@
       "value": "12"
     },
     {
+      "name": "read_panel_label_width",
+      "value": "76"
+    },
+    {
       "name": "value_chip_height",
       "value": "32"
     },

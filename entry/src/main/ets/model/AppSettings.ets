@@ -37,9 +37,13 @@ export class AppSettings {
   @Trace logoKind: string = LOGO_OPTIONS.defaultValue;
   /** 自动刷新间隔：'off' | '15' | '30' | '60'（分钟，回到前台时判断是否过期）。 */
   @Trace autoRefresh: string = AUTO_REFRESH_OPTIONS.defaultValue;
-  /** 正文字号：'small' | 'medium' | 'large'。 */
+  /** 正文字号倍数（0.8–1.6，连续值；详情页「阅读排版」面板用 Slider 调）。 */
+  @Trace readerFontScale: number = 1.0;
+  /** 正文字号档位（'small' | 'medium' | 'large'）：由倍数推出的最接近预设，设置页档位行显示用。 */
   @Trace readerFont: string = READER_FONT_OPTIONS.defaultValue;
-  /** 正文行距：'compact' | 'normal' | 'loose'。 */
+  /** 正文行距倍数（1.2–2.2，连续值）。 */
+  @Trace readerLineScale: number = 1.7;
+  /** 正文行距档位（'compact' | 'normal' | 'loose'）：由倍数推出的最接近预设。 */
   @Trace readerLine: string = READER_LINE_OPTIONS.defaultValue;
   /** 正文字体：'system' | 'serif' | 'sans'。 */
   @Trace readerFontFamily: string = READER_FAMILY_OPTIONS.defaultValue;

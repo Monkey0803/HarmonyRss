@@ -26,10 +26,17 @@ export class ReaderStyle {
    * 否则首屏文字会被透明标题栏压住、文末文字会被底栏挡住。
    */
   buildCss(): string {
-    const size: number = ReaderTypography.fontSize(appSettings.readerFont);
-    const line: number = ReaderTypography.lineHeight(appSettings.readerLine);
+    const size: number = ReaderTypography.fontSizePx(appSettings.readerFontScale);
+    const line: number = size * ReaderTypography.lineHeightOf(appSettings.readerLineScale);
+    // 网页原文模式只能覆盖文本容器：字号 / 行距 / 字体族 + 图片自适应 + 浮层让位内边距。
+    // 栏宽 / 对齐 / 主题受站点布局限制，不在这里强行注入（面板里会说明）。
+    const family: string = ReaderTypography.fontFamilyCss(appSettings.readerFontFamily);
+    const familyRule: string = family.length > 0
+      ? 'font-family:' + family + ' !important;'
+      : '';
     return 'body,p,li,div,span,article,section{font-size:' + size + 'px !important;line-height:' + line +
-      ' !important;}img,video,table{max-width:100% !important;height:auto !important;}' +
+      'px !important;' + familyRule + '}' +
+      'img,video,table{max-width:100% !important;height:auto !important;}' +
       'body{-webkit-text-size-adjust:100% !important;word-wrap:break-word !important;' +
       'padding-top:' + safeArea.contentTopInsetVp + 'px !important;' +
       'padding-bottom:' + safeArea.contentBottomInsetVp + 'px !important;}';

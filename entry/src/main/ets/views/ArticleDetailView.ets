@@ -34,7 +34,7 @@ import { MaterialController } from '../service/MaterialController';
 import { CommonConstants } from '../common/constants/CommonConstants';
 import { articleActions } from '../service/ArticleActions';
 import { settingsViewModel } from '../viewmodel/SettingsViewModel';
-import { ChoiceOption, READER_FONT_OPTIONS } from '../model/SettingsOptions';
+import { ReadSettingsSheet } from './ReadSettingsSheet';
 import { ToastUtil } from '../common/utils/ToastUtil';
 import { readerStyle } from '../service/ReaderStyle';
 import { buildReaderDocument } from '../service/ReaderDocument';
@@ -76,6 +76,10 @@ export struct ArticleDetailView {
   private finished: boolean = false;
   /** 触底检测在途标记（避免过度滚动事件重复触发 runJavaScript）。 */
   private bottomCheckPending: boolean = false;
+  /** 「阅读排版」半模态面板显隐。 */
+  @Local showReadSheet: boolean = false;
+  /** 排版变化（重建 Reader 文档）后要落回的滚动位置（px）；-1 表示无需特殊恢复。 */
+  private pendingRestoreY: number = -1;
   /** 悬浮操作栏的页签控制器（页签栏只作为沉浸光感的生效区域）。 */
   private barTabsController: HdsTabsController = new HdsTabsController();
 
@@ -330,35 +334,6 @@ export struct ArticleDetailView {
     .radius($r('app.float.radius_card'))
   }
 
-  /**
-   * 阅读排版快捷菜单：不必跳设置页就能换正文字号。
-   * Reader 文档内联 CSS：改完重建文档重新加载；网页原文靠注入（幂等）。
-   */
-  @Builder
-  FontMenu() {
-    Menu() {
-      ForEach(READER_FONT_OPTIONS.options, (option: ChoiceOption) => {
-        MenuItem({ content: option.label })
-          .contentFontColor(appSettings.readerFont === option.id
-            ? $r('app.color.hm_brand')
-            : $r('app.color.hm_text_primary'))
-          .onClick(() => {
-            this.applyFontSize(option.id);
-          })
-      }, (option: ChoiceOption) => option.id)
-    }
-    .radius($r('app.float.radius_card'))
-  }
-
-  private applyFontSize(id: string): void {
-    settingsViewModel.setReaderFont(id);
-    if (this.viewMode === MODE_READER && this.readerHtml.length > 0) {
-      this.loadReaderDocIntoWeb();
-    } else if (this.viewMode === MODE_WEB) {
-      readerStyle.apply(this.webController);
-    }
-  }
-
   aboutToAppear(): void {
     this.startReader();
   }
@@ -396,7 +371,12 @@ export struct ArticleDetailView {
     if (article === undefined || article.progress <= 0) {
       return;
     }
-    const target: string = Math.round(article.progress).toString();
+    this.restoreScrollTo(controller, article.progress);
+  }
+
+  /** 用「带重试的 scrollTo 脚本」落到指定 px（文档可能还在长高，一次滚动会被顶掉）。 */
+  private restoreScrollTo(controller: webview.WebviewController, y: number): void {
+    const target: string = Math.round(y).toString();
     const script: string = '(function(){var y=' + target + ';var n=0;' +
       'var iv=setInterval(function(){window.scrollTo(0,y);n++;' +
       'if(n>12||window.scrollY>=y-4){clearInterval(iv);}},250);})()';
@@ -504,7 +484,7 @@ export struct ArticleDetailView {
       })
   }
 
-  /** 底栏操作：阅读排版（就地换正文字号）。 */
+  /** 底栏操作：阅读排版（打开半模态面板：字号/行距连续可调 + 栏宽/对齐/主题/字体）。 */
   @Builder
   FontAction() {
     SymbolGlyph($r('sys.symbol.textformat'))
@@ -512,7 +492,43 @@ export struct ArticleDetailView {
       .fontColor([$r('sys.color.font_primary')])
       .padding($r('app.float.space_xs'))
       .accessibilityText($r('app.string.row_reader_font'))
-      .bindMenu(this.FontMenu(), MaterialController.menuOptions({}, appSettings.immersiveOn))
+      .onClick(() => {
+        this.showReadSheet = true;
+      })
+  }
+
+  /** 排版面板内容（半模态：沉浸光感生效区域，材质由 bindSheet 的 options 注入）。 */
+  @Builder
+  ReadSheet() {
+    ReadSettingsSheet({
+      webMode: this.viewMode === MODE_WEB,
+      onApply: () => {
+        this.applyTypography();
+      }
+    })
+  }
+
+  /**
+   * 应用排版改动：Reader 模式重建文档（先记住当前滚动位置，重建完在 onPageEnd 落回），
+   * 网页原文模式只需重新注入覆盖样式（幂等）。
+   */
+  private applyTypography(): void {
+    if (this.viewMode === MODE_READER && this.readerHtml.length > 0) {
+      const controller: webview.WebviewController = this.readerController;
+      controller.runJavaScript('window.scrollY', (err: BusinessError, value: string) => {
+        if (!err) {
+          const y: number = Number(value);
+          if (Number.isFinite(y) && y > 0) {
+            this.pendingRestoreY = y;
+          }
+        }
+        this.loadReaderDocIntoWeb();
+      });
+      return;
+    }
+    if (this.viewMode === MODE_WEB) {
+      readerStyle.apply(this.webController);
+    }
   }
 
   /** 底栏操作：溢出菜单（重新提取 / 复制链接 / 浏览器打开 / 分享）。 */
@@ -693,7 +709,14 @@ export struct ArticleDetailView {
             })
             .onPageEnd(() => {
               this.loading = false;
-              this.restoreReaderProgress();
+              if (this.pendingRestoreY >= 0) {
+                // 排版变化导致的重建：落回改动前的阅读位置，避免「调字号跳回顶部」。
+                const y: number = this.pendingRestoreY;
+                this.pendingRestoreY = -1;
+                this.restoreScrollTo(this.readerController, y);
+              } else {
+                this.restoreReaderProgress();
+              }
             })
             .onOverScroll((event: OnOverScrollEvent) => {
               if (Math.abs(event.yOffset) >= OVERSCROLL_TRIGGER_VP) {
@@ -776,9 +799,9 @@ export struct ArticleDetailView {
           Row().width('100%').height(safeArea.contentTopInsetVp)
 
           Text(this.cur().content.length > 0 ? this.cur().content : $r('app.string.article_no_content'))
-            .fontSize(ReaderTypography.fontSize(appSettings.readerFont))
-            .lineHeight(ReaderTypography.fontSize(appSettings.readerFont)
-              * ReaderTypography.lineHeight(appSettings.readerLine))
+            .fontSize(ReaderTypography.fontSizePx(appSettings.readerFontScale))
+            .lineHeight(ReaderTypography.fontSizePx(appSettings.readerFontScale)
+              * ReaderTypography.lineHeightOf(appSettings.readerLineScale))
             .fontColor($r('app.color.hm_text_primary'))
             .width('100%')
 
@@ -852,5 +875,12 @@ export struct ArticleDetailView {
     .width('100%')
     .height('100%')
     .backgroundColor($r('app.color.hm_page_transparent'))
+    .bindSheet(this.showReadSheet, this.ReadSheet(), MaterialController.sheetOptions({
+      height: SheetSize.LARGE,
+      dragBar: true,
+      onDisappear: () => {
+        this.showReadSheet = false;
+      }
+    }, appSettings.immersiveOn))
   }
 }

@@ -20,6 +20,10 @@ export class PreferencesConstants {
   static readonly KEY_AUTO_REFRESH: string = 'autoRefresh';
   /** 阅读排版：正文字号档位。 */
   static readonly KEY_READER_FONT: string = 'readerFont';
+  /** 正文字号倍数（连续值）。 */
+  static readonly KEY_READER_FONT_SCALE: string = 'readerFontScale';
+  /** 正文行距倍数（连续值）。 */
+  static readonly KEY_READER_LINE_SCALE: string = 'readerLineScale';
   /** 阅读排版：正文行距档位。 */
   static readonly KEY_READER_LINE: string = 'readerLine';
   /** 阅读排版：字体族。 */

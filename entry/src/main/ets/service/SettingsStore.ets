@@ -10,6 +10,7 @@ import { BusinessError } from '@kit.BasicServicesKit';
 import { appSettings } from '../model/AppSettings';
 import { THEME_OPTIONS, LANGUAGE_OPTIONS, MATERIAL_TYPE_OPTIONS, MATERIAL_LEVEL_OPTIONS, BACKGROUND_OPTIONS, LOGO_OPTIONS, AUTO_REFRESH_OPTIONS, READER_FONT_OPTIONS, READER_LINE_OPTIONS, READER_FAMILY_OPTIONS, READER_WIDTH_OPTIONS, READER_ALIGN_OPTIONS, READER_THEME_OPTIONS } from '../model/SettingsOptions';
 import { PreferencesConstants } from '../common/constants/PreferencesConstants';
+import { ReaderTypography } from '../common/constants/SettingsConstants';
 
 export class SettingsStore {
   private store: preferences.Preferences | undefined = undefined;
@@ -47,6 +48,16 @@ export class SettingsStore {
         store.getSync(PreferencesConstants.KEY_READER_FONT, appSettings.readerFont) as string);
       appSettings.readerLine = READER_LINE_OPTIONS.normalize(
         store.getSync(PreferencesConstants.KEY_READER_LINE, appSettings.readerLine) as string);
+      // 字号 / 行距已改为连续倍数：老库里只有档位 id 时按预设换算成倍数（迁移），
+      // 之后两者保持一致（倍数为准，档位由倍数推出，供设置页档位行显示）。
+      const fontScale: number = store.getSync(PreferencesConstants.KEY_READER_FONT_SCALE,
+        ReaderTypography.fontScaleOfPreset(appSettings.readerFont)) as number;
+      const lineScale: number = store.getSync(PreferencesConstants.KEY_READER_LINE_SCALE,
+        ReaderTypography.lineScaleOfPreset(appSettings.readerLine)) as number;
+      appSettings.readerFontScale = fontScale;
+      appSettings.readerLineScale = lineScale;
+      appSettings.readerFont = ReaderTypography.fontPresetOfScale(fontScale);
+      appSettings.readerLine = ReaderTypography.linePresetOfScale(lineScale);
       appSettings.readerFontFamily = READER_FAMILY_OPTIONS.normalize(
         store.getSync(PreferencesConstants.KEY_READER_FAMILY, appSettings.readerFontFamily) as string);
       appSettings.readerWidth = READER_WIDTH_OPTIONS.normalize(
@@ -92,6 +103,8 @@ export class SettingsStore {
       store.putSync(PreferencesConstants.KEY_AUTO_REFRESH, appSettings.autoRefresh);
       store.putSync(PreferencesConstants.KEY_READER_FONT, appSettings.readerFont);
       store.putSync(PreferencesConstants.KEY_READER_LINE, appSettings.readerLine);
+      store.putSync(PreferencesConstants.KEY_READER_FONT_SCALE, appSettings.readerFontScale);
+      store.putSync(PreferencesConstants.KEY_READER_LINE_SCALE, appSettings.readerLineScale);
       store.putSync(PreferencesConstants.KEY_READER_FAMILY, appSettings.readerFontFamily);
       store.putSync(PreferencesConstants.KEY_READER_WIDTH, appSettings.readerWidth);
       store.putSync(PreferencesConstants.KEY_READER_ALIGN, appSettings.readerAlign);
