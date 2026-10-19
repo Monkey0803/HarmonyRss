@@ -67,7 +67,7 @@ export struct FeedArticlesView {
   Header() {
     Column({ space: $r('app.float.space_m') }) {
       // 透明标题栏占位：首屏顶部预留「状态栏 + 标题栏」高度，滚动时随内容上移，内容即可穿过标题栏下方。
-      Row().width('100%').height(safeArea.topInsetVp + CommonConstants.TITLE_BAR_HEIGHT_VP)
+      Row().width('100%').height(safeArea.contentTopInsetVp)
 
       Row({ space: $r('app.float.space_s') }) {
         Column({ space: $r('app.float.space_xs') }) {

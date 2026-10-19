@@ -81,11 +81,12 @@ function bodyRule(p: ReaderPalette): string {
   return rule + '}';
 }
 
-/** 主题相关元素规则（链接 / 引用 / 代码 / 表格 / 图注）。 */
-function elementRules(p: ReaderPalette): string {
+/** 主题相关元素规则（链接 / 引用 / 代码 / 表格 / 图注）。topPad / bottomPad 为浮层让位的内边距（CSS px）。 */
+function elementRules(p: ReaderPalette, topPad: number, bottomPad: number): string {
   const align: string = ReaderTypography.textAlignCss(appSettings.readerAlign);
   const width: number = ReaderTypography.contentWidthPx(appSettings.readerWidth);
-  return '.reader{max-width:' + width + 'px;margin:0 auto;padding:16px 20px 56px;}' +
+  return '.reader{max-width:' + width + 'px;margin:0 auto;padding:' + (16 + topPad) + 'px 20px ' +
+    (56 + bottomPad) + 'px;}' +
     '.reader p,.reader li,.reader blockquote{text-align:' + align + ';}' +
     '.reader a{color:' + p.link + ';text-decoration:none;word-break:break-word;}' +
     '.reader code{background:' + p.codeBg + ';padding:.1em .35em;border-radius:4px;font-family:monospace;font-size:.92em;}' +
@@ -124,12 +125,17 @@ function darkOverride(): string {
     '}';
 }
 
-/** 阅读 CSS（正文排版 + 主题）。 */
-export function readerCss(): string {
+/**
+ * 阅读 CSS（正文排版 + 主题）。
+ *
+ * topPad / bottomPad：为浮在正文之上的标题栏 / 悬浮底栏让出的内边距（CSS px）。
+ * 沉浸式布局下正文铺满整页、从两栏下方穿过，正文首尾必须自己留出这段空间才不会被挡住。
+ */
+export function readerCss(topPad: number = 0, bottomPad: number = 0): string {
   const palette: ReaderPalette = paletteOf(appSettings.readerTheme);
   const scheme: string = palette.system ? ':root{color-scheme:light dark;}' : ':root{color-scheme:' +
     (appSettings.readerTheme === ReaderTheme.DARK ? 'dark' : 'light') + ';}';
-  let css: string = scheme + bodyRule(palette) + structuralRules() + elementRules(palette);
+  let css: string = scheme + bodyRule(palette) + structuralRules() + elementRules(palette, topPad, bottomPad);
   if (palette.system) {
     css += darkOverride();
   }
@@ -137,10 +143,10 @@ export function readerCss(): string {
 }
 
 /** 拼一份完整 HTML 文档（片段已净化，可直接内嵌）。 */
-export function buildReaderDocument(bodyHtml: string): string {
+export function buildReaderDocument(bodyHtml: string, topPad: number = 0, bottomPad: number = 0): string {
   return '<!DOCTYPE html><html><head>' +
     '<meta charset="utf-8">' +
     '<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">' +
-    '<style>' + readerCss() + '</style>' +
+    '<style>' + readerCss(topPad, bottomPad) + '</style>' +
     '</head><body><article class="reader">' + bodyHtml + '</article></body></html>';
 }

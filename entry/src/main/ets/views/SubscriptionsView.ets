@@ -371,7 +371,7 @@ export struct SubscriptionsView {
   build() {
     Column({ space: $r('app.float.space_m') }) {
       // 透明标题栏占位：固定页头（输入区）整体下移，避免被透明标题栏遮挡。
-      Row().width('100%').height(safeArea.topInsetVp + CommonConstants.TITLE_BAR_HEIGHT_VP)
+      Row().width('100%').height(safeArea.contentTopInsetVp)
 
       this.Editor()
 

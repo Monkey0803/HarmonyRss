@@ -8,7 +8,7 @@
 
 import { hdsMaterial, SystemMaterialParams } from '@kit.UIDesignKit';
 import { uiMaterial } from '@kit.ArkUI';
-import { BusinessError, deviceInfo } from '@kit.BasicServicesKit';
+import { BusinessError } from '@kit.BasicServicesKit';
 import { MaterialKind, MaterialGrade } from '../common/constants/SettingsConstants';
 
 export class MaterialController {
@@ -89,51 +89,4 @@ export class MaterialController {
     return result;
   }
 
-  /**
-   * 设备是否具备「普通组件沉浸光感」（通用属性 systemMaterial + uiMaterial.ImmersiveMaterial，SDK 26.0.0 起）。
-   *
-   * 该能力新于工程声明的兼容版本 6.1.0(23)，所以只能运行时探测；探测用的 apiAvailable 也是 26.0.0 的接口，
-   * 老版本设备上调用会失败，这里连同探测一起 catch —— 失败即视为不支持，调用方走实色兜底。
-   */
-  static componentMaterialSupported(immersiveOn: boolean): boolean {
-    if (!immersiveOn) {
-      return false;
-    }
-    try {
-      if (!deviceInfo.apiAvailable('26.0.0')) {
-        return false;
-      }
-      return uiMaterial.isImmersiveMaterialSupported();
-    } catch (err) {
-      return false;
-    }
-  }
-
-  /**
-   * 普通 ArkUI 组件（Row / Column 等自绘悬浮栏）的沉浸光感背板材质，走通用属性 systemMaterial。
-   *
-   * 与 HDS 轨道的 SystemMaterialParams 不是同一套参数：这里用 uiMaterial.ImmersiveStyle 描述厚度，
-   * 官方建议悬浮工具栏用 ULTRA_THIN（最通透的一档）。colorInvert 让栏内文字 / 图标随背板自动反色，
-   * 但要求这些颜色用 sys.color.font_* 这类特殊系统资源值，用业务色不会自适应。
-   *
-   * 设备不具备该能力（低算力 / 低版本 / 总开关关闭）或构造失败时返回 undefined，
-   * 调用方退回实色背板，保证栏内文字始终可读。
-   */
-  static componentMaterial(immersiveOn: boolean): uiMaterial.Material | undefined {
-    if (!MaterialController.componentMaterialSupported(immersiveOn)) {
-      return undefined;
-    }
-    try {
-      return new uiMaterial.ImmersiveMaterial({
-        style: uiMaterial.ImmersiveStyle.ULTRA_THIN,
-        colorInvert: true,
-        interactive: true,
-        lightEffect: { color: $r('sys.color.interactive_click') }
-      });
-    } catch (err) {
-      const error: BusinessError = err as BusinessError;
-      console.error('uiMaterial.ImmersiveMaterial failed: ' + error.code.toString());
-      return undefined;
-    }
-  }
 }

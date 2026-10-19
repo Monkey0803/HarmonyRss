@@ -200,6 +200,38 @@ struct Index {
   }
 
   /**
+   * 常驻材质标题栏样式：不做「滚动渐显」，背板与材质一直在。
+   *
+   * 详情页的正文是 Web / Reader 文档（不是 ArkUI 滚动容器），滚动偏移没法通过 bindToScrollable
+   * 喂给标题栏，渐显永远不会触发；而正文又铺满整页从标题栏下方穿过，若背板透明，文章文字会直接
+   * 透到标题下面。所以详情页固定用这一份：观感与首页标题栏滚起来之后一致。
+   */
+  private stickyTitleStyle(): TitleBarStyleOptions {
+    const scrolled: HdsNavigationTitleBarStyle = {
+      backgroundStyle: { backgroundColor: $r('sys.color.comp_background_gray') }
+    };
+    const style: TitleBarStyleOptions = {
+      originalStyle: scrolled,
+      scrollEffectStyle: scrolled,
+      systemMaterialEffect: this.materialParams()
+    };
+    return style;
+  }
+
+  /** 详情页标题栏配置：常驻材质 + 当前文章标题。 */
+  private articleTitleOptions(): HdsNavigationTitleBarOptions {
+    const title: HdsNavigationTitle = { mainTitle: this.articleTitle() };
+    const content: TitleBarContentOptions = { title: title };
+    const options: HdsNavigationTitleBarOptions = {
+      avoidLayoutSafeArea: true,
+      enableComponentSafeArea: false,
+      content: content,
+      style: this.stickyTitleStyle()
+    };
+    return options;
+  }
+
+  /**
    * 目的页转场：入场「自右滑入 + 淡入」，出场（pop）反向滑出并淡出；
    * 被覆盖 / 被重新露出的那一侧保持原位不动。
    *
@@ -303,7 +335,7 @@ struct Index {
       HdsNavDestination() {
         ArticleDetailView({ scroller: this.articleScroller })
       }
-      .titleBar(this.titleOptions(this.articleTitle()))
+      .titleBar(this.articleTitleOptions())
       .titleMode(HdsNavDestinationTitleMode.MINI)
       .backgroundColor($r('app.color.hm_page_transparent'))
       .bindToScrollable([this.articleScroller])

@@ -3,9 +3,11 @@
  *
  * 应用在 EntryAbility 里调用了 setWindowLayoutFullScreen(true)，布局不做系统栏避让。
  * 顶部由 HDS 标题栏的 enableComponentSafeArea / avoidLayoutSafeArea 处理，界面无需自己估算；
- * 这里只提供底部需要的尺寸：
+ * 这里提供「内容要为浮层让出多少」：
+ *   - contentTopInsetVp：可滚动内容顶部预留量（= 系统状态栏 + 标题栏高度），
+ *     供把占位块放进滚动内容里的页面使用（标题栏是浮层，内容从它下方穿过）；
  *   - contentBottomInsetVp：可滚动内容底部预留量（= 悬浮页签栏避让高度 + 系统导航条高度）；
- *   - bottomInsetVp：系统导航条高度，用于无页签栏的 NavDestination 页面底部内缩。
+ *   - bottomInsetVp：系统导航条高度，用于底部没有悬浮栏的页面内缩。
  *
  * 单位统一换算成 vp，方便直接用于布局；旋转 / 分屏 / 折叠时由 avoidAreaChange 刷新。
  */
@@ -14,6 +16,7 @@ import { window } from '@kit.ArkUI';
 import { common } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
+import { CommonConstants } from '../common/constants/CommonConstants';
 
 const DOMAIN: number = 0x0000;
 const TAG: string = 'SafeAreaController';
@@ -24,6 +27,8 @@ export class SafeAreaController {
   @Trace topInsetVp: number = 0;
   /** 底部系统导航条高度（vp）。 */
   @Trace bottomInsetVp: number = 0;
+  /** 可滚动内容顶部预留量（vp）= 系统状态栏 + HDS 紧凑标题栏高度。 */
+  @Trace contentTopInsetVp: number = 0;
   /** 可滚动内容底部预留量（vp）= 悬浮页签栏避让高度 + 系统导航条高度。 */
   @Trace contentBottomInsetVp: number = 0;
 
@@ -98,6 +103,7 @@ export class SafeAreaController {
       hilog.error(DOMAIN, TAG, 'getWindowAvoidArea(TYPE_NAVIGATION_INDICATOR) failed: %{public}d', error.code);
       this.bottomInsetVp = 0;
     }
+    this.contentTopInsetVp = this.topInsetVp + CommonConstants.TITLE_BAR_HEIGHT_VP;
     this.contentBottomInsetVp = this.tabClearanceVp + this.bottomInsetVp;
   }
 }

@@ -5,8 +5,8 @@
  *   保留段落 / 标题 / 图片 / 列表 / 代码 / 引用，离线可读（正文已缓存到本地库）。
  * 网页原文（WEB）：ArkWeb 直接加载原文链接，作为提取失败或用户主动切换时的兜底。
  * 纯文本（无链接且提取失败时）：退回 feed 文本。
- * 文章标题由 HdsNavDestination 的标题栏显示（见 Index.articleTitle），正文上方不再有信息行；
- * 排版 / 更多 / 模式切换 / 分享 / 收藏等操作收在贴底的悬浮胶囊里，见 FloatingBar。
+ * 文章标题由 HdsNavDestination 的标题栏显示（见 Index.articleTitle）；正文上方没有信息行，
+ * 排版 / 更多 / 模式切换 / 收藏等操作收在贴底的悬浮操作栏里（HDS 悬浮页签栏承载，见 FloatingBar）。
  * 只从 FeedViewModel 读取当前文章与正文，不在视图里做业务逻辑。
  */
 
@@ -20,13 +20,16 @@ import {
   SnackBarMessageOptions,
   SnackBarOperationOptions,
   SnackBarStyleOptions,
-  SnackBarOperationType
+  SnackBarOperationType,
+  HdsTabs,
+  HdsTabsController,
+  HdsTabsFloatingStyle,
+  HdsBarWidthRangeOptions
 } from '@kit.UIDesignKit';
-import { SymbolGlyphModifier, uiMaterial } from '@kit.ArkUI';
+import { display, SymbolGlyphModifier } from '@kit.ArkUI';
 import { Article } from '../model/Feed';
 import { feedViewModel } from '../viewmodel/FeedViewModel';
 import { safeArea } from '../service/SafeAreaController';
-import { gripSensor } from '../service/GripSensor';
 import { MaterialController } from '../service/MaterialController';
 import { CommonConstants } from '../common/constants/CommonConstants';
 import { articleActions } from '../service/ArticleActions';
@@ -53,38 +56,6 @@ const OVERSCROLL_TRIGGER_VP: number = 24;
 /** 空文章占位：@Builder 内不能声明局部变量，用辅助方法返回兜底对象避免 undefined 判空。 */
 const EMPTY_ARTICLE: Article = new Article('', '', '', '', '', '', '', 0);
 
-/**
- * 悬浮底栏的背板。
- *
- * 沉浸光感材质只能用 SDK 26.0.0 起的通用属性 systemMaterial 设置，而工程兼容版本是 6.1.0(23)：
- * 写成声明式属性（.systemMaterial(...)）既无法在低版本设备上兜底（属性方法不存在会直接抛错），
- * 也必然留下编译期 API 兼容告警。改成 AttributeModifier 的命令式设置后，调用点可以 try/catch ——
- * 这既是低版本设备的兜底，也是编译器识别「已做兼容处理」、不再报 since 告警的方式。
- */
-class BarBackdropModifier implements AttributeModifier<ColumnAttribute> {
-  private readonly immersiveOn: boolean;
-
-  constructor(immersiveOn: boolean) {
-    this.immersiveOn = immersiveOn;
-  }
-
-  applyNormalAttribute(instance: ColumnAttribute): void {
-    const material: uiMaterial.Material | undefined = MaterialController.componentMaterial(this.immersiveOn);
-    try {
-      if (material === undefined) {
-        instance.backgroundColor($r('app.color.hm_card_background'));
-        return;
-      }
-      instance.systemMaterial(material);
-    } catch (err) {
-      const error: BusinessError = err as BusinessError;
-      hilog.warn(DOMAIN, TAG, 'systemMaterial failed: %{public}d', error.code);
-      // 材质不可用：退回实色卡片背板，保证栏内文字可读。
-      instance.backgroundColor($r('app.color.hm_card_background'));
-    }
-  }
-}
-
 @ComponentV2
 export struct ArticleDetailView {
   /** 当前阅读模式。 */
@@ -105,17 +76,8 @@ export struct ArticleDetailView {
   private finished: boolean = false;
   /** 触底检测在途标记（避免过度滚动事件重复触发 runJavaScript）。 */
   private bottomCheckPending: boolean = false;
-
-  /**
-   * 悬浮底栏的背板修饰器。
-   *
-   * 用 @Computed 缓存：沉浸式开关不变时实例稳定（不重复设置属性），开关一变就换成新实例 ——
-   * 传入的修饰器实例变化会触发 applyNormalAttribute 重跑，底栏背板即时在「材质 / 实色」之间切换。
-   */
-  @Computed
-  get backdropModifier(): BarBackdropModifier {
-    return new BarBackdropModifier(appSettings.immersiveOn);
-  }
+  /** 悬浮操作栏的页签控制器（页签栏只作为沉浸光感的生效区域）。 */
+  private barTabsController: HdsTabsController = new HdsTabsController();
 
   private hostContext(): common.UIAbilityContext {
     const context: common.Context | undefined = this.getUIContext().getHostContext();
@@ -212,7 +174,7 @@ export struct ArticleDetailView {
     if (article === undefined || this.readerHtml.length === 0) {
       return;
     }
-    const doc: string = buildReaderDocument(this.readerHtml);
+    const doc: string = buildReaderDocument(this.readerHtml, safeArea.contentTopInsetVp, safeArea.contentBottomInsetVp);
     try {
       this.readerController.loadData(doc, 'text/html', 'UTF-8', article.link);
     } catch (err) {
@@ -592,73 +554,94 @@ export struct ArticleDetailView {
       })
   }
 
-  /** 底栏第一行：阅读导航（上一篇 / 下一篇 / 下一条未读），主操作随握持手镜像左右。 */
+  /**
+   * 悬浮操作栏：阅读导航（上一篇 / 下一篇 / 下一条未读）+ 文章操作
+   * （更多 / 排版 / 模式切换 / 收藏），一行铺在 HDS 悬浮页签栏里。
+   *
+   * 为什么是「页签栏」：沉浸光感是区域级能力 —— 只有 Navigation/NavDestination 标题栏与
+   * Tabs 的底部 TabBar 属于生效区域，内容区里给普通容器挂 systemMaterial 会静默失效
+   * （系统日志：Material inactive: out of scope）。所以这里用 HdsTabs 的悬浮页签栏承载，
+   * 材质走 HDS 轨道（systemMaterialEffect，6.1.0(23) 起），与首页页签栏同一套参数与观感。
+   *
+   * 智感握姿：交给 HdsTabsFloatingStyle.adaptToHandedness，整条悬浮栏随握持手左右切换。
+   */
   @Builder
-  NavRow() {
+  BarContent() {
     Row({ space: $r('app.float.space_s') }) {
-      if (gripSensor.gripLeft) {
-        this.NextUnreadNav()
-        Blank()
-        this.PrevNav()
-        this.NextNav()
-      } else {
-        this.PrevNav()
-        this.NextNav()
-        Blank()
-        this.NextUnreadNav()
-      }
+      this.PrevNav()
+      this.NextNav()
+      this.NextUnreadNav()
+      Blank()
+      this.MoreAction()
+      this.FontAction()
+      this.ModeAction()
+      this.StarAction()
     }
     .width('100%')
-  }
-
-  /** 底栏第二行：更多 / 排版 / 模式切换 / 收藏，主操作（收藏）贴握持手一侧。分享收在「更多」菜单里。 */
-  @Builder
-  IconRow() {
-    Row({ space: $r('app.float.space_2xl') }) {
-      if (gripSensor.gripLeft) {
-        this.StarAction()
-        this.ModeAction()
-        this.FontAction()
-        this.MoreAction()
-      } else {
-        this.MoreAction()
-        this.FontAction()
-        this.ModeAction()
-        this.StarAction()
-      }
-    }
-    .width('100%')
-    .justifyContent(gripSensor.gripLeft ? FlexAlign.Start : FlexAlign.End)
+    .height('100%')
   }
 
   /**
-   * 悬浮底栏：与底部页签栏同位（贴屏幕底部悬浮、左右留白），承载阅读导航
-   * （上一篇 / 下一篇 / 下一条未读）与文章操作（模式切换 / 收藏 / 分享）。
+   * 悬浮操作栏样式：与首页悬浮页签栏同一套（沉浸光感材质 + 智感握姿 + 底部避让）。
    *
-   * 智感握姿：识别到左手握持时整体镜像 —— 主操作（下一条未读、收藏）挪到左侧拇指可达处，
-   * 右手握持即界面本来的排布（见 GripSensor 的镜像约定）。
-   *
-   * 背板走 attributeModifier 的命令式设置（见 BarBackdropModifier），而不写成声明式属性 ——
-   * 沉浸光感材质 systemMaterial 是 SDK 26.0.0 起的接口，工程兼容版本是 6.1.0(23)：
-   * 声明式写法无法 try/catch 兜底，低版本设备上会直接崩，且必然留下 API 兼容告警。
+   * barWidth 三个断点必须显式锁成同一个值：不设的话系统会按断点套默认宽度，
+   * 悬浮栏（及其玻璃背板）会比内容窄，图标就露在背板外面。
    */
+  private barFloatingStyle(): HdsTabsFloatingStyle {
+    const width: number = this.barWidthVp();
+    // 三个断点锁成同一个值（同一个值也要各自写全，对象字面量必须对应声明类型）。
+    const widths: HdsBarWidthRangeOptions = {
+      smallWidth: width,
+      mediumWidth: width,
+      largeWidth: width
+    };
+    const style: HdsTabsFloatingStyle = {
+      barWidth: widths,
+      adaptToHandedness: appSettings.gripEnabled,
+      barBottomMargin: safeArea.bottomInsetVp,
+      systemMaterialEffect: MaterialController.params(appSettings.materialType,
+        appSettings.materialLevel, appSettings.immersiveOn)
+    };
+    return style;
+  }
+
+  /** 悬浮操作栏宽度（vp）：页面宽度减去两侧留白，与首页页签栏一致地「贴着两侧浮」。 */
+  private barWidthVp(): number {
+    try {
+      const screenPx: number = display.getDefaultDisplaySync().width;
+      return this.getUIContext().px2vp(screenPx) - 2 * CommonConstants.BAR_SIDE_MARGIN_VP;
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.warn(DOMAIN, TAG, 'display info failed: %{public}d', error.code);
+      return 0;
+    }
+  }
+
+  /**
+   * 操作栏（HdsTabs）在页面里占的条带高度：悬浮页签栏高度 + 系统导航条避让。
+   * 只占底部这一条，空页签内容不会盖住正文、也不会吃掉正文的手势。
+   */
+  private barStripHeight(): number {
+    return safeArea.bottomInsetVp + CommonConstants.TAB_BAR_HEIGHT_VP;
+  }
+
   @Builder
   FloatingBar() {
     if (this.hasArticle()) {
-      Column({ space: $r('app.float.space_s') }) {
-        this.NavRow()
-        this.IconRow()
+      HdsTabs({ controller: this.barTabsController }) {
+        // 唯一页签：内容为空 —— 这里只借「底部悬浮页签栏」这个沉浸光感生效区域承载操作栏。
+        TabContent() {
+        }
+        .tabBar(this.BarContent())
       }
+      .barPosition(BarPosition.End)
+      .barOverlap(true)
+      .vertical(false)
+      // 禁用左右滑动切页签：页签栏只是容器。
+      .scrollable(false)
+      .barFloatingStyle(this.barFloatingStyle())
       .width('100%')
-      .padding({
-        left: $r('app.float.space_l'),
-        right: $r('app.float.space_l'),
-        top: $r('app.float.space_m'),
-        bottom: $r('app.float.space_m')
-      })
-      .borderRadius($r('app.float.radius_card'))
-      .margin({ left: $r('app.float.space_l'), right: $r('app.float.space_l') })
-      .attributeModifier(this.backdropModifier)
+      .height(this.barStripHeight())
     }
   }
 
@@ -691,7 +674,7 @@ export struct ArticleDetailView {
             .domStorageAccess(false)
             .horizontalScrollBarAccess(false)
             .onControllerAttached(() => {
-              const doc: string = buildReaderDocument(this.readerHtml);
+              const doc: string = buildReaderDocument(this.readerHtml, safeArea.contentTopInsetVp, safeArea.contentBottomInsetVp);
               try {
                 this.readerController.loadData(doc, 'text/html', 'UTF-8', this.cur().link);
               } catch (err) {
@@ -726,7 +709,7 @@ export struct ArticleDetailView {
         }
       }
       .width('100%')
-      .layoutWeight(1)
+      .height('100%')
       .clip(true)
     }
   }
@@ -769,7 +752,7 @@ export struct ArticleDetailView {
         }
       }
       .width('100%')
-      .layoutWeight(1)
+      .height('100%')
       .clip(true)
     }
   }
@@ -780,6 +763,9 @@ export struct ArticleDetailView {
     if (this.hasArticle()) {
       Scroll(this.scroller) {
         Column({ space: $r('app.float.space_m') }) {
+          // 透明标题栏占位：放在滚动内容里（不是外层固定占位），正文才会从标题栏下方穿过。
+          Row().width('100%').height(safeArea.contentTopInsetVp)
+
           Text(this.cur().content.length > 0 ? this.cur().content : $r('app.string.article_no_content'))
             .fontSize(ReaderTypography.fontSize(appSettings.readerFont))
             .lineHeight(ReaderTypography.fontSize(appSettings.readerFont)
@@ -805,11 +791,16 @@ export struct ArticleDetailView {
           }
         }
         .width('100%')
-        .padding({ left: $r('app.float.space_l'), right: $r('app.float.space_l'), bottom: $r('app.float.space_3xl') })
+        .padding({
+          left: $r('app.float.space_l'),
+          right: $r('app.float.space_l'),
+          // 底部预留：让文末文字能滚到悬浮底栏之上（含系统导航条避让）。
+          bottom: safeArea.contentBottomInsetVp
+        })
         .alignItems(HorizontalAlign.Start)
       }
       .width('100%')
-      .layoutWeight(1)
+      .height('100%')
       .scrollBar(BarState.Off)
       .clip(false)
       .align(Alignment.TopStart)
@@ -842,18 +833,15 @@ export struct ArticleDetailView {
   }
 
   build() {
-    Column() {
-      // 透明标题栏占位：首屏内容顶部预留「状态栏 + 标题栏」高度（titleOptions 关闭了组件级安全区）。
-      Row().width('100%').height(safeArea.topInsetVp + CommonConstants.TITLE_BAR_HEIGHT_VP)
-
-      // 标题栏（文章标题在返回键右侧）之下直接就是正文；来源 / 时间的快捷入口已收进悬浮底栏。
+    Stack({ alignContent: Alignment.Bottom }) {
+      // 正文铺满整页（含标题栏与悬浮底栏下方），从两栏下方穿过 —— 与首页 barOverlap(true) 同源；
+      // 首尾让位由正文自己留：Reader 文档 / 网页原文走 CSS 内边距，纯文本走滚动内容里的占位与底部内边距。
       this.BodySwitch()
+
       this.FloatingBar()
     }
     .width('100%')
     .height('100%')
-    // 详情页没有页签栏：底部按系统导航条内缩 —— 悬浮底栏贴在这个避让区上沿，与首页悬浮页签栏同位。
-    .padding({ bottom: safeArea.bottomInsetVp })
     .backgroundColor($r('app.color.hm_page_transparent'))
   }
 }
