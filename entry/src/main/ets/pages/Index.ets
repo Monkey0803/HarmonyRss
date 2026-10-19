@@ -221,8 +221,10 @@ struct Index {
    * 透到标题下面。所以详情页固定用这一份：观感与首页标题栏滚起来之后一致。
    */
   private stickyTitleStyle(): TitleBarStyleOptions {
+    // 详情页正文是 Web / Reader 文档，材质与背景模糊都采样不到它的画面（实测标题栏背后无模糊），
+    // 所以这里固定补一层半透明底：标题栏在正文之上始终读得出是一块玻璃面，标题也始终清晰。
     const scrolled: HdsNavigationTitleBarStyle = {
-      backgroundStyle: { backgroundColor: this.titleBackdropColor() }
+      backgroundStyle: { backgroundColor: $r('app.color.hm_title_scrim') }
     };
     const style: TitleBarStyleOptions = {
       originalStyle: scrolled,
