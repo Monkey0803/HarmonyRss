@@ -165,6 +165,10 @@
       "value": "Title bar scrolls with content"
     },
     {
+      "name": "row_status_bar_scroll",
+      "value": "Status bar scrolls with content"
+    },
+    {
       "name": "row_theme",
       "value": "Theme"
     },

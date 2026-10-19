@@ -15,6 +15,7 @@ export class PreferencesConstants {
   static readonly KEY_BACKGROUND_IMAGE_PATH: string = 'backgroundImagePath';
   /** 标题栏是否随内容滚动（动态隐藏标题栏）。 */
   static readonly KEY_TITLE_BAR_SCROLL: string = 'titleBarScrollsWithContent';
+  static readonly KEY_STATUS_BAR_SCROLL: string = 'statusBarScrollsWithContent';
   /** 自动刷新间隔（'off' | '15' | '30' | '60'）。 */
   static readonly KEY_AUTO_REFRESH: string = 'autoRefresh';
   /** 阅读排版：正文字号档位。 */

@@ -88,6 +88,12 @@ export class SettingsViewModel {
     settingsStore.save();
   }
 
+  /** 切换「状态栏随内容滚动」：开启后滚动内容时状态栏会一并收起（沉浸光感建议开）。 */
+  setStatusBarScroll(value: boolean): void {
+    appSettings.statusBarScrollsWithContent = value;
+    settingsStore.save();
+  }
+
   /** 自动刷新间隔：'off' | '15' | '30' | '60'（分钟）；同时重排后台任务。 */
   setAutoRefresh(id: string, context: common.Context): void {
     appSettings.autoRefresh = id;

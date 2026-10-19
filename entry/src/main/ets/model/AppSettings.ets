@@ -27,6 +27,8 @@ export class AppSettings {
   @Trace backgroundImagePath: string = '';
   /** 标题栏是否随内容滚动：false 时标题栏固定、内容从标题栏下滚过；true 时滚动会收起标题栏。 */
   @Trace titleBarScrollsWithContent: boolean = false;
+  /** 状态栏是否随内容滚动：true 时滚动内容会一并收起状态栏（沉浸光感建议开启，交给用户决定）。 */
+  @Trace statusBarScrollsWithContent: boolean = false;
   /** 智感握姿：悬浮页签是否跟随握持手。 */
   @Trace gripEnabled: boolean = true;
   /** 防窥保护总开关。 */

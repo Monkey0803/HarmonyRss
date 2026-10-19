@@ -29,6 +29,8 @@ export class SettingsStore {
         store.getSync(PreferencesConstants.KEY_BACKGROUND_IMAGE_PATH, appSettings.backgroundImagePath) as string;
       const titleBarScroll: boolean =
         store.getSync(PreferencesConstants.KEY_TITLE_BAR_SCROLL, appSettings.titleBarScrollsWithContent) as boolean;
+      const statusBarScroll: boolean =
+        store.getSync(PreferencesConstants.KEY_STATUS_BAR_SCROLL, appSettings.statusBarScrollsWithContent) as boolean;
       appSettings.themeMode = THEME_OPTIONS.normalize(theme);
       appSettings.languageMode = LANGUAGE_OPTIONS.normalize(language);
       appSettings.materialType = MATERIAL_TYPE_OPTIONS.normalize(materialType);
@@ -36,6 +38,7 @@ export class SettingsStore {
       appSettings.backgroundKind = BACKGROUND_OPTIONS.normalize(backgroundKind);
       appSettings.backgroundImagePath = backgroundImagePath;
       appSettings.titleBarScrollsWithContent = titleBarScroll;
+      appSettings.statusBarScrollsWithContent = statusBarScroll;
       appSettings.logoKind = LOGO_OPTIONS.normalize(
         store.getSync(PreferencesConstants.KEY_LOGO_KIND, appSettings.logoKind) as string);
       appSettings.autoRefresh = AUTO_REFRESH_OPTIONS.normalize(
@@ -80,6 +83,7 @@ export class SettingsStore {
       store.putSync(PreferencesConstants.KEY_BACKGROUND_KIND, appSettings.backgroundKind);
       store.putSync(PreferencesConstants.KEY_BACKGROUND_IMAGE_PATH, appSettings.backgroundImagePath);
       store.putSync(PreferencesConstants.KEY_TITLE_BAR_SCROLL, appSettings.titleBarScrollsWithContent);
+      store.putSync(PreferencesConstants.KEY_STATUS_BAR_SCROLL, appSettings.statusBarScrollsWithContent);
       store.putSync(PreferencesConstants.KEY_IMMERSIVE_ON, appSettings.immersiveOn);
       store.putSync(PreferencesConstants.KEY_POINT_LIGHT, appSettings.pointLightEnabled);
       store.putSync(PreferencesConstants.KEY_GRIP_ENABLED, appSettings.gripEnabled);

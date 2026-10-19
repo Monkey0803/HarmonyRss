@@ -165,6 +165,10 @@
       "value": "标题栏随内容滚动"
     },
     {
+      "name": "row_status_bar_scroll",
+      "value": "状态栏随内容滚动"
+    },
+    {
       "name": "row_theme",
       "value": "主题"
     },

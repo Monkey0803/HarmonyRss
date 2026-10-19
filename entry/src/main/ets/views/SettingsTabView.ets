@@ -46,6 +46,7 @@ enum SettingField {
   GRIP = 'grip',
   ANTI_PEEP = 'antiPeep',
   TITLE_BAR_SCROLL = 'titleBarScroll',
+  STATUS_BAR_SCROLL = 'statusBarScroll',
   AUTO_REFRESH = 'autoRefresh',
   READER_FONT = 'readerFont',
   READER_LINE = 'readerLine',
@@ -212,6 +213,8 @@ struct SwitchSettingRow {
         return appSettings.antiPeepEnabled;
       case SettingField.TITLE_BAR_SCROLL:
         return appSettings.titleBarScrollsWithContent;
+      case SettingField.STATUS_BAR_SCROLL:
+        return appSettings.statusBarScrollsWithContent;
       case SettingField.NOTIFY_NEW:
         return appSettings.notifyNewArticles;
       default:
@@ -485,6 +488,15 @@ export struct SettingsTabView {
             field: SettingField.TITLE_BAR_SCROLL,
             onToggle: (value: boolean) => {
               settingsViewModel.setTitleBarScroll(value);
+            }
+          })
+          Divider().color($r('app.color.hm_divider'))
+          SwitchSettingRow({
+            icon: $r('sys.symbol.arrow_down_and_line_horizontal_and_arrow_up'),
+            title: $r('app.string.row_status_bar_scroll'),
+            field: SettingField.STATUS_BAR_SCROLL,
+            onToggle: (value: boolean) => {
+              settingsViewModel.setStatusBarScroll(value);
             }
           })
           Divider().color($r('app.color.hm_divider'))

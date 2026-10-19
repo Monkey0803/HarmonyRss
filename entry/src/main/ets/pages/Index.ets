@@ -142,14 +142,14 @@ struct Index {
   }
 
   /**
-   * 标题栏动态显隐：由设置页开关控制。
-   * false（默认）—— 标题栏固定不动，内容从标题栏下方滚过；
-   * true          —— 滚动内容时标题栏随之收起，反向滚动时恢复。
+   * 标题栏 / 状态栏动态显隐：各由一个设置页开关控制（沉浸光感最佳实践建议都开，这里交给用户）。
+   * 标题栏：false（默认）固定不动、内容从标题栏下方滚过；true 滚动时收起。
+   * 状态栏：false（默认）常驻；true 滚动内容时一并收起。
    */
   private dynamicHideParams(): DynamicHideParams {
     const params: DynamicHideParams = {
       hideTitleArea: appSettings.titleBarScrollsWithContent,
-      hideStatusBar: false,
+      hideStatusBar: appSettings.statusBarScrollsWithContent,
       hideBottomBuilder: false,
       mode: HideMode.SCROLL_UP_TO,
       hideOffset: CommonConstants.TITLE_HIDE_OFFSET_VP
@@ -574,10 +574,10 @@ struct Index {
       .hideBackButton(true)
       .mode(NavigationMode.Stack)
       .navDestination(this.pageMap)
-      // 滚动联动：把当前页签的 Scroller 交给导航，供标题栏动态显隐（设置页开关）使用。
-      .bindToScrollable([this.currentScroller()])
-      // 标题栏是否随内容滚动（设置页开关）。
+      // 先声明动态显隐，再绑定可滚动容器 —— 顺序不能反：真机上「先 bindToScrollable 后 dynamicHideTitleBar」
+      // 会导致动态显隐完全不生效（已实测），官方样例也是这个顺序。
       .dynamicHideTitleBar(this.dynamicHideParams())
+      .bindToScrollable([this.currentScroller()])
       .width('100%')
       .height('100%')
 
