@@ -29,8 +29,4 @@ export class CommonConstants {
   static readonly LOGO_BRAND_SIZE: number = 26;
   /** App logo 在首页品牌行的圆角（vp）。 */
   static readonly LOGO_BRAND_RADIUS: number = 8;
-  /** 目的页入场转场时长（ms）：自右滑入 + 淡入。 */
-  static readonly NAV_ENTER_DURATION_MS: number = 320;
-  /** 目的页出场（pop）转场时长（ms）：向右滑出 + 淡出，略快于入场。 */
-  static readonly NAV_EXIT_DURATION_MS: number = 260;
 }
