@@ -46,6 +46,33 @@ function matchesKeyword(article: Article, keyword: string): boolean {
   return article.content.toLowerCase().indexOf(keyword) >= 0;
 }
 
+/**
+ * 把本地库读回的一行并回内存里的旧实例（只改字段，不换对象）。
+ *
+ * 必须保留对象身份：List 里的 ForEach 键值不变时会复用旧节点，子组件仍然绑定旧对象；
+ * 若这里直接换成新对象，之后所有「改属性」的操作（已读 / 收藏 / 进度）都改在新对象上，
+ * 界面绑定的旧对象纹丝不动 —— 表现为「收藏、未读、已读状态都不对」。
+ */
+function mergeArticle(target: Article, source: Article): void {
+  target.feedTitle = source.feedTitle;
+  target.title = source.title;
+  target.link = source.link;
+  target.summary = source.summary;
+  target.content = source.content;
+  // contentHtml 未落库（loadRecent 读回来恒为空），旧实例里可能还留着 feed 正文，不能覆盖掉。
+  if (source.contentHtml.length > 0) {
+    target.contentHtml = source.contentHtml;
+  }
+  target.publishedAt = source.publishedAt;
+  target.imageUrl = source.imageUrl;
+  target.author = source.author;
+  target.read = source.read;
+  target.starred = source.starred;
+  target.progress = source.progress;
+  target.readerHtml = source.readerHtml;
+  target.readerState = source.readerState;
+}
+
 @ObservedV2
 export class FeedViewModel {
   /** 订阅源列表。 */
@@ -189,11 +216,35 @@ export class FeedViewModel {
     feed.lastModified = lastModified;
   }
 
+  /**
+   * 把本地库读回的数据并回内存列表：同 id 复用旧实例，只更新字段；新 id 才用新对象。
+   * 这样界面上已建立的列表项绑定不会被换掉的实例切断（见 mergeArticle 的说明）。
+   */
+  private async reloadFromStore(): Promise<void> {
+    const loaded: Article[] = await articleStore.loadRecent();
+    const previous: Map<string, Article> = new Map<string, Article>();
+    for (let i = 0; i < this.all.length; i += 1) {
+      previous.set(this.all[i].id, this.all[i]);
+    }
+    const merged: Article[] = [];
+    for (let i = 0; i < loaded.length; i += 1) {
+      const item: Article = loaded[i];
+      const kept: Article | undefined = previous.get(item.id);
+      if (kept === undefined) {
+        merged.push(item);
+      } else {
+        mergeArticle(kept, item);
+        merged.push(kept);
+      }
+    }
+    this.all = merged;
+  }
+
   /** 抓取收尾：新条目入库 → 重新读库 → 重新出列表与未读数。 */
   private async commitFresh(fresh: Article[]): Promise<void> {
     articleStore.insertNew(fresh);
     articleStore.prune();
-    this.all = await articleStore.loadRecent();
+    await this.reloadFromStore();
     this.publish();
     this.lastUpdated = Date.now();
     this.loading = false;
@@ -610,7 +661,7 @@ export class FeedViewModel {
       const fresh: Article[] = [];
       toArticles(feed, resolved.parsed, fresh);
       articleStore.insertNew(fresh);
-      this.all = await articleStore.loadRecent();
+      await this.reloadFromStore();
       this.publish();
       this.errorCode = FeedError.NONE;
       this.lastUpdated = Date.now();
