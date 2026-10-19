@@ -8,6 +8,8 @@
 
 import { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
+import { appSettings } from '../../model/AppSettings';
+import { MaterialController } from '../../service/MaterialController';
 
 const DOMAIN: number = 0x0000;
 const TAG: string = 'ToastUtil';
@@ -16,7 +18,7 @@ export class ToastUtil {
   /** 弹一条 Toast；失败只记日志，不向上抛。 */
   static show(uiContext: UIContext, message: ResourceStr): void {
     try {
-      uiContext.getPromptAction().showToast({ message: message });
+      uiContext.getPromptAction().showToast(MaterialController.toastOptions({ message: message }, appSettings.immersiveOn));
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       hilog.error(DOMAIN, TAG, 'showToast failed: %{public}d', error.code);

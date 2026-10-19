@@ -17,6 +17,8 @@ import { ToastUtil } from '../common/utils/ToastUtil';
 import { opmlService } from '../service/OpmlService';
 import { OpmlEntry, parseOpml } from '../service/OpmlCodec';
 import { RouterConstants } from '../common/constants/RouterConstants';
+import { MaterialController } from '../service/MaterialController';
+import { appSettings } from '../model/AppSettings';
 
 @ComponentV2
 export struct SubscriptionsView {
@@ -167,7 +169,7 @@ export struct SubscriptionsView {
       primaryButton: cancelButton,
       secondaryButton: removeButton
     };
-    this.getUIContext().showAlertDialog(params);
+    this.getUIContext().showAlertDialog(MaterialController.dialogParams(params, appSettings.immersiveOn));
   }
 
   /** 行标题文案（分组头用分组名，订阅源行用源标题）。 */
@@ -359,7 +361,7 @@ export struct SubscriptionsView {
           .fontSize($r('app.float.icon_size'))
           .fontColor([$r('app.color.hm_text_secondary')])
           .padding($r('app.float.space_xs'))
-          .bindMenu(this.FeedMenu(feed))
+          .bindMenu(this.FeedMenu(feed), MaterialController.menuOptions({}, appSettings.immersiveOn))
       }
     }
     .width('100%')

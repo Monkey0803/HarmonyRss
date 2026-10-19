@@ -20,6 +20,7 @@ import { ColorMetrics, SegmentButtonV2Items, TabSegmentButtonV2 } from '@kit.Ark
 import { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { safeArea } from '../service/SafeAreaController';
+import { MaterialController } from '../service/MaterialController';
 
 const DOMAIN: number = 0x0000;
 const TAG: string = 'HomeTabView';
@@ -93,7 +94,7 @@ export struct HomeTabView {
       primaryButton: cancelButton,
       secondaryButton: confirmButton
     };
-    this.getUIContext().showAlertDialog(params);
+    this.getUIContext().showAlertDialog(MaterialController.dialogParams(params, appSettings.immersiveOn));
   }
 
   private emptyTitle(): ResourceStr {

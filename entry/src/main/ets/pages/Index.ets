@@ -303,8 +303,9 @@ struct Index {
         this.AddMiniBarButton()
       },
       miniBarWidth: miniWidth,
-      // 常驻收起态：展开态会把页签栏压成「只留当前页签」（HDS 的折叠语义），三个页签就没了。
-      miniBarStyle: HdsBarStyle.COLLAPSE,
+      // 不显式指定 miniBarStyle：HDS 会按设备宽度自适应（宽屏默认展开、窄屏默认折叠），
+      // 手机上落到的就是「页签栏展开 + 迷你栏折叠」这一态 —— 与之前的观感一致，
+      // 而显式 EXPAND 会把页签栏压成「只留当前页签」（HDS 的折叠语义）。
       onBarStyleChange: (miniBarStyle: HdsBarStyle, tabBarStyle: HdsBarStyle,
         miniBarWidth: number, tabBarWidth: number, mode: HdsTabsBarChangeMode) => {
         // 点 miniBar 在 HDS 里是「切换栏样式」：这里它只是个入口，所以展开后立刻收回来，
@@ -588,12 +589,12 @@ struct Index {
     .height('100%')
     // 背景图关闭时露出的兜底色（与窗口层 start_window_background 一致，含深浅色适配）。
     .backgroundColor($r('app.color.start_window_background'))
-    .bindSheet(this.showAddSheet, this.AddFeedSheet(), {
+    .bindSheet(this.showAddSheet, this.AddFeedSheet(), MaterialController.sheetOptions({
       height: 240,
       dragBar: true,
       onDisappear: () => {
         this.showAddSheet = false;
       }
-    })
+    }, appSettings.immersiveOn))
   }
 }

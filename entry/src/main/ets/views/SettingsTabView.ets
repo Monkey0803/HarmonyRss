@@ -32,6 +32,7 @@ import { ToastUtil } from '../common/utils/ToastUtil';
 import { CommonConstants } from '../common/constants/CommonConstants';
 import { RouterConstants } from '../common/constants/RouterConstants';
 import { BackgroundKind } from '../common/constants/SettingsConstants';
+import { MaterialController } from '../service/MaterialController';
 
 /** 设置页每一行绑定到 appSettings 的哪个字段。 */
 enum SettingField {
@@ -188,7 +189,8 @@ struct OptionSelectRow {
     .height($r('app.float.row_height'))
     .padding({ left: $r('app.float.space_m'), right: $r('app.float.space_m') })
     // 贴着被点的这一行弹出：右下对齐，从右侧的当前值 / 箭头下方展开。
-    .bindMenu(this.OptionMenu(), { placement: Placement.BottomRight })
+    .bindMenu(this.OptionMenu(),
+      MaterialController.menuOptions({ placement: Placement.BottomRight }, appSettings.immersiveOn))
   }
 }
 

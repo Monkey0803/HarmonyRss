@@ -512,7 +512,7 @@ export struct ArticleDetailView {
       .fontColor([$r('sys.color.font_primary')])
       .padding($r('app.float.space_xs'))
       .accessibilityText($r('app.string.row_reader_font'))
-      .bindMenu(this.FontMenu())
+      .bindMenu(this.FontMenu(), MaterialController.menuOptions({}, appSettings.immersiveOn))
   }
 
   /** 底栏操作：溢出菜单（重新提取 / 复制链接 / 浏览器打开 / 分享）。 */
@@ -523,7 +523,7 @@ export struct ArticleDetailView {
       .fontColor([$r('sys.color.font_primary')])
       .padding($r('app.float.space_xs'))
       .accessibilityText($r('app.string.action_more'))
-      .bindMenu(this.ActionsMenu(this.cur()))
+      .bindMenu(this.ActionsMenu(this.cur()), MaterialController.menuOptions({}, appSettings.immersiveOn))
   }
 
   /** 底栏操作：阅读模式切换（Reader ↔ 网页原文）。 */

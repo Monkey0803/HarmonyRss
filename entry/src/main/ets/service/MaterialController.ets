@@ -7,8 +7,8 @@
  */
 
 import { hdsMaterial, SystemMaterialParams } from '@kit.UIDesignKit';
-import { uiMaterial } from '@kit.ArkUI';
-import { BusinessError } from '@kit.BasicServicesKit';
+import { promptAction, uiMaterial } from '@kit.ArkUI';
+import { BusinessError, deviceInfo } from '@kit.BasicServicesKit';
 import { MaterialKind, MaterialGrade } from '../common/constants/SettingsConstants';
 
 export class MaterialController {
@@ -88,6 +88,70 @@ export class MaterialController {
    */
   static immersiveActive(immersiveOn: boolean): boolean {
     return immersiveOn && MaterialController.immersiveSupported() && MaterialController.globalEnabled();
+  }
+
+
+  /**
+   * 弹层（Menu / Sheet / AlertDialog / Toast）用的组件级沉浸光感材质。
+   *
+   * 弹层属于「全页面生效」场景，但走 ArkUI 组件级轨道：需要应用 targetAPIVersion ≥ 26.0.0
+   * 且设备支持材质，并且要在弹层的 options 里显式给出 systemMaterial
+   * （官方最佳实践「菜单栏适配沉浸光感」的做法）。不满足时返回 undefined，弹层沿用系统默认背板。
+   */
+  static overlayMaterial(immersiveOn: boolean): uiMaterial.Material | undefined {
+    if (!immersiveOn || !deviceInfo.apiAvailable('26.0.0')) {
+      return undefined;
+    }
+    try {
+      if (MaterialController.supportedTypes().length === 0) {
+        return undefined;
+      }
+      return new uiMaterial.ImmersiveMaterial({
+        style: uiMaterial.ImmersiveStyle.THICK,
+        interactive: true,
+        lightEffect: { color: undefined }
+      });
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      console.error('uiMaterial.ImmersiveMaterial failed: ' + error.code.toString());
+      return undefined;
+    }
+  }
+
+  /** 上下文菜单（bindMenu）注入沉浸光感；不支持时原样返回。 */
+  static menuOptions(options: ContextMenuOptions, immersiveOn: boolean): ContextMenuOptions {
+    const material: uiMaterial.Material | undefined = MaterialController.overlayMaterial(immersiveOn);
+    if (material !== undefined) {
+      options.systemMaterial = material;
+    }
+    return options;
+  }
+
+  /** 半模态面板（bindSheet）注入沉浸光感；不支持时原样返回。 */
+  static sheetOptions(options: SheetOptions, immersiveOn: boolean): SheetOptions {
+    const material: uiMaterial.Material | undefined = MaterialController.overlayMaterial(immersiveOn);
+    if (material !== undefined) {
+      options.systemMaterial = material;
+    }
+    return options;
+  }
+
+  /** 对话框（showAlertDialog）注入沉浸光感；不支持时原样返回。 */
+  static dialogParams<T extends AlertDialogParam>(params: T, immersiveOn: boolean): T {
+    const material: uiMaterial.Material | undefined = MaterialController.overlayMaterial(immersiveOn);
+    if (material !== undefined) {
+      params.systemMaterial = material;
+    }
+    return params;
+  }
+
+  /** Toast 注入沉浸光感；不支持时原样返回。 */
+  static toastOptions(options: promptAction.ShowToastOptions, immersiveOn: boolean): promptAction.ShowToastOptions {
+    const material: uiMaterial.Material | undefined = MaterialController.overlayMaterial(immersiveOn);
+    if (material !== undefined) {
+      options.systemMaterial = material;
+    }
+    return options;
   }
 
   /** 组装下发到 HdsTabs / HdsNavigation 的材质参数。总开关关掉时用 NONE。 */
