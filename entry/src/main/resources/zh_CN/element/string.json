@@ -693,6 +693,10 @@
       "value": "两条边缘流光沿组件周界流动"
     },
     {
+      "name": "action_more",
+      "value": "更多"
+    },
+    {
       "name": "action_star",
       "value": "收藏"
     },

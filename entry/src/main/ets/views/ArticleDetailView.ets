@@ -5,6 +5,8 @@
  *   保留段落 / 标题 / 图片 / 列表 / 代码 / 引用，离线可读（正文已缓存到本地库）。
  * 网页原文（WEB）：ArkWeb 直接加载原文链接，作为提取失败或用户主动切换时的兜底。
  * 纯文本（无链接且提取失败时）：退回 feed 文本。
+ * 文章标题由 HdsNavDestination 的标题栏显示（见 Index.articleTitle），正文上方不再有信息行；
+ * 排版 / 更多 / 模式切换 / 分享 / 收藏等操作收在贴底的悬浮胶囊里，见 FloatingBar。
  * 只从 FeedViewModel 读取当前文章与正文，不在视图里做业务逻辑。
  */
 
@@ -20,10 +22,9 @@ import {
   SnackBarStyleOptions,
   SnackBarOperationType
 } from '@kit.UIDesignKit';
-import { uiMaterial } from '@kit.ArkUI';
+import { SymbolGlyphModifier, uiMaterial } from '@kit.ArkUI';
 import { Article } from '../model/Feed';
 import { feedViewModel } from '../viewmodel/FeedViewModel';
-import { DateUtil } from '../common/utils/DateUtil';
 import { safeArea } from '../service/SafeAreaController';
 import { gripSensor } from '../service/GripSensor';
 import { MaterialController } from '../service/MaterialController';
@@ -321,23 +322,45 @@ export struct ArticleDetailView {
       });
   }
 
+  /**
+   * 菜单项前置图标：HM Symbol 必须走 symbolStartIcon（startIcon 不支持符号图标）。
+   * 尺寸与页面里其它图标一致。
+   */
+  private menuIcon(icon: Resource): SymbolGlyphModifier {
+    const modifier: SymbolGlyphModifier = new SymbolGlyphModifier(icon);
+    modifier.fontSize($r('app.float.icon_size'));
+    return modifier;
+  }
+
   /** 溢出菜单：重新提取 / 复制链接 / 浏览器打开 / 分享。 */
   @Builder
   ActionsMenu(article: Article) {
     Menu() {
-      MenuItem({ content: $r('app.string.action_reader_retry') })
+      MenuItem({
+        content: $r('app.string.action_reader_retry'),
+        symbolStartIcon: this.menuIcon($r('sys.symbol.arrow_clockwise'))
+      })
         .onClick(() => {
           this.retryReader();
         })
-      MenuItem({ content: $r('app.string.action_copy_link') })
+      MenuItem({
+        content: $r('app.string.action_copy_link'),
+        symbolStartIcon: this.menuIcon($r('sys.symbol.link'))
+      })
         .onClick(() => {
           this.copyLink(article);
         })
-      MenuItem({ content: $r('app.string.action_open_browser') })
+      MenuItem({
+        content: $r('app.string.action_open_browser'),
+        symbolStartIcon: this.menuIcon($r('sys.symbol.arrow_right_up_and_square'))
+      })
         .onClick(() => {
           this.openInBrowser(article);
         })
-      MenuItem({ content: $r('app.string.action_share') })
+      MenuItem({
+        content: $r('app.string.action_share'),
+        symbolStartIcon: this.menuIcon($r('sys.symbol.share'))
+      })
         .onClick(() => {
           this.shareArticle(article);
         })
@@ -471,86 +494,19 @@ export struct ArticleDetailView {
     });
   }
 
-  /** 文章标题 + 来源 + 时间 + 阅读模式切换。 */
-  @Builder
-  Meta() {
-    if (this.hasArticle()) {
-      Column({ space: $r('app.float.space_xs') }) {
-        Text(this.cur().title)
-          .fontSize($r('app.float.font_size_body'))
-          .fontColor($r('app.color.hm_text_primary'))
-          .fontWeight(FontWeight.Medium)
-          .maxLines(2)
-          .textOverflow({ overflow: TextOverflow.Ellipsis })
-          .width('100%')
-
-        Row({ space: $r('app.float.space_s') }) {
-          Text(this.cur().feedTitle)
-            .fontSize($r('app.float.font_size_caption'))
-            .fontColor($r('app.color.hm_brand'))
-            .maxLines(1)
-            .textOverflow({ overflow: TextOverflow.Ellipsis })
-            .layoutWeight(1)
-          if (this.cur().author.length > 0) {
-            Text(this.cur().author)
-              .fontSize($r('app.float.font_size_caption'))
-              .fontColor($r('app.color.hm_text_secondary'))
-              .maxLines(1)
-              .textOverflow({ overflow: TextOverflow.Ellipsis })
-          }
-          Text(DateUtil.format(this.cur().publishedAt))
-            .fontSize($r('app.float.font_size_caption'))
-            .fontColor($r('app.color.hm_text_secondary'))
-          if (this.cur().link.length > 0) {
-            Button(this.viewMode === MODE_READER
-              ? $r('app.string.article_mode_web')
-              : $r('app.string.article_mode_reader'))
-              .buttonStyle(ButtonStyleMode.TEXTUAL)
-              .fontSize($r('app.float.font_size_caption'))
-              .fontColor($r('app.color.hm_brand'))
-              .onClick(() => {
-                this.switchMode();
-              })
-          }
-
-          // 阅读排版快捷入口：就地换正文字号。
-          SymbolGlyph($r('sys.symbol.textformat'))
-            .fontSize($r('app.float.icon_size'))
-            .fontColor([$r('app.color.hm_text_secondary')])
-            .padding($r('app.float.space_xs'))
-            .bindMenu(this.FontMenu())
-
-          SymbolGlyph(this.cur().starred ? $r('sys.symbol.star_fill') : $r('sys.symbol.star'))
-            .fontSize($r('app.float.icon_size'))
-            .fontColor([this.cur().starred ? $r('app.color.hm_brand') : $r('app.color.hm_text_secondary')])
-            .padding($r('app.float.space_xs'))
-            .onClick(() => {
-              feedViewModel.toggleStar(this.cur().id);
-            })
-
-          SymbolGlyph($r('sys.symbol.more'))
-            .fontSize($r('app.float.icon_size'))
-            .fontColor([$r('app.color.hm_text_secondary')])
-            .padding($r('app.float.space_xs'))
-            .bindMenu(this.ActionsMenu(this.cur()))
-        }
-        .width('100%')
-      }
-      .width('100%')
-      .padding($r('app.float.space_l'))
-      .alignItems(HorizontalAlign.Start)
-    }
-  }
-
-  /** 阅读导航：上一篇（在当前筛选范围内原地切换）。 */
+  /**
+   * 阅读导航：上一篇（在当前筛选范围内原地切换）。
+   * 图标化后把文字挪到无障碍标签，读屏仍能念出「上一篇 / 下一篇 / 下一条未读」。
+   */
   @Builder
   PrevNav() {
-    Button($r('app.string.article_prev'))
-      .buttonStyle(ButtonStyleMode.TEXTUAL)
-      .fontSize($r('app.float.font_size_caption'))
-      .fontColor(feedViewModel.prevArticleId().length > 0
-        ? $r('app.color.hm_brand') : $r('sys.color.font_secondary'))
+    SymbolGlyph($r('sys.symbol.chevron_left'))
+      .fontSize($r('app.float.icon_size'))
+      .fontColor([feedViewModel.prevArticleId().length > 0
+        ? $r('app.color.hm_brand') : $r('sys.color.font_tertiary')])
+      .padding($r('app.float.space_xs'))
       .enabled(feedViewModel.prevArticleId().length > 0)
+      .accessibilityText($r('app.string.article_prev'))
       .onClick(() => {
         this.openRelative(feedViewModel.prevArticleId());
       })
@@ -559,29 +515,53 @@ export struct ArticleDetailView {
   /** 阅读导航：下一篇。 */
   @Builder
   NextNav() {
-    Button($r('app.string.article_next'))
-      .buttonStyle(ButtonStyleMode.TEXTUAL)
-      .fontSize($r('app.float.font_size_caption'))
-      .fontColor(feedViewModel.nextArticleId().length > 0
-        ? $r('app.color.hm_brand') : $r('sys.color.font_secondary'))
+    SymbolGlyph($r('sys.symbol.chevron_right'))
+      .fontSize($r('app.float.icon_size'))
+      .fontColor([feedViewModel.nextArticleId().length > 0
+        ? $r('app.color.hm_brand') : $r('sys.color.font_tertiary')])
+      .padding($r('app.float.space_xs'))
       .enabled(feedViewModel.nextArticleId().length > 0)
+      .accessibilityText($r('app.string.article_next'))
       .onClick(() => {
         this.openRelative(feedViewModel.nextArticleId());
       })
   }
 
-  /** 阅读导航：下一条未读（底栏的主操作，随握持手镜像左右）。 */
+  /** 阅读导航：下一条未读（底栏的主操作，随握持手镜像左右）。信封 + 未读点。 */
   @Builder
   NextUnreadNav() {
-    Button($r('app.string.article_next_unread'))
-      .buttonStyle(ButtonStyleMode.TEXTUAL)
-      .fontSize($r('app.float.font_size_caption'))
-      .fontColor(feedViewModel.nextUnreadId().length > 0
-        ? $r('app.color.hm_brand') : $r('sys.color.font_secondary'))
+    SymbolGlyph($r('sys.symbol.envelope_badge_dot'))
+      .fontSize($r('app.float.icon_size'))
+      .fontColor([feedViewModel.nextUnreadId().length > 0
+        ? $r('app.color.hm_brand') : $r('sys.color.font_tertiary')])
+      .padding($r('app.float.space_xs'))
       .enabled(feedViewModel.nextUnreadId().length > 0)
+      .accessibilityText($r('app.string.article_next_unread'))
       .onClick(() => {
         this.openRelative(feedViewModel.nextUnreadId());
       })
+  }
+
+  /** 底栏操作：阅读排版（就地换正文字号）。 */
+  @Builder
+  FontAction() {
+    SymbolGlyph($r('sys.symbol.textformat'))
+      .fontSize($r('app.float.icon_size'))
+      .fontColor([$r('sys.color.font_primary')])
+      .padding($r('app.float.space_xs'))
+      .accessibilityText($r('app.string.row_reader_font'))
+      .bindMenu(this.FontMenu())
+  }
+
+  /** 底栏操作：溢出菜单（重新提取 / 复制链接 / 浏览器打开 / 分享）。 */
+  @Builder
+  MoreAction() {
+    SymbolGlyph($r('sys.symbol.more'))
+      .fontSize($r('app.float.icon_size'))
+      .fontColor([$r('sys.color.font_primary')])
+      .padding($r('app.float.space_xs'))
+      .accessibilityText($r('app.string.action_more'))
+      .bindMenu(this.ActionsMenu(this.cur()))
   }
 
   /** 底栏操作：阅读模式切换（Reader ↔ 网页原文）。 */
@@ -591,6 +571,9 @@ export struct ArticleDetailView {
       .fontSize($r('app.float.icon_size'))
       .fontColor([$r('sys.color.font_primary')])
       .padding($r('app.float.space_xs'))
+      .accessibilityText(this.viewMode === MODE_READER
+        ? $r('app.string.article_mode_web')
+        : $r('app.string.article_mode_reader'))
       .onClick(() => {
         this.switchMode();
       })
@@ -603,20 +586,9 @@ export struct ArticleDetailView {
       .fontSize($r('app.float.icon_size'))
       .fontColor([this.cur().starred ? $r('app.color.hm_brand') : $r('sys.color.font_primary')])
       .padding($r('app.float.space_xs'))
+      .accessibilityText(this.cur().starred ? $r('app.string.action_unstar') : $r('app.string.action_star'))
       .onClick(() => {
         feedViewModel.toggleStar(this.cur().id);
-      })
-  }
-
-  /** 底栏操作：分享。 */
-  @Builder
-  ShareAction() {
-    SymbolGlyph($r('sys.symbol.share'))
-      .fontSize($r('app.float.icon_size'))
-      .fontColor([$r('sys.color.font_primary')])
-      .padding($r('app.float.space_xs'))
-      .onClick(() => {
-        this.shareArticle(this.cur());
       })
   }
 
@@ -639,17 +611,19 @@ export struct ArticleDetailView {
     .width('100%')
   }
 
-  /** 底栏第二行：文章操作（模式切换 / 收藏 / 分享），收藏贴握持手一侧。 */
+  /** 底栏第二行：更多 / 排版 / 模式切换 / 收藏，主操作（收藏）贴握持手一侧。分享收在「更多」菜单里。 */
   @Builder
   IconRow() {
     Row({ space: $r('app.float.space_2xl') }) {
       if (gripSensor.gripLeft) {
         this.StarAction()
-        this.ShareAction()
         this.ModeAction()
+        this.FontAction()
+        this.MoreAction()
       } else {
+        this.MoreAction()
+        this.FontAction()
         this.ModeAction()
-        this.ShareAction()
         this.StarAction()
       }
     }
@@ -872,7 +846,7 @@ export struct ArticleDetailView {
       // 透明标题栏占位：首屏内容顶部预留「状态栏 + 标题栏」高度（titleOptions 关闭了组件级安全区）。
       Row().width('100%').height(safeArea.topInsetVp + CommonConstants.TITLE_BAR_HEIGHT_VP)
 
-      this.Meta()
+      // 标题栏（文章标题在返回键右侧）之下直接就是正文；来源 / 时间的快捷入口已收进悬浮底栏。
       this.BodySwitch()
       this.FloatingBar()
     }

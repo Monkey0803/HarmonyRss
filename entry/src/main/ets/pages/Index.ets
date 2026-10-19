@@ -49,6 +49,7 @@ import { SubscriptionsView } from '../views/SubscriptionsView';
 import { FeedArticlesView } from '../views/FeedArticlesView';
 import { EffectPreviewView } from '../views/EffectPreviewView';
 import { feedViewModel } from '../viewmodel/FeedViewModel';
+import { Article } from '../model/Feed';
 
 @Entry
 @ComponentV2
@@ -116,6 +117,18 @@ struct Index {
       return $r('app.string.settings_title');
     }
     return $r('app.string.home_title');
+  }
+
+  /**
+   * 详情页标题：显示当前文章的标题（落在返回键右侧的标题栏位置），
+   * 原地切上一篇/下一篇或换文时随 @Trace 的当前文章一起刷新；无文章时退回通用「文章」。
+   */
+  private articleTitle(): ResourceStr {
+    const article: Article | undefined = feedViewModel.currentArticle();
+    if (article === undefined || article.title.length === 0) {
+      return $r('app.string.article_title');
+    }
+    return article.title;
   }
 
   /**
@@ -290,7 +303,7 @@ struct Index {
       HdsNavDestination() {
         ArticleDetailView({ scroller: this.articleScroller })
       }
-      .titleBar(this.titleOptions($r('app.string.article_title')))
+      .titleBar(this.titleOptions(this.articleTitle()))
       .titleMode(HdsNavDestinationTitleMode.MINI)
       .backgroundColor($r('app.color.hm_page_transparent'))
       .bindToScrollable([this.articleScroller])

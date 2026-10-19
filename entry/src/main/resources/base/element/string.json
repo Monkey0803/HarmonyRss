@@ -693,6 +693,10 @@
       "value": "Two edge light streams flow along the component border"
     },
     {
+      "name": "action_more",
+      "value": "More"
+    },
+    {
       "name": "action_star",
       "value": "Favorite"
     },
