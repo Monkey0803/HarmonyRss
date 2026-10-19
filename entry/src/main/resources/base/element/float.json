@@ -117,6 +117,10 @@
       "value": "12"
     },
     {
+      "name": "read_progress_height",
+      "value": "3"
+    },
+    {
       "name": "read_panel_label_width",
       "value": "76"
     },

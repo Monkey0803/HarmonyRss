@@ -118,6 +118,11 @@ export class Article {
    * 由详情页写入本地库，重新打开时恢复；0 表示从头开始。
    */
   @Trace progress: number = 0;
+  /**
+   * 阅读进度比例（0–1）：y / (scrollHeight - innerHeight)。
+   * 换字号 / 栏宽 / 主题后排版会重排，px 会漂，恢复位置以比例为准（px 仅作老数据兜底）。
+   */
+  @Trace progressRatio: number = 0;
 
   constructor(id: string, feedId: string, feedTitle: string, title: string, link: string,
     summary: string, content: string, publishedAt: number, imageUrl: string = '', author: string = '',

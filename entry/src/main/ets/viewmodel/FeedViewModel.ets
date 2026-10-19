@@ -725,14 +725,15 @@ export class FeedViewModel {
    * 记录阅读进度（滚动位置，px）。
    * 只在详情页滚动结束 / 离开页面时调用，因此**不触发列表重算**（没有列表读这个字段）。
    */
-  saveProgress(articleId: string, progress: number): void {
+  saveProgress(articleId: string, progress: number, ratio: number = 0): void {
     for (let i = 0; i < this.all.length; i += 1) {
       if (this.all[i].id === articleId) {
         this.all[i].progress = progress;
+        this.all[i].progressRatio = ratio;
         break;
       }
     }
-    articleStore.setProgress(articleId, progress);
+    articleStore.setProgress(articleId, progress, ratio);
   }
 
   /** 按 id 取当前文章；找不到返回 undefined。 */

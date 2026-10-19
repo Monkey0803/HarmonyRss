@@ -33,6 +33,7 @@ const SQL_CREATE: string =
   'image_url TEXT NOT NULL DEFAULT \'\', ' +
   'author TEXT NOT NULL DEFAULT \'\', ' +
   'progress INTEGER NOT NULL DEFAULT 0, ' +
+  'progress_ratio REAL NOT NULL DEFAULT 0, ' +
   'reader_html TEXT NOT NULL DEFAULT \'\')';
 
 /** 老库补列（表已存在时 CREATE 不会加列，ALTER 失败可忽略）。 */
@@ -43,6 +44,9 @@ const SQL_ADD_AUTHOR: string =
 /** 阅读进度（滚动位置，px）。 */
 const SQL_ADD_PROGRESS: string =
   'ALTER TABLE ' + ArticleDbConstants.TABLE_ARTICLES + ' ADD COLUMN progress INTEGER NOT NULL DEFAULT 0';
+/** 阅读进度比例（0–1）：换排版后恢复位置用。 */
+const SQL_ADD_PROGRESS_RATIO: string =
+  'ALTER TABLE ' + ArticleDbConstants.TABLE_ARTICLES + ' ADD COLUMN progress_ratio REAL NOT NULL DEFAULT 0';
 /** Reader 视图的结构化正文 HTML（提取 + 净化后）。 */
 const SQL_ADD_READER: string =
   'ALTER TABLE ' + ArticleDbConstants.TABLE_ARTICLES + ' ADD COLUMN reader_html TEXT NOT NULL DEFAULT \'\'';
@@ -54,7 +58,7 @@ const SQL_INSERT: string =
 
 const SQL_SELECT_ALL: string =
   'SELECT id, feed_id, feed_title, title, link, summary, content, published_at, is_read, is_starred,' +
-  ' image_url, author, progress, reader_html' +
+  ' image_url, author, progress, progress_ratio, reader_html' +
   ' FROM ' + ArticleDbConstants.TABLE_ARTICLES + ' ORDER BY published_at DESC';
 
 /** 卡片展示用的轻量快照：未读数 + 最新几条标题（不把整库读进内存）。 */
@@ -83,6 +87,7 @@ export class ArticleStore {
       this.addColumnIfNeeded(SQL_ADD_IMAGE);
       this.addColumnIfNeeded(SQL_ADD_AUTHOR);
       this.addColumnIfNeeded(SQL_ADD_PROGRESS);
+      this.addColumnIfNeeded(SQL_ADD_PROGRESS_RATIO);
       this.addColumnIfNeeded(SQL_ADD_READER);
     } catch (err) {
       const error: BusinessError = err as BusinessError;
@@ -172,6 +177,7 @@ export class ArticleStore {
           article.starred = rs.getLong(rs.getColumnIndex('is_starred')) === 1;
           // 用 getDouble 读：老数据里可能残留小数（列是 INTEGER，但 SQLite 动态类型允许 REAL）。
           article.progress = rs.getDouble(rs.getColumnIndex('progress'));
+          article.progressRatio = rs.getDouble(rs.getColumnIndex('progress_ratio'));
           article.readerHtml = rs.getString(rs.getColumnIndex('reader_html'));
           if (article.readerHtml.length > 0) {
             article.readerState = ReaderState.READY;
@@ -239,10 +245,12 @@ export class ArticleStore {
    * 列类型是 INTEGER，而网页的 window.scrollY 是小数，所以这里取整后再写，
    * 避免存成 REAL 之后读取端类型不匹配。
    */
-  setProgress(id: string, progress: number): void {
+  setProgress(id: string, progress: number, ratio: number): void {
     const rounded: number = Math.max(0, Math.round(progress));
-    this.exec('UPDATE ' + ArticleDbConstants.TABLE_ARTICLES + ' SET progress = ? WHERE id = ?',
-      [rounded, id]);
+    const safeRatio: number = Math.min(1, Math.max(0, ratio));
+    this.exec('UPDATE ' + ArticleDbConstants.TABLE_ARTICLES +
+      ' SET progress = ?, progress_ratio = ? WHERE id = ?',
+      [rounded, safeRatio, id]);
   }
 
   /** 写入 Reader 视图的结构化正文 HTML（离线阅读用）。 */

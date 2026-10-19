@@ -18,6 +18,15 @@ export struct ArticleListItem {
   /** 切换收藏。 */
   @Event onToggleStar: (id: string) => void = () => {};
 
+  /**
+   * 读了一半（进度比例 2%–98%）：用来在标题下补一条细进度线，提示「可以接着读」。
+   * 不看已读状态 —— 打开即标已读，若加 unread 限制这条提示几乎永远不会出现；
+   * 读完（触底）会把比例清零，线也就自动消失。
+   */
+  private halfRead(): boolean {
+    return this.article.progressRatio > 0.02 && this.article.progressRatio < 0.98;
+  }
+
   build() {
     Row({ space: $r('app.float.space_m') }) {
       Row()
@@ -63,6 +72,21 @@ export struct ArticleListItem {
             .fontColor($r('app.color.hm_text_secondary'))
         }
         .width('100%')
+
+        // 读了一半的条目：标题下面补一条细进度线（同类阅读器的「半读」标记）。
+        if (this.halfRead()) {
+          Row() {
+            Row()
+              .width(Math.round(this.article.progressRatio * 100) + '%')
+              .height($r('app.float.read_progress_height'))
+              .backgroundColor($r('app.color.hm_text_secondary'))
+              .borderRadius($r('app.float.read_progress_height'))
+          }
+          .width('100%')
+          .height($r('app.float.read_progress_height'))
+          .backgroundColor($r('app.color.hm_divider'))
+          .borderRadius($r('app.float.read_progress_height'))
+        }
       }
       .layoutWeight(1)
       .alignItems(HorizontalAlign.Start)

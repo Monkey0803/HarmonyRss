@@ -38,6 +38,14 @@ import { ReadSettingsSheet } from './ReadSettingsSheet';
 import { ToastUtil } from '../common/utils/ToastUtil';
 import { readerStyle } from '../service/ReaderStyle';
 import { buildReaderDocument } from '../service/ReaderDocument';
+import {
+  parsePosition,
+  progressListenerScript,
+  ReaderPosition,
+  ReaderProgressBridge,
+  readPositionScript,
+  restorePositionScript
+} from '../service/ReaderProgress';
 import { appSettings } from '../model/AppSettings';
 import { ReaderTypography } from '../common/constants/SettingsConstants';
 
@@ -78,8 +86,14 @@ export struct ArticleDetailView {
   private bottomCheckPending: boolean = false;
   /** 「阅读排版」半模态面板显隐。 */
   @Local showReadSheet: boolean = false;
-  /** 排版变化（重建 Reader 文档）后要落回的滚动位置（px）；-1 表示无需特殊恢复。 */
-  private pendingRestoreY: number = -1;
+  /** 当前阅读进度（0–1），用于标题栏下方的细进度条；由文档内滚动回调刷新。 */
+  @Local progressRatio: number = 0;
+  /** 排版变化（重建 Reader 文档）后要落回的位置；undefined 表示无需特殊恢复。 */
+  private pendingRestore: ReaderPosition | undefined = undefined;
+  /** 文档内滚动 → ArkTS 的进度回调（javaScriptProxy，页面创建时注册一次）。 */
+  private progressBridge: ReaderProgressBridge = new ReaderProgressBridge((ratio: number) => {
+    this.progressRatio = ratio;
+  });
   /** 悬浮操作栏的页签控制器（页签栏只作为沉浸光感的生效区域）。 */
   private barTabsController: HdsTabsController = new HdsTabsController();
 
@@ -227,6 +241,7 @@ export struct ArticleDetailView {
     }
     feedViewModel.openArticle(id);
     // 不重置 readerHtml：保持 Reader Web 挂载，随后直接换文档，避免 controller 失效。
+    this.progressRatio = 0;
     this.readerFailed = false;
     this.webProgressRestored = false;
     this.readerProgressRestored = false;
@@ -368,22 +383,30 @@ export struct ArticleDetailView {
       return;
     }
     const article: Article | undefined = feedViewModel.currentArticle();
-    if (article === undefined || article.progress <= 0) {
+    if (article === undefined || (article.progress <= 0 && article.progressRatio <= 0)) {
       return;
     }
-    this.restoreScrollTo(controller, article.progress);
+    this.runRestore(controller, new ReaderPosition(article.progress, article.progressRatio));
   }
 
-  /** 用「带重试的 scrollTo 脚本」落到指定 px（文档可能还在长高，一次滚动会被顶掉）。 */
-  private restoreScrollTo(controller: webview.WebviewController, y: number): void {
-    const target: string = Math.round(y).toString();
-    const script: string = '(function(){var y=' + target + ';var n=0;' +
-      'var iv=setInterval(function(){window.scrollTo(0,y);n++;' +
-      'if(n>12||window.scrollY>=y-4){clearInterval(iv);}},250);})()';
+  /**
+   * 落回指定位置：比例优先（换排版后 px 会漂），px 仅作老数据兜底。
+   * 脚本自带重试 —— 文档可能还在长高，一次性滚动会被顶掉。
+   */
+  private runRestore(controller: webview.WebviewController, position: ReaderPosition): void {
     controller
-      .runJavaScript(script)
+      .runJavaScript(restorePositionScript(position.ratio, position.y))
       .catch((err: BusinessError) => {
         hilog.warn(DOMAIN, TAG, 'restore progress failed: %{public}d', err.code);
+      });
+  }
+
+  /** 注入滚动监听，让文档持续回报进度（进度条用；失败不影响阅读）。 */
+  private bindProgressListener(controller: webview.WebviewController): void {
+    controller
+      .runJavaScript(progressListenerScript())
+      .catch((err: BusinessError) => {
+        hilog.warn(DOMAIN, TAG, 'progress listener failed: %{public}d', err.code);
       });
   }
 
@@ -423,16 +446,15 @@ export struct ArticleDetailView {
     this.readScrollY(this.readerController, article.id);
   }
 
+  /** 读一次文档位置（px + 比例）并写回本地库。 */
   private readScrollY(controller: webview.WebviewController, articleId: string): void {
-    controller.runJavaScript('window.scrollY', (err: BusinessError, value: string) => {
+    controller.runJavaScript(readPositionScript(), (err: BusinessError, value: string) => {
       if (err) {
-        hilog.warn(DOMAIN, TAG, 'read scrollY failed: %{public}d', err.code);
+        hilog.warn(DOMAIN, TAG, 'read scroll position failed: %{public}d', err.code);
         return;
       }
-      const y: number = Number(value);
-      if (Number.isFinite(y) && y >= 0) {
-        feedViewModel.saveProgress(articleId, y);
-      }
+      const position: ReaderPosition = parsePosition(value);
+      feedViewModel.saveProgress(articleId, position.y, position.ratio);
     });
   }
 
@@ -515,12 +537,9 @@ export struct ArticleDetailView {
   private applyTypography(): void {
     if (this.viewMode === MODE_READER && this.readerHtml.length > 0) {
       const controller: webview.WebviewController = this.readerController;
-      controller.runJavaScript('window.scrollY', (err: BusinessError, value: string) => {
+      controller.runJavaScript(readPositionScript(), (err: BusinessError, value: string) => {
         if (!err) {
-          const y: number = Number(value);
-          if (Number.isFinite(y) && y > 0) {
-            this.pendingRestoreY = y;
-          }
+          this.pendingRestore = parsePosition(value);
         }
         this.loadReaderDocIntoWeb();
       });
@@ -698,6 +717,13 @@ export struct ArticleDetailView {
             .javaScriptAccess(true)
             .domStorageAccess(false)
             .horizontalScrollBarAccess(false)
+            // 文档内滚动回调：window.hrProgress.onProgress(ratio)
+            .javaScriptProxy({
+              object: this.progressBridge,
+              name: 'hrProgress',
+              methodList: ['onProgress'],
+              controller: this.readerController
+            })
             .onControllerAttached(() => {
               const doc: string = buildReaderDocument(this.readerHtml, safeArea.contentTopInsetVp, safeArea.contentBottomInsetVp);
               try {
@@ -709,11 +735,12 @@ export struct ArticleDetailView {
             })
             .onPageEnd(() => {
               this.loading = false;
-              if (this.pendingRestoreY >= 0) {
+              this.bindProgressListener(this.readerController);
+              const pending: ReaderPosition | undefined = this.pendingRestore;
+              if (pending !== undefined) {
                 // 排版变化导致的重建：落回改动前的阅读位置，避免「调字号跳回顶部」。
-                const y: number = this.pendingRestoreY;
-                this.pendingRestoreY = -1;
-                this.restoreScrollTo(this.readerController, y);
+                this.pendingRestore = undefined;
+                this.runRestore(this.readerController, pending);
               } else {
                 this.restoreReaderProgress();
               }
@@ -758,10 +785,18 @@ export struct ArticleDetailView {
           .darkMode(WebDarkMode.Auto)
           .javaScriptAccess(true)
           .domStorageAccess(true)
+          // 文档内滚动回调：window.hrProgress.onProgress(ratio)
+          .javaScriptProxy({
+            object: this.progressBridge,
+            name: 'hrProgress',
+            methodList: ['onProgress'],
+            controller: this.webController
+          })
           .onPageEnd(() => {
             this.loading = false;
-            // 网页原文的排版只能靠注入：按设置覆盖正文字号 / 行距。
+            // 网页原文的排版只能靠注入：按设置覆盖正文字号 / 行距 / 字体族。
             readerStyle.apply(this.webController);
+            this.bindProgressListener(this.webController);
             // 排版注入完成后再恢复进度，避免字号变化导致落点偏移。
             this.restoreWebProgress();
           })
@@ -866,6 +901,22 @@ export struct ArticleDetailView {
     }
   }
 
+  /** 标题栏下沿的细进度条：只在正文模式显示，随文档滚动刷新。 */
+  @Builder
+  ProgressLine() {
+    if (this.hasArticle() && this.progressRatio > 0.001) {
+      Row() {
+        Row()
+          .width(Math.round(this.progressRatio * 100) + '%')
+          .height($r('app.float.read_progress_height'))
+          .backgroundColor($r('app.color.hm_brand'))
+          .borderRadius($r('app.float.read_progress_height'))
+      }
+      .width('100%')
+      .height($r('app.float.read_progress_height'))
+    }
+  }
+
   build() {
     Stack({ alignContent: Alignment.Bottom }) {
       // 正文铺满整页（含标题栏与悬浮底栏下方），从两栏下方穿过 —— 与首页 barOverlap(true) 同源；
@@ -873,6 +924,19 @@ export struct ArticleDetailView {
       this.BodySwitch()
 
       this.FloatingBar()
+
+      // 进度条层：铺满整页、内容贴顶，但不吃手势（正文滚动 / 点按照常）。
+      Column() {
+        Row()
+          .width('100%')
+          .height(safeArea.contentTopInsetVp)
+        this.ProgressLine()
+      }
+      .width('100%')
+      .height('100%')
+      .justifyContent(FlexAlign.Start)
+      .alignItems(HorizontalAlign.Start)
+      .hitTestBehavior(HitTestMode.None)
     }
     .width('100%')
     .height('100%')
