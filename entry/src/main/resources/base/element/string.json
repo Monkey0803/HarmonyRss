@@ -181,6 +181,22 @@
       "value": "No match"
     },
     {
+      "name": "action_start_speech",
+      "value": "Read aloud"
+    },
+    {
+      "name": "action_stop_speech",
+      "value": "Stop reading"
+    },
+    {
+      "name": "speech_running",
+      "value": "Reading aloud…"
+    },
+    {
+      "name": "toast_speech_unsupported",
+      "value": "Read-aloud is not supported on this device"
+    },
+    {
       "name": "action_copy",
       "value": "Copy"
     },
@@ -203,6 +219,10 @@
     {
       "name": "snack_selection_copied",
       "value": "Selection copied"
+    },
+    {
+      "name": "row_reader_keep_on",
+      "value": "Keep screen on while reading"
     },
     {
       "name": "read_panel_title",

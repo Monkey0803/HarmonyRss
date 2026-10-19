@@ -54,6 +54,7 @@ enum SettingField {
   READER_WIDTH = 'readerWidth',
   READER_ALIGN = 'readerAlign',
   READER_THEME = 'readerTheme',
+  READER_KEEP_ON = 'readerKeepScreenOn',
   NOTIFY_NEW = 'notifyNew'
 }
 
@@ -217,6 +218,8 @@ struct SwitchSettingRow {
         return appSettings.statusBarScrollsWithContent;
       case SettingField.NOTIFY_NEW:
         return appSettings.notifyNewArticles;
+      case SettingField.READER_KEEP_ON:
+        return appSettings.readerKeepScreenOn;
       default:
         return appSettings.immersiveOn;
     }
@@ -565,6 +568,15 @@ export struct SettingsTabView {
             field: SettingField.READER_THEME,
             onPick: (id: string) => {
               settingsViewModel.setReaderTheme(id);
+            }
+          })
+          Divider().color($r('app.color.hm_divider'))
+          SwitchSettingRow({
+            icon: $r('sys.symbol.sun_max'),
+            title: $r('app.string.row_reader_keep_on'),
+            field: SettingField.READER_KEEP_ON,
+            onToggle: (value: boolean) => {
+              settingsViewModel.setReaderKeepScreenOn(value);
             }
           })
         }

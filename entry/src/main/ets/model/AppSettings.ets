@@ -41,6 +41,8 @@ export class AppSettings {
   @Trace readerFontScale: number = 1.0;
   /** 正文字号档位（'small' | 'medium' | 'large'）：由倍数推出的最接近预设，设置页档位行显示用。 */
   @Trace readerFont: string = READER_FONT_OPTIONS.defaultValue;
+  /** 阅读时常亮屏幕（进入详情页开启、离开恢复）。 */
+  @Trace readerKeepScreenOn: boolean = true;
   /** 正文行距倍数（1.2–2.2，连续值）。 */
   @Trace readerLineScale: number = 1.7;
   /** 正文行距档位（'compact' | 'normal' | 'loose'）：由倍数推出的最接近预设。 */

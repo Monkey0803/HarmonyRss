@@ -181,6 +181,22 @@
       "value": "无匹配"
     },
     {
+      "name": "action_start_speech",
+      "value": "朗读正文"
+    },
+    {
+      "name": "action_stop_speech",
+      "value": "停止朗读"
+    },
+    {
+      "name": "speech_running",
+      "value": "正在朗读…"
+    },
+    {
+      "name": "toast_speech_unsupported",
+      "value": "本机不支持朗读"
+    },
+    {
       "name": "action_copy",
       "value": "复制"
     },
@@ -203,6 +219,10 @@
     {
       "name": "snack_selection_copied",
       "value": "已复制选段"
+    },
+    {
+      "name": "row_reader_keep_on",
+      "value": "阅读时常亮"
     },
     {
       "name": "read_panel_title",

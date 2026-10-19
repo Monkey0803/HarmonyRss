@@ -37,6 +37,8 @@ import { settingsViewModel } from '../viewmodel/SettingsViewModel';
 import { ReadSettingsSheet } from './ReadSettingsSheet';
 import { ToastUtil } from '../common/utils/ToastUtil';
 import { toPlainText } from '../common/utils/HtmlText';
+import { screenAwake } from '../service/ScreenAwake';
+import { readerSpeech } from '../service/ReaderSpeech';
 import {
   clearFindScript,
   countFindScript,
@@ -98,6 +100,17 @@ export struct ArticleDetailView {
   @Local progressRatio: number = 0;
   /** 正文里选中的文本（Web 的 onTextSelectionChange 回调）；非空时显示「复制/分享选段」浮条。 */
   @Local selectedText: string = '';
+  /** 切文动效：正文容器的临时位移/透明度（animateTo 收尾回 0 / 1）。 */
+  @Local bodyShift: number = 0;
+  @Local bodyAlpha: number = 1;
+  /** 朗读：是否正在朗读（控制迷你播放条与菜单文案）。 */
+  @Local speaking: boolean = false;
+  /** 沉浸阅读：隐藏标题栏与底栏（点按正文中部切换）。 */
+  @Local barsHidden: boolean = false;
+  /** 横向手势的起手点（px），用于避让系统边缘返回手势。 */
+  private panStartX: number = -1;
+  /** 沉浸态切换上报给外壳（标题栏由 HdsNavDestination.hideTitleBar 控制）。 */
+  @Event onImmersiveChange: (hidden: boolean) => void = () => {};
   /** 文内查找：查找条显隐、查询串、命中数与当前下标。 */
   @Local findOpen: boolean = false;
   @Local findQuery: string = '';
@@ -112,6 +125,10 @@ export struct ArticleDetailView {
   private progressBridge: ReaderProgressBridge = new ReaderProgressBridge((ratio: number) => {
     this.progressRatio = ratio;
   });
+  /** 正文触摸判定（沉浸阅读的点按）：按下位置与时间。 */
+  private tapStartX: number = -1;
+  private tapStartY: number = -1;
+  private tapStartTime: number = 0;
   /** 悬浮操作栏的页签控制器（页签栏只作为沉浸光感的生效区域）。 */
   private barTabsController: HdsTabsController = new HdsTabsController();
 
@@ -236,6 +253,25 @@ export struct ArticleDetailView {
       .catch((err: BusinessError) => {
         hilog.warn(DOMAIN, TAG, 'find clear failed: %{public}d', err.code);
       });
+  }
+
+  /** 开始 / 停止朗读（不支持时提示，不影响阅读）。 */
+  private async toggleSpeech(): Promise<void> {
+    if (this.speaking) {
+      readerSpeech.stop();
+      return;
+    }
+    const text: string = this.plainText();
+    if (text.length === 0) {
+      this.toast($r('app.string.article_no_content'));
+      return;
+    }
+    const ok: boolean = await readerSpeech.start(text, (speaking: boolean) => {
+      this.speaking = speaking;
+    });
+    if (!ok) {
+      this.toast($r('app.string.toast_speech_unsupported'));
+    }
   }
 
   private async copyBody(): Promise<void> {
@@ -409,15 +445,26 @@ export struct ArticleDetailView {
     }
   }
 
-  /** 原地切换到上一篇 / 下一篇 / 下一条未读（不重新 push 路由）。 */
-  private openRelative(id: string): void {
+  /**
+   * 原地切换到上一篇 / 下一篇 / 下一条未读（不重新 push 路由）。
+   * slideFrom：1 = 新内容从右侧滑入（下一篇），-1 = 从左侧滑入（上一篇）。
+   */
+  private openRelative(id: string, slideFrom: number = 1): void {
     if (id.length === 0) {
       return;
     }
     feedViewModel.openArticle(id);
     // 不重置 readerHtml：保持 Reader Web 挂载，随后直接换文档，避免 controller 失效。
     this.progressRatio = 0;
-    // 换了文章：查找条与高亮都失效，直接收起
+    // 换了文章：停掉朗读
+    if (this.speaking) {
+      readerSpeech.stop();
+    }
+    // 沉浸态与查找条都复位（新文章从完整界面开始）
+    if (this.barsHidden) {
+      this.barsHidden = false;
+      this.onImmersiveChange(false);
+    }
     this.findOpen = false;
     this.findQuery = '';
     this.findCount = 0;
@@ -431,6 +478,20 @@ export struct ArticleDetailView {
       this.startReader();
     }
     // 网页原文模式：Web 的 src 随 article.link 变化自动重载，等 onPageEnd 收尾。
+    this.playSwitchAnimation(slideFrom);
+  }
+
+  /**
+   * 切文动效：先把正文按方向推开一点，再动画回位。
+   * 不做书页翻转 —— 正文是 Web 文档，换文档本身开销已经不小，这里只做轻量位移 + 淡入。
+   */
+  private playSwitchAnimation(slideFrom: number): void {
+    this.bodyShift = slideFrom * 24;
+    this.bodyAlpha = 0.35;
+    this.getUIContext().animateTo({ duration: 180, curve: Curve.Friction }, () => {
+      this.bodyShift = 0;
+      this.bodyAlpha = 1;
+    });
   }
 
   /** 重新提取正文：清掉缓存后重跑（不卸载 Reader Web，直接换文档）。 */
@@ -449,10 +510,26 @@ export struct ArticleDetailView {
 
   /** 横向滑动：左滑下一篇、右滑上一篇（竖向留给正文滚动）。 */
   private onHorizontalPan(deltaX: number): void {
+    // 起手点必须在屏幕中间带：贴左右边缘的滑动优先交给系统返回手势，避免互相抢。
+    if (this.panStartX >= 0 && !this.isMiddleBand(this.panStartX)) {
+      return;
+    }
     if (deltaX < 0) {
-      this.openRelative(feedViewModel.nextArticleId());
+      this.openRelative(feedViewModel.nextArticleId(), 1);
     } else {
-      this.openRelative(feedViewModel.prevArticleId());
+      this.openRelative(feedViewModel.prevArticleId(), -1);
+    }
+  }
+
+  /** 起手点是否落在屏幕中间 60%（px，与 globalX 同坐标系）。 */
+  private isMiddleBand(globalX: number): boolean {
+    try {
+      const width: number = display.getDefaultDisplaySync().width;
+      return globalX > width * 0.2 && globalX < width * 0.8;
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.warn(DOMAIN, TAG, 'display info failed: %{public}d', error.code);
+      return true;
     }
   }
 
@@ -505,6 +582,13 @@ export struct ArticleDetailView {
           this.retryReader();
         })
       MenuItem({
+        content: this.speaking ? $r('app.string.action_stop_speech') : $r('app.string.action_start_speech'),
+        symbolStartIcon: this.menuIcon(this.speaking ? $r('sys.symbol.stop_circle') : $r('sys.symbol.speaker'))
+      })
+        .onClick(() => {
+          this.toggleSpeech();
+        })
+      MenuItem({
         content: $r('app.string.action_find_in_article'),
         symbolStartIcon: this.menuIcon($r('sys.symbol.magnifyingglass'))
       })
@@ -552,10 +636,15 @@ export struct ArticleDetailView {
 
   aboutToAppear(): void {
     this.startReader();
+    if (appSettings.readerKeepScreenOn) {
+      screenAwake.set(true, this.getUIContext().getHostContext());
+    }
   }
 
-  /** 离开详情页：按当前模式取一次滚动位置写回。 */
+  /** 离开详情页：恢复系统息屏策略，并按当前模式取一次滚动位置写回。 */
   aboutToDisappear(): void {
+    screenAwake.set(false, this.getUIContext().getHostContext());
+    readerSpeech.release();
     if (this.viewMode === MODE_WEB) {
       this.persistWebProgress();
     } else {
@@ -602,13 +691,62 @@ export struct ArticleDetailView {
       });
   }
 
-  /** 注入滚动监听，让文档持续回报进度（进度条用；失败不影响阅读）。 */
+  /** 注入滚动监听与点按监听（进度条 + 沉浸切换用；失败不影响阅读）。 */
   private bindProgressListener(controller: webview.WebviewController): void {
     controller
       .runJavaScript(progressListenerScript())
       .catch((err: BusinessError) => {
         hilog.warn(DOMAIN, TAG, 'progress listener failed: %{public}d', err.code);
       });
+  }
+
+  /**
+   * 正文触摸判定：短按、几乎没位移、且落在屏幕中间 60% 区域 → 视为「点按中部」。
+   * 放在 ArkTS 侧而不是注入脚本：ArkWeb 里 text 区域的合成点按不一定抛出 DOM click 事件（实测点按回调收不到）。
+   */
+  private handleBodyTouch(event: TouchEvent): void {
+    if (event.type === TouchType.Down) {
+      if (event.touches.length > 0) {
+        this.tapStartX = event.touches[0].windowX;
+        this.tapStartY = event.touches[0].windowY;
+        this.tapStartTime = Date.now();
+      }
+      return;
+    }
+    if (event.type !== TouchType.Up || this.tapStartTime === 0) {
+      return;
+    }
+    const startX: number = this.tapStartX;
+    const startY: number = this.tapStartY;
+    const moved: number = event.changedTouches.length > 0
+      ? Math.abs(event.changedTouches[0].windowX - startX) + Math.abs(event.changedTouches[0].windowY - startY)
+      : 0;
+    const elapsed: number = Date.now() - this.tapStartTime;
+    this.tapStartTime = 0;
+    if (elapsed > 300 || moved > 12) {
+      return;
+    }
+    if (this.isMiddleBandVp(startY)) {
+      this.toggleBars();
+    }
+  }
+
+  /** 竖直方向是否落在屏幕中间 60%（入参是 vp）。 */
+  private isMiddleBandVp(windowY: number): boolean {
+    try {
+      const heightVp: number = this.getUIContext().px2vp(display.getDefaultDisplaySync().height);
+      return windowY > heightVp * 0.25 && windowY < heightVp * 0.75;
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.warn(DOMAIN, TAG, 'display info failed: %{public}d', error.code);
+      return false;
+    }
+  }
+
+  /** 沉浸阅读：点按正文中部时切换标题栏与底栏显隐。 */
+  private toggleBars(): void {
+    this.barsHidden = !this.barsHidden;
+    this.onImmersiveChange(this.barsHidden);
   }
 
   private restoreWebProgress(): void {
@@ -673,7 +811,7 @@ export struct ArticleDetailView {
       .enabled(feedViewModel.prevArticleId().length > 0)
       .accessibilityText($r('app.string.article_prev'))
       .onClick(() => {
-        this.openRelative(feedViewModel.prevArticleId());
+        this.openRelative(feedViewModel.prevArticleId(), -1);
       })
   }
 
@@ -931,6 +1069,10 @@ export struct ArticleDetailView {
             .onTextSelectionChange((selectionText: string) => {
               this.selectedText = selectionText;
             })
+            // 沉浸阅读：点按正文中部切换上下栏（ArkWeb 里 DOM click 不一定触发，改在 ArkTS 侧判定）
+            .onTouch((event: TouchEvent) => {
+              this.handleBodyTouch(event);
+            })
             .onControllerAttached(() => {
               const doc: string = buildReaderDocument(this.readerHtml, safeArea.contentTopInsetVp, safeArea.contentBottomInsetVp);
               try {
@@ -960,6 +1102,9 @@ export struct ArticleDetailView {
             // 横向滑动切文：priorityGesture + IgnoreInternal 才能抢在 ArkWeb 内部手势之前。
             .priorityGesture(
               PanGesture({ direction: PanDirection.Horizontal, distance: SWIPE_DISTANCE_VP })
+                .onActionStart((event: GestureEvent) => {
+                  this.panStartX = event.fingerList.length > 0 ? event.fingerList[0].globalX : -1;
+                })
                 .onActionEnd((event: GestureEvent) => {
                   this.onHorizontalPan(event.offsetX);
                 }),
@@ -1005,6 +1150,10 @@ export struct ArticleDetailView {
           .onTextSelectionChange((selectionText: string) => {
             this.selectedText = selectionText;
           })
+          // 沉浸阅读：点按正文中部切换上下栏（ArkWeb 里 DOM click 不一定触发，改在 ArkTS 侧判定）
+          .onTouch((event: TouchEvent) => {
+            this.handleBodyTouch(event);
+          })
           .onPageEnd(() => {
             this.loading = false;
             // 网页原文的排版只能靠注入：按设置覆盖正文字号 / 行距 / 字体族。
@@ -1022,6 +1171,9 @@ export struct ArticleDetailView {
           // 横向滑动切文：priorityGesture + IgnoreInternal 才能抢在 ArkWeb 内部手势之前。
           .priorityGesture(
             PanGesture({ direction: PanDirection.Horizontal, distance: SWIPE_DISTANCE_VP })
+              .onActionStart((event: GestureEvent) => {
+                this.panStartX = event.fingerList.length > 0 ? event.fingerList[0].globalX : -1;
+              })
               .onActionEnd((event: GestureEvent) => {
                 this.onHorizontalPan(event.offsetX);
               }),
@@ -1171,6 +1323,48 @@ export struct ArticleDetailView {
     }
   }
 
+  /** 朗读迷你条：朗读中出现在底栏上方，可停止。 */
+  @Builder
+  SpeechBar() {
+    if (this.speaking) {
+      Row({ space: $r('app.float.space_s') }) {
+        SymbolGlyph($r('sys.symbol.speaker'))
+          .fontSize($r('app.float.icon_size_small'))
+          .fontColor([$r('app.color.hm_brand')])
+
+        Text($r('app.string.speech_running'))
+          .fontSize($r('app.float.font_size_caption'))
+          .fontColor($r('app.color.hm_text_primary'))
+          .layoutWeight(1)
+          .maxLines(1)
+          .textOverflow({ overflow: TextOverflow.Ellipsis })
+
+        Button($r('app.string.action_stop_speech'))
+          .buttonStyle(ButtonStyleMode.TEXTUAL)
+          .fontSize($r('app.float.font_size_caption'))
+          .fontColor($r('app.color.hm_brand'))
+          .onClick(() => {
+            readerSpeech.stop();
+          })
+      }
+      .width('100%')
+      .padding({
+        left: $r('app.float.space_l'),
+        right: $r('app.float.space_m'),
+        top: $r('app.float.space_s'),
+        bottom: $r('app.float.space_s')
+      })
+      .margin({
+        left: $r('app.float.space_l'),
+        right: $r('app.float.space_l'),
+        bottom: $r('app.float.space_s')
+      })
+      .backgroundColor($r('app.color.hm_card_background'))
+      .borderRadius($r('app.float.radius_card'))
+      .alignItems(VerticalAlign.Center)
+    }
+  }
+
   /** 选段浮条：选中正文后出现，提供复制 / 分享选段。 */
   @Builder
   SelectionBar() {
@@ -1243,13 +1437,29 @@ export struct ArticleDetailView {
     Stack({ alignContent: Alignment.Bottom }) {
       // 正文铺满整页（含标题栏与悬浮底栏下方），从两栏下方穿过 —— 与首页 barOverlap(true) 同源；
       // 首尾让位由正文自己留：Reader 文档 / 网页原文走 CSS 内边距，纯文本走滚动内容里的占位与底部内边距。
-      this.BodySwitch()
+      // 切文时由 playSwitchAnimation 给一层轻量位移 + 淡入。
+      Column() {
+        this.BodySwitch()
+      }
+      .width('100%')
+      .height('100%')
+      .translate({ x: this.bodyShift })
+      .opacity(this.bodyAlpha)
 
-      this.FloatingBar()
+      // 底栏：沉浸态下收起（高度 + 透明度动画；内容底部预留是固定的，收起后只是多点留白）
+      Column() {
+        this.FloatingBar()
+      }
+      .width('100%')
+      .height(this.barsHidden ? 0 : this.barStripHeight())
+      .opacity(this.barsHidden ? 0 : 1)
+      .clip(true)
+      .animation({ duration: 180, curve: Curve.Friction })
 
-      // 选段操作浮条：贴在底栏上方
+      // 底部浮层：朗读条 + 选段条（都贴在底栏上方）
       Column() {
         Blank()
+        this.SpeechBar()
         this.SelectionBar()
       }
       .width('100%')

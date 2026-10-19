@@ -58,6 +58,8 @@ export class SettingsStore {
       appSettings.readerLineScale = lineScale;
       appSettings.readerFont = ReaderTypography.fontPresetOfScale(fontScale);
       appSettings.readerLine = ReaderTypography.linePresetOfScale(lineScale);
+      appSettings.readerKeepScreenOn =
+        store.getSync(PreferencesConstants.KEY_READER_KEEP_SCREEN_ON, appSettings.readerKeepScreenOn) as boolean;
       appSettings.readerFontFamily = READER_FAMILY_OPTIONS.normalize(
         store.getSync(PreferencesConstants.KEY_READER_FAMILY, appSettings.readerFontFamily) as string);
       appSettings.readerWidth = READER_WIDTH_OPTIONS.normalize(
@@ -101,6 +103,7 @@ export class SettingsStore {
       store.putSync(PreferencesConstants.KEY_ANTI_PEEP_ENABLED, appSettings.antiPeepEnabled);
       store.putSync(PreferencesConstants.KEY_LOGO_KIND, appSettings.logoKind);
       store.putSync(PreferencesConstants.KEY_AUTO_REFRESH, appSettings.autoRefresh);
+      store.putSync(PreferencesConstants.KEY_READER_KEEP_SCREEN_ON, appSettings.readerKeepScreenOn);
       store.putSync(PreferencesConstants.KEY_READER_FONT, appSettings.readerFont);
       store.putSync(PreferencesConstants.KEY_READER_LINE, appSettings.readerLine);
       store.putSync(PreferencesConstants.KEY_READER_FONT_SCALE, appSettings.readerFontScale);

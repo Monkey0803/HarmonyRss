@@ -61,6 +61,8 @@ import { Article } from '../model/Feed';
 @ComponentV2
 struct Index {
   @Local currentTab: number = CommonConstants.DEFAULT_TAB_INDEX;
+  /** 详情页沉浸阅读：由详情页点按正文中部切换，控制 HdsNavDestination 标题栏显隐。 */
+  @Local articleBarsHidden: boolean = false;
   /** 添加订阅源面板：显隐、输入地址、提交中（入口在悬浮页签栏的 miniBar 上）。 */
   @Local showAddSheet: boolean = false;
   @Local addUrl: string = '';
@@ -412,9 +414,16 @@ struct Index {
   pageMap(name: string, pageInfos: Object) {
     if (name === RouterConstants.PAGE_ARTICLE) {
       HdsNavDestination() {
-        ArticleDetailView({ scroller: this.articleScroller })
+        ArticleDetailView({
+          scroller: this.articleScroller,
+          onImmersiveChange: (hidden: boolean) => {
+            this.articleBarsHidden = hidden;
+          }
+        })
       }
       .titleBar(this.articleTitleOptions())
+      // 沉浸阅读：详情页点按正文中部时收起 / 恢复标题栏（带系统动画）
+      .hideTitleBar(this.articleBarsHidden, true)
       .titleMode(HdsNavDestinationTitleMode.MINI)
       // 不透明背板：原生覆盖式 push 时不会透过新页看到上一页，也不再因淡出透出壁纸。
       .backgroundColor($r('app.color.hm_web_surface'))

@@ -136,6 +136,12 @@ export class SettingsViewModel {
     settingsStore.save();
   }
 
+  /** 阅读时常亮屏幕。 */
+  setReaderKeepScreenOn(value: boolean): void {
+    appSettings.readerKeepScreenOn = value;
+    settingsStore.save();
+  }
+
   /** 正文字体族。 */
   setReaderFontFamily(id: string): void {
     appSettings.readerFontFamily = id;

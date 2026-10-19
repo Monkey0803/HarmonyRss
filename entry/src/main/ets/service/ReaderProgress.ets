@@ -81,7 +81,7 @@ export function progressListenerScript(): string {
 }
 
 /**
- * 注入到 Web 的 ArkTS 对象：文档内脚本通过 window.hrProgress.onProgress(ratio) 回调。
+ * 注入到 Web 的 ArkTS 对象：文档内脚本通过 window.hrProgress.* 回调。
  * 方法必须是同步签名（javaScriptProxy 的约定）。
  */
 export class ReaderProgressBridge {

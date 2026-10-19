@@ -19,6 +19,7 @@ export class PreferencesConstants {
   /** 自动刷新间隔（'off' | '15' | '30' | '60'）。 */
   static readonly KEY_AUTO_REFRESH: string = 'autoRefresh';
   /** 阅读排版：正文字号档位。 */
+  static readonly KEY_READER_KEEP_SCREEN_ON: string = 'readerKeepScreenOn';
   static readonly KEY_READER_FONT: string = 'readerFont';
   /** 正文字号倍数（连续值）。 */
   static readonly KEY_READER_FONT_SCALE: string = 'readerFontScale';
