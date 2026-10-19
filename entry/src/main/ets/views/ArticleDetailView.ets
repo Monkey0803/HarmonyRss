@@ -13,9 +13,6 @@ import { common } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import {
-  HdsActionBar,
-  ActionBarButton,
-  ActionBarStyle,
   HdsSnackBar,
   SnackBarIconOptions,
   SnackBarMessageOptions,
@@ -23,10 +20,13 @@ import {
   SnackBarStyleOptions,
   SnackBarOperationType
 } from '@kit.UIDesignKit';
+import { uiMaterial } from '@kit.ArkUI';
 import { Article } from '../model/Feed';
 import { feedViewModel } from '../viewmodel/FeedViewModel';
 import { DateUtil } from '../common/utils/DateUtil';
 import { safeArea } from '../service/SafeAreaController';
+import { gripSensor } from '../service/GripSensor';
+import { MaterialController } from '../service/MaterialController';
 import { CommonConstants } from '../common/constants/CommonConstants';
 import { articleActions } from '../service/ArticleActions';
 import { settingsViewModel } from '../viewmodel/SettingsViewModel';
@@ -52,6 +52,38 @@ const OVERSCROLL_TRIGGER_VP: number = 24;
 /** 空文章占位：@Builder 内不能声明局部变量，用辅助方法返回兜底对象避免 undefined 判空。 */
 const EMPTY_ARTICLE: Article = new Article('', '', '', '', '', '', '', 0);
 
+/**
+ * 悬浮底栏的背板。
+ *
+ * 沉浸光感材质只能用 SDK 26.0.0 起的通用属性 systemMaterial 设置，而工程兼容版本是 6.1.0(23)：
+ * 写成声明式属性（.systemMaterial(...)）既无法在低版本设备上兜底（属性方法不存在会直接抛错），
+ * 也必然留下编译期 API 兼容告警。改成 AttributeModifier 的命令式设置后，调用点可以 try/catch ——
+ * 这既是低版本设备的兜底，也是编译器识别「已做兼容处理」、不再报 since 告警的方式。
+ */
+class BarBackdropModifier implements AttributeModifier<ColumnAttribute> {
+  private readonly immersiveOn: boolean;
+
+  constructor(immersiveOn: boolean) {
+    this.immersiveOn = immersiveOn;
+  }
+
+  applyNormalAttribute(instance: ColumnAttribute): void {
+    const material: uiMaterial.Material | undefined = MaterialController.componentMaterial(this.immersiveOn);
+    try {
+      if (material === undefined) {
+        instance.backgroundColor($r('app.color.hm_card_background'));
+        return;
+      }
+      instance.systemMaterial(material);
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.warn(DOMAIN, TAG, 'systemMaterial failed: %{public}d', error.code);
+      // 材质不可用：退回实色卡片背板，保证栏内文字可读。
+      instance.backgroundColor($r('app.color.hm_card_background'));
+    }
+  }
+}
+
 @ComponentV2
 export struct ArticleDetailView {
   /** 当前阅读模式。 */
@@ -61,8 +93,6 @@ export struct ArticleDetailView {
   @Local readerFailed: boolean = false;
   /** 已提取并净化好的正文片段（由 ViewModel 提供，命中本地缓存时无需联网）。 */
   @Local readerHtml: string = '';
-  /** HdsActionBar 展开态：展开时同时显示两侧按钮。 */
-  @Local isExpand: boolean = true;
   private readerController: webview.WebviewController = new webview.WebviewController();
   private webController: webview.WebviewController = new webview.WebviewController();
   /** 提取正文模式的可滚动控制器（由外层 HdsNavDestination 绑定，用于标题栏材质随滚动跟手渐变 + 阅读进度）。 */
@@ -74,6 +104,17 @@ export struct ArticleDetailView {
   private finished: boolean = false;
   /** 触底检测在途标记（避免过度滚动事件重复触发 runJavaScript）。 */
   private bottomCheckPending: boolean = false;
+
+  /**
+   * 悬浮底栏的背板修饰器。
+   *
+   * 用 @Computed 缓存：沉浸式开关不变时实例稳定（不重复设置属性），开关一变就换成新实例 ——
+   * 传入的修饰器实例变化会触发 applyNormalAttribute 重跑，底栏背板即时在「材质 / 实色」之间切换。
+   */
+  @Computed
+  get backdropModifier(): BarBackdropModifier {
+    return new BarBackdropModifier(appSettings.immersiveOn);
+  }
 
   private hostContext(): common.UIAbilityContext {
     const context: common.Context | undefined = this.getUIContext().getHostContext();
@@ -501,84 +542,149 @@ export struct ArticleDetailView {
     }
   }
 
-  /** 阅读导航：上一篇 / 下一篇 / 下一条未读（在当前筛选范围内原地切换）。 */
+  /** 阅读导航：上一篇（在当前筛选范围内原地切换）。 */
   @Builder
-  NavBar() {
+  PrevNav() {
+    Button($r('app.string.article_prev'))
+      .buttonStyle(ButtonStyleMode.TEXTUAL)
+      .fontSize($r('app.float.font_size_caption'))
+      .fontColor(feedViewModel.prevArticleId().length > 0
+        ? $r('app.color.hm_brand') : $r('sys.color.font_secondary'))
+      .enabled(feedViewModel.prevArticleId().length > 0)
+      .onClick(() => {
+        this.openRelative(feedViewModel.prevArticleId());
+      })
+  }
+
+  /** 阅读导航：下一篇。 */
+  @Builder
+  NextNav() {
+    Button($r('app.string.article_next'))
+      .buttonStyle(ButtonStyleMode.TEXTUAL)
+      .fontSize($r('app.float.font_size_caption'))
+      .fontColor(feedViewModel.nextArticleId().length > 0
+        ? $r('app.color.hm_brand') : $r('sys.color.font_secondary'))
+      .enabled(feedViewModel.nextArticleId().length > 0)
+      .onClick(() => {
+        this.openRelative(feedViewModel.nextArticleId());
+      })
+  }
+
+  /** 阅读导航：下一条未读（底栏的主操作，随握持手镜像左右）。 */
+  @Builder
+  NextUnreadNav() {
+    Button($r('app.string.article_next_unread'))
+      .buttonStyle(ButtonStyleMode.TEXTUAL)
+      .fontSize($r('app.float.font_size_caption'))
+      .fontColor(feedViewModel.nextUnreadId().length > 0
+        ? $r('app.color.hm_brand') : $r('sys.color.font_secondary'))
+      .enabled(feedViewModel.nextUnreadId().length > 0)
+      .onClick(() => {
+        this.openRelative(feedViewModel.nextUnreadId());
+      })
+  }
+
+  /** 底栏操作：阅读模式切换（Reader ↔ 网页原文）。 */
+  @Builder
+  ModeAction() {
+    SymbolGlyph(this.viewMode === MODE_READER ? $r('sys.symbol.link') : $r('sys.symbol.doc_text'))
+      .fontSize($r('app.float.icon_size'))
+      .fontColor([$r('sys.color.font_primary')])
+      .padding($r('app.float.space_xs'))
+      .onClick(() => {
+        this.switchMode();
+      })
+  }
+
+  /** 底栏操作：收藏（实心星 = 已收藏）。 */
+  @Builder
+  StarAction() {
+    SymbolGlyph(this.cur().starred ? $r('sys.symbol.star_fill') : $r('sys.symbol.star'))
+      .fontSize($r('app.float.icon_size'))
+      .fontColor([this.cur().starred ? $r('app.color.hm_brand') : $r('sys.color.font_primary')])
+      .padding($r('app.float.space_xs'))
+      .onClick(() => {
+        feedViewModel.toggleStar(this.cur().id);
+      })
+  }
+
+  /** 底栏操作：分享。 */
+  @Builder
+  ShareAction() {
+    SymbolGlyph($r('sys.symbol.share'))
+      .fontSize($r('app.float.icon_size'))
+      .fontColor([$r('sys.color.font_primary')])
+      .padding($r('app.float.space_xs'))
+      .onClick(() => {
+        this.shareArticle(this.cur());
+      })
+  }
+
+  /** 底栏第一行：阅读导航（上一篇 / 下一篇 / 下一条未读），主操作随握持手镜像左右。 */
+  @Builder
+  NavRow() {
     Row({ space: $r('app.float.space_s') }) {
-      Button($r('app.string.article_prev'))
-        .buttonStyle(ButtonStyleMode.TEXTUAL)
-        .fontSize($r('app.float.font_size_caption'))
-        .fontColor(feedViewModel.prevArticleId().length > 0
-          ? $r('app.color.hm_brand') : $r('app.color.hm_text_secondary'))
-        .enabled(feedViewModel.prevArticleId().length > 0)
-        .onClick(() => {
-          this.openRelative(feedViewModel.prevArticleId());
-        })
-
-      Button($r('app.string.article_next'))
-        .buttonStyle(ButtonStyleMode.TEXTUAL)
-        .fontSize($r('app.float.font_size_caption'))
-        .fontColor(feedViewModel.nextArticleId().length > 0
-          ? $r('app.color.hm_brand') : $r('app.color.hm_text_secondary'))
-        .enabled(feedViewModel.nextArticleId().length > 0)
-        .onClick(() => {
-          this.openRelative(feedViewModel.nextArticleId());
-        })
-
-      Blank()
-
-      Button($r('app.string.article_next_unread'))
-        .buttonStyle(ButtonStyleMode.TEXTUAL)
-        .fontSize($r('app.float.font_size_caption'))
-        .fontColor(feedViewModel.nextUnreadId().length > 0
-          ? $r('app.color.hm_brand') : $r('app.color.hm_text_secondary'))
-        .enabled(feedViewModel.nextUnreadId().length > 0)
-        .onClick(() => {
-          this.openRelative(feedViewModel.nextUnreadId());
-        })
+      if (gripSensor.gripLeft) {
+        this.NextUnreadNav()
+        Blank()
+        this.PrevNav()
+        this.NextNav()
+      } else {
+        this.PrevNav()
+        this.NextNav()
+        Blank()
+        this.NextUnreadNav()
+      }
     }
     .width('100%')
-    .padding({ left: $r('app.float.space_l'), right: $r('app.float.space_l') })
+  }
+
+  /** 底栏第二行：文章操作（模式切换 / 收藏 / 分享），收藏贴握持手一侧。 */
+  @Builder
+  IconRow() {
+    Row({ space: $r('app.float.space_2xl') }) {
+      if (gripSensor.gripLeft) {
+        this.StarAction()
+        this.ShareAction()
+        this.ModeAction()
+      } else {
+        this.ModeAction()
+        this.ShareAction()
+        this.StarAction()
+      }
+    }
+    .width('100%')
+    .justifyContent(gripSensor.gripLeft ? FlexAlign.Start : FlexAlign.End)
   }
 
   /**
-   * 底部操作栏（HdsActionBar）：主按钮 = 收藏（星标切换），左 = 阅读模式切换，右 = 分享。
-   * isPrimaryIconChanged 驱动主按钮在 baseIcon / altIcon 之间切换，表达「已收藏」状态。
+   * 悬浮底栏：与底部页签栏同位（贴屏幕底部悬浮、左右留白），承载阅读导航
+   * （上一篇 / 下一篇 / 下一条未读）与文章操作（模式切换 / 收藏 / 分享）。
+   *
+   * 智感握姿：识别到左手握持时整体镜像 —— 主操作（下一条未读、收藏）挪到左侧拇指可达处，
+   * 右手握持即界面本来的排布（见 GripSensor 的镜像约定）。
+   *
+   * 背板走 attributeModifier 的命令式设置（见 BarBackdropModifier），而不写成声明式属性 ——
+   * 沉浸光感材质 systemMaterial 是 SDK 26.0.0 起的接口，工程兼容版本是 6.1.0(23)：
+   * 声明式写法无法 try/catch 兜底，低版本设备上会直接崩，且必然留下 API 兼容告警。
    */
   @Builder
-  ActionBar() {
+  FloatingBar() {
     if (this.hasArticle()) {
-      HdsActionBar({
-        startButtons: [
-          new ActionBarButton({
-            baseIcon: this.viewMode === MODE_READER ? $r('sys.symbol.link') : $r('sys.symbol.doc_text'),
-            onClick: () => {
-              this.switchMode();
-            }
-          })
-        ],
-        endButtons: [
-          new ActionBarButton({
-            baseIcon: $r('sys.symbol.share'),
-            onClick: () => {
-              this.shareArticle(this.cur());
-            }
-          })
-        ],
-        primaryButton: new ActionBarButton({
-          baseIcon: $r('sys.symbol.star'),
-          altIcon: $r('sys.symbol.star_fill'),
-          hoverTips: this.cur().starred ? $r('app.string.action_unstar') : $r('app.string.action_star'),
-          onClick: () => {
-            feedViewModel.toggleStar(this.cur().id);
-          }
-        }),
-        actionBarStyle: new ActionBarStyle({
-          isPrimaryIconChanged: this.cur().starred
-        }),
-        isExpand: this.isExpand
+      Column({ space: $r('app.float.space_s') }) {
+        this.NavRow()
+        this.IconRow()
+      }
+      .width('100%')
+      .padding({
+        left: $r('app.float.space_l'),
+        right: $r('app.float.space_l'),
+        top: $r('app.float.space_m'),
+        bottom: $r('app.float.space_m')
       })
-      .margin({ top: $r('app.float.space_l'), bottom: $r('app.float.space_l') })
+      .borderRadius($r('app.float.radius_card'))
+      .margin({ left: $r('app.float.space_l'), right: $r('app.float.space_l') })
+      .attributeModifier(this.backdropModifier)
     }
   }
 
@@ -767,13 +873,12 @@ export struct ArticleDetailView {
       Row().width('100%').height(safeArea.topInsetVp + CommonConstants.TITLE_BAR_HEIGHT_VP)
 
       this.Meta()
-      this.NavBar()
       this.BodySwitch()
-      this.ActionBar()
+      this.FloatingBar()
     }
     .width('100%')
     .height('100%')
-    // 详情页没有页签栏：底部只按系统导航条内缩。
+    // 详情页没有页签栏：底部按系统导航条内缩 —— 悬浮底栏贴在这个避让区上沿，与首页悬浮页签栏同位。
     .padding({ bottom: safeArea.bottomInsetVp })
     .backgroundColor($r('app.color.hm_page_transparent'))
   }
