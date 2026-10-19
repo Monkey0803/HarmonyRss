@@ -13,6 +13,8 @@ export class CommonConstants {
   static readonly TITLE_BAR_HEIGHT_VP: number = 56;
   /** HDS 悬浮页签栏 / 操作栏高度（vp）——HDS 规范固定值，用于给它留出页面条带高度。 */
   static readonly TAB_BAR_HEIGHT_VP: number = 56;
+  /** 悬浮页签栏上 miniBar（添加订阅源入口）宽度（vp）——圆角胶囊，够一个图标落位。 */
+  static readonly MINI_BAR_WIDTH_VP: number = 64;
   /** 悬浮操作栏两侧留白（vp）：与首页悬浮页签栏的贴边距离一致。 */
   static readonly BAR_SIDE_MARGIN_VP: number = 16;
   /** 标题栏沉浸光感材质的渐显滚动距离（vp）：内容滚过该距离后材质完全生效——行为参数。 */

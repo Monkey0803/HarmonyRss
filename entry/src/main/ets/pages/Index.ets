@@ -25,7 +25,11 @@ import {
   TitleBarStyleOptions,
   HdsNavigationTitleBarOptions,
   HdsTabsFloatingStyle,
-  SystemMaterialParams
+  SystemMaterialParams,
+  HdsTabsMiniBar,
+  HdsBarStyle,
+  HdsTabsBarChangeMode,
+  HdsBarWidthRangeOptions
 } from '@kit.UIDesignKit';
 import { LengthMetrics } from '@kit.ArkUI';
 import { appSettings } from '../model/AppSettings';
@@ -40,6 +44,8 @@ import { TabIndex } from '../common/constants/NavigationConstants';
 import { RouterConstants } from '../common/constants/RouterConstants';
 import { BackgroundKind } from '../common/constants/SettingsConstants';
 import { IMAGE_DOMAIN } from '../common/constants/DomainConstants';
+import { FeedError } from '../common/constants/RssConstants';
+import { FeedErrorText } from '../common/utils/FeedErrorText';
 import { HomeTabView } from '../views/HomeTabView';
 import { SettingsTabView } from '../views/SettingsTabView';
 import { ImageTabView } from '../views/ImageTabView';
@@ -55,6 +61,10 @@ import { Article } from '../model/Feed';
 @ComponentV2
 struct Index {
   @Local currentTab: number = CommonConstants.DEFAULT_TAB_INDEX;
+  /** 添加订阅源面板：显隐、输入地址、提交中（入口在悬浮页签栏的 miniBar 上）。 */
+  @Local showAddSheet: boolean = false;
+  @Local addUrl: string = '';
+  @Local addSubmitting: boolean = false;
   @Local navPathStack: NavPathStack = new NavPathStack();
   private tabsController: HdsTabsController = new HdsTabsController();
   /** 每个页签独立的 Scroller：绑定给 HdsNavigation 做滚动联动，互不干扰。 */
@@ -224,7 +234,7 @@ struct Index {
     // 详情页正文是 Web / Reader 文档，材质与背景模糊都采样不到它的画面（实测标题栏背后无模糊），
     // 所以这里固定补一层半透明底：标题栏在正文之上始终读得出是一块玻璃面，标题也始终清晰。
     const scrolled: HdsNavigationTitleBarStyle = {
-      backgroundStyle: { backgroundColor: $r('app.color.hm_title_scrim') }
+      backgroundStyle: { backgroundColor: $r('app.color.hm_glass_scrim') }
     };
     const style: TitleBarStyleOptions = {
       originalStyle: scrolled,
@@ -282,13 +292,111 @@ struct Index {
   }
 
   private floatingStyle(): HdsTabsFloatingStyle {
+    const width: number = CommonConstants.MINI_BAR_WIDTH_VP;
+    const miniWidth: HdsBarWidthRangeOptions = {
+      smallWidth: width,
+      mediumWidth: width,
+      largeWidth: width
+    };
+    const miniBar: HdsTabsMiniBar = {
+      miniBarBuilder: () => {
+        this.AddMiniBarButton()
+      },
+      miniBarWidth: miniWidth,
+      // 常驻收起态：展开态会把页签栏压成「只留当前页签」（HDS 的折叠语义），三个页签就没了。
+      miniBarStyle: HdsBarStyle.COLLAPSE,
+      onBarStyleChange: (miniBarStyle: HdsBarStyle, tabBarStyle: HdsBarStyle,
+        miniBarWidth: number, tabBarWidth: number, mode: HdsTabsBarChangeMode) => {
+        // 点 miniBar 在 HDS 里是「切换栏样式」：这里它只是个入口，所以展开后立刻收回来，
+        // 同时打开「添加订阅源」面板（APP_TRIGGER 是下面这行自己触发的，不重复处理）。
+        if (miniBarStyle === HdsBarStyle.EXPAND && mode !== HdsTabsBarChangeMode.APP_TRIGGER) {
+          this.showAddSheet = true;
+          this.tabsController.applyMiniBarStyle(HdsBarStyle.COLLAPSE);
+        }
+      }
+    };
     const style: HdsTabsFloatingStyle = {
       adaptToHandedness: appSettings.gripEnabled,
       // 悬浮页签栏默认距 HdsTabs 底部 0vp；全屏布局下会压住系统导航条，这里按避让高度上抬。
       barBottomMargin: safeArea.bottomInsetVp,
-      systemMaterialEffect: this.materialParams()
+      systemMaterialEffect: this.materialParams(),
+      miniBar: miniBar
     };
     return style;
+  }
+
+  /**
+   * 悬浮页签栏上的「添加订阅源」入口（miniBar 承载）。
+   *
+   * 放在这里的理由：沉浸光感是区域级能力，只有标题栏与横向 Tabs 的底部 TabBar 生效；
+   * miniBar 属于悬浮页签栏的一部分，因此能拿到真正的系统材质（首页原来那个内容区自绘悬浮按钮拿不到）。
+   */
+  @Builder
+  AddMiniBarButton() {
+    Row() {
+      SymbolGlyph($r('sys.symbol.plus'))
+        .fontSize($r('app.float.icon_size'))
+        .fontColor([$r('sys.color.font_primary')])
+    }
+    .width('100%')
+    .height('100%')
+    .justifyContent(FlexAlign.Center)
+    .accessibilityText($r('app.string.home_add_feed_title'))
+    .onClick(() => {
+      this.showAddSheet = true;
+    })
+  }
+
+  /** 添加订阅源底部面板：输入地址 → 校验并入库抓取。 */
+  @Builder
+  AddFeedSheet() {
+    Column({ space: $r('app.float.space_m') }) {
+      Text($r('app.string.home_add_feed_title'))
+        .fontSize($r('app.float.font_size_title'))
+        .fontWeight(FontWeight.Bold)
+        .fontColor($r('app.color.hm_text_primary'))
+        .width('100%')
+
+      Row({ space: $r('app.float.space_s') }) {
+        TextInput({ text: this.addUrl, placeholder: $r('app.string.subs_url_hint') })
+          .type(InputType.Normal)
+          .fontSize($r('app.float.font_size_body'))
+          .layoutWeight(1)
+          .onChange((value: string) => {
+            this.addUrl = value;
+          })
+        Button(this.addSubmitting ? $r('app.string.subs_adding') : $r('app.string.subs_add'))
+          .buttonStyle(ButtonStyleMode.NORMAL)
+          .fontSize($r('app.float.font_size_body'))
+          .fontColor($r('app.color.hm_on_brand'))
+          .backgroundColor($r('app.color.hm_brand'))
+          .enabled(!this.addSubmitting)
+          .onClick(() => {
+            this.submitAdd();
+          })
+      }
+      .width('100%')
+
+      if (feedViewModel.errorCode !== FeedError.NONE) {
+        Text(FeedErrorText.of(feedViewModel.errorCode))
+          .fontSize($r('app.float.font_size_caption'))
+          .fontColor($r('app.color.hm_danger'))
+      }
+    }
+    .width('100%')
+    .padding($r('app.float.space_l'))
+    .alignItems(HorizontalAlign.Start)
+  }
+
+  /** 从悬浮页签栏添加订阅源：成功则清空输入并关闭面板，失败保留输入以便修正。 */
+  private async submitAdd(): Promise<void> {
+    this.addSubmitting = true;
+    const ok: boolean = await feedViewModel.addFeed(this.addUrl);
+    this.addSubmitting = false;
+    if (ok) {
+      this.addUrl = '';
+      this.showAddSheet = false;
+    }
   }
 
   /** 内置背景图资源（默认 / 极光 / 暮色）。 */
@@ -415,7 +523,13 @@ struct Index {
       HdsNavigation(this.navPathStack) {
         HdsTabs({ controller: this.tabsController }) {
           TabContent() {
-            HomeTabView({ navPathStack: this.navPathStack, scroller: this.homeScroller })
+            HomeTabView({
+              navPathStack: this.navPathStack,
+              scroller: this.homeScroller,
+              onAddFeedRequest: () => {
+                this.showAddSheet = true;
+              }
+            })
           }
           .tabBar(this.barBuilder($r('sys.symbol.house'), $r('app.string.tab_home'), this.currentTab === TabIndex.HOME))
 
@@ -474,5 +588,12 @@ struct Index {
     .height('100%')
     // 背景图关闭时露出的兜底色（与窗口层 start_window_background 一致，含深浅色适配）。
     .backgroundColor($r('app.color.start_window_background'))
+    .bindSheet(this.showAddSheet, this.AddFeedSheet(), {
+      height: 240,
+      dragBar: true,
+      onDisappear: () => {
+        this.showAddSheet = false;
+      }
+    })
   }
 }

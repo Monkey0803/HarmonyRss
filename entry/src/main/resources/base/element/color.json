@@ -14,7 +14,7 @@
     { "name": "hm_danger", "value": "#FFE84026" },
     { "name": "hm_menu_item_selected", "value": "#1A0A59F7" },
     { "name": "hm_web_surface", "value": "#FFF1F3F5" },
-    { "name": "hm_title_scrim", "value": "#B3FFFFFF" },
+    { "name": "hm_glass_scrim", "value": "#B3FFFFFF" },
     { "name": "hm_value_chip_background", "value": "#12000000" }
   ]
 }
