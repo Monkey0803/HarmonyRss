@@ -78,12 +78,13 @@ export struct ArticleListItem {
       }
 
       // 收藏 / 稍后读：与整行点击互不干扰。
-      // 命中区靠 padding 撑到 ~38vp（图标 22vp）：命中区太小容易点空，点空会落到整行的
-      // onClick 上把文章打开并标已读 —— 表现为「收藏点不动 / 阅读状态不对」。
+      // 命中区用 padding 撑到 ~46vp（图标 22vp，接近 48vp 的最小点击区建议）：命中区太小
+      // 容易点空，点空会落到整行的 onClick 上把文章打开并标已读 —— 表现为「收藏点不动 / 阅读状态不对」。
       SymbolGlyph(this.article.starred ? $r('sys.symbol.star_fill') : $r('sys.symbol.star'))
         .fontSize($r('app.float.icon_size'))
         .fontColor([this.article.starred ? $r('app.color.hm_brand') : $r('app.color.hm_text_secondary')])
-        .padding($r('app.float.space_s'))
+        .padding($r('app.float.space_m'))
+        .accessibilityText(this.article.starred ? $r('app.string.action_unstar') : $r('app.string.action_star'))
         .onClick(() => {
           this.onToggleStar(this.article.id);
         })
