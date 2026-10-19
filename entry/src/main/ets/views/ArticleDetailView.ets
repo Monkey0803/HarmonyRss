@@ -563,7 +563,8 @@ export struct ArticleDetailView {
    * （系统日志：Material inactive: out of scope）。所以这里用 HdsTabs 的悬浮页签栏承载，
    * 材质走 HDS 轨道（systemMaterialEffect，6.1.0(23) 起），与首页页签栏同一套参数与观感。
    *
-   * 智感握姿：交给 HdsTabsFloatingStyle.adaptToHandedness，整条悬浮栏随握持手左右切换。
+   * 智感握姿：交给 HdsTabsFloatingStyle.adaptToHandedness（与首页页签栏同一个原生开关），
+   * 整条悬浮栏在左右之间平移 —— 因此栏宽要留出侧移余量，见 barWidthVp。
    */
   @Builder
   BarContent() {
@@ -605,11 +606,19 @@ export struct ArticleDetailView {
     return style;
   }
 
-  /** 悬浮操作栏宽度（vp）：页面宽度减去两侧留白，与首页页签栏一致地「贴着两侧浮」。 */
+  /**
+   * 悬浮操作栏宽度（vp）：页面宽度减去两侧留白，再额外留出跟手侧移的余量。
+   *
+   * 智感握姿是「整条悬浮栏左右平移」（adaptToHandedness）；若宽度锁成「页宽 - 2×留白」，
+   * 栏就贴满两侧、没有可平移的余量，跟手看不出效果。内容本身 7 个图标只需 ~260vp，
+   * 收窄后靠中间的 Blank 吃掉余量即可。
+   */
   private barWidthVp(): number {
     try {
       const screenPx: number = display.getDefaultDisplaySync().width;
-      return this.getUIContext().px2vp(screenPx) - 2 * CommonConstants.BAR_SIDE_MARGIN_VP;
+      return this.getUIContext().px2vp(screenPx)
+        - 2 * CommonConstants.BAR_SIDE_MARGIN_VP
+        - CommonConstants.BAR_HANDEDNESS_ROOM_VP;
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       hilog.warn(DOMAIN, TAG, 'display info failed: %{public}d', error.code);

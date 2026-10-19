@@ -17,6 +17,8 @@ export class CommonConstants {
   static readonly MINI_BAR_WIDTH_VP: number = 64;
   /** 悬浮操作栏两侧留白（vp）：与首页悬浮页签栏的贴边距离一致。 */
   static readonly BAR_SIDE_MARGIN_VP: number = 16;
+  /** 给「整栏跟手」预留的左右侧移余量（vp）：栏若贴满两侧就没有可平移到对侧的余量。 */
+  static readonly BAR_HANDEDNESS_ROOM_VP: number = 48;
   /** 标题栏沉浸光感材质的渐显滚动距离（vp）：内容滚过该距离后材质完全生效——行为参数。 */
   static readonly TITLE_MATERIAL_FADE_VP: number = 24;
   /** App logo 在设置页预览瓦片中的边长（vp）。 */
