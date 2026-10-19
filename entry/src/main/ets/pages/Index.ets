@@ -75,18 +75,6 @@ struct Index {
   private feedArticlesScroller: Scroller = new Scroller();
   private articleScroller: Scroller = new Scroller();
 
-  /**
-   * 各目的页自己的转场状态（自右滑入 + 淡入）。
-   * customTransition 的代理对「进入的页」和「被覆盖的页」都会调用，共用一份状态会互相打架，
-   * 所以每个目的页各持有一份 slide / alpha。
-   */
-  @Local articleSlideX: string = '0%';
-  @Local articleAlpha: number = 1;
-  @Local feedSlideX: string = '0%';
-  @Local feedAlpha: number = 1;
-  @Local effectSlideX: string = '0%';
-  @Local effectAlpha: number = 1;
-
   aboutToAppear(): void {
     const context: common.Context | undefined = this.getUIContext().getHostContext();
     settingsViewModel.init(context as common.Context);
@@ -255,40 +243,6 @@ struct Index {
       style: this.stickyTitleStyle()
     };
     return options;
-  }
-
-  /**
-   * 目的页转场：入场「自右滑入 + 淡入」，出场（pop）反向滑出并淡出；
-   * 被覆盖 / 被重新露出的那一侧保持原位不动。
-   *
-   * 这里只是算出「起始态 / 终止态」，实际值由调用方通过 setSlide / setAlpha 写回
-   * 该目的页自己的那一份状态（见上方 articleSlideX 等），系统再按 duration / curve 补间。
-   */
-  private slideFadeTransition(
-    operation: NavigationOperation,
-    isEnter: boolean,
-    setSlide: (value: string) => void,
-    setAlpha: (value: number) => void
-  ): Array<NavDestinationTransition> | undefined {
-    const enterPush: boolean = operation === NavigationOperation.PUSH && isEnter;
-    const exitPop: boolean = operation === NavigationOperation.POP && !isEnter;
-    const duration: number = exitPop ? CommonConstants.NAV_EXIT_DURATION_MS : CommonConstants.NAV_ENTER_DURATION_MS;
-
-    // 起始态：入场从右侧屏外 + 全透明；其余情况从原位 + 不透明开始。
-    setSlide(enterPush ? '100%' : '0%');
-    setAlpha(enterPush ? 0 : 1);
-
-    // 终止态：入场回到原位并淡入；出场滑出右侧并淡出；其余保持原位。
-    const transition: NavDestinationTransition = {
-      duration: duration,
-      delay: 0,
-      curve: Curve.Friction,
-      event: () => {
-        setSlide(exitPop ? '100%' : '0%');
-        setAlpha(exitPop ? 0 : 1);
-      }
-    };
-    return [transition];
   }
 
   private floatingStyle(): HdsTabsFloatingStyle {
@@ -462,19 +416,9 @@ struct Index {
       }
       .titleBar(this.articleTitleOptions())
       .titleMode(HdsNavDestinationTitleMode.MINI)
-      .backgroundColor($r('app.color.hm_page_transparent'))
+      // 不透明背板：原生覆盖式 push 时不会透过新页看到上一页，也不再因淡出透出壁纸。
+      .backgroundColor($r('app.color.hm_web_surface'))
       .bindToScrollable([this.articleScroller])
-      .translate({ x: this.articleSlideX })
-      .opacity(this.articleAlpha)
-      .customTransition((operation: NavigationOperation, isEnter: boolean): Array<NavDestinationTransition> | undefined => {
-        return this.slideFadeTransition(operation, isEnter,
-          (value: string) => {
-            this.articleSlideX = value;
-          },
-          (value: number) => {
-            this.articleAlpha = value;
-          });
-      })
     } else if (name === RouterConstants.PAGE_FEED_ARTICLES) {
       HdsNavDestination() {
         FeedArticlesView({ navPathStack: this.navPathStack, scroller: this.feedArticlesScroller })
@@ -483,37 +427,17 @@ struct Index {
         ? feedViewModel.detailFeedTitle
         : $r('app.string.feed_articles_title')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
-      .backgroundColor($r('app.color.hm_page_transparent'))
+      // 不透明背板：与详情页一致，走系统原生转场不穿透。
+      .backgroundColor($r('app.color.hm_web_surface'))
       .bindToScrollable([this.feedArticlesScroller])
-      .translate({ x: this.feedSlideX })
-      .opacity(this.feedAlpha)
-      .customTransition((operation: NavigationOperation, isEnter: boolean): Array<NavDestinationTransition> | undefined => {
-        return this.slideFadeTransition(operation, isEnter,
-          (value: string) => {
-            this.feedSlideX = value;
-          },
-          (value: number) => {
-            this.feedAlpha = value;
-          });
-      })
     } else if (name === RouterConstants.PAGE_EFFECT) {
       HdsNavDestination() {
         EffectPreviewView()
       }
       .titleBar(this.titleOptions($r('app.string.effect_title')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
-      .backgroundColor($r('app.color.hm_page_transparent'))
-      .translate({ x: this.effectSlideX })
-      .opacity(this.effectAlpha)
-      .customTransition((operation: NavigationOperation, isEnter: boolean): Array<NavDestinationTransition> | undefined => {
-        return this.slideFadeTransition(operation, isEnter,
-          (value: string) => {
-            this.effectSlideX = value;
-          },
-          (value: number) => {
-            this.effectAlpha = value;
-          });
-      })
+      // 不透明背板：与详情页一致，走系统原生转场不穿透。
+      .backgroundColor($r('app.color.hm_web_surface'))
     }
   }
 

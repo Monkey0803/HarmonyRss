@@ -736,12 +736,13 @@ export struct ArticleDetailView {
           this.TextBody()
         }
 
-        if (this.loading && this.readerHtml.length > 0) {
+        if (this.loading) {
           this.LoadingVeil()
         }
       }
       .width('100%')
       .height('100%')
+      .backgroundColor($r('app.color.hm_web_surface'))
       .clip(true)
     }
   }
@@ -785,6 +786,7 @@ export struct ArticleDetailView {
       }
       .width('100%')
       .height('100%')
+      .backgroundColor($r('app.color.hm_web_surface'))
       .clip(true)
     }
   }
