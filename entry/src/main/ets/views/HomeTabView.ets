@@ -63,6 +63,9 @@ export struct HomeTabView {
   ]);
 
   private async reload(): Promise<void> {
+    if (this.refreshing) {
+      return;
+    }
     this.refreshing = true;
     await feedViewModel.refreshAll();
     this.refreshing = false;
@@ -135,12 +138,14 @@ export struct HomeTabView {
       .width('100%')
 
       Row({ space: $r('app.float.space_m') }) {
-        Button($r('app.string.home_refresh'))
-          .buttonStyle(ButtonStyleMode.NORMAL)
-          .fontSize($r('app.float.font_size_body'))
-          .fontColor($r('app.color.hm_on_brand'))
-          .backgroundColor($r('app.color.hm_brand'))
+        SymbolGlyph($r('sys.symbol.arrow_clockwise'))
+          .fontSize($r('app.float.icon_size'))
+          .fontColor([feedViewModel.loading
+            ? $r('sys.color.font_tertiary')
+            : $r('app.color.hm_brand')])
+          .padding($r('app.float.space_s'))
           .enabled(!feedViewModel.loading)
+          .accessibilityText($r('app.string.home_refresh'))
           .onClick(() => {
             this.reload();
           })
@@ -387,6 +392,11 @@ export struct HomeTabView {
       .cachedCount(3, true)
       .padding({ left: $r('app.float.space_l'), right: $r('app.float.space_l') })
     }
+    // 下拉刷新：必须由 onRefreshing 驱动刷新并复位 refreshing，否则指示器会一直停在顶部、
+    // 内容被顶下去不复位（表现为「下拉刷新后标题与品牌行间距不对」）。
+    .onRefreshing(() => {
+      this.reload();
+    })
     .width('100%')
     .height('100%')
     .backgroundColor($r('app.color.hm_page_transparent'))
