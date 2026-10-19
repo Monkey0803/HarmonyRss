@@ -121,6 +121,10 @@
       "value": "3"
     },
     {
+      "name": "selection_bar_gap",
+      "value": "72"
+    },
+    {
       "name": "read_panel_label_width",
       "value": "76"
     },

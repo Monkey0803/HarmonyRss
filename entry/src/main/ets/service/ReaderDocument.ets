@@ -99,7 +99,8 @@ function elementRules(p: ReaderPalette, topPad: number, bottomPad: number): stri
 
 /** 与主题无关的固定排版（图片 / 列表 / 标题 / 表格）。 */
 function structuralRules(): string {
-  return 'html,body{margin:0;padding:0;}' +
+  // 显式允许选择与复制：阅读器里选段后要能用系统菜单/自定义操作条复制、分享。
+  return 'html,body{margin:0;padding:0;-webkit-user-select:text;user-select:text;}' +
     '.reader img{max-width:100%;height:auto;display:block;margin:12px auto;border-radius:8px;}' +
     '.reader video,.reader iframe{max-width:100%;}' +
     '.reader p{margin:0 0 1em;}' +

@@ -36,6 +36,7 @@ import { articleActions } from '../service/ArticleActions';
 import { settingsViewModel } from '../viewmodel/SettingsViewModel';
 import { ReadSettingsSheet } from './ReadSettingsSheet';
 import { ToastUtil } from '../common/utils/ToastUtil';
+import { toPlainText } from '../common/utils/HtmlText';
 import { readerStyle } from '../service/ReaderStyle';
 import { buildReaderDocument } from '../service/ReaderDocument';
 import {
@@ -88,6 +89,11 @@ export struct ArticleDetailView {
   @Local showReadSheet: boolean = false;
   /** 当前阅读进度（0–1），用于标题栏下方的细进度条；由文档内滚动回调刷新。 */
   @Local progressRatio: number = 0;
+  /** 正文里选中的文本（Web 的 onTextSelectionChange 回调）；非空时显示「复制/分享选段」浮条。 */
+  @Local selectedText: string = '';
+  /** 当前文章纯文本缓存（复制正文 / 分享正文 / 朗读用）：按文章 id 失效。 */
+  private plainTextCache: string = '';
+  private plainTextCacheId: string = '';
   /** 排版变化（重建 Reader 文档）后要落回的位置；undefined 表示无需特殊恢复。 */
   private pendingRestore: ReaderPosition | undefined = undefined;
   /** 文档内滚动 → ArkTS 的进度回调（javaScriptProxy，页面创建时注册一次）。 */
@@ -131,6 +137,87 @@ export struct ArticleDetailView {
     };
     const style: SnackBarStyleOptions = { duration: 3000 };
     bar.show(icon, message, operation, style);
+  }
+
+  /** 当前文章纯文本（提取后的正文优先，兜底用 feed 里的纯文本）。 */
+  private plainText(): string {
+    const article: Article = this.cur();
+    if (this.plainTextCacheId !== article.id) {
+      const source: string = this.readerHtml.length > 0 ? this.readerHtml : article.content;
+      this.plainTextCache = toPlainText(source);
+      this.plainTextCacheId = article.id;
+    }
+    return this.plainTextCache;
+  }
+
+  private async copyBody(): Promise<void> {
+    const text: string = this.plainText();
+    if (text.length === 0) {
+      this.toast($r('app.string.article_no_content'));
+      return;
+    }
+    const ok: boolean = await articleActions.copyText(text);
+    if (ok) {
+      this.snack($r('app.string.snack_body_copied'));
+    } else {
+      this.toast($r('app.string.toast_action_failed'));
+    }
+  }
+
+  private async shareBody(): Promise<void> {
+    const text: string = this.plainText();
+    if (text.length === 0) {
+      this.toast($r('app.string.article_no_content'));
+      return;
+    }
+    const ok: boolean = await articleActions.shareText(this.hostContext(), this.cur().title, text);
+    if (!ok) {
+      this.toast($r('app.string.toast_action_failed'));
+    }
+  }
+
+  private async copySelection(): Promise<void> {
+    const ok: boolean = await articleActions.copyText(this.selectedText);
+    this.selectedText = '';
+    if (ok) {
+      this.snack($r('app.string.snack_selection_copied'));
+    } else {
+      this.toast($r('app.string.toast_action_failed'));
+    }
+  }
+
+  private async shareSelection(): Promise<void> {
+    const text: string = this.selectedText;
+    this.selectedText = '';
+    const ok: boolean = await articleActions.shareText(this.hostContext(), this.cur().title, text);
+    if (!ok) {
+      this.toast($r('app.string.toast_action_failed'));
+    }
+  }
+
+  /**
+   * 正文里的链接拦截：放行文档自身（Reader 的 baseUrl / 网页原文地址），
+   * 其余外链交给系统浏览器，避免在阅读视图里原地跳走。
+   * 注意：将来支持内嵌媒体（iframe 白名单）时，这里要放行白名单域。
+   */
+  private handleLinkIntercept(url: string): boolean {
+    if (url.length === 0 || url.startsWith('about:') || url.startsWith('data:') || url.startsWith('file:')) {
+      return false;
+    }
+    const article: Article = this.cur();
+    if (article.link.length > 0 && url.startsWith(article.link)) {
+      return false;
+    }
+    this.openInBrowserUrl(url);
+    return true;
+  }
+
+  private openInBrowserUrl(url: string): void {
+    articleActions.openInBrowser(this.hostContext(), url).then((ok: boolean) => {
+      if (!ok) {
+        this.toast($r('app.string.toast_action_failed'));
+      }
+    });
   }
 
   private async copyLink(article: Article): Promise<void> {
@@ -323,6 +410,20 @@ export struct ArticleDetailView {
       })
         .onClick(() => {
           this.retryReader();
+        })
+      MenuItem({
+        content: $r('app.string.action_copy_body'),
+        symbolStartIcon: this.menuIcon($r('sys.symbol.text_clipboard'))
+      })
+        .onClick(() => {
+          this.copyBody();
+        })
+      MenuItem({
+        content: $r('app.string.action_share_body'),
+        symbolStartIcon: this.menuIcon($r('sys.symbol.share'))
+      })
+        .onClick(() => {
+          this.shareBody();
         })
       MenuItem({
         content: $r('app.string.action_copy_link'),
@@ -724,6 +825,12 @@ export struct ArticleDetailView {
               methodList: ['onProgress'],
               controller: this.readerController
             })
+            .onLoadIntercept((event: OnLoadInterceptEvent) => {
+              return this.handleLinkIntercept(event.data.getRequestUrl());
+            })
+            .onTextSelectionChange((selectionText: string) => {
+              this.selectedText = selectionText;
+            })
             .onControllerAttached(() => {
               const doc: string = buildReaderDocument(this.readerHtml, safeArea.contentTopInsetVp, safeArea.contentBottomInsetVp);
               try {
@@ -791,6 +898,12 @@ export struct ArticleDetailView {
             name: 'hrProgress',
             methodList: ['onProgress'],
             controller: this.webController
+          })
+          .onLoadIntercept((event: OnLoadInterceptEvent) => {
+            return this.handleLinkIntercept(event.data.getRequestUrl());
+          })
+          .onTextSelectionChange((selectionText: string) => {
+            this.selectedText = selectionText;
           })
           .onPageEnd(() => {
             this.loading = false;
@@ -901,6 +1014,58 @@ export struct ArticleDetailView {
     }
   }
 
+  /** 选段浮条：选中正文后出现，提供复制 / 分享选段。 */
+  @Builder
+  SelectionBar() {
+    if (this.selectedText.length > 0) {
+      Row({ space: $r('app.float.space_s') }) {
+        Text(this.selectionPreview())
+          .fontSize($r('app.float.font_size_caption'))
+          .fontColor($r('app.color.hm_text_secondary'))
+          .maxLines(1)
+          .textOverflow({ overflow: TextOverflow.Ellipsis })
+          .layoutWeight(1)
+
+        Button($r('app.string.action_copy'))
+          .buttonStyle(ButtonStyleMode.TEXTUAL)
+          .fontSize($r('app.float.font_size_caption'))
+          .fontColor($r('app.color.hm_brand'))
+          .onClick(() => {
+            this.copySelection();
+          })
+
+        Button($r('app.string.action_share_selection'))
+          .buttonStyle(ButtonStyleMode.TEXTUAL)
+          .fontSize($r('app.float.font_size_caption'))
+          .fontColor($r('app.color.hm_brand'))
+          .onClick(() => {
+            this.shareSelection();
+          })
+      }
+      .width('100%')
+      .padding({
+        left: $r('app.float.space_l'),
+        right: $r('app.float.space_m'),
+        top: $r('app.float.space_s'),
+        bottom: $r('app.float.space_s')
+      })
+      .margin({
+        left: $r('app.float.space_l'),
+        right: $r('app.float.space_l'),
+        bottom: $r('app.float.selection_bar_gap')
+      })
+      .backgroundColor($r('app.color.hm_card_background'))
+      .borderRadius($r('app.float.radius_card'))
+      .alignItems(VerticalAlign.Center)
+    }
+  }
+
+  /** 选中文本预览（压缩空白 + 截断）。 */
+  private selectionPreview(): string {
+    const flat: string = this.selectedText.replace(/\s+/g, ' ').trim();
+    return flat.length > 40 ? flat.substring(0, 40) + '…' : flat;
+  }
+
   /** 标题栏下沿的细进度条：只在正文模式显示，随文档滚动刷新。 */
   @Builder
   ProgressLine() {
@@ -924,6 +1089,17 @@ export struct ArticleDetailView {
       this.BodySwitch()
 
       this.FloatingBar()
+
+      // 选段操作浮条：贴在底栏上方
+      Column() {
+        Blank()
+        this.SelectionBar()
+      }
+      .width('100%')
+      .height('100%')
+      .justifyContent(FlexAlign.End)
+      .alignItems(HorizontalAlign.Center)
+      .hitTestBehavior(HitTestMode.Transparent)
 
       // 进度条层：铺满整页、内容贴顶，但不吃手势（正文滚动 / 点按照常）。
       Column() {

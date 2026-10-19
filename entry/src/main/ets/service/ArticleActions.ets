@@ -16,6 +16,10 @@ const TAG: string = 'ArticleActions';
 
 /** 超链接的统一类型描述符（系统分享用）。 */
 const UTD_HYPERLINK: string = 'general.hyperlink';
+/** 纯文本的统一类型描述符。 */
+const UTD_PLAIN_TEXT: string = 'general.plain-text';
+/** 分享正文时的文本上限（字符）。 */
+const SHARE_TEXT_MAX_CHARS: number = 20000;
 
 export class ArticleActions {
   /** 复制文本到系统剪贴板。 */
@@ -50,6 +54,36 @@ export class ArticleActions {
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       hilog.error(DOMAIN, TAG, 'openInBrowser failed: %{public}d', error.code);
+      return false;
+    }
+  }
+
+  /**
+   * 分享纯文本（正文 / 选段）：分享的是文本本身，不是链接。
+   * 文本过长时截断，避免超过系统分享的承载上限。
+   */
+  async shareText(context: common.UIAbilityContext, title: string, text: string): Promise<boolean> {
+    if (text.length === 0) {
+      return false;
+    }
+    const clipped: string = text.length > SHARE_TEXT_MAX_CHARS ? text.substring(0, SHARE_TEXT_MAX_CHARS) : text;
+    try {
+      const record: systemShare.SharedRecord = {
+        utd: UTD_PLAIN_TEXT,
+        content: clipped,
+        title: title
+      };
+      const data: systemShare.SharedData = new systemShare.SharedData(record);
+      const controller: systemShare.ShareController = new systemShare.ShareController(data);
+      const options: systemShare.ShareControllerOptions = {
+        selectionMode: systemShare.SelectionMode.SINGLE,
+        previewMode: systemShare.SharePreviewMode.DEFAULT
+      };
+      await controller.show(context, options);
+      return true;
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.error(DOMAIN, TAG, 'shareText failed: %{public}d', error.code);
       return false;
     }
   }
