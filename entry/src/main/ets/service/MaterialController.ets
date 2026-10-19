@@ -95,15 +95,19 @@ export class MaterialController {
    * 弹层（Menu / Sheet / AlertDialog / Toast）用的组件级沉浸光感材质。
    *
    * 弹层属于「全页面生效」场景，但走 ArkUI 组件级轨道：需要应用 targetAPIVersion ≥ 26.0.0
-   * 且设备支持材质，并且要在弹层的 options 里显式给出 systemMaterial
+   * 且设备真正支持组件级沉浸材质，并且要在弹层的 options 里显式给出 systemMaterial
    * （官方最佳实践「菜单栏适配沉浸光感」的做法）。不满足时返回 undefined，弹层沿用系统默认背板。
+   *
+   * 注意探针要用 uiMaterial.isImmersiveMaterialSupported()（组件级轨道），
+   * 不能用 hdsMaterial.getSystemMaterialTypes()（HDS 轨道）—— 两者并非总是同时可用：
+   * 在只支持 HDS 轨道的设备上给弹层塞材质，弹层会渲染不出来（菜单/面板点不开）。
    */
   static overlayMaterial(immersiveOn: boolean): uiMaterial.Material | undefined {
     if (!immersiveOn || !deviceInfo.apiAvailable('26.0.0')) {
       return undefined;
     }
     try {
-      if (MaterialController.supportedTypes().length === 0) {
+      if (!uiMaterial.isImmersiveMaterialSupported()) {
         return undefined;
       }
       return new uiMaterial.ImmersiveMaterial({

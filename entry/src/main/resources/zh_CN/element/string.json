@@ -165,6 +165,22 @@
       "value": "标题栏随内容滚动"
     },
     {
+      "name": "action_find_in_article",
+      "value": "在文章中查找"
+    },
+    {
+      "name": "find_hint",
+      "value": "在文章中查找"
+    },
+    {
+      "name": "find_count",
+      "value": "%d/%d"
+    },
+    {
+      "name": "find_none",
+      "value": "无匹配"
+    },
+    {
       "name": "action_copy",
       "value": "复制"
     },

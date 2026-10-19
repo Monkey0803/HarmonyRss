@@ -165,6 +165,22 @@
       "value": "Title bar scrolls with content"
     },
     {
+      "name": "action_find_in_article",
+      "value": "Find in article"
+    },
+    {
+      "name": "find_hint",
+      "value": "Find in article"
+    },
+    {
+      "name": "find_count",
+      "value": "%d/%d"
+    },
+    {
+      "name": "find_none",
+      "value": "No match"
+    },
+    {
       "name": "action_copy",
       "value": "Copy"
     },

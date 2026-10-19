@@ -37,6 +37,13 @@ import { settingsViewModel } from '../viewmodel/SettingsViewModel';
 import { ReadSettingsSheet } from './ReadSettingsSheet';
 import { ToastUtil } from '../common/utils/ToastUtil';
 import { toPlainText } from '../common/utils/HtmlText';
+import {
+  clearFindScript,
+  countFindScript,
+  findSupportScript,
+  gotoFindScript,
+  runFindScript
+} from '../service/ReaderFind';
 import { readerStyle } from '../service/ReaderStyle';
 import { buildReaderDocument } from '../service/ReaderDocument';
 import {
@@ -91,6 +98,11 @@ export struct ArticleDetailView {
   @Local progressRatio: number = 0;
   /** 正文里选中的文本（Web 的 onTextSelectionChange 回调）；非空时显示「复制/分享选段」浮条。 */
   @Local selectedText: string = '';
+  /** 文内查找：查找条显隐、查询串、命中数与当前下标。 */
+  @Local findOpen: boolean = false;
+  @Local findQuery: string = '';
+  @Local findCount: number = 0;
+  @Local findIndex: number = 0;
   /** 当前文章纯文本缓存（复制正文 / 分享正文 / 朗读用）：按文章 id 失效。 */
   private plainTextCache: string = '';
   private plainTextCacheId: string = '';
@@ -148,6 +160,82 @@ export struct ArticleDetailView {
       this.plainTextCacheId = article.id;
     }
     return this.plainTextCache;
+  }
+
+  /** 当前正文 Web 的控制器（查找 / 高亮都作用于它）。 */
+  private bodyController(): webview.WebviewController {
+    return this.viewMode === MODE_WEB ? this.webController : this.readerController;
+  }
+
+  /** 打开查找条：注入高亮支持（幂等），并聚焦输入框由用户输入。 */
+  private openFind(): void {
+    this.findOpen = true;
+    this.findQuery = '';
+    this.findCount = 0;
+    this.findIndex = 0;
+    this.bodyController()
+      .runJavaScript(findSupportScript())
+      .catch((err: BusinessError) => {
+        hilog.warn(DOMAIN, TAG, 'find support failed: %{public}d', err.code);
+      });
+  }
+
+  /** 查询串变化：清掉旧高亮，重新查找并跳到第一个命中项。 */
+  private applyFind(query: string): void {
+    this.findQuery = query;
+    if (query.length === 0) {
+      this.clearFind();
+      return;
+    }
+    const controller: webview.WebviewController = this.bodyController();
+    controller
+      .runJavaScript(findSupportScript())
+      .then(() => controller.runJavaScript(runFindScript(query)))
+      .then((raw: string) => {
+        const total: number = Number(raw);
+        this.findCount = Number.isFinite(total) && total > 0 ? total : 0;
+        this.findIndex = this.findCount > 0 ? 0 : -1;
+        if (this.findCount > 0) {
+          this.gotoFind(0);
+        }
+      })
+      .catch((err: BusinessError) => {
+        hilog.warn(DOMAIN, TAG, 'find failed: %{public}d', err.code);
+      });
+  }
+
+  /** 下一个 / 上一个命中项（循环）。 */
+  private stepFind(delta: number): void {
+    if (this.findCount <= 0) {
+      return;
+    }
+    const next: number = (this.findIndex + delta + this.findCount) % this.findCount;
+    this.gotoFind(next);
+  }
+
+  private gotoFind(index: number): void {
+    this.findIndex = index;
+    this.bodyController()
+      .runJavaScript(gotoFindScript(index))
+      .catch((err: BusinessError) => {
+        hilog.warn(DOMAIN, TAG, 'find goto failed: %{public}d', err.code);
+      });
+  }
+
+  /** 关闭查找条：清掉高亮。 */
+  private closeFind(): void {
+    this.findOpen = false;
+    this.clearFind();
+  }
+
+  private clearFind(): void {
+    this.findCount = 0;
+    this.findIndex = 0;
+    this.bodyController()
+      .runJavaScript(clearFindScript())
+      .catch((err: BusinessError) => {
+        hilog.warn(DOMAIN, TAG, 'find clear failed: %{public}d', err.code);
+      });
   }
 
   private async copyBody(): Promise<void> {
@@ -329,6 +417,11 @@ export struct ArticleDetailView {
     feedViewModel.openArticle(id);
     // 不重置 readerHtml：保持 Reader Web 挂载，随后直接换文档，避免 controller 失效。
     this.progressRatio = 0;
+    // 换了文章：查找条与高亮都失效，直接收起
+    this.findOpen = false;
+    this.findQuery = '';
+    this.findCount = 0;
+    this.findIndex = 0;
     this.readerFailed = false;
     this.webProgressRestored = false;
     this.readerProgressRestored = false;
@@ -410,6 +503,13 @@ export struct ArticleDetailView {
       })
         .onClick(() => {
           this.retryReader();
+        })
+      MenuItem({
+        content: $r('app.string.action_find_in_article'),
+        symbolStartIcon: this.menuIcon($r('sys.symbol.magnifyingglass'))
+      })
+        .onClick(() => {
+          this.openFind();
         })
       MenuItem({
         content: $r('app.string.action_copy_body'),
@@ -1014,6 +1114,63 @@ export struct ArticleDetailView {
     }
   }
 
+  /** 文内查找条：贴标题栏下方，输入即查、可上/下跳转。 */
+  @Builder
+  FindBar() {
+    if (this.findOpen) {
+      Row({ space: $r('app.float.space_s') }) {
+        TextInput({ text: this.findQuery, placeholder: $r('app.string.find_hint') })
+          .type(InputType.Normal)
+          .fontSize($r('app.float.font_size_caption'))
+          .layoutWeight(1)
+          .onChange((value: string) => {
+            this.applyFind(value);
+          })
+
+        Text(this.findCount > 0
+          ? $r('app.string.find_count', this.findIndex + 1, this.findCount)
+          : $r('app.string.find_none'))
+          .fontSize($r('app.float.font_size_caption'))
+          .fontColor($r('app.color.hm_text_secondary'))
+          .maxLines(1)
+
+        SymbolGlyph($r('sys.symbol.chevron_up'))
+          .fontSize($r('app.float.icon_size_small'))
+          .fontColor([this.findCount > 0 ? $r('app.color.hm_brand') : $r('app.color.hm_text_secondary')])
+          .enabled(this.findCount > 0)
+          .onClick(() => {
+            this.stepFind(-1);
+          })
+
+        SymbolGlyph($r('sys.symbol.chevron_down'))
+          .fontSize($r('app.float.icon_size_small'))
+          .fontColor([this.findCount > 0 ? $r('app.color.hm_brand') : $r('app.color.hm_text_secondary')])
+          .enabled(this.findCount > 0)
+          .onClick(() => {
+            this.stepFind(1);
+          })
+
+        SymbolGlyph($r('sys.symbol.xmark'))
+          .fontSize($r('app.float.icon_size_small'))
+          .fontColor([$r('app.color.hm_text_secondary')])
+          .onClick(() => {
+            this.closeFind();
+          })
+      }
+      .width('100%')
+      .padding({
+        left: $r('app.float.space_l'),
+        right: $r('app.float.space_l'),
+        top: $r('app.float.space_s'),
+        bottom: $r('app.float.space_s')
+      })
+      .margin({ left: $r('app.float.space_l'), right: $r('app.float.space_l'), top: $r('app.float.space_s') })
+      .backgroundColor($r('app.color.hm_card_background'))
+      .borderRadius($r('app.float.radius_card'))
+      .alignItems(VerticalAlign.Center)
+    }
+  }
+
   /** 选段浮条：选中正文后出现，提供复制 / 分享选段。 */
   @Builder
   SelectionBar() {
@@ -1100,6 +1257,18 @@ export struct ArticleDetailView {
       .justifyContent(FlexAlign.End)
       .alignItems(HorizontalAlign.Center)
       .hitTestBehavior(HitTestMode.Transparent)
+
+      // 查找条层：贴标题栏下方（只占自身高度，不挡正文滚动）
+      Column() {
+        Row()
+          .width('100%')
+          .height(safeArea.contentTopInsetVp)
+        this.FindBar()
+      }
+      .width('100%')
+      .height('100%')
+      .justifyContent(FlexAlign.Start)
+      .alignItems(HorizontalAlign.Start)
 
       // 进度条层：铺满整页、内容贴顶，但不吃手势（正文滚动 / 点按照常）。
       Column() {
