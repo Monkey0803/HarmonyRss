@@ -13,6 +13,7 @@ import { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { Article } from '../model/Feed';
 import { ArticleDbConstants, ReaderState } from '../common/constants/RssConstants';
+import { toPlainText } from '../common/utils/HtmlText';
 
 const DOMAIN: number = 0x0000;
 const TAG: string = 'ArticleStore';
@@ -35,7 +36,8 @@ const SQL_CREATE: string =
   'progress INTEGER NOT NULL DEFAULT 0, ' +
   'progress_ratio REAL NOT NULL DEFAULT 0, ' +
   'reader_html TEXT NOT NULL DEFAULT \'\', ' +
-  'content_html TEXT NOT NULL DEFAULT \'\')';
+  'content_html TEXT NOT NULL DEFAULT \'\', ' +
+  'plain_text TEXT NOT NULL DEFAULT \'\')';
 
 /** 老库补列（表已存在时 CREATE 不会加列，ALTER 失败可忽略）。 */
 const SQL_ADD_IMAGE: string =
@@ -51,6 +53,9 @@ const SQL_ADD_PROGRESS_RATIO: string =
 /** feed 自带的 HTML 正文（content:encoded / Atom content / JSON Feed content_html）。 */
 const SQL_ADD_CONTENT_HTML: string =
   'ALTER TABLE ' + ArticleDbConstants.TABLE_ARTICLES + ' ADD COLUMN content_html TEXT NOT NULL DEFAULT \'\'';
+/** Reader 正文的纯文本（提供搜索 / 复制 / 朗读复用）。 */
+const SQL_ADD_PLAIN_TEXT: string =
+  'ALTER TABLE ' + ArticleDbConstants.TABLE_ARTICLES + ' ADD COLUMN plain_text TEXT NOT NULL DEFAULT \'\'';
 /** Reader 视图的结构化正文 HTML（提取 + 净化后）。 */
 const SQL_ADD_READER: string =
   'ALTER TABLE ' + ArticleDbConstants.TABLE_ARTICLES + ' ADD COLUMN reader_html TEXT NOT NULL DEFAULT \'\'';
@@ -62,7 +67,7 @@ const SQL_INSERT: string =
 
 const SQL_SELECT_ALL: string =
   'SELECT id, feed_id, feed_title, title, link, summary, content, published_at, is_read, is_starred,' +
-  ' image_url, author, progress, progress_ratio, reader_html, content_html' +
+  ' image_url, author, progress, progress_ratio, reader_html, content_html, plain_text' +
   ' FROM ' + ArticleDbConstants.TABLE_ARTICLES + ' ORDER BY published_at DESC';
 
 /** 卡片展示用的轻量快照：未读数 + 最新几条标题（不把整库读进内存）。 */
@@ -94,6 +99,7 @@ export class ArticleStore {
       this.addColumnIfNeeded(SQL_ADD_PROGRESS_RATIO);
       this.addColumnIfNeeded(SQL_ADD_READER);
       this.addColumnIfNeeded(SQL_ADD_CONTENT_HTML);
+      this.addColumnIfNeeded(SQL_ADD_PLAIN_TEXT);
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       hilog.error(DOMAIN, TAG, 'open failed: %{public}d', error.code);
@@ -186,6 +192,7 @@ export class ArticleStore {
           article.readerHtml = rs.getString(rs.getColumnIndex('reader_html'));
           // feed 自带全文落盘：冷启动后仍能本地提纯，省掉一次网络抓取
           article.contentHtml = rs.getString(rs.getColumnIndex('content_html'));
+          article.plainText = rs.getString(rs.getColumnIndex('plain_text'));
           if (article.readerHtml.length > 0) {
             article.readerState = ReaderState.READY;
           }
@@ -260,10 +267,43 @@ export class ArticleStore {
       [rounded, safeRatio, id]);
   }
 
-  /** 写入 Reader 视图的结构化正文 HTML（离线阅读用）。 */
-  setReaderHtml(id: string, html: string): void {
-    this.exec('UPDATE ' + ArticleDbConstants.TABLE_ARTICLES + ' SET reader_html = ? WHERE id = ?',
-      [html, id]);
+  /**
+   * 一次性回填：给「已有提取正文、但还没有纯文本」的老数据补上 plain_text。
+   * 只在升级后的头几次启动做有限条数，避免一次性把整库算一遍拖慢启动。
+   */
+  async backfillPlainText(limit: number): Promise<void> {
+    const store: relationalStore.RdbStore | undefined = this.store;
+    if (store === undefined || limit <= 0) {
+      return;
+    }
+    try {
+      const rs: relationalStore.ResultSet = await store.querySql(
+        'SELECT id, reader_html FROM ' + ArticleDbConstants.TABLE_ARTICLES +
+        ' WHERE reader_html <> \'\' AND plain_text = \'\' LIMIT ' + Math.round(limit));
+      try {
+        while (rs.goToNextRow()) {
+          const id: string = rs.getString(rs.getColumnIndex('id'));
+          const html: string = rs.getString(rs.getColumnIndex('reader_html'));
+          const plain: string = toPlainText(html);
+          if (plain.length > 0) {
+            store.executeSync('UPDATE ' + ArticleDbConstants.TABLE_ARTICLES +
+              ' SET plain_text = ? WHERE id = ?', [plain, id]);
+          }
+        }
+      } finally {
+        rs.close();
+      }
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.warn(DOMAIN, TAG, 'backfill plain text failed: %{public}d', error.code);
+    }
+  }
+
+  /** 写入 Reader 视图的结构化正文 HTML（离线阅读用）与其纯文本（搜索 / 复制 / 朗读用）。 */
+  setReaderHtml(id: string, html: string, plainText: string): void {
+    this.exec('UPDATE ' + ArticleDbConstants.TABLE_ARTICLES +
+      ' SET reader_html = ?, plain_text = ? WHERE id = ?',
+      [html, plainText, id]);
   }
 
   markAllRead(): void {

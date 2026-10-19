@@ -103,6 +103,12 @@ export class Article {
   @Trace readerHtml: string;
   /** Reader 提取状态：'none' | 'loading' | 'ready' | 'failed'。 */
   @Trace readerState: string;
+  /**
+   * Reader 正文的纯文本（由 readerHtml 去标签得到，落库）：
+   * 供「搜索命中正文 / 复制正文 / 分享正文 / 朗读」复用，避免每次现算。
+   * feed 自带全文（content）仍单独保留，两者都可能为空。
+   */
+  plainText: string = '';
   /** 发布时间戳（毫秒）；解析不到时为 0。 */
   @Trace publishedAt: number;
   /** 配图地址（网络 URL）；空串表示没有配图。入库后不再变化。 */

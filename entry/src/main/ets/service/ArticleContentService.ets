@@ -13,6 +13,7 @@ import { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { Article } from '../model/Feed';
 import { articleStore } from './ArticleStore';
+import { toPlainText } from '../common/utils/HtmlText';
 import { extractReadable } from './Readability';
 import { imageCache } from './ImageCache';
 import { ReaderBudget } from './ReaderBudget';
@@ -135,8 +136,11 @@ export class ArticleContentService {
   private persist(article: Article, fragment: string): void {
     article.readerHtml = fragment;
     article.readerState = ReaderState.READY;
+    // 顺带落一份纯文本：搜索要能命中正文，复制 / 分享 / 朗读也在用它。
+    const plain: string = toPlainText(fragment);
+    article.plainText = plain;
     try {
-      articleStore.setReaderHtml(article.id, fragment);
+      articleStore.setReaderHtml(article.id, fragment, plain);
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       hilog.warn(DOMAIN, TAG, 'persist reader html failed: %{public}d', error.code);

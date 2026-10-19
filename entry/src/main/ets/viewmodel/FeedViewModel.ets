@@ -35,7 +35,13 @@ function errorCodeOf(err: Object): FeedError {
   return err instanceof FeedFetchError ? err.code : FeedError.FETCH_FAILED;
 }
 
-/** 关键词匹配：标题 / 摘要 / 正文（关键词已转小写）。 */
+/** 启动时回填正文纯文本的最大条数（一次性迁移用）。 */
+const BACKFILL_PLAIN_TEXT_LIMIT: number = 200;
+
+/**
+ * 关键词匹配：标题 / 摘要 / feed 正文 / 提取后的正文纯文本（关键词已转小写）。
+ * plainText 来自 Reader 提取结果，这样摘要型 feed 也能被正文里的词搜到。
+ */
 function matchesKeyword(article: Article, keyword: string): boolean {
   if (article.title.toLowerCase().indexOf(keyword) >= 0) {
     return true;
@@ -43,7 +49,10 @@ function matchesKeyword(article: Article, keyword: string): boolean {
   if (article.summary.toLowerCase().indexOf(keyword) >= 0) {
     return true;
   }
-  return article.content.toLowerCase().indexOf(keyword) >= 0;
+  if (article.content.toLowerCase().indexOf(keyword) >= 0) {
+    return true;
+  }
+  return article.plainText.length > 0 && article.plainText.toLowerCase().indexOf(keyword) >= 0;
 }
 
 @ObservedV2
@@ -91,6 +100,8 @@ export class FeedViewModel {
     this.started = true;
     this.feeds = await feedStore.load(context);
     await articleStore.open(context);
+    // 老数据补一次正文纯文本（有上限）：让搜索能命中「之前已提取过正文」的那些文章。
+    await articleStore.backfillPlainText(BACKFILL_PLAIN_TEXT_LIMIT);
     this.all = await articleStore.loadRecent();
     this.publish();
     await this.refreshAll();
@@ -765,7 +776,8 @@ export class FeedViewModel {
       if (this.all[i].id === articleId) {
         this.all[i].readerHtml = '';
         this.all[i].readerState = ReaderState.NONE;
-        articleStore.setReaderHtml(articleId, '');
+        this.all[i].plainText = '';
+        articleStore.setReaderHtml(articleId, '', '');
         return;
       }
     }

@@ -172,8 +172,13 @@ export struct ArticleDetailView {
   private plainText(): string {
     const article: Article = this.cur();
     if (this.plainTextCacheId !== article.id) {
-      const source: string = this.readerHtml.length > 0 ? this.readerHtml : article.content;
-      this.plainTextCache = toPlainText(source);
+      // 优先用提取时落库的纯文本；没有（未提取过）再就近从 readerHtml / feed 正文现算。
+      if (article.plainText.length > 0) {
+        this.plainTextCache = article.plainText;
+      } else {
+        const source: string = this.readerHtml.length > 0 ? this.readerHtml : article.content;
+        this.plainTextCache = toPlainText(source);
+      }
       this.plainTextCacheId = article.id;
     }
     return this.plainTextCache;
