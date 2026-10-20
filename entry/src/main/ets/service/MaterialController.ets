@@ -122,6 +122,32 @@ export class MaterialController {
     }
   }
 
+  /**
+   * 内容区交互控件（分段按钮等）用的组件级沉浸光感材质。
+   *
+   * 与弹层同属 ArkUI 组件级轨道（API 26+ 且设备支持），但控件尺寸小、面积薄，用 THIN，
+   * 并开启按压形变与点光源，替代默认按压态。不支持时返回 undefined（调用方退回模糊兜底）。
+   */
+  static controlMaterial(immersiveOn: boolean): uiMaterial.Material | undefined {
+    if (!immersiveOn || !deviceInfo.apiAvailable('26.0.0')) {
+      return undefined;
+    }
+    try {
+      if (MaterialController.supportedTypes().length === 0) {
+        return undefined;
+      }
+      return new uiMaterial.ImmersiveMaterial({
+        style: uiMaterial.ImmersiveStyle.THIN,
+        interactive: true,
+        lightEffect: { color: undefined }
+      });
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      console.error('uiMaterial.ImmersiveMaterial failed: ' + error.code.toString());
+      return undefined;
+    }
+  }
+
   /** 上下文菜单（bindMenu）注入沉浸光感；不支持时原样返回。 */
   static menuOptions(options: ContextMenuOptions, immersiveOn: boolean): ContextMenuOptions {
     const material: uiMaterial.Material | undefined = MaterialController.overlayMaterial(immersiveOn);
