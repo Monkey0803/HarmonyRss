@@ -102,6 +102,9 @@ function structuralRules(): string {
   // 显式允许选择与复制：阅读器里选段后要能用系统菜单/自定义操作条复制、分享。
   return 'html,body{margin:0;padding:0;-webkit-user-select:text;user-select:text;}' +
     '.reader img{max-width:100%;height:auto;display:block;margin:12px auto;border-radius:8px;}' +
+    // 内嵌媒体：视频 / 音频 / 播放器撑满栏宽，播放器按 16:9 占位避免布局跳动
+    '.reader video,.reader audio{width:100%;max-width:100%;display:block;margin:12px auto;border-radius:8px;}' +
+    '.reader iframe{width:100%;aspect-ratio:16/9;border:0;border-radius:8px;margin:12px auto;display:block;}' +
     '.reader video,.reader iframe{max-width:100%;}' +
     '.reader p{margin:0 0 1em;}' +
     '.reader h1,.reader h2,.reader h3,.reader h4{line-height:1.35;margin:1.4em 0 .6em;font-weight:600;}' +

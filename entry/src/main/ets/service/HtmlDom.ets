@@ -63,7 +63,8 @@ const RAW_TEXT_ELEMENTS: string[] = ['script', 'style', 'textarea', 'title'];
 const IMPLICIT_CLOSE: string[] = ['li', 'p'];
 
 /** 会被直接丢弃、连内容也不要的元素。 */
-export const DROP_WITH_CONTENT: string[] = ['script', 'style', 'noscript', 'template', 'svg', 'canvas', 'iframe'];
+// iframe 交给净化器按域名白名单处理（见 HtmlSanitizer.serializeEmbed），这里不再整段丢弃。
+export const DROP_WITH_CONTENT: string[] = ['script', 'style', 'noscript', 'template', 'svg', 'canvas'];
 
 function isVoid(tag: string): boolean {
   return VOID_ELEMENTS.indexOf(tag) >= 0;

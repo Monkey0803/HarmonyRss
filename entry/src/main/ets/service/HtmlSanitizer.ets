@@ -17,7 +17,9 @@ const ALLOWED_TAGS: string[] = [
   'blockquote', 'pre', 'code', 'kbd', 'samp',
   'strong', 'b', 'em', 'i', 'u', 's', 'sub', 'sup', 'mark', 'small',
   'figure', 'figcaption', 'img', 'picture',
-  'a', 'table', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td', 'caption', 'colgroup', 'col'
+  'a', 'table', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td', 'caption', 'colgroup', 'col',
+  // 内嵌媒体：播客音频、视频、以及 media 的子标签（iframe 单独白名单处理，见 serializeEmbed）
+  'video', 'audio', 'track'
 ];
 
 /** 输出时按 void 元素处理（不加结束标签）。 */
@@ -33,6 +35,15 @@ function allowedAttrs(tag: string): string[] {
   }
   if (tag === 'source') {
     return ['src', 'srcset', 'type'];
+  }
+  if (tag === 'video') {
+    return ['src', 'poster', 'controls', 'preload', 'width', 'height', 'playsinline'];
+  }
+  if (tag === 'audio') {
+    return ['src', 'controls', 'preload'];
+  }
+  if (tag === 'track') {
+    return ['src', 'kind', 'srclang', 'label', 'default'];
   }
   if (tag === 'td' || tag === 'th') {
     return ['colspan', 'rowspan'];
@@ -165,22 +176,51 @@ function isRealImageUrl(value: string): boolean {
 }
 
 /** 取 srcset 里的第一个候选地址（"a.png 1x, b.png 2x" → "a.png"）。 */
-function firstUrlFromSrcset(value: string): string {
+/** srcset 里挑选的目标宽度（px）：手机阅读场景取「够清晰又不浪费流量」的一档。 */
+const SRCSET_TARGET_WIDTH: number = 1080;
+
+/**
+ * 从 srcset 里挑一个候选：按描述符宽度（如 `a.jpg 320w`）选最接近目标宽度的一档；
+ * 没有宽度描述符（如 `a.jpg 2x`）时退回第一个候选。
+ * 原来只取第一项，很多站点第一项是 320w 的小图，正文里会糊。
+ */
+function urlFromSrcset(value: string): string {
   const text: string = value.trim();
   if (text.length === 0) {
     return '';
   }
-  const comma: number = text.indexOf(',');
-  const first: string = comma < 0 ? text : text.substring(0, comma);
-  let end: number = 0;
-  while (end < first.length) {
-    const c: string = first.charAt(end);
-    if (c === ' ' || c === '\t' || c === '\n' || c === '\r') {
-      break;
+  const parts: string[] = text.split(',');
+  let bestUrl: string = '';
+  let bestGap: number = Number.MAX_VALUE;
+  let fallback: string = '';
+  for (let i = 0; i < parts.length; i += 1) {
+    const candidate: string = parts[i].trim();
+    if (candidate.length === 0) {
+      continue;
     }
-    end += 1;
+    const space: number = candidate.search(/\s/);
+    const url: string = (space < 0 ? candidate : candidate.substring(0, space)).trim();
+    if (url.length === 0) {
+      continue;
+    }
+    if (fallback.length === 0) {
+      fallback = url;
+    }
+    const descriptor: string = space < 0 ? '' : candidate.substring(space).trim();
+    if (descriptor.length === 0 || descriptor.charAt(descriptor.length - 1) !== 'w') {
+      continue;
+    }
+    const width: number = Number(descriptor.substring(0, descriptor.length - 1));
+    if (!Number.isFinite(width)) {
+      continue;
+    }
+    const gap: number = Math.abs(width - SRCSET_TARGET_WIDTH);
+    if (gap < bestGap) {
+      bestGap = gap;
+      bestUrl = url;
+    }
   }
-  return first.substring(0, end).trim();
+  return bestUrl.length > 0 ? bestUrl : fallback;
 }
 
 /**
@@ -203,8 +243,8 @@ function pickImageUrl(node: HtmlNode): string {
     }
   }
   const srcset: string[] = [
-    firstUrlFromSrcset(node.attr('data-srcset')),
-    firstUrlFromSrcset(node.attr('srcset'))
+    urlFromSrcset(node.attr('data-srcset')),
+    urlFromSrcset(node.attr('srcset'))
   ];
   for (let i = 0; i < srcset.length; i += 1) {
     if (isRealImageUrl(srcset[i])) {
@@ -250,12 +290,54 @@ function serializeImage(node: HtmlNode, baseUrl: string): string {
   return out;
 }
 
+/** 允许内嵌的播放域（iframe）：只放行 https 且域名命中的嵌入，其余一律丢弃。 */
+const IFRAME_ALLOW_HOSTS: string[] = [
+  'www.youtube.com', 'youtube.com', 'youtu.be', 'www.youtube-nocookie.com',
+  'player.vimeo.com', 'vimeo.com',
+  'player.bilibili.com', 'www.bilibili.com',
+  'open.spotify.com', 'w.soundcloud.com'
+];
+
+/** 判断 iframe 的地址是否在放行名单里（https + 域名后缀匹配）。 */
+function isAllowedEmbed(rawUrl: string, baseUrl: string): string {
+  const url: string = resolveUrl(baseUrl, rawUrl);
+  if (url.length === 0 || url.indexOf('https://') !== 0) {
+    return '';
+  }
+  const hostStart: number = 'https://'.length;
+  const rest: string = url.substring(hostStart);
+  const slash: number = rest.indexOf('/');
+  const host: string = (slash < 0 ? rest : rest.substring(0, slash)).toLowerCase();
+  const hostNoPort: string = host.indexOf(':') < 0 ? host : host.substring(0, host.indexOf(':'));
+  for (let i = 0; i < IFRAME_ALLOW_HOSTS.length; i += 1) {
+    const allowed: string = IFRAME_ALLOW_HOSTS[i];
+    if (hostNoPort === allowed || hostNoPort.endsWith('.' + allowed)) {
+      return url;
+    }
+  }
+  return '';
+}
+
+/** 内嵌播放器的安全序列化：只保留绝对化后的 src 与少量必要属性。 */
+function serializeEmbed(node: HtmlNode, baseUrl: string): string {
+  const src: string = isAllowedEmbed(node.attr('src'), baseUrl);
+  if (src.length === 0) {
+    return '';
+  }
+  return '<iframe src="' + decodeAndEscape(src) + '" loading="lazy" allowfullscreen ' +
+    'referrerpolicy="no-referrer" frameborder="0"></iframe>';
+}
+
 /** 序列化一个节点子树为安全 HTML 片段。 */
 export function sanitizeNode(node: HtmlNode, baseUrl: string): string {
   if (node.isText()) {
     return decodeAndEscape(node.text);
   }
   const tag: string = node.tag;
+  if (tag === 'iframe') {
+    // 先于 isDropTag 判断：白名单内的播放域要保留（其余 iframe 丢弃）
+    return serializeEmbed(node, baseUrl);
+  }
   if (isDropTag(tag)) {
     return '';
   }
