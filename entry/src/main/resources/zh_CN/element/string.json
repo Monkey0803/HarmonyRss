@@ -397,6 +397,58 @@
       "value": "订阅源已更新"
     },
     {
+      "name": "section_list",
+      "value": "列表"
+    },
+    {
+      "name": "row_list_layout",
+      "value": "行样式"
+    },
+    {
+      "name": "row_summary_lines",
+      "value": "摘要行数"
+    },
+    {
+      "name": "row_list_density",
+      "value": "列表密度"
+    },
+    {
+      "name": "opt_layout_text",
+      "value": "纯文字"
+    },
+    {
+      "name": "opt_layout_thumb",
+      "value": "缩略图"
+    },
+    {
+      "name": "opt_layout_card",
+      "value": "大图卡片"
+    },
+    {
+      "name": "opt_lines_1",
+      "value": "1 行"
+    },
+    {
+      "name": "opt_lines_2",
+      "value": "2 行"
+    },
+    {
+      "name": "opt_lines_3",
+      "value": "3 行"
+    },
+    {
+      "name": "opt_density_compact",
+      "value": "紧凑"
+    },
+    {
+      "name": "opt_density_standard",
+      "value": "标准"
+    },
+    {
+      "name": "opt_density_relaxed",
+      "value": "宽松"
+    },
+    {
       "name": "read_panel_title",
       "value": "阅读排版"
     },

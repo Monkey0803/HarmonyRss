@@ -397,6 +397,58 @@
       "value": "Feeds updated"
     },
     {
+      "name": "section_list",
+      "value": "List"
+    },
+    {
+      "name": "row_list_layout",
+      "value": "Row layout"
+    },
+    {
+      "name": "row_summary_lines",
+      "value": "Summary lines"
+    },
+    {
+      "name": "row_list_density",
+      "value": "Density"
+    },
+    {
+      "name": "opt_layout_text",
+      "value": "Text only"
+    },
+    {
+      "name": "opt_layout_thumb",
+      "value": "Thumbnail"
+    },
+    {
+      "name": "opt_layout_card",
+      "value": "Large image card"
+    },
+    {
+      "name": "opt_lines_1",
+      "value": "1 line"
+    },
+    {
+      "name": "opt_lines_2",
+      "value": "2 lines"
+    },
+    {
+      "name": "opt_lines_3",
+      "value": "3 lines"
+    },
+    {
+      "name": "opt_density_compact",
+      "value": "Compact"
+    },
+    {
+      "name": "opt_density_standard",
+      "value": "Standard"
+    },
+    {
+      "name": "opt_density_relaxed",
+      "value": "Comfortable"
+    },
+    {
       "name": "read_panel_title",
       "value": "Reading layout"
     },

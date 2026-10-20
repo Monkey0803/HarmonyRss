@@ -51,6 +51,67 @@ export enum AutoRefreshInterval {
   MIN_60 = '60'
 }
 
+/** 列表行样式：纯文字 / 右侧缩略图 / 顶部大图卡片。 */
+export enum ListRowLayout {
+  TEXT = 'text',
+  THUMB = 'thumb',
+  CARD = 'card'
+}
+
+/** 列表密度：紧凑 / 标准 / 宽松。 */
+export enum ListDensity {
+  COMPACT = 'compact',
+  STANDARD = 'standard',
+  RELAXED = 'relaxed'
+}
+
+/** 摘要行数：1 / 2 / 3。 */
+export enum SummaryLines {
+  ONE = '1',
+  TWO = '2',
+  THREE = '3'
+}
+
+/**
+ * 密度 → 尺寸资源的映射。
+ * 具体数值都落在 float 资源里（紧凑/标准/宽松各一套），这里只做「语义 id → 资源」的翻译，
+ * 避免把尺寸散在组件里。
+ */
+export class ListDensityMetrics {
+  /** 行内边距。 */
+  static padding(density: string): Resource {
+    if (density === ListDensity.COMPACT) {
+      return $r('app.float.list_pad_compact');
+    }
+    if (density === ListDensity.RELAXED) {
+      return $r('app.float.list_pad_relaxed');
+    }
+    return $r('app.float.list_pad_standard');
+  }
+
+  /** 行与行的间距。 */
+  static gap(density: string): Resource {
+    if (density === ListDensity.COMPACT) {
+      return $r('app.float.list_gap_compact');
+    }
+    if (density === ListDensity.RELAXED) {
+      return $r('app.float.list_gap_relaxed');
+    }
+    return $r('app.float.list_gap_standard');
+  }
+
+  /** 摘要最多显示几行。 */
+  static summaryLines(value: string): number {
+    if (value === SummaryLines.ONE) {
+      return 1;
+    }
+    if (value === SummaryLines.THREE) {
+      return 3;
+    }
+    return 2;
+  }
+}
+
 /** 归档规则：已读且超过阈值的文章不进主列表（OFF 表示不归档）。 */
 export enum ArchiveRule {
   OFF = 'off',

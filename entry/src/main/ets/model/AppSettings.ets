@@ -6,7 +6,7 @@
  */
 
 import { ArticleFilter, GroupMode, ReaderViewMode } from '../common/constants/RssConstants';
-import { ArchiveRule } from '../common/constants/SettingsConstants';
+import { ArchiveRule, ListDensity, ListRowLayout, SummaryLines } from '../common/constants/SettingsConstants';
 import { THEME_OPTIONS, LANGUAGE_OPTIONS, MATERIAL_TYPE_OPTIONS, MATERIAL_LEVEL_OPTIONS, BACKGROUND_OPTIONS, LOGO_OPTIONS, AUTO_REFRESH_OPTIONS, READER_FONT_OPTIONS, READER_LINE_OPTIONS, READER_FAMILY_OPTIONS, READER_WIDTH_OPTIONS, READER_ALIGN_OPTIONS, READER_THEME_OPTIONS } from './SettingsOptions';
 
 @ObservedV2
@@ -71,6 +71,12 @@ export class AppSettings {
   @Trace readerViewMode: string = ReaderViewMode.READER;
   /** 归档规则：ArchiveRule（已读且超过该天数的文章不进主列表，进「归档」）。 */
   @Trace archiveRule: string = ArchiveRule.DAYS_30;
+  /** 列表行样式：纯文字 / 缩略图 / 大图卡片。 */
+  @Trace listRowLayout: string = ListRowLayout.THUMB;
+  /** 列表摘要行数。 */
+  @Trace listSummaryLines: string = SummaryLines.TWO;
+  /** 列表密度：紧凑 / 标准 / 宽松。 */
+  @Trace listDensity: string = ListDensity.STANDARD;
 }
 
 /** 全局唯一设置实例。 */

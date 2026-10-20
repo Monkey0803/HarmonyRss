@@ -9,6 +9,8 @@
 
 import { Article } from '../model/Feed';
 import { DateUtil } from '../common/utils/DateUtil';
+import { appSettings } from '../model/AppSettings';
+import { ListDensityMetrics, ListRowLayout } from '../common/constants/SettingsConstants';
 
 @ComponentV2
 export struct ArticleListItem {
@@ -24,6 +26,26 @@ export struct ArticleListItem {
   /** 本行是否被选中（仅多选模式有意义）。 */
   @Param picked: boolean = false;
 
+  /** 摘要最多几行（设置页可配 1/2/3）。 */
+  private summaryLines(): number {
+    return ListDensityMetrics.summaryLines(appSettings.listSummaryLines);
+  }
+
+  /** 行内边距（随密度：紧凑 / 标准 / 宽松）。 */
+  private rowPadding(): Resource {
+    return ListDensityMetrics.padding(appSettings.listDensity);
+  }
+
+  /** 是否用「顶部大图」卡片样式（无图时自动退回缩略图/纯文字，避免空一块）。 */
+  private largeImage(): boolean {
+    return appSettings.listRowLayout === ListRowLayout.CARD && this.article.imageUrl.length > 0;
+  }
+
+  /** 是否显示右侧缩略图。 */
+  private thumbImage(): boolean {
+    return appSettings.listRowLayout === ListRowLayout.THUMB && this.article.imageUrl.length > 0;
+  }
+
   /**
    * 读了一半（进度比例 2%–98%）：用来在标题下补一条细进度线，提示「可以接着读」。
    * 不看已读状态 —— 打开即标已读，若加 unread 限制这条提示几乎永远不会出现；
@@ -34,7 +56,18 @@ export struct ArticleListItem {
   }
 
   build() {
-    Row({ space: $r('app.float.space_m') }) {
+    Column({ space: $r('app.float.space_s') }) {
+      // 大图卡片样式：图在上、文在下（feed 没配图时自动退回文字/缩略图，不留空白）
+      if (this.largeImage()) {
+        Image(this.article.imageUrl)
+          .width('100%')
+          .height($r('app.float.card_image_height'))
+          .objectFit(ImageFit.Cover)
+          .borderRadius($r('app.float.radius_menu_item'))
+          .interpolation(ImageInterpolation.Medium)
+      }
+
+      Row({ space: $r('app.float.space_m') }) {
       if (this.selecting) {
         // 多选态：未读点换成勾选圈（选中的用品牌色实心）
         SymbolGlyph(this.picked ? $r('sys.symbol.checkmark_circle') : $r('sys.symbol.circle'))
@@ -62,7 +95,7 @@ export struct ArticleListItem {
           Text(this.article.summary)
             .fontSize($r('app.float.font_size_caption'))
             .fontColor($r('app.color.hm_text_secondary'))
-            .maxLines(2)
+            .maxLines(this.summaryLines())
             .textOverflow({ overflow: TextOverflow.Ellipsis })
             .width('100%')
         }
@@ -106,10 +139,10 @@ export struct ArticleListItem {
       .alignItems(HorizontalAlign.Start)
 
       // 配图缩略图（feed 里带 media:content / enclosure / 首图时才有）。
-      if (this.article.imageUrl.length > 0) {
+      if (this.thumbImage()) {
         Image(this.article.imageUrl)
-          .width($r('app.float.thumb_size'))
-          .height($r('app.float.thumb_size'))
+          .width(this.largeImage() ? $r('app.float.thumb_size_large') : $r('app.float.thumb_size'))
+          .height(this.largeImage() ? $r('app.float.thumb_size_large') : $r('app.float.thumb_size'))
           .objectFit(ImageFit.Cover)
           .borderRadius($r('app.float.radius_menu_item'))
           .interpolation(ImageInterpolation.Medium)
@@ -136,9 +169,12 @@ export struct ArticleListItem {
             this.onToggleStar(this.article.id);
           })
       }
+      }
+      .width('100%')
+      .alignItems(VerticalAlign.Top)
     }
     .width('100%')
-    .padding($r('app.float.space_m'))
+    .padding(this.rowPadding())
     .backgroundColor(this.selecting && this.picked
       ? $r('app.color.hm_menu_item_selected')
       : $r('app.color.hm_card_background'))

@@ -8,7 +8,7 @@ import { preferences } from '@kit.ArkData';
 import { common } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { appSettings } from '../model/AppSettings';
-import { ARCHIVE_OPTIONS, THEME_OPTIONS, LANGUAGE_OPTIONS, MATERIAL_TYPE_OPTIONS, MATERIAL_LEVEL_OPTIONS, BACKGROUND_OPTIONS, LOGO_OPTIONS, AUTO_REFRESH_OPTIONS, READER_FONT_OPTIONS, READER_LINE_OPTIONS, READER_FAMILY_OPTIONS, READER_WIDTH_OPTIONS, READER_ALIGN_OPTIONS, READER_THEME_OPTIONS } from '../model/SettingsOptions';
+import { ARCHIVE_OPTIONS, LIST_DENSITY_OPTIONS, ROW_LAYOUT_OPTIONS, SUMMARY_LINES_OPTIONS, THEME_OPTIONS, LANGUAGE_OPTIONS, MATERIAL_TYPE_OPTIONS, MATERIAL_LEVEL_OPTIONS, BACKGROUND_OPTIONS, LOGO_OPTIONS, AUTO_REFRESH_OPTIONS, READER_FONT_OPTIONS, READER_LINE_OPTIONS, READER_FAMILY_OPTIONS, READER_WIDTH_OPTIONS, READER_ALIGN_OPTIONS, READER_THEME_OPTIONS } from '../model/SettingsOptions';
 import { PreferencesConstants } from '../common/constants/PreferencesConstants';
 import { ReaderTypography } from '../common/constants/SettingsConstants';
 import { normalizeArticleFilter, normalizeReaderViewMode } from '../common/constants/RssConstants';
@@ -83,6 +83,12 @@ export class SettingsStore {
       appSettings.readerViewMode = normalizeReaderViewMode(
         store.getSync(PreferencesConstants.KEY_READER_VIEW_MODE, appSettings.readerViewMode) as string);
       appSettings.lastTabIndex = store.getSync(PreferencesConstants.KEY_LAST_TAB, appSettings.lastTabIndex) as number;
+      appSettings.listRowLayout = ROW_LAYOUT_OPTIONS.normalize(
+        store.getSync(PreferencesConstants.KEY_ROW_LAYOUT, appSettings.listRowLayout) as string);
+      appSettings.listSummaryLines = SUMMARY_LINES_OPTIONS.normalize(
+        store.getSync(PreferencesConstants.KEY_SUMMARY_LINES, appSettings.listSummaryLines) as string);
+      appSettings.listDensity = LIST_DENSITY_OPTIONS.normalize(
+        store.getSync(PreferencesConstants.KEY_LIST_DENSITY, appSettings.listDensity) as string);
       appSettings.archiveRule = ARCHIVE_OPTIONS.normalize(
         store.getSync(PreferencesConstants.KEY_ARCHIVE_RULE, appSettings.archiveRule) as string);
     } catch (err) {
@@ -130,6 +136,9 @@ export class SettingsStore {
       store.putSync(PreferencesConstants.KEY_READER_VIEW_MODE, appSettings.readerViewMode);
       store.putSync(PreferencesConstants.KEY_LAST_TAB, appSettings.lastTabIndex);
       store.putSync(PreferencesConstants.KEY_ARCHIVE_RULE, appSettings.archiveRule);
+      store.putSync(PreferencesConstants.KEY_ROW_LAYOUT, appSettings.listRowLayout);
+      store.putSync(PreferencesConstants.KEY_SUMMARY_LINES, appSettings.listSummaryLines);
+      store.putSync(PreferencesConstants.KEY_LIST_DENSITY, appSettings.listDensity);
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       console.error('SettingsStore.putSync failed: ' + error.code.toString());

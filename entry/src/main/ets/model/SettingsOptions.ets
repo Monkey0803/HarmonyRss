@@ -5,7 +5,7 @@
  * 状态文件可读，SDK 枚举重排也不会错位；读到旧值 / 脏值统一退回默认项。控件（下拉菜单）只认 label。
  */
 
-import { ArchiveRule, ThemeMode, AppLanguage, MaterialKind, MaterialGrade, BackgroundKind, LogoKind, AutoRefreshInterval, ReaderFontSize, ReaderLineHeight, ReaderFontFamily, ReaderWidth, ReaderAlign, ReaderTheme } from '../common/constants/SettingsConstants';
+import { ArchiveRule, ListDensity, ListRowLayout, SummaryLines, ThemeMode, AppLanguage, MaterialKind, MaterialGrade, BackgroundKind, LogoKind, AutoRefreshInterval, ReaderFontSize, ReaderLineHeight, ReaderFontFamily, ReaderWidth, ReaderAlign, ReaderTheme } from '../common/constants/SettingsConstants';
 
 /** 一个可选项：语义 id + 展示文案。 */
 export class ChoiceOption {
@@ -113,6 +113,27 @@ export const AUTO_REFRESH_OPTIONS: ChoiceSet = new ChoiceSet([
   new ChoiceOption(AutoRefreshInterval.MIN_30, $r('app.string.opt_refresh_30')),
   new ChoiceOption(AutoRefreshInterval.MIN_60, $r('app.string.opt_refresh_60'))
 ], AutoRefreshInterval.OFF);
+
+/** 列表行样式：纯文字 / 缩略图 / 大图卡片。 */
+export const ROW_LAYOUT_OPTIONS: ChoiceSet = new ChoiceSet([
+  new ChoiceOption(ListRowLayout.TEXT, $r('app.string.opt_layout_text')),
+  new ChoiceOption(ListRowLayout.THUMB, $r('app.string.opt_layout_thumb')),
+  new ChoiceOption(ListRowLayout.CARD, $r('app.string.opt_layout_card'))
+], ListRowLayout.THUMB);
+
+/** 摘要行数：1 / 2 / 3。 */
+export const SUMMARY_LINES_OPTIONS: ChoiceSet = new ChoiceSet([
+  new ChoiceOption(SummaryLines.ONE, $r('app.string.opt_lines_1')),
+  new ChoiceOption(SummaryLines.TWO, $r('app.string.opt_lines_2')),
+  new ChoiceOption(SummaryLines.THREE, $r('app.string.opt_lines_3'))
+], SummaryLines.TWO);
+
+/** 列表密度：紧凑 / 标准 / 宽松。 */
+export const LIST_DENSITY_OPTIONS: ChoiceSet = new ChoiceSet([
+  new ChoiceOption(ListDensity.COMPACT, $r('app.string.opt_density_compact')),
+  new ChoiceOption(ListDensity.STANDARD, $r('app.string.opt_density_standard')),
+  new ChoiceOption(ListDensity.RELAXED, $r('app.string.opt_density_relaxed'))
+], ListDensity.STANDARD);
 
 /** 归档规则：已读且超过 N 天不进主列表。 */
 export const ARCHIVE_OPTIONS: ChoiceSet = new ChoiceSet([

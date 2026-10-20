@@ -6,7 +6,7 @@
 
 import { common } from '@kit.AbilityKit';
 import { ReaderTypography } from '../common/constants/SettingsConstants';
-import { ARCHIVE_OPTIONS } from '../model/SettingsOptions';
+import { ARCHIVE_OPTIONS, LIST_DENSITY_OPTIONS, ROW_LAYOUT_OPTIONS, SUMMARY_LINES_OPTIONS } from '../model/SettingsOptions';
 import { feedViewModel } from './FeedViewModel';
 import { appSettings } from '../model/AppSettings';
 import { settingsStore } from '../service/SettingsStore';
@@ -110,6 +110,24 @@ export class SettingsViewModel {
   }
 
   /** 自动刷新间隔：'off' | '15' | '30' | '60'（分钟）；同时重排后台任务。 */
+  /** 列表行样式：纯文字 / 缩略图 / 大图卡片。列表行自己读 appSettings，改完即生效。 */
+  setListRowLayout(id: string): void {
+    appSettings.listRowLayout = ROW_LAYOUT_OPTIONS.normalize(id);
+    settingsStore.save();
+  }
+
+  /** 摘要行数：1 / 2 / 3。 */
+  setListSummaryLines(id: string): void {
+    appSettings.listSummaryLines = SUMMARY_LINES_OPTIONS.normalize(id);
+    settingsStore.save();
+  }
+
+  /** 列表密度：紧凑 / 标准 / 宽松（尺寸落在 float 资源，见 ListDensityMetrics）。 */
+  setListDensity(id: string): void {
+    appSettings.listDensity = LIST_DENSITY_OPTIONS.normalize(id);
+    settingsStore.save();
+  }
+
   /** 归档规则：已读且超过 N 天不进主列表（进「归档」筛选）。 */
   setArchiveRule(id: string): void {
     appSettings.archiveRule = ARCHIVE_OPTIONS.normalize(id);

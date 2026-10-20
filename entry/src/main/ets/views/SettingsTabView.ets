@@ -23,7 +23,7 @@ import {
   SnackBarOperationType
 } from '@kit.UIDesignKit';
 import { appSettings } from '../model/AppSettings';
-import { ARCHIVE_OPTIONS, ChoiceOption, ChoiceSet, THEME_OPTIONS, LANGUAGE_OPTIONS, MATERIAL_TYPE_OPTIONS, MATERIAL_LEVEL_OPTIONS, BACKGROUND_OPTIONS, LOGO_OPTIONS, AUTO_REFRESH_OPTIONS, READER_FONT_OPTIONS, READER_LINE_OPTIONS, READER_FAMILY_OPTIONS, READER_WIDTH_OPTIONS, READER_ALIGN_OPTIONS, READER_THEME_OPTIONS } from '../model/SettingsOptions';
+import { ARCHIVE_OPTIONS, LIST_DENSITY_OPTIONS, ROW_LAYOUT_OPTIONS, SUMMARY_LINES_OPTIONS, ChoiceOption, ChoiceSet, THEME_OPTIONS, LANGUAGE_OPTIONS, MATERIAL_TYPE_OPTIONS, MATERIAL_LEVEL_OPTIONS, BACKGROUND_OPTIONS, LOGO_OPTIONS, AUTO_REFRESH_OPTIONS, READER_FONT_OPTIONS, READER_LINE_OPTIONS, READER_FAMILY_OPTIONS, READER_WIDTH_OPTIONS, READER_ALIGN_OPTIONS, READER_THEME_OPTIONS } from '../model/SettingsOptions';
 import { settingsViewModel } from '../viewmodel/SettingsViewModel';
 import { feedViewModel } from '../viewmodel/FeedViewModel';
 import { antiPeep } from '../service/AntiPeep';
@@ -51,6 +51,9 @@ enum SettingField {
   STATUS_BAR_SCROLL = 'statusBarScroll',
   AUTO_REFRESH = 'autoRefresh',
   ARCHIVE_RULE = 'archiveRule',
+  ROW_LAYOUT = 'rowLayout',
+  SUMMARY_LINES = 'summaryLines',
+  LIST_DENSITY = 'listDensity',
   READER_FONT = 'readerFont',
   READER_LINE = 'readerLine',
   READER_FAMILY = 'readerFamily',
@@ -96,6 +99,12 @@ struct OptionSelectRow {
         return appSettings.languageMode;
       case SettingField.ARCHIVE_RULE:
         return appSettings.archiveRule;
+      case SettingField.ROW_LAYOUT:
+        return appSettings.listRowLayout;
+      case SettingField.SUMMARY_LINES:
+        return appSettings.listSummaryLines;
+      case SettingField.LIST_DENSITY:
+        return appSettings.listDensity;
       case SettingField.AUTO_REFRESH:
         return appSettings.autoRefresh;
       case SettingField.READER_FONT:
@@ -652,6 +661,42 @@ export struct SettingsTabView {
             field: SettingField.READER_KEEP_ON,
             onToggle: (value: boolean) => {
               settingsViewModel.setReaderKeepScreenOn(value);
+            }
+          })
+        }
+        .width('100%')
+        .backgroundColor($r('app.color.hm_card_background'))
+        .borderRadius($r('app.float.radius_card'))
+
+        this.SectionTitle($r('app.string.section_list'))
+        Column() {
+          OptionSelectRow({
+            icon: $r('sys.symbol.picture'),
+            title: $r('app.string.row_list_layout'),
+            choice: ROW_LAYOUT_OPTIONS,
+            field: SettingField.ROW_LAYOUT,
+            onPick: (id: string) => {
+              settingsViewModel.setListRowLayout(id);
+            }
+          })
+          Divider().color($r('app.color.hm_divider'))
+          OptionSelectRow({
+            icon: $r('sys.symbol.text_alignleft'),
+            title: $r('app.string.row_summary_lines'),
+            choice: SUMMARY_LINES_OPTIONS,
+            field: SettingField.SUMMARY_LINES,
+            onPick: (id: string) => {
+              settingsViewModel.setListSummaryLines(id);
+            }
+          })
+          Divider().color($r('app.color.hm_divider'))
+          OptionSelectRow({
+            icon: $r('sys.symbol.slider_horizontal_2'),
+            title: $r('app.string.row_list_density'),
+            choice: LIST_DENSITY_OPTIONS,
+            field: SettingField.LIST_DENSITY,
+            onPick: (id: string) => {
+              settingsViewModel.setListDensity(id);
             }
           })
         }

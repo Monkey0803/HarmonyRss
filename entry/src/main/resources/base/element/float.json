@@ -97,6 +97,38 @@
       "value": "8"
     },
     {
+      "name": "thumb_size_large",
+      "value": "72"
+    },
+    {
+      "name": "card_image_height",
+      "value": "180"
+    },
+    {
+      "name": "list_pad_compact",
+      "value": "8"
+    },
+    {
+      "name": "list_pad_standard",
+      "value": "12"
+    },
+    {
+      "name": "list_pad_relaxed",
+      "value": "16"
+    },
+    {
+      "name": "list_gap_compact",
+      "value": "4"
+    },
+    {
+      "name": "list_gap_standard",
+      "value": "8"
+    },
+    {
+      "name": "list_gap_relaxed",
+      "value": "12"
+    },
+    {
       "name": "badge_size",
       "value": "16"
     },

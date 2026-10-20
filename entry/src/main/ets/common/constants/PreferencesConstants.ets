@@ -46,6 +46,12 @@ export class PreferencesConstants {
   static readonly KEY_HOME_FILTER: string = 'homeFilter';
   /** 上次停留的页签下标（阅读 / 订阅源 / 设置 …）。 */
   static readonly KEY_LAST_TAB: string = 'lastTabIndex';
+  /** 列表行样式：'text' | 'thumb' | 'card'。 */
+  static readonly KEY_ROW_LAYOUT: string = 'listRowLayout';
+  /** 摘要行数：'1' | '2' | '3'。 */
+  static readonly KEY_SUMMARY_LINES: string = 'listSummaryLines';
+  /** 列表密度：'compact' | 'standard' | 'relaxed'。 */
+  static readonly KEY_LIST_DENSITY: string = 'listDensity';
   /** 归档规则：'off' | '7' | '14' | '30' | '90'（已读且超过该天数的文章不进主列表）。 */
   static readonly KEY_ARCHIVE_RULE: string = 'archiveRule';
   /** 详情页阅读模式：'reader' = 阅读器，其它 = 原文。 */
