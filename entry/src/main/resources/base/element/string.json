@@ -225,6 +225,34 @@
       "value": "Keep screen on while reading"
     },
     {
+      "name": "section_storage",
+      "value": "Storage"
+    },
+    {
+      "name": "row_reader_cache",
+      "value": "Clear article cache"
+    },
+    {
+      "name": "cache_summary",
+      "value": "%d articles · %s"
+    },
+    {
+      "name": "aux_reader_cache",
+      "value": "Clears cached article text and images for unstarred articles; read state and the list are kept."
+    },
+    {
+      "name": "dialog_clear_cache_title",
+      "value": "Clear article cache?"
+    },
+    {
+      "name": "dialog_clear_cache_message",
+      "value": "Cached article text and inlined images will be removed. Unstarred articles will need network to open again."
+    },
+    {
+      "name": "snack_cache_cleared",
+      "value": "Cleared %d articles"
+    },
+    {
       "name": "read_panel_title",
       "value": "Reading layout"
     },

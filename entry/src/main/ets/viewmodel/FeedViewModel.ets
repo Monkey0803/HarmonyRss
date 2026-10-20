@@ -12,7 +12,7 @@ import { Article, FeedGroup, FeedListItem, FeedSource } from '../model/Feed';
 import { feedStore } from '../service/FeedStore';
 import { feedService, FeedFetchResult, ResolvedFeed } from '../service/FeedService';
 import { feedDiscovery } from '../service/FeedDiscovery';
-import { articleStore } from '../service/ArticleStore';
+import { articleStore, CacheStats } from '../service/ArticleStore';
 import { articleContentService } from '../service/ArticleContentService';
 import { ParsedArticle, ParsedFeed } from '../service/RssParser';
 import { buildOpml, OpmlEntry } from '../service/OpmlCodec';
@@ -745,6 +745,34 @@ export class FeedViewModel {
       }
     }
     articleStore.setProgress(articleId, progress, ratio);
+  }
+
+  /** 正文缓存占用（设置页展示）：条数 + 字符量。 */
+  @Trace cachedArticles: number = 0;
+  @Trace cachedChars: number = 0;
+
+  /** 刷新缓存占用统计。 */
+  async refreshCacheStats(): Promise<void> {
+    const stats: CacheStats = await articleStore.cacheStats();
+    this.cachedArticles = stats.articles;
+    this.cachedChars = stats.bytes;
+    this.publish();
+  }
+
+  /** 清理未收藏文章的正文缓存，返回清理条数；内存里的正文一并失效。 */
+  async clearCachedContent(): Promise<number> {
+    const cleared: number = await articleStore.clearCachedContent();
+    for (let i = 0; i < this.all.length; i += 1) {
+      const item: Article = this.all[i];
+      if (!item.starred) {
+        item.readerHtml = '';
+        item.contentHtml = '';
+        item.plainText = '';
+        item.readerState = ReaderState.NONE;
+      }
+    }
+    await this.refreshCacheStats();
+    return cleared;
   }
 
   /** 按 id 取当前文章；找不到返回 undefined。 */

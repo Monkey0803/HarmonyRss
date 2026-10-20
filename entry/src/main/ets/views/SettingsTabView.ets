@@ -25,6 +25,7 @@ import {
 import { appSettings } from '../model/AppSettings';
 import { ChoiceOption, ChoiceSet, THEME_OPTIONS, LANGUAGE_OPTIONS, MATERIAL_TYPE_OPTIONS, MATERIAL_LEVEL_OPTIONS, BACKGROUND_OPTIONS, LOGO_OPTIONS, AUTO_REFRESH_OPTIONS, READER_FONT_OPTIONS, READER_LINE_OPTIONS, READER_FAMILY_OPTIONS, READER_WIDTH_OPTIONS, READER_ALIGN_OPTIONS, READER_THEME_OPTIONS } from '../model/SettingsOptions';
 import { settingsViewModel } from '../viewmodel/SettingsViewModel';
+import { feedViewModel } from '../viewmodel/FeedViewModel';
 import { antiPeep } from '../service/AntiPeep';
 import { safeArea } from '../service/SafeAreaController';
 import { AppLogo } from '../common/components/AppLogo';
@@ -308,6 +309,11 @@ export struct SettingsTabView {
   @Param navPathStack: NavPathStack = new NavPathStack();
   @Param scroller: Scroller = new Scroller();
 
+  /** 进设置页时刷新一次正文缓存占用（存储区展示用）。 */
+  aboutToAppear(): void {
+    feedViewModel.refreshCacheStats();
+  }
+
   /** 开启通知前先申请系统授权；失败则提示并保持关闭。 */
   private async toggleNotify(value: boolean): Promise<void> {
     const granted: boolean = await settingsViewModel.setNotifyNewArticles(value, this.hostContext());
@@ -319,6 +325,53 @@ export struct SettingsTabView {
   private hostContext(): common.UIAbilityContext {
     const context: common.Context | undefined = this.getUIContext().getHostContext();
     return context as common.UIAbilityContext;
+  }
+
+  /** 缓存占用文案：条数 + 粗略体积（KB/MB）。 */
+  private cacheSummary(): ResourceStr {
+    const count: number = feedViewModel.cachedArticles;
+    const kb: number = Math.round(feedViewModel.cachedChars / 1024);
+    const size: string = kb < 1024 ? (kb.toString() + 'KB') : ((kb / 1024).toFixed(1) + 'MB');
+    return $r('app.string.cache_summary', count, size);
+  }
+
+  /** 清理正文缓存（保留收藏）：二次确认后执行，并即时刷新占用。 */
+  private confirmClearCache(): void {
+    const cancelButton: AlertDialogButtonBaseOptions = {
+      value: $r('app.string.dialog_cancel'),
+      action: () => {
+      }
+    };
+    const confirmButton: AlertDialogButtonBaseOptions = {
+      value: $r('app.string.dialog_confirm'),
+      fontColor: $r('app.color.hm_brand'),
+      action: () => {
+        feedViewModel.clearCachedContent().then((cleared: number) => {
+          this.showCacheSnack($r('app.string.snack_cache_cleared', cleared));
+        });
+      }
+    };
+    const params: AlertDialogParamWithButtons = {
+      title: $r('app.string.dialog_clear_cache_title'),
+      message: $r('app.string.dialog_clear_cache_message'),
+      autoCancel: true,
+      primaryButton: cancelButton,
+      secondaryButton: confirmButton
+    };
+    this.getUIContext().showAlertDialog(MaterialController.dialogParams(params, appSettings.immersiveOn));
+  }
+
+  /** 清理结果提示。 */
+  private showCacheSnack(message: ResourceStr): void {
+    const bar: HdsSnackBar = new HdsSnackBar(this.getUIContext());
+    const icon: SnackBarIconOptions = { icon: $r('sys.symbol.checkmark_circle') };
+    const text: SnackBarMessageOptions = { title: message };
+    const operation: SnackBarOperationOptions = {
+      operationType: SnackBarOperationType.CLOSE_BUTTON_ONLY,
+      closeButtonAccessibilityText: $r('app.string.snack_dismiss')
+    };
+    const style: SnackBarStyleOptions = { duration: 3000 };
+    bar.show(icon, text, operation, style);
   }
 
   /** 桌面图标未能切换时的即时提示（HdsSnackBar，比 Toast 更能承载「为什么没成功」）。 */
@@ -632,6 +685,40 @@ export struct SettingsTabView {
         .width('100%')
         .backgroundColor($r('app.color.hm_card_background'))
         .borderRadius($r('app.float.radius_card'))
+
+        this.SectionTitle($r('app.string.section_storage'))
+        Column() {
+          Row() {
+            SettingLeading($r('sys.symbol.externaldrive'), $r('app.string.row_reader_cache'))
+            Blank()
+            Text(this.cacheSummary())
+              .fontSize($r('app.float.font_size_caption'))
+              .fontColor($r('app.color.hm_text_secondary'))
+            SymbolGlyph($r('sys.symbol.chevron_down'))
+              .fontSize($r('app.float.icon_size_small'))
+              .fontColor([$r('app.color.hm_text_secondary')])
+              .padding({ left: $r('app.float.space_xs') })
+          }
+          .width('100%')
+          .height($r('app.float.row_height'))
+          .padding({ left: $r('app.float.space_m'), right: $r('app.float.space_m') })
+          .onClick(() => {
+            this.confirmClearCache();
+          })
+
+          Text($r('app.string.aux_reader_cache'))
+            .fontSize($r('app.float.font_size_caption'))
+            .fontColor($r('app.color.hm_text_secondary'))
+            .padding({
+              left: $r('app.float.space_m'),
+              right: $r('app.float.space_m'),
+              bottom: $r('app.float.space_m')
+            })
+        }
+        .width('100%')
+        .backgroundColor($r('app.color.hm_card_background'))
+        .borderRadius($r('app.float.radius_card'))
+        .alignItems(HorizontalAlign.Start)
 
         if (!antiPeep.supported) {
           Text($r('app.string.aux_antipeep_unsupported'))

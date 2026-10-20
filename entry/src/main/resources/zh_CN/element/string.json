@@ -225,6 +225,34 @@
       "value": "阅读时常亮"
     },
     {
+      "name": "section_storage",
+      "value": "存储"
+    },
+    {
+      "name": "row_reader_cache",
+      "value": "清理正文缓存"
+    },
+    {
+      "name": "cache_summary",
+      "value": "%d 篇 · %s"
+    },
+    {
+      "name": "aux_reader_cache",
+      "value": "清理未收藏文章的正文与内联图片缓存；已读状态与列表保留。"
+    },
+    {
+      "name": "dialog_clear_cache_title",
+      "value": "清理正文缓存？"
+    },
+    {
+      "name": "dialog_clear_cache_message",
+      "value": "已缓存的正文与内联图片会被删除，未收藏的文章再次打开时需要联网。"
+    },
+    {
+      "name": "snack_cache_cleared",
+      "value": "已清理 %d 篇"
+    },
+    {
       "name": "read_panel_title",
       "value": "阅读排版"
     },

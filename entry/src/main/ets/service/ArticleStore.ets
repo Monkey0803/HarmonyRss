@@ -37,7 +37,9 @@ const SQL_CREATE: string =
   'progress_ratio REAL NOT NULL DEFAULT 0, ' +
   'reader_html TEXT NOT NULL DEFAULT \'\', ' +
   'content_html TEXT NOT NULL DEFAULT \'\', ' +
-  'plain_text TEXT NOT NULL DEFAULT \'\')';
+  'plain_text TEXT NOT NULL DEFAULT \'\', ' +
+  'page_etag TEXT NOT NULL DEFAULT \'\', ' +
+  'page_last_modified TEXT NOT NULL DEFAULT \'\')';
 
 /** 老库补列（表已存在时 CREATE 不会加列，ALTER 失败可忽略）。 */
 const SQL_ADD_IMAGE: string =
@@ -53,6 +55,11 @@ const SQL_ADD_PROGRESS_RATIO: string =
 /** feed 自带的 HTML 正文（content:encoded / Atom content / JSON Feed content_html）。 */
 const SQL_ADD_CONTENT_HTML: string =
   'ALTER TABLE ' + ArticleDbConstants.TABLE_ARTICLES + ' ADD COLUMN content_html TEXT NOT NULL DEFAULT \'\'';
+/** 正文页协商缓存的两个校验器（条件请求用）。 */
+const SQL_ADD_PAGE_ETAG: string =
+  'ALTER TABLE ' + ArticleDbConstants.TABLE_ARTICLES + ' ADD COLUMN page_etag TEXT NOT NULL DEFAULT \'\'';
+const SQL_ADD_PAGE_LAST_MODIFIED: string =
+  'ALTER TABLE ' + ArticleDbConstants.TABLE_ARTICLES + ' ADD COLUMN page_last_modified TEXT NOT NULL DEFAULT \'\'';
 /** Reader 正文的纯文本（提供搜索 / 复制 / 朗读复用）。 */
 const SQL_ADD_PLAIN_TEXT: string =
   'ALTER TABLE ' + ArticleDbConstants.TABLE_ARTICLES + ' ADD COLUMN plain_text TEXT NOT NULL DEFAULT \'\'';
@@ -67,8 +74,20 @@ const SQL_INSERT: string =
 
 const SQL_SELECT_ALL: string =
   'SELECT id, feed_id, feed_title, title, link, summary, content, published_at, is_read, is_starred,' +
-  ' image_url, author, progress, progress_ratio, reader_html, content_html, plain_text' +
+  ' image_url, author, progress, progress_ratio, reader_html, content_html, plain_text,' +
+  ' page_etag, page_last_modified' +
   ' FROM ' + ArticleDbConstants.TABLE_ARTICLES + ' ORDER BY published_at DESC';
+
+/** 正文缓存占用快照。 */
+export class CacheStats {
+  readonly articles: number;
+  readonly bytes: number;
+
+  constructor(articles: number, bytes: number) {
+    this.articles = articles;
+    this.bytes = bytes;
+  }
+}
 
 /** 卡片展示用的轻量快照：未读数 + 最新几条标题（不把整库读进内存）。 */
 export class WidgetSnapshot {
@@ -100,6 +119,8 @@ export class ArticleStore {
       this.addColumnIfNeeded(SQL_ADD_READER);
       this.addColumnIfNeeded(SQL_ADD_CONTENT_HTML);
       this.addColumnIfNeeded(SQL_ADD_PLAIN_TEXT);
+      this.addColumnIfNeeded(SQL_ADD_PAGE_ETAG);
+      this.addColumnIfNeeded(SQL_ADD_PAGE_LAST_MODIFIED);
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       hilog.error(DOMAIN, TAG, 'open failed: %{public}d', error.code);
@@ -193,6 +214,8 @@ export class ArticleStore {
           // feed 自带全文落盘：冷启动后仍能本地提纯，省掉一次网络抓取
           article.contentHtml = rs.getString(rs.getColumnIndex('content_html'));
           article.plainText = rs.getString(rs.getColumnIndex('plain_text'));
+          article.pageEtag = rs.getString(rs.getColumnIndex('page_etag'));
+          article.pageLastModified = rs.getString(rs.getColumnIndex('page_last_modified'));
           if (article.readerHtml.length > 0) {
             article.readerState = ReaderState.READY;
           }
@@ -297,6 +320,73 @@ export class ArticleStore {
       const error: BusinessError = err as BusinessError;
       hilog.warn(DOMAIN, TAG, 'backfill plain text failed: %{public}d', error.code);
     }
+  }
+
+  /** 正文缓存占用：缓存过的条数与字符总量（设置页展示用）。 */
+  async cacheStats(): Promise<CacheStats> {
+    const store: relationalStore.RdbStore | undefined = this.store;
+    if (store === undefined) {
+      return new CacheStats(0, 0);
+    }
+    try {
+      const rs: relationalStore.ResultSet = await store.querySql(
+        'SELECT COUNT(*) AS n, COALESCE(SUM(LENGTH(reader_html) + LENGTH(content_html) + LENGTH(plain_text)), 0) AS bytes' +
+        ' FROM ' + ArticleDbConstants.TABLE_ARTICLES +
+        ' WHERE reader_html <> \'\' OR content_html <> \'\' OR plain_text <> \'\'');
+      try {
+        if (rs.goToNextRow()) {
+          return new CacheStats(rs.getLong(rs.getColumnIndex('n')), rs.getLong(rs.getColumnIndex('bytes')));
+        }
+      } finally {
+        rs.close();
+      }
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.warn(DOMAIN, TAG, 'cache stats failed: %{public}d', error.code);
+    }
+    return new CacheStats(0, 0);
+  }
+
+  /**
+   * 清理正文缓存：清空未收藏文章的 reader_html / content_html / plain_text / 阅读进度，
+   * 列表条目与已读状态保留（收藏的文章不动）。返回清理条数。
+   */
+  async clearCachedContent(): Promise<number> {
+    const store: relationalStore.RdbStore | undefined = this.store;
+    if (store === undefined) {
+      return 0;
+    }
+    try {
+      // executeSql 返回 void，拿不到影响行数：先数一遍待清理条数，再执行清理。
+      let affected: number = 0;
+      const rs: relationalStore.ResultSet = await store.querySql(
+        'SELECT COUNT(*) AS n FROM ' + ArticleDbConstants.TABLE_ARTICLES +
+        ' WHERE is_starred = 0 AND (reader_html <> \'\' OR content_html <> \'\' OR plain_text <> \'\')');
+      try {
+        if (rs.goToNextRow()) {
+          affected = rs.getLong(rs.getColumnIndex('n'));
+        }
+      } finally {
+        rs.close();
+      }
+      await store.executeSql(
+        'UPDATE ' + ArticleDbConstants.TABLE_ARTICLES +
+        ' SET reader_html = \'\', content_html = \'\', plain_text = \'\', progress = 0, progress_ratio = 0' +
+        ' WHERE is_starred = 0 AND (reader_html <> \'\' OR content_html <> \'\' OR plain_text <> \'\')');
+      hilog.info(DOMAIN, TAG, 'cleared cached content rows: %{public}d', affected);
+      return affected;
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.error(DOMAIN, TAG, 'clear cache failed: %{public}d', error.code);
+      return 0;
+    }
+  }
+
+  /** 写入正文页的两个校验器（条件请求用）。 */
+  setPageValidators(id: string, etag: string, lastModified: string): void {
+    this.exec('UPDATE ' + ArticleDbConstants.TABLE_ARTICLES +
+      ' SET page_etag = ?, page_last_modified = ? WHERE id = ?',
+      [etag, lastModified, id]);
   }
 
   /** 写入 Reader 视图的结构化正文 HTML（离线阅读用）与其纯文本（搜索 / 复制 / 朗读用）。 */

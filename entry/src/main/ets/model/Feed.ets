@@ -109,6 +109,9 @@ export class Article {
    * feed 自带全文（content）仍单独保留，两者都可能为空。
    */
   plainText: string = '';
+  /** 正文页的 ETag / Last-Modified（条件请求用：页面没变时服务端回 304，省一次整页下载）。 */
+  pageEtag: string = '';
+  pageLastModified: string = '';
   /** 发布时间戳（毫秒）；解析不到时为 0。 */
   @Trace publishedAt: number;
   /** 配图地址（网络 URL）；空串表示没有配图。入库后不再变化。 */

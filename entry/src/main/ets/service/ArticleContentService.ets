@@ -44,12 +44,58 @@ function looksLikeBodyHtml(html: string): boolean {
     || lower.indexOf('<ul') >= 0 || lower.indexOf('<figure') >= 0 || lower.indexOf('<br') >= 0;
 }
 
+/** 正文页抓取结果：notModified 为 true 时 html 为空（服务端说「没变」）。 */
+export class PageFetch {
+  readonly html: string;
+  readonly notModified: boolean;
+  readonly etag: string;
+  readonly lastModified: string;
+
+  constructor(html: string, notModified: boolean, etag: string, lastModified: string) {
+    this.html = html;
+    this.notModified = notModified;
+    this.etag = etag;
+    this.lastModified = lastModified;
+  }
+}
+
+/** 去掉正文片段开头的版本标记（`<!--hrvN-->`）。 */
+function stripMarker(fragment: string): string {
+  return fragment.replace(/^<!--hrv\d+-->/, '');
+}
+
+/**
+ * 取响应头里的某个字段（与 FeedService.headerOf 同一套写法）。
+ * http 返回的 header 是 Object，key 大小写不保证统一；ArkTS 不允许在 Object 上做动态属性访问，
+ * 所以先转成 Record，再按几种常见写法依次取。
+ */
+function headerOf(response: http.HttpResponse, name: string): string {
+  const headers: Record<string, string> = response.header as Record<string, string>;
+  const candidates: string[] = [name, name.toLowerCase(), name.toUpperCase()];
+  for (let i = 0; i < candidates.length; i += 1) {
+    const value: string | undefined = headers[candidates[i]];
+    if (value !== undefined && value.length > 0) {
+      return value.trim();
+    }
+  }
+  return '';
+}
+
 export class ArticleContentService {
-  /** 抓取一个网页的 HTML 文本（复用订阅抓取的超时 / 错误归类）。 */
-  async fetchHtml(url: string): Promise<string> {
+  /**
+   * 抓取正文页 HTML，带条件请求：带上 ETag / Last-Modified 时，页面没变服务端回 304，
+   * 省掉一次整页下载（阅读器版本升级导致缓存同批次失效时，这一步能省下绝大多数流量）。
+   */
+  async fetchPage(url: string, etag: string, lastModified: string): Promise<PageFetch> {
     const header: Record<string, string> = {
       'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
     };
+    if (etag.length > 0) {
+      header['If-None-Match'] = etag;
+    }
+    if (lastModified.length > 0) {
+      header['If-Modified-Since'] = lastModified;
+    }
     const options: http.HttpRequestOptions = {
       method: http.RequestMethod.GET,
       connectTimeout: RssConstants.CONNECT_TIMEOUT_MS,
@@ -66,6 +112,9 @@ export class ArticleContentService {
         const error: BusinessError = err as BusinessError;
         throw new FeedFetchError(classifyRequestError(error), 'network: ' + error.message);
       }
+      if (response.responseCode === http.ResponseCode.NOT_MODIFIED) {
+        return new PageFetch('', true, etag, lastModified);
+      }
       if (response.responseCode !== http.ResponseCode.OK) {
         throw new FeedFetchError(FeedError.HTTP_ERROR, 'HTTP ' + response.responseCode.toString());
       }
@@ -74,7 +123,11 @@ export class ArticleContentService {
       if (body.length === 0) {
         throw new FeedFetchError(FeedError.EMPTY_RESPONSE, 'empty html body');
       }
-      return body;
+      const newEtag: string = headerOf(response, 'etag');
+      const newModified: string = headerOf(response, 'last-modified');
+      return new PageFetch(body, false,
+        newEtag.length > 0 ? newEtag : etag,
+        newModified.length > 0 ? newModified : lastModified);
     } finally {
       request.destroy();
     }
@@ -101,8 +154,22 @@ export class ArticleContentService {
       if (looksLikeBodyHtml(article.contentHtml)) {
         fresh = extractReadable(article.contentHtml, baseUrl);
       } else if (baseUrl.length > 0) {
-        const source: string = await this.fetchHtml(baseUrl);
-        fresh = extractReadable(source, baseUrl);
+        const page: PageFetch = await this.fetchPage(baseUrl, article.pageEtag, article.pageLastModified);
+        if (page.etag !== article.pageEtag || page.lastModified !== article.pageLastModified) {
+          article.pageEtag = page.etag;
+          article.pageLastModified = page.lastModified;
+          articleStore.setPageValidators(article.id, page.etag, page.lastModified);
+        }
+        if (page.notModified) {
+          // 页面没变：直接沿用旧片段（可能带旧版本标记），只把标记换成当前版本，省掉下载与重新提取。
+          if (cached.length > 0) {
+            hilog.info(DOMAIN, TAG, 'page not modified, reuse cache (%{public}d chars)', cached.length);
+            this.persist(article, READER_MARKER + stripMarker(cached));
+            return article.readerHtml;
+          }
+          throw new FeedFetchError(FeedError.PARSE_ERROR, 'not modified but no usable cache');
+        }
+        fresh = extractReadable(page.html, baseUrl);
       }
     } catch (err) {
       // 抓取失败（多为离线）：已有旧缓存就先用着，不打断阅读。
