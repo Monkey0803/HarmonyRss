@@ -1,51 +1,21 @@
 /*
  * HomeTabView.ets — 阅读页签（纯展示 + 事件上报）。
  *
- * 整页只有一个铺满全屏的可滚动 List：首条是表头（刷新 / 未读 / 筛选 / 全部已读 / 订阅管理），
+ * 整页只有一个铺满全屏的可滚动 List：首条是表头（刷新 / 未读 / 搜索），
  * 随列表一起滚动，因此内容可以穿过透明标题栏（配合 list 的 clip(false) + cachedCount）。
+ * 品牌行与筛选（全部 / 未读 / 收藏）挂在标题栏上，见 views/BrandTitle.ets、views/FilterSegmentBar.ets。
  * 点光源演示台不在这里（位置固定在组件中心、不能放滚动容器），见 views/EffectPreviewView.ets。
  * 业务逻辑全在 FeedViewModel，这里只读状态、上报触摸与点击事件。
  */
 
 import { Article } from '../model/Feed';
 import { feedViewModel } from '../viewmodel/FeedViewModel';
-import { appSettings } from '../model/AppSettings';
-import { AppLogo } from '../common/components/AppLogo';
 import { CommonConstants } from '../common/constants/CommonConstants';
 import { ArticleListItem } from './ArticleListItem';
 import { RouterConstants } from '../common/constants/RouterConstants';
 import { ArticleFilter, FeedError } from '../common/constants/RssConstants';
 import { FeedErrorText } from '../common/utils/FeedErrorText';
-import { ColorMetrics, SegmentButtonV2Items, TabSegmentButtonV2 } from '@kit.ArkUI';
-import { BusinessError } from '@kit.BasicServicesKit';
-import { hilog } from '@kit.PerformanceAnalysisKit';
 import { safeArea } from '../service/SafeAreaController';
-import { MaterialController } from '../service/MaterialController';
-
-const DOMAIN: number = 0x0000;
-const TAG: string = 'HomeTabView';
-
-/** 筛选值 → 分段控件选中下标。 */
-function filterIndexOf(filter: string): number {
-  if (filter === ArticleFilter.UNREAD) {
-    return 1;
-  }
-  if (filter === ArticleFilter.STARRED) {
-    return 2;
-  }
-  return 0;
-}
-
-/** 分段控件下标 → 筛选值。 */
-function filterAt(index: number): string {
-  if (index === 1) {
-    return ArticleFilter.UNREAD;
-  }
-  if (index === 2) {
-    return ArticleFilter.STARRED;
-  }
-  return ArticleFilter.ALL;
-}
 
 @ComponentV2
 export struct HomeTabView {
@@ -55,12 +25,6 @@ export struct HomeTabView {
   @Local searchOpen: boolean = false;
   /** 「添加订阅源」入口在悬浮页签栏的 miniBar 上（Index 持有面板），这里只发请求。 */
   @Event onAddFeedRequest: () => void = () => {};
-  /** 筛选分段控件的选项（全部 / 未读 / 收藏）。 */
-  private filterItems: SegmentButtonV2Items = new SegmentButtonV2Items([
-    { text: $r('app.string.filter_all') },
-    { text: $r('app.string.filter_unread') },
-    { text: $r('app.string.filter_starred') }
-  ]);
 
   private async reload(): Promise<void> {
     if (this.refreshing) {
@@ -74,30 +38,6 @@ export struct HomeTabView {
   private openArticle(article: Article): void {
     feedViewModel.openArticle(article.id);
     this.navPathStack.pushPath(new NavPathInfo(RouterConstants.PAGE_ARTICLE, ''));
-  }
-
-  /** 全部已读前确认。 */
-  private confirmMarkAllRead(): void {
-    const cancelButton: AlertDialogButtonBaseOptions = {
-      value: $r('app.string.dialog_cancel'),
-      action: () => {
-      }
-    };
-    const confirmButton: AlertDialogButtonBaseOptions = {
-      value: $r('app.string.dialog_confirm'),
-      fontColor: $r('app.color.hm_brand'),
-      action: () => {
-        feedViewModel.markAllRead();
-      }
-    };
-    const params: AlertDialogParamWithButtons = {
-      title: $r('app.string.mark_all_read_confirm_title'),
-      message: $r('app.string.mark_all_read_confirm_message'),
-      autoCancel: true,
-      primaryButton: cancelButton,
-      secondaryButton: confirmButton
-    };
-    this.getUIContext().showAlertDialog(MaterialController.dialogParams(params, appSettings.immersiveOn));
   }
 
   private emptyTitle(): ResourceStr {
@@ -120,22 +60,9 @@ export struct HomeTabView {
   @Builder
   Header() {
     Column({ space: $r('app.float.space_m') }) {
-      // 透明标题栏占位：首屏顶部预留「状态栏 + 标题栏」高度，滚动时随内容上移，列表内容即可穿过透明标题栏下方。
-      Row().width('100%').height(safeArea.contentTopInsetVp)
-
-      // 品牌行：显示当前所选 App logo，切换后立即反映。
-      Row({ space: $r('app.float.space_s') }) {
-        AppLogo({
-          logoKind: appSettings.logoKind,
-          logoSize: CommonConstants.LOGO_BRAND_SIZE,
-          cornerRadius: CommonConstants.LOGO_BRAND_RADIUS
-        })
-        Text($r('app.string.brand_name'))
-          .fontSize($r('app.float.font_size_title'))
-          .fontWeight(FontWeight.Bold)
-          .fontColor($r('app.color.hm_text_primary'))
-      }
-      .width('100%')
+      // 透明标题栏占位：首屏顶部预留「状态栏 + 标题栏 + 筛选条」高度，滚动时随内容上移，
+      // 列表内容即可穿过透明标题栏下方（品牌行 + 筛选条挂在标题栏上，见 Index）。
+      Row().width('100%').height(safeArea.contentTopInsetVp + CommonConstants.FILTER_BAR_HEIGHT_VP)
 
       Row({ space: $r('app.float.space_m') }) {
         SymbolGlyph($r('sys.symbol.arrow_clockwise'))
@@ -224,40 +151,6 @@ export struct HomeTabView {
         .borderRadius($r('app.float.radius_card'))
       }
 
-      Row({ space: $r('app.float.space_s') }) {
-        // 分段控件不支持通用属性，会吃掉所在区域的「最大可用宽度」，直接放进 Row 会把右侧按钮挤成 0 宽。
-        // 因此套一层 layoutWeight(1) 的容器：它按固定尺寸的按钮量完后再取剩余宽度，按钮宽度得以保留。
-        Row() {
-          // 页签型分段按钮。刻意不传 backgroundSystemMaterial：沉浸光感是区域级能力，
-          // 只有 Navigation/NavDestination 标题栏与底部 TabBar 等生效区域里的组件才吃材质，
-          // 分段控件在内容区，传了只会打 "Material inactive: out of scope"，背板仍是组件自带背景
-          // （官方给生效范围外组件的替代方案就是通用背景属性，见沉浸光感 FAQ）。
-          TabSegmentButtonV2({
-            items: this.filterItems,
-            selectedIndex: filterIndexOf(feedViewModel.filter),
-            onItemClicked: (index: number) => {
-              feedViewModel.setFilter(filterAt(index));
-            },
-            // 特殊系统资源值：未选中态跟随主题文字色。
-            itemFontColor: this.safeColor($r('sys.color.font_primary')),
-            itemSelectedFontColor: this.safeColor(Color.Black)
-          })
-        }
-        .layoutWeight(1)
-        .alignItems(VerticalAlign.Center)
-
-        Button($r('app.string.home_mark_all_read'))
-          .buttonStyle(ButtonStyleMode.TEXTUAL)
-          .fontSize($r('app.float.font_size_caption'))
-          .fontColor($r('app.color.hm_text_secondary'))
-          .flexShrink(0)
-          .enabled(feedViewModel.unreadTotal > 0)
-          .onClick(() => {
-            this.confirmMarkAllRead();
-          })
-      }
-      .width('100%')
-
       if (feedViewModel.errorCode !== FeedError.NONE && feedViewModel.articles.length === 0) {
         Text(FeedErrorText.of(feedViewModel.errorCode))
           .fontSize($r('app.float.font_size_caption'))
@@ -323,22 +216,6 @@ export struct HomeTabView {
     }
     .height('100%')
     .padding({ left: $r('app.float.space_s') })
-  }
-
-  /**
-   * 分段按钮的文本配色。
-   *
-   * `ColorMetrics.resourceColor` 标注了可能抛异常，ArkTS 要求调用点必须 catch；
-   * 这两个参数在 TabSegmentButtonV2 里都是可选的，失败时返回 undefined 退回组件默认样式。
-   */
-  private safeColor(value: ResourceColor): ColorMetrics | undefined {
-    try {
-      return ColorMetrics.resourceColor(value);
-    } catch (err) {
-      const error: BusinessError = err as BusinessError;
-      hilog.error(DOMAIN, TAG, 'resourceColor failed: %{public}d', error.code);
-      return undefined;
-    }
   }
 
   build() {

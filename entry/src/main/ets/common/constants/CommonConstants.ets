@@ -11,6 +11,8 @@ export class CommonConstants {
   static readonly TITLE_HIDE_OFFSET_VP: number = 10;
   /** HDS 紧凑标题栏（MINI）高度（vp）——HDS 规范固定值，用于透明标题栏下的首屏顶部占位。 */
   static readonly TITLE_BAR_HEIGHT_VP: number = 56;
+  /** 首页筛选分段控件条带高度（vp）：挂在标题栏 bottomBuilder 上，需计入顶部占位。 */
+  static readonly FILTER_BAR_HEIGHT_VP: number = 48;
   /** HDS 悬浮页签栏 / 操作栏高度（vp）——HDS 规范固定值，用于给它留出页面条带高度。 */
   static readonly TAB_BAR_HEIGHT_VP: number = 56;
   /** 悬浮页签栏上 miniBar（添加订阅源入口）宽度（vp）——圆角胶囊，够一个图标落位。 */

@@ -11,6 +11,7 @@ import { common } from '@kit.AbilityKit';
 import {
   DynamicHideParams,
   HideMode,
+  BottomBuilderShowType,
   HdsTabs,
   HdsTabsController,
   HdsNavigation,
@@ -47,6 +48,8 @@ import { IMAGE_DOMAIN } from '../common/constants/DomainConstants';
 import { FeedError } from '../common/constants/RssConstants';
 import { FeedErrorText } from '../common/utils/FeedErrorText';
 import { HomeTabView } from '../views/HomeTabView';
+import { FilterSegmentBar } from '../views/FilterSegmentBar';
+import { BrandTitle } from '../views/BrandTitle';
 import { SettingsTabView } from '../views/SettingsTabView';
 import { ImageTabView } from '../views/ImageTabView';
 import { PrivacyVeil } from '../views/PrivacyVeil';
@@ -209,6 +212,51 @@ struct Index {
       style: this.materialTitleStyle()
     };
     return options;
+  }
+
+  /**
+   * 根标题栏配置：在「阅读」页签时，标题换成品牌行（logo + HarmonyRss），
+   * 并在标题下方挂筛选分段控件。
+   *
+   * 为什么都挂标题栏：沉浸光感是区域级能力，只有 Navigation/NavDestination 标题栏与横向 Tabs 的
+   * 底部 TabBar 里组件才真吃系统材质；放进内容区材质会静默失效。品牌行用 stackBuilder 顶掉文字标题，
+   * 筛选条用 bottomBuilder 挂在标题下方（首页内容顶部按 FILTER_BAR_HEIGHT_VP 多留一段占位）。
+   */
+  private rootTitleOptions(): HdsNavigationTitleBarOptions {
+    const isHome: boolean = this.currentTab === TabIndex.HOME;
+    const title: HdsNavigationTitle = { mainTitle: isHome ? '' : this.rootTitle() };
+    const content: TitleBarContentOptions = { title: title };
+    if (isHome) {
+      content.stackBuilder = (): void => {
+        this.HomeBrandBar();
+      };
+      content.bottomBuilder = {
+        builder: (): void => {
+          this.HomeFilterBar();
+        },
+        height: CommonConstants.FILTER_BAR_HEIGHT_VP,
+        showType: BottomBuilderShowType.DIRECTLY_SHOW
+      };
+    }
+    const options: HdsNavigationTitleBarOptions = {
+      avoidLayoutSafeArea: true,
+      enableComponentSafeArea: false,
+      content: content,
+      style: this.materialTitleStyle()
+    };
+    return options;
+  }
+
+  /** 标题栏 stackBuilder：品牌行（logo + HarmonyRss）。 */
+  @Builder
+  HomeBrandBar() {
+    BrandTitle()
+  }
+
+  /** 标题栏 bottomBuilder：阅读页签的筛选条。 */
+  @Builder
+  HomeFilterBar() {
+    FilterSegmentBar()
   }
 
   /**
@@ -491,7 +539,7 @@ struct Index {
         .height('100%')
         .backgroundColor($r('app.color.hm_page_transparent'))
       }
-      .titleBar(this.titleOptions(this.rootTitle()))
+      .titleBar(this.rootTitleOptions())
       // 紧凑标题栏（默认 FREE 是大标题模式，标题上下留白很大）。
       .titleMode(HdsNavigationTitleMode.MINI)
       // 根页面没有上一级：MINI 模式下会默认显示返回键，这里隐藏。
