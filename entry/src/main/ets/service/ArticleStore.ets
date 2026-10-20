@@ -12,6 +12,7 @@ import { common } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { Article } from '../model/Feed';
+import { Highlight } from '../model/Highlight';
 import { ArticleDbConstants, ReaderState } from '../common/constants/RssConstants';
 import { toPlainText } from '../common/utils/HtmlText';
 
@@ -41,6 +42,21 @@ const SQL_CREATE: string =
   'plain_text TEXT NOT NULL DEFAULT \'\', ' +
   'page_etag TEXT NOT NULL DEFAULT \'\', ' +
   'page_last_modified TEXT NOT NULL DEFAULT \'\')';
+
+/**
+ * 标注表：一条 = 引文 + 可选备注 + 配色 + 定位信息。
+ * 与 articles 分开存（一对多，且删文章时按 article_id 一起清），所以用独立 CREATE TABLE IF NOT EXISTS。
+ */
+const SQL_CREATE_HIGHLIGHTS: string =
+  'CREATE TABLE IF NOT EXISTS ' + ArticleDbConstants.TABLE_HIGHLIGHTS + ' (' +
+  'id TEXT PRIMARY KEY, ' +
+  'article_id TEXT NOT NULL, ' +
+  'quote TEXT NOT NULL DEFAULT \'\', ' +
+  'note TEXT NOT NULL DEFAULT \'\', ' +
+  'color TEXT NOT NULL DEFAULT \'yellow\', ' +
+  'created_at INTEGER NOT NULL DEFAULT 0, ' +
+  'anchor_text TEXT NOT NULL DEFAULT \'\', ' +
+  'anchor_ratio REAL NOT NULL DEFAULT 0)';
 
 /** 老库补列（表已存在时 CREATE 不会加列，ALTER 失败可忽略）。 */
 const SQL_ADD_IMAGE: string =
@@ -134,6 +150,7 @@ export class ArticleStore {
       this.addColumnIfNeeded(SQL_ADD_PAGE_ETAG);
       this.addColumnIfNeeded(SQL_ADD_PAGE_LAST_MODIFIED);
       this.addColumnIfNeeded(SQL_ADD_SAVED);
+      this.store.executeSync(SQL_CREATE_HIGHLIGHTS);
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       hilog.error(DOMAIN, TAG, 'open failed: %{public}d', error.code);
@@ -378,6 +395,89 @@ export class ArticleStore {
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       hilog.warn(DOMAIN, TAG, 'backfill plain text failed: %{public}d', error.code);
+    }
+  }
+
+  // ---- 正文标注（highlight）CRUD ----
+
+  /** 新增一条标注。 */
+  addHighlight(item: Highlight): void {
+    this.exec('INSERT OR REPLACE INTO ' + ArticleDbConstants.TABLE_HIGHLIGHTS +
+      ' (id, article_id, quote, note, color, created_at, anchor_text, anchor_ratio)' +
+      ' VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [item.id, item.articleId, item.quote, item.note, item.color, item.createdAt,
+        item.anchorText, item.anchorRatio]);
+  }
+
+  /** 列出某篇文章的标注（按创建时间正序：与正文阅读顺序大致一致）。 */
+  async listHighlights(articleId: string): Promise<Highlight[]> {
+    const store: relationalStore.RdbStore | undefined = this.store;
+    const result: Highlight[] = [];
+    if (store === undefined || articleId.length === 0) {
+      return result;
+    }
+    try {
+      const rs: relationalStore.ResultSet = await store.querySql(
+        'SELECT id, article_id, quote, note, color, created_at, anchor_text, anchor_ratio FROM ' +
+        ArticleDbConstants.TABLE_HIGHLIGHTS + ' WHERE article_id = ? ORDER BY created_at ASC',
+        [articleId]);
+      try {
+        while (rs.goToNextRow()) {
+          result.push(new Highlight(
+            rs.getString(rs.getColumnIndex('id')),
+            rs.getString(rs.getColumnIndex('article_id')),
+            rs.getString(rs.getColumnIndex('quote')),
+            rs.getString(rs.getColumnIndex('note')),
+            rs.getString(rs.getColumnIndex('color')),
+            rs.getLong(rs.getColumnIndex('created_at')),
+            rs.getString(rs.getColumnIndex('anchor_text')),
+            rs.getDouble(rs.getColumnIndex('anchor_ratio'))));
+        }
+      } finally {
+        rs.close();
+      }
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.error(DOMAIN, TAG, 'listHighlights failed: %{public}d', error.code);
+    }
+    return result;
+  }
+
+  /** 改备注。 */
+  updateHighlightNote(id: string, note: string): void {
+    this.exec('UPDATE ' + ArticleDbConstants.TABLE_HIGHLIGHTS + ' SET note = ? WHERE id = ?',
+      [note, id]);
+  }
+
+  /** 改配色。 */
+  updateHighlightColor(id: string, color: string): void {
+    this.exec('UPDATE ' + ArticleDbConstants.TABLE_HIGHLIGHTS + ' SET color = ? WHERE id = ?',
+      [color, id]);
+  }
+
+  /** 删除一条标注。 */
+  deleteHighlight(id: string): void {
+    this.exec('DELETE FROM ' + ArticleDbConstants.TABLE_HIGHLIGHTS + ' WHERE id = ?', [id]);
+  }
+
+  /** 统计标注总数（设置页「储存」区展示用）。 */
+  async countHighlights(): Promise<number> {
+    const store: relationalStore.RdbStore | undefined = this.store;
+    if (store === undefined) {
+      return 0;
+    }
+    try {
+      const rs: relationalStore.ResultSet = await store.querySql(
+        'SELECT COUNT(*) AS c FROM ' + ArticleDbConstants.TABLE_HIGHLIGHTS);
+      try {
+        return rs.goToNextRow() ? rs.getLong(rs.getColumnIndex('c')) : 0;
+      } finally {
+        rs.close();
+      }
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.error(DOMAIN, TAG, 'countHighlights failed: %{public}d', error.code);
+      return 0;
     }
   }
 

@@ -457,6 +457,50 @@
       "value": "Mark read"
     },
     {
+      "name": "action_highlight",
+      "value": "Highlight"
+    },
+    {
+      "name": "hl_panel_entry",
+      "value": "Highlights"
+    },
+    {
+      "name": "hl_panel_title",
+      "value": "%d highlights"
+    },
+    {
+      "name": "hl_panel_empty",
+      "value": "No highlights yet. Select text in the article to add one."
+    },
+    {
+      "name": "hl_editor_title",
+      "value": "Edit highlight"
+    },
+    {
+      "name": "hl_note_hint",
+      "value": "Note (optional)"
+    },
+    {
+      "name": "hl_action_goto",
+      "value": "Go"
+    },
+    {
+      "name": "hl_action_note",
+      "value": "Note"
+    },
+    {
+      "name": "hl_action_color",
+      "value": "Color"
+    },
+    {
+      "name": "snack_highlight_added",
+      "value": "Highlight saved"
+    },
+    {
+      "name": "snack_highlight_removed",
+      "value": "Highlight removed"
+    },
+    {
       "name": "read_panel_title",
       "value": "Reading layout"
     },

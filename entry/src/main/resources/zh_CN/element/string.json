@@ -457,6 +457,50 @@
       "value": "标记已读"
     },
     {
+      "name": "action_highlight",
+      "value": "高亮"
+    },
+    {
+      "name": "hl_panel_entry",
+      "value": "标注"
+    },
+    {
+      "name": "hl_panel_title",
+      "value": "%d 条标注"
+    },
+    {
+      "name": "hl_panel_empty",
+      "value": "还没有标注。选中正文里的文字即可加一条。"
+    },
+    {
+      "name": "hl_editor_title",
+      "value": "编辑标注"
+    },
+    {
+      "name": "hl_note_hint",
+      "value": "备注（可留空）"
+    },
+    {
+      "name": "hl_action_goto",
+      "value": "定位"
+    },
+    {
+      "name": "hl_action_note",
+      "value": "备注"
+    },
+    {
+      "name": "hl_action_color",
+      "value": "改色"
+    },
+    {
+      "name": "snack_highlight_added",
+      "value": "已添加标注"
+    },
+    {
+      "name": "snack_highlight_removed",
+      "value": "已删除标注"
+    },
+    {
       "name": "read_panel_title",
       "value": "阅读排版"
     },

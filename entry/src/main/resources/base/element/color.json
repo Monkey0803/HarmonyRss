@@ -1,5 +1,9 @@
 {
   "color": [
+    { "name": "hl_yellow", "value": "#FFE082" },
+    { "name": "hl_green", "value": "#B7E8B7" },
+    { "name": "hl_blue", "value": "#B3D9FF" },
+    { "name": "hl_pink", "value": "#FFC7DC" },
     { "name": "start_window_background", "value": "#F1F3F5" },
     { "name": "hm_brand", "value": "#FF0A59F7" },
     { "name": "hm_text_primary", "value": "#E6000000" },

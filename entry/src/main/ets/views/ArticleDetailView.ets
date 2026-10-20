@@ -51,6 +51,17 @@ import { settingsStore } from '../service/SettingsStore';
 import { ReaderViewMode } from '../common/constants/RssConstants';
 import { buildReaderDocument } from '../service/ReaderDocument';
 import {
+  applyHighlightsScript,
+  gotoHighlightScript,
+  gotoRatioScript,
+  highlightSupportScript,
+  HighlightItem,
+  ReaderHighlightBridge,
+  selectionRatioScript
+} from '../service/ReaderHighlight';
+import { Highlight, HighlightColor } from '../model/Highlight';
+import { articleStore } from '../service/ArticleStore';
+import {
   parsePosition,
   progressListenerScript,
   ReaderPosition,
@@ -98,11 +109,23 @@ export struct ArticleDetailView {
   /** 触底检测在途标记（避免过度滚动事件重复触发 runJavaScript）。 */
   private bottomCheckPending: boolean = false;
   /** 「阅读排版」半模态面板显隐。 */
-  @Local showReadSheet: boolean = false;
+  /**
+   * 半模态面板当前显示哪一种内容：'' 关闭 / 'read' 阅读排版 / 'hlList' 标注列表 / 'hlEdit' 标注编辑。
+   * 一个组件上只能挂一个 bindSheet（挂多个只会生效最后一个），所以用一个状态切换内容。
+   */
+  @Local sheetMode: string = '';
+  /** 半模态显隐（bindSheet 的首参要是纯状态变量，不能传表达式，否则打开不生效）。 */
+  @Local showSheet: boolean = false;
   /** 当前阅读进度（0–1），用于标题栏下方的细进度条；由文档内滚动回调刷新。 */
   @Local progressRatio: number = 0;
   /** 正文里选中的文本（Web 的 onTextSelectionChange 回调）；非空时显示「复制/分享选段」浮条。 */
   @Local selectedText: string = '';
+  /** 当前文章的标注（本地库读出；正文里靠注入脚本重放高亮）。 */
+  @Local highlights: Highlight[] = [];
+  /** 正在编辑的标注（弹面板改备注 / 改色 / 删除）。 */
+  @Local editingHighlightId: string = '';
+  /** 备注输入草稿。 */
+  @Local noteDraft: string = '';
   /** 切文动效：正文容器的临时位移/透明度（animateTo 收尾回 0 / 1）。 */
   @Local bodyShift: number = 0;
   @Local bodyAlpha: number = 1;
@@ -126,6 +149,10 @@ export struct ArticleDetailView {
   private plainTextCacheId: string = '';
   /** 排版变化（重建 Reader 文档）后要落回的位置；undefined 表示无需特殊恢复。 */
   private pendingRestore: ReaderPosition | undefined = undefined;
+  /** 文档内点标注 → ArkTS 弹编辑面板（javaScriptProxy，页面创建时注册一次）。 */
+  private hlBridge: ReaderHighlightBridge = new ReaderHighlightBridge((id: string) => {
+    this.openHighlightEditor(id);
+  });
   /** 文档内滚动 → ArkTS 的进度回调（javaScriptProxy，页面创建时注册一次）。 */
   private progressBridge: ReaderProgressBridge = new ReaderProgressBridge((ratio: number) => {
     this.progressRatio = ratio;
@@ -459,6 +486,150 @@ export struct ArticleDetailView {
     settingsStore.save();
   }
 
+  // ---- 正文标注（高亮 + 备注） ----
+
+  /** 读出当前文章的标注并重放到正文里。 */
+  private async loadHighlights(): Promise<void> {
+    const article: Article | undefined = feedViewModel.currentArticle();
+    if (article === undefined) {
+      this.highlights = [];
+      return;
+    }
+    this.highlights = await articleStore.listHighlights(article.id);
+    this.highlights = await articleStore.listHighlights(article.id);
+    this.replayHighlights(this.activeController());
+  }
+
+  /** 当前模式的 Web 控制器（正文注入都走它）。 */
+  private activeController(): webview.WebviewController {
+    return this.viewMode === MODE_WEB ? this.webController : this.readerController;
+  }
+
+  /**
+   * 把标注重放进文档：先注入支持脚本（幂等），再 apply 一次。
+   * 注入失败只表现为没有高亮，不影响阅读（站点 CSP 场景）。
+   */
+  private replayHighlights(controller: webview.WebviewController): void {
+    const items: HighlightItem[] = [];
+    for (let i = 0; i < this.highlights.length; i += 1) {
+      const h: Highlight = this.highlights[i];
+      items.push(new HighlightItem(h.id, h.quote, h.color, h.note.length > 0));
+    }
+    try {
+      controller.runJavaScript(highlightSupportScript())
+        .then(() => controller.runJavaScript(applyHighlightsScript(items)))
+        .catch((err: BusinessError) => {
+          hilog.warn(DOMAIN, TAG, 'highlight inject failed: %{public}d', err.code);
+        });
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.warn(DOMAIN, TAG, 'highlight inject threw: %{public}d', error.code);
+    }
+  }
+
+  /**
+   * 把当前选段存成标注。
+   * anchor_ratio 由文档侧算（选区起点在文中的比例）——引文以后定位不到时用它兜底跳转。
+   */
+  private addHighlight(): void {
+    const article: Article | undefined = feedViewModel.currentArticle();
+    const quote: string = this.selectedText.trim();
+    if (article === undefined || quote.length === 0) {
+      return;
+    }
+    const controller: webview.WebviewController = this.activeController();
+    controller.runJavaScript(selectionRatioScript()).then((raw: string) => {
+      const ratio: number = this.parseRatio(raw);
+      const item: Highlight = new Highlight(this.newHighlightId(article.id), article.id, quote, '',
+        HighlightColor.YELLOW, Date.now(), '', ratio);
+      articleStore.addHighlight(item);
+      this.selectedText = '';
+      this.loadHighlights();
+      this.snack($r('app.string.snack_highlight_added'));
+    }).catch((err: BusinessError) => {
+      hilog.warn(DOMAIN, TAG, 'add highlight failed: %{public}d', err.code);
+    });
+  }
+
+  /** runJavaScript 回传可能被 JSON 序列化成带引号的字符串，这里统一剥掉再解析。 */
+  private parseRatio(raw: string): number {
+    const cleaned: string = raw.replace(/"/g, '');
+    const value: number = Number.parseFloat(cleaned);
+    if (Number.isNaN(value)) {
+      return 0;
+    }
+    return Math.min(1, Math.max(0, value));
+  }
+
+  private newHighlightId(articleId: string): string {
+    return articleId + '#' + Date.now().toString();
+  }
+
+  /** 打开标注编辑面板（文档内点标记走这里）。 */
+  private openHighlightEditor(id: string): void {
+    const item: Highlight | undefined = this.findHighlight(id);
+    if (item === undefined) {
+      return;
+    }
+    this.editingHighlightId = id;
+    this.noteDraft = item.note;
+    this.openSheet('hlEdit');
+  }
+
+  private findHighlight(id: string): Highlight | undefined {
+    for (let i = 0; i < this.highlights.length; i += 1) {
+      if (this.highlights[i].id === id) {
+        return this.highlights[i];
+      }
+    }
+    return undefined;
+  }
+
+  /** 保存备注（空串表示清除备注）。 */
+  private saveHighlightNote(): void {
+    const item: Highlight | undefined = this.findHighlight(this.editingHighlightId);
+    if (item === undefined) {
+      return;
+    }
+    item.note = this.noteDraft.trim();
+    articleStore.updateHighlightNote(item.id, item.note);
+    this.editingHighlightId = '';
+    this.replayHighlights(this.activeController());
+  }
+
+  /** 改配色（就地改 + 重新重放，标记颜色立即更新）。 */
+  private setHighlightColor(id: string, color: string): void {
+    const item: Highlight | undefined = this.findHighlight(id);
+    if (item === undefined) {
+      return;
+    }
+    item.color = color;
+    articleStore.updateHighlightColor(id, color);
+    this.replayHighlights(this.activeController());
+  }
+
+  /** 删除标注。 */
+  private removeHighlight(id: string): void {
+    articleStore.deleteHighlight(id);
+    this.editingHighlightId = '';
+    this.loadHighlights();
+    this.snack($r('app.string.snack_highlight_removed'));
+  }
+
+  /** 跳到某条标注；引文定位失败时按 anchor_ratio 兜底。 */
+  private gotoHighlight(item: Highlight): void {
+    const controller: webview.WebviewController = this.activeController();
+    const fallback: string = gotoRatioScript(item.anchorRatio);
+    controller.runJavaScript(gotoHighlightScript(item.id)).then((raw: string) => {
+      // 回传 "true"/"false"（可能带引号）
+      if (raw.replace(/"/g, '') !== 'true') {
+        controller.runJavaScript(fallback);
+      }
+    }).catch(() => {
+      controller.runJavaScript(fallback);
+    });
+  }
+
   /** 切换阅读模式。 */
   private switchMode(): void {
     const article: Article | undefined = feedViewModel.currentArticle();
@@ -511,6 +682,7 @@ export struct ArticleDetailView {
     }
     // 网页原文模式：Web 的 src 随 article.link 变化自动重载，等 onPageEnd 收尾。
     this.playSwitchAnimation(slideFrom);
+    this.loadHighlights();
   }
 
   /**
@@ -649,6 +821,13 @@ export struct ArticleDetailView {
           this.copyLink(article);
         })
       MenuItem({
+        content: $r('app.string.hl_panel_entry'),
+        symbolStartIcon: this.menuIcon($r('sys.symbol.paintpalette'))
+      })
+        .onClick(() => {
+          this.openSheet('hlList');
+        })
+      MenuItem({
         content: $r('app.string.action_scope_feed'),
         symbolStartIcon: this.menuIcon($r('sys.symbol.folder'))
       })
@@ -684,6 +863,7 @@ export struct ArticleDetailView {
       this.viewMode = MODE_READER;
       this.startReader();
     }
+    this.loadHighlights();
     if (appSettings.readerKeepScreenOn) {
       screenAwake.set(true, this.getUIContext().getHostContext());
     }
@@ -902,8 +1082,234 @@ export struct ArticleDetailView {
       .padding($r('app.float.space_xs'))
       .accessibilityText($r('app.string.row_reader_font'))
       .onClick(() => {
-        this.showReadSheet = true;
+        this.openSheet('read');
       })
+  }
+
+  /** 打开半模态并指定内容类型（'' 之外都要走这里，保证显隐与内容同步）。 */
+  private openSheet(mode: string): void {
+    this.sheetMode = mode;
+    this.showSheet = true;
+  }
+
+  /** 关闭半模态（面板内的动作触发的关闭）。 */
+  private closeSheet(): void {
+    this.showSheet = false;
+    this.sheetMode = '';
+  }
+
+  /** 半模态内容分派：同一时刻只有一种（见 sheetMode 的说明）。 */
+  @Builder
+  SheetContent() {
+    if (this.sheetMode === 'hlList') {
+      this.HighlightPanel()
+    } else if (this.sheetMode === 'hlEdit') {
+      this.HighlightEditor()
+    } else {
+      this.ReadSheet()
+    }
+  }
+
+  /** 标注面板：列出本文全部标注，点一条跳过去，右侧「改色 / 备注 / 删除」。 */
+  @Builder
+  HighlightPanel() {
+    Column({ space: $r('app.float.space_m') }) {
+      Text($r('app.string.hl_panel_title', this.highlights.length))
+        .fontSize($r('app.float.font_size_section'))
+        .fontWeight(FontWeight.Medium)
+        .fontColor($r('app.color.hm_text_primary'))
+        .width('100%')
+
+      if (this.highlights.length === 0) {
+        Text($r('app.string.hl_panel_empty'))
+          .fontSize($r('app.float.font_size_caption'))
+          .fontColor($r('app.color.hm_text_secondary'))
+          .width('100%')
+      } else {
+        // List 的 space 只收 string|number，不接受资源引用：间距放在条目 margin 上。
+        List() {
+          ForEach(this.highlights, (item: Highlight) => {
+            ListItem() {
+              Column({ space: $r('app.float.space_xs') }) {
+                Row({ space: $r('app.float.space_s') }) {
+                  // 配色圆点
+                  Row()
+                    .width($r('app.float.feed_dot_size'))
+                    .height($r('app.float.feed_dot_size'))
+                    .backgroundColor(this.colorOf(item.color))
+                    .borderRadius($r('app.float.feed_dot_size'))
+                  Text(item.quote)
+                    .fontSize($r('app.float.font_size_caption'))
+                    .fontColor($r('app.color.hm_text_primary'))
+                    .maxLines(2)
+                    .textOverflow({ overflow: TextOverflow.Ellipsis })
+                    .layoutWeight(1)
+                }
+                .width('100%')
+
+                if (item.note.length > 0) {
+                  Text(item.note)
+                    .fontSize($r('app.float.font_size_caption'))
+                    .fontColor($r('app.color.hm_text_secondary'))
+                    .maxLines(2)
+                    .textOverflow({ overflow: TextOverflow.Ellipsis })
+                    .width('100%')
+                }
+
+                Row({ space: $r('app.float.space_m') }) {
+                  Text($r('app.string.hl_action_goto'))
+                    .fontSize($r('app.float.font_size_caption'))
+                    .fontColor($r('app.color.hm_brand'))
+                    .onClick(() => {
+                      this.closeSheet();
+                      this.gotoHighlight(item);
+                    })
+                  Text($r('app.string.hl_action_note'))
+                    .fontSize($r('app.float.font_size_caption'))
+                    .fontColor($r('app.color.hm_brand'))
+                    .onClick(() => {
+                      this.openHighlightEditor(item.id);
+                    })
+                  Text($r('app.string.hl_action_color'))
+                    .fontSize($r('app.float.font_size_caption'))
+                    .fontColor($r('app.color.hm_brand'))
+                    .onClick(() => {
+                      this.setHighlightColor(item.id, this.nextColor(item.color));
+                    })
+                  Text($r('app.string.action_delete'))
+                    .fontSize($r('app.float.font_size_caption'))
+                    .fontColor($r('app.color.hm_danger'))
+                    .onClick(() => {
+                      this.removeHighlight(item.id);
+                    })
+                }
+                .width('100%')
+              }
+              .width('100%')
+              .padding($r('app.float.space_m'))
+              .backgroundColor($r('app.color.hm_card_background'))
+              .borderRadius($r('app.float.radius_card'))
+              .alignItems(HorizontalAlign.Start)
+            }
+            .margin({ bottom: $r('app.float.space_s') })
+          }, (item: Highlight) => item.id)
+        }
+        .width('100%')
+        .layoutWeight(1)
+        .scrollBar(BarState.Off)
+      }
+    }
+    .width('100%')
+    .height('100%')
+    .padding($r('app.float.space_l'))
+    .alignItems(HorizontalAlign.Start)
+  }
+
+  /** 标注编辑面板：备注输入 + 配色 + 删除（点正文里的标记也会打开它）。 */
+  @Builder
+  HighlightEditor() {
+    Column({ space: $r('app.float.space_m') }) {
+      Text($r('app.string.hl_editor_title'))
+        .fontSize($r('app.float.font_size_section'))
+        .fontWeight(FontWeight.Medium)
+        .fontColor($r('app.color.hm_text_primary'))
+        .width('100%')
+
+      Text(this.editingQuote())
+        .fontSize($r('app.float.font_size_caption'))
+        .fontColor($r('app.color.hm_text_secondary'))
+        .maxLines(3)
+        .textOverflow({ overflow: TextOverflow.Ellipsis })
+        .width('100%')
+        .padding($r('app.float.space_m'))
+        .backgroundColor($r('app.color.hm_value_chip_background'))
+        .borderRadius($r('app.float.radius_menu_item'))
+
+      TextInput({ text: this.noteDraft, placeholder: $r('app.string.hl_note_hint') })
+        .type(InputType.Normal)
+        .fontSize($r('app.float.font_size_body'))
+        .width('100%')
+        .onChange((value: string) => {
+          this.noteDraft = value;
+        })
+
+      Row({ space: $r('app.float.space_m') }) {
+        ForEach(this.colorOptions(), (color: string) => {
+          Row()
+            .width($r('app.float.hl_color_size'))
+            .height($r('app.float.hl_color_size'))
+            .backgroundColor(this.colorOf(color))
+            .borderRadius($r('app.float.feed_dot_size'))
+            .borderWidth(2)
+            .borderColor(this.editingColor() === color
+              ? $r('app.color.hm_text_primary')
+              : $r('app.color.hm_page_transparent'))
+            .onClick(() => {
+              this.setHighlightColor(this.editingHighlightId, color);
+            })
+        }, (color: string) => color)
+      }
+      .width('100%')
+
+      Row({ space: $r('app.float.space_m') }) {
+        Button($r('app.string.action_delete'))
+          .buttonStyle(ButtonStyleMode.TEXTUAL)
+          .fontSize($r('app.float.font_size_caption'))
+          .fontColor($r('app.color.hm_danger'))
+          .onClick(() => {
+            this.removeHighlight(this.editingHighlightId);
+          })
+        Blank()
+        Button($r('app.string.dialog_confirm'))
+          .buttonStyle(ButtonStyleMode.NORMAL)
+          .fontSize($r('app.float.font_size_caption'))
+          .fontColor($r('app.color.hm_on_brand'))
+          .backgroundColor($r('app.color.hm_brand'))
+          .onClick(() => {
+            this.saveHighlightNote();
+          })
+      }
+      .width('100%')
+    }
+    .width('100%')
+    .padding($r('app.float.space_l'))
+    .alignItems(HorizontalAlign.Start)
+  }
+
+  /** 配色语义 id → 实际色值。 */
+  private colorOf(color: string): ResourceColor {
+    if (color === HighlightColor.GREEN) {
+      return $r('app.color.hl_green');
+    }
+    if (color === HighlightColor.BLUE) {
+      return $r('app.color.hl_blue');
+    }
+    if (color === HighlightColor.PINK) {
+      return $r('app.color.hl_pink');
+    }
+    return $r('app.color.hl_yellow');
+  }
+
+  /** 可选的四种配色。 */
+  private colorOptions(): string[] {
+    return [HighlightColor.YELLOW, HighlightColor.GREEN, HighlightColor.BLUE, HighlightColor.PINK];
+  }
+
+  /** 轮换到下一种配色（面板里快速改色用）。 */
+  private nextColor(current: string): string {
+    const options: string[] = this.colorOptions();
+    const index: number = options.indexOf(current);
+    return options[(index + 1) % options.length];
+  }
+
+  private editingQuote(): string {
+    const item: Highlight | undefined = this.findHighlight(this.editingHighlightId);
+    return item === undefined ? '' : item.quote;
+  }
+
+  private editingColor(): string {
+    const item: Highlight | undefined = this.findHighlight(this.editingHighlightId);
+    return item === undefined ? '' : item.color;
   }
 
   /** 排版面板内容（半模态：沉浸光感生效区域，材质由 bindSheet 的 options 注入）。 */
@@ -1111,6 +1517,13 @@ export struct ArticleDetailView {
               methodList: ['onProgress'],
               controller: this.readerController
             })
+            // 文档内点标注：window.__hrHlCb.onHlClick(id)
+            .javaScriptProxy({
+              object: this.hlBridge,
+              name: '__hrHlCb',
+              methodList: ['onHlClick'],
+              controller: this.readerController
+            })
             .onLoadIntercept((event: OnLoadInterceptEvent) => {
               return this.handleLinkIntercept(event.data.getRequestUrl());
             })
@@ -1133,6 +1546,7 @@ export struct ArticleDetailView {
             .onPageEnd(() => {
               this.loading = false;
               this.bindProgressListener(this.readerController);
+              this.replayHighlights(this.readerController);
               const pending: ReaderPosition | undefined = this.pendingRestore;
               if (pending !== undefined) {
                 // 排版变化导致的重建：落回改动前的阅读位置，避免「调字号跳回顶部」。
@@ -1192,6 +1606,13 @@ export struct ArticleDetailView {
             methodList: ['onProgress'],
             controller: this.webController
           })
+          // 文档内点标注：window.__hrHlCb.onHlClick(id)
+          .javaScriptProxy({
+            object: this.hlBridge,
+            name: '__hrHlCb',
+            methodList: ['onHlClick'],
+            controller: this.webController
+          })
           .onLoadIntercept((event: OnLoadInterceptEvent) => {
             return this.handleLinkIntercept(event.data.getRequestUrl());
           })
@@ -1207,6 +1628,7 @@ export struct ArticleDetailView {
             // 网页原文的排版只能靠注入：按设置覆盖正文字号 / 行距 / 字体族。
             readerStyle.apply(this.webController);
             this.bindProgressListener(this.webController);
+            this.replayHighlights(this.webController);
             // 排版注入完成后再恢复进度，避免字号变化导致落点偏移。
             this.restoreWebProgress();
           })
@@ -1425,6 +1847,14 @@ export struct ArticleDetailView {
           .textOverflow({ overflow: TextOverflow.Ellipsis })
           .layoutWeight(1)
 
+        Button($r('app.string.action_highlight'))
+          .buttonStyle(ButtonStyleMode.TEXTUAL)
+          .fontSize($r('app.float.font_size_caption'))
+          .fontColor($r('app.color.hm_brand'))
+          .onClick(() => {
+            this.addHighlight();
+          })
+
         Button($r('app.string.action_copy'))
           .buttonStyle(ButtonStyleMode.TEXTUAL)
           .fontSize($r('app.float.font_size_caption'))
@@ -1544,11 +1974,12 @@ export struct ArticleDetailView {
     .width('100%')
     .height('100%')
     .backgroundColor($r('app.color.hm_page_transparent'))
-    .bindSheet(this.showReadSheet, this.ReadSheet(), MaterialController.sheetOptions({
-      height: SheetSize.LARGE,
+    .bindSheet(this.showSheet, this.SheetContent(), MaterialController.sheetOptions({
+      height: this.sheetMode === 'read' ? SheetSize.LARGE : SheetSize.MEDIUM,
       dragBar: true,
       onDisappear: () => {
-        this.showReadSheet = false;
+        this.showSheet = false;
+        this.sheetMode = '';
       }
     }, appSettings.immersiveOn))
   }

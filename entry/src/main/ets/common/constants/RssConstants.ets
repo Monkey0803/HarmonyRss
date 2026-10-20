@@ -99,6 +99,8 @@ export function normalizeReaderViewMode(value: string): string {
 export class ArticleDbConstants {
   static readonly DB_NAME: string = 'harmony_rss.db';
   static readonly TABLE_ARTICLES: string = 'articles';
+  /** 正文标注表（本地，无后端）。 */
+  static readonly TABLE_HIGHLIGHTS: string = 'highlights';
   /** 缓存上限：超过后清理最旧的未收藏文章（收藏的永不清理）。 */
   static readonly MAX_CACHED_ARTICLES: number = 1000;
 }

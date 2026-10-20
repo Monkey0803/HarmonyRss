@@ -129,6 +129,10 @@
       "value": "12"
     },
     {
+      "name": "hl_color_size",
+      "value": "32"
+    },
+    {
       "name": "badge_size",
       "value": "16"
     },
