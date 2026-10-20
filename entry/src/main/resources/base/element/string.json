@@ -253,6 +253,14 @@
       "value": "Cleared %d articles"
     },
     {
+      "name": "list_load_more",
+      "value": "Loading more…"
+    },
+    {
+      "name": "list_sort_toggle",
+      "value": "Toggle sort order"
+    },
+    {
       "name": "read_panel_title",
       "value": "Reading layout"
     },

@@ -9,6 +9,7 @@
  */
 
 import { Article } from '../model/Feed';
+import { ArticleDataSource } from '../viewmodel/ArticleDataSource';
 import { feedViewModel } from '../viewmodel/FeedViewModel';
 import { CommonConstants } from '../common/constants/CommonConstants';
 import { ArticleListItem } from './ArticleListItem';
@@ -25,6 +26,28 @@ export struct HomeTabView {
   @Local searchOpen: boolean = false;
   /** 「添加订阅源」入口在悬浮页签栏的 miniBar 上（Index 持有面板），这里只发请求。 */
   @Event onAddFeedRequest: () => void = () => {};
+  /** 列表数据源（LazyForEach 虚拟化用）。 */
+  private dataSource: ArticleDataSource = new ArticleDataSource();
+
+  /**
+   * 列表内容变化时同步到数据源：ViewModel 负责筛选/排序/分页，这里只管把结果灌进去。
+   * 用 isSame 做一次引用比较，避免每次 publish 都整表重建。
+   */
+  private syncArticles: () => void = () => {
+    const next: Article[] = feedViewModel.articles;
+    if (!this.dataSource.isSame(next)) {
+      this.dataSource.setItems(next);
+    }
+  };
+
+  aboutToAppear(): void {
+    feedViewModel.subscribeArticles(this.syncArticles);
+    this.dataSource.setItems(feedViewModel.articles);
+  }
+
+  aboutToDisappear(): void {
+    feedViewModel.unsubscribeArticles(this.syncArticles);
+  }
 
   private async reload(): Promise<void> {
     if (this.refreshing) {
@@ -90,6 +113,17 @@ export struct HomeTabView {
           .borderRadius($r('app.float.radius_card'))
 
         Blank()
+
+        // 排序：最新 / 最旧（同一个说明性图标，靠旋转区分方向，避免依赖不确定的符号名）
+        SymbolGlyph($r('sys.symbol.arrow_down_and_line_horizontal_and_arrow_up'))
+          .fontSize($r('app.float.icon_size'))
+          .fontColor([$r('app.color.hm_text_secondary')])
+          .padding($r('app.float.space_xs'))
+          .rotate({ angle: feedViewModel.newestFirst ? 0 : 180 })
+          .accessibilityText($r('app.string.list_sort_toggle'))
+          .onClick(() => {
+            feedViewModel.toggleSort();
+          })
 
         SymbolGlyph($r('sys.symbol.magnifyingglass'))
           .fontSize($r('app.float.icon_size'))
@@ -237,7 +271,8 @@ export struct HomeTabView {
             this.EmptyState()
           }
         } else {
-          ForEach(feedViewModel.articles, (item: Article) => {
+          // 虚拟化：只构建可见区域附近的条目（配合 ViewModel 的分页，条数多也不掉帧）
+          LazyForEach(this.dataSource, (item: Article) => {
             ListItem() {
               ArticleListItem({
                 article: item,
@@ -252,6 +287,18 @@ export struct HomeTabView {
             .margin({ bottom: $r('app.float.space_s') })
             .swipeAction({ end: this.SwipeActions(item) })
           }, (item: Article) => item.id)
+
+          // 触底续页：还有下一屏时给一条提示尾行（滚到底自动加载）
+          if (feedViewModel.hasMore()) {
+            ListItem() {
+              Text($r('app.string.list_load_more'))
+                .fontSize($r('app.float.font_size_caption'))
+                .fontColor($r('app.color.hm_text_secondary'))
+                .width('100%')
+                .textAlign(TextAlign.Center)
+                .padding($r('app.float.space_l'))
+            }
+          }
         }
 
         // 底部预留：避让悬浮页签栏与系统导航条。
@@ -264,6 +311,10 @@ export struct HomeTabView {
       .width('100%')
       .height('100%')
       .scrollBar(BarState.Off)
+      // 触底续页：多加载一屏
+      .onReachEnd(() => {
+        feedViewModel.loadMore();
+      })
       // 内容穿透标题栏：超出列表范围的部分不裁剪，滚到标题栏下方的列表项也不会被回收。
       .clip(false)
       .cachedCount(3, true)

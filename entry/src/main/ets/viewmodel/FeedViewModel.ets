@@ -13,6 +13,7 @@ import { feedStore } from '../service/FeedStore';
 import { feedService, FeedFetchResult, ResolvedFeed } from '../service/FeedService';
 import { feedDiscovery } from '../service/FeedDiscovery';
 import { articleStore, CacheStats } from '../service/ArticleStore';
+import { CommonConstants } from '../common/constants/CommonConstants';
 import { articleContentService } from '../service/ArticleContentService';
 import { ParsedArticle, ParsedFeed } from '../service/RssParser';
 import { buildOpml, OpmlEntry } from '../service/OpmlCodec';
@@ -90,6 +91,10 @@ export class FeedViewModel {
   @Trace articles: Article[] = [];
   /** 当前筛选：'all' | 'unread' | 'starred'。 */
   @Trace filter: string = ArticleFilter.ALL;
+  /** 列表排序：true = 最新在前（默认），false = 最旧在前。 */
+  @Trace newestFirst: boolean = true;
+  /** 当前筛选/排序下的总条数（分页展示用：articles 只是其中已加载的一页）。 */
+  @Trace articlesTotal: number = 0;
   /** 是否正在抓取。 */
   @Trace loading: boolean = false;
   /** 最近一次操作的结果码，视图据此映射文案。 */
@@ -100,6 +105,8 @@ export class FeedViewModel {
   @Trace unreadTotal: number = 0;
   /** 当前范围（订阅源 + 关键词）下的未读数，表头展示用。 */
   @Trace unreadShown: number = 0;
+  /** 已加载条数（分页游标）。 */
+  @Trace visibleCount: number = CommonConstants.LIST_PAGE_SIZE;
   /** 搜索关键词（标题 / 摘要 / 正文，大小写不敏感）。 */
   @Trace keyword: string = '';
   /** 单源视图：非空时只看该订阅源的文章。 */
@@ -115,6 +122,12 @@ export class FeedViewModel {
 
   /** 全量文章（缓存 + 本次抓取），未读统计与筛选都基于它。 */
   private all: Article[] = [];
+  /**
+   * 列表内容变化的订阅者（视图用 LazyForEach 时，需要显式把最新数组灌进数据源）。
+   * 说明：这里只用 @Trace 属性驱动「直接渲染」的视图；虚拟化列表拿不到这个时机，
+   * 所以额外提供显式订阅，避免依赖框架对全局单例的监听行为。
+   */
+  private articleListeners: Array<() => void> = [];
   private started: boolean = false;
   /** 最近一次批量抓取中，最后一个失败源的错误码（用于全量失败时上报）。 */
   private lastFailureCode: FeedError = FeedError.FETCH_FAILED;
@@ -253,6 +266,8 @@ export class FeedViewModel {
 
   /** 抓取收尾：新条目入库 → 重新读库 → 重新出列表与未读数。 */
   private async commitFresh(fresh: Article[]): Promise<void> {
+    // 新内容入库后回到第一页（否则分页游标停在旧位置、看不到最新）
+    this.resetPaging();
     articleStore.insertNew(fresh);
     articleStore.prune();
     await this.reloadFromStore();
@@ -292,6 +307,7 @@ export class FeedViewModel {
       return;
     }
     this.filter = filter;
+    this.resetPaging();
     this.publish();
   }
 
@@ -302,6 +318,7 @@ export class FeedViewModel {
       return;
     }
     this.keyword = next;
+    this.resetPaging();
     this.publish();
   }
 
@@ -309,6 +326,7 @@ export class FeedViewModel {
   scopeToFeed(feed: FeedSource): void {
     this.scopeFeedId = feed.id;
     this.scopeTitle = feed.title;
+    this.resetPaging();
     this.publish();
   }
 
@@ -316,6 +334,7 @@ export class FeedViewModel {
   clearScope(): void {
     this.scopeFeedId = '';
     this.scopeTitle = '';
+    this.resetPaging();
     this.publish();
   }
 
@@ -883,7 +902,12 @@ export class FeedViewModel {
     this.publish();
   }
 
-  /** 依据全量列表重算筛选结果与未读数。 */
+  /**
+   * 依据全量列表重算筛选结果与未读数。
+   *
+   * 列表是**分页**的：articles 只放已加载的前 visibleCount 条（虚拟化列表 + 触底续页），
+   * articlesTotal 是当前筛选/排序下的总条数，界面据此决定是否继续加载。
+   */
   private publish(): void {
     const visible: Article[] = [];
     for (let i = 0; i < this.all.length; i += 1) {
@@ -891,9 +915,57 @@ export class FeedViewModel {
         visible.push(this.all[i]);
       }
     }
-    this.articles = visible;
+    visible.sort((a: Article, b: Article) => {
+      return this.newestFirst ? b.publishedAt - a.publishedAt : a.publishedAt - b.publishedAt;
+    });
+    this.articlesTotal = visible.length;
+    this.articles = this.visibleCount < visible.length ? visible.slice(0, this.visibleCount) : visible;
     this.feedArticles = this.collectFeedArticles();
     this.recomputeUnread();
+    for (let i = 0; i < this.articleListeners.length; i += 1) {
+      this.articleListeners[i]();
+    }
+  }
+
+  /** 订阅列表内容变化（组件 aboutToAppear 调用）。 */
+  subscribeArticles(listener: () => void): void {
+    if (this.articleListeners.indexOf(listener) < 0) {
+      this.articleListeners.push(listener);
+    }
+  }
+
+  /** 退订列表内容变化（组件 aboutToDisappear 调用）。 */
+  unsubscribeArticles(listener: () => void): void {
+    const index: number = this.articleListeners.indexOf(listener);
+    if (index >= 0) {
+      this.articleListeners.splice(index, 1);
+    }
+  }
+
+  /** 触底续页：多加载一屏（列表用 LazyForEach 虚拟化，不怕条数多）。 */
+  loadMore(): void {
+    if (this.visibleCount >= this.articlesTotal) {
+      return;
+    }
+    this.visibleCount += CommonConstants.LIST_PAGE_SIZE;
+    this.publish();
+  }
+
+  /** 还有未加载的条目（界面用来显示「加载更多」尾行）。 */
+  hasMore(): boolean {
+    return this.visibleCount < this.articlesTotal;
+  }
+
+  /** 切换排序：最新 / 最旧，并回到第一页。 */
+  toggleSort(): void {
+    this.newestFirst = !this.newestFirst;
+    this.visibleCount = CommonConstants.LIST_PAGE_SIZE;
+    this.publish();
+  }
+
+  /** 回到第一页（筛选 / 关键词 / 范围 / 刷新后调用）。 */
+  resetPaging(): void {
+    this.visibleCount = CommonConstants.LIST_PAGE_SIZE;
   }
 
   /** 单条是否落在当前范围（订阅源 + 筛选 + 关键词）内。 */

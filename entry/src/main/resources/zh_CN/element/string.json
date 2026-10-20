@@ -253,6 +253,14 @@
       "value": "已清理 %d 篇"
     },
     {
+      "name": "list_load_more",
+      "value": "加载更多…"
+    },
+    {
+      "name": "list_sort_toggle",
+      "value": "切换排序"
+    },
+    {
       "name": "read_panel_title",
       "value": "阅读排版"
     },

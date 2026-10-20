@@ -5,6 +5,8 @@
  * 一律走 resources（color.json / string.json / float.json）。
  */
 export class CommonConstants {
+  /** 列表分页：首屏与每次续页加载的条数。 */
+  static readonly LIST_PAGE_SIZE: number = 50;
   /** 应用启动时的默认页签下标。 */
   static readonly DEFAULT_TAB_INDEX: number = 0;
   /** 标题栏随内容滚动时，开始隐藏标题栏的滚动距离阈值（vp）——行为参数，不是视觉尺寸。 */
