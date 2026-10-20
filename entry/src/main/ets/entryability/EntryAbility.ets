@@ -2,7 +2,10 @@ import { AbilityConstant, ConfigurationConstant, UIAbility, Want } from '@kit.Ab
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
 import { BusinessError } from '@kit.BasicServicesKit';
+import { systemShare } from '@kit.ShareKit';
 import { safeArea } from '../service/SafeAreaController';
+import { shareIntent } from '../service/ShareIntent';
+import { shareHandoff } from '../service/ShareHandoff';
 
 const DOMAIN: number = 0x0000;
 const TAG: string = 'HdsEntry';
@@ -15,6 +18,28 @@ export default class EntryAbility extends UIAbility {
     } catch (err) {
       hilog.error(DOMAIN, TAG, 'setColorMode failed');
     }
+    // 冷启动也可能来自「分享」（skills 声明了 sendData/viewData）。
+    this.handleSharedData(want);
+  }
+
+  /** 热启动（应用已在运行）时收到的新 want：同样可能是分享。 */
+  onNewWant(want: Want, launchParam: AbilityConstant.LaunchParam): void {
+    this.handleSharedData(want);
+  }
+
+  /**
+   * 解析分享进来的内容并交给界面：取出地址写入 shareHandoff，界面据此打开「添加订阅源」面板并预填。
+   * 不是分享（普通启动）时记录里没有可订阅地址，静默跳过即可。
+   */
+  private handleSharedData(want: Want): void {
+    systemShare.getSharedData(want)
+      .then((data: systemShare.SharedData) => {
+        shareHandoff.set(shareIntent.extractFromSharedData(data));
+      })
+      .catch((error: BusinessError) => {
+        // 普通启动没有分享数据，getSharedData 会失败：属正常情况，不打扰用户。
+        hilog.info(DOMAIN, TAG, 'no shared data: %{public}d', error.code);
+      });
   }
 
   onWindowStageCreate(windowStage: window.WindowStage): void {

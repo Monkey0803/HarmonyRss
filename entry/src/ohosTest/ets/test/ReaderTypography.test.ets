@@ -17,17 +17,18 @@ import { appSettings } from '../../../main/ets/model/AppSettings';
 
 export default function readerTypographyTest() {
   describe('ReaderTypography', () => {
-    it('font_size_levels', 0, () => {
-      expect(ReaderTypography.fontSize(ReaderFontSize.SMALL)).assertEqual(15);
-      expect(ReaderTypography.fontSize(ReaderFontSize.MEDIUM)).assertEqual(17);
-      expect(ReaderTypography.fontSize(ReaderFontSize.LARGE)).assertEqual(20);
-      expect(ReaderTypography.fontSize('unknown')).assertEqual(17);
+    it('font_size_scale', 0, () => {
+      expect(ReaderTypography.fontSizePx(1)).assertEqual(17);
+      // 超范围做收敛：下限 0.8、上限 1.6。
+      expect(ReaderTypography.fontSizePx(0.5)).assertEqual(13.6);
+      expect(ReaderTypography.fontSizePx(2)).assertEqual(27.2);
+      expect(ReaderTypography.fontScaleOfPreset(ReaderFontSize.LARGE)).assertEqual(1.2);
     });
 
-    it('line_height_levels', 0, () => {
-      expect(ReaderTypography.lineHeight(ReaderLineHeight.COMPACT)).assertEqual(1.4);
-      expect(ReaderTypography.lineHeight(ReaderLineHeight.NORMAL)).assertEqual(1.7);
-      expect(ReaderTypography.lineHeight(ReaderLineHeight.LOOSE)).assertEqual(2.0);
+    it('line_height_scale', 0, () => {
+      expect(ReaderTypography.lineHeightOf(1.7)).assertEqual(1.7);
+      expect(ReaderTypography.lineHeightOf(0.1)).assertEqual(1.2);
+      expect(ReaderTypography.lineHeightOf(5)).assertEqual(2.2);
     });
 
     it('font_family_css', 0, () => {

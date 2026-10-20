@@ -12,6 +12,10 @@ import rssParserTest from './RssParser.test';
 import mimeSniffTest from './MimeSniff.test';
 import readerTypographyTest from './ReaderTypography.test';
 import readerBudgetTest from './ReaderBudget.test';
+import urlTextTest from './UrlText.test';
+import feedDiscoveryTest from './FeedDiscovery.test';
+import opmlCodecTest from './OpmlCodec.test';
+import shareIntentTest from './ShareIntent.test';
 
 export default function testsuite() {
   htmlDomTest();
@@ -21,4 +25,8 @@ export default function testsuite() {
   mimeSniffTest();
   readerTypographyTest();
   readerBudgetTest();
+  urlTextTest();
+  feedDiscoveryTest();
+  opmlCodecTest();
+  shareIntentTest();
 }

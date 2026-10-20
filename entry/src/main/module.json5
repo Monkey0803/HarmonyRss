@@ -46,6 +46,34 @@
             "actions": [
               "ohos.want.action.home"
             ]
+          },
+          {
+            "actions": [
+              "ohos.want.action.sendData",
+              "ohos.want.action.viewData"
+            ],
+            "uris": [
+              {
+                "scheme": "file",
+                "utd": "general.hyperlink",
+                "maxFileSupported": 1
+              },
+              {
+                "scheme": "file",
+                "utd": "general.plain-text",
+                "maxFileSupported": 1
+              },
+              {
+                "scheme": "file",
+                "utd": "general.text",
+                "maxFileSupported": 1
+              },
+              {
+                "scheme": "file",
+                "utd": "general.object",
+                "maxFileSupported": 1
+              }
+            ]
           }
         ]
       }
@@ -68,6 +96,43 @@
           {
             "name": "ohos.extension.form",
             "resource": "$profile:form_config"
+          }
+        ]
+      },
+      {
+        "name": "ShareAbility",
+        "srcEntry": "./ets/shareability/ShareAbility.ets",
+        "type": "share",
+        "exported": true,
+        "description": "$string:share_ability_desc",
+        "metadata": [
+          {
+            "name": "ohos.extension.share",
+            "resource": "$profile:share_config"
+          }
+        ],
+        "skills": [
+          {
+            "actions": [
+              "ohos.want.action.sendData"
+            ],
+            "uris": [
+              {
+                "scheme": "file",
+                "utd": "general.hyperlink",
+                "maxFileSupported": 1
+              },
+              {
+                "scheme": "file",
+                "utd": "general.plain-text",
+                "maxFileSupported": 1
+              },
+              {
+                "scheme": "file",
+                "utd": "general.text",
+                "maxFileSupported": 1
+              }
+            ]
           }
         ]
       }

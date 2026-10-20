@@ -81,6 +81,14 @@ hdc shell aa test -b com.example.harmonyrss -m entry_test -s unittest OpenHarmon
 
 结果看 `OHOS_REPORT_RESULT: stream=Tests run: N, Failure: M ...`。
 
+**注意：测试 HAP 会覆盖主包。** `install -r entry-ohosTest-signed.hap` 会把设备上的应用替换成测试变体，
+其 `module.json` 不含主模块的 `extensionAbilities`（如 `ShareAbility`）等配置 —— 表现为
+「改了配置却毫无效果」（例如分享面板里看不到应用）。**跑完用例后必须重装主包**：
+
+```sh
+hdc -t <device> install -r entry/build/default/outputs/default/entry-default-signed.hap
+```
+
 **已知环境问题**：本仓库目录名 `解析` 含非 ASCII，hvigor CLI 报
 `00306003 Invalid project path`。`build_project` / `start_app` 在此目录不可用；
 需将工程软/硬拷贝到纯 ASCII 路径后再跑 hvigor（或改用 DevEco Studio 构建）。

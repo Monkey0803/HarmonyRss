@@ -1,0 +1,12 @@
+{
+  "supportedTypes": [
+    "text",
+    "url"
+  ],
+  "shareTargets": [
+    {
+      "label": "$string:share_ability_desc",
+      "abilityName": "ShareAbility"
+    }
+  ]
+}
