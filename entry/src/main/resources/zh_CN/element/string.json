@@ -501,6 +501,26 @@
       "value": "已删除标注"
     },
     {
+      "name": "hl_library_title",
+      "value": "标注"
+    },
+    {
+      "name": "hl_export_md",
+      "value": "导出 Markdown"
+    },
+    {
+      "name": "hl_export_json",
+      "value": "导出 JSON"
+    },
+    {
+      "name": "hl_export_empty",
+      "value": "还没有可导出的标注"
+    },
+    {
+      "name": "hl_article_gone",
+      "value": "这篇文章已不在本地缓存里"
+    },
+    {
       "name": "read_panel_title",
       "value": "阅读排版"
     },

@@ -498,6 +498,15 @@ export struct ArticleDetailView {
     this.highlights = await articleStore.listHighlights(article.id);
     this.highlights = await articleStore.listHighlights(article.id);
     this.replayHighlights(this.activeController());
+    // 从标注聚合页点进来：定位到那条标注（消费后清空，避免切文又跳一次）。
+    const pending: string = feedViewModel.pendingHighlightId;
+    if (pending.length > 0) {
+      feedViewModel.pendingHighlightId = '';
+      const target: Highlight | undefined = this.findHighlight(pending);
+      if (target !== undefined) {
+        this.gotoHighlight(target);
+      }
+    }
   }
 
   /** 当前模式的 Web 控制器（正文注入都走它）。 */

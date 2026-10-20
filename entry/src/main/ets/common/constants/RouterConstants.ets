@@ -9,6 +9,8 @@ export class RouterConstants {
   static readonly PAGE_ARTICLE: string = 'article';
   /** 单个订阅源的文章列表页。 */
   static readonly PAGE_FEED_ARTICLES: string = 'feedArticles';
+  /** 标注聚合页（全部标注 + 导出）。 */
+  static readonly PAGE_HIGHLIGHTS: string = 'highlights';
   /** 点光源效果预览页。 */
   static readonly PAGE_EFFECT: string = 'effect';
 }

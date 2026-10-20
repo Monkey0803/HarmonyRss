@@ -42,3 +42,21 @@ export class Highlight {
     this.anchorRatio = anchorRatio;
   }
 }
+
+/**
+ * 聚合页用的一条标注：标注本体 + 所属文章信息（标题 / 链接 / 来源）。
+ * 单独一个类型是因为它来自 JOIN 查询，不是纯粹的一条 highlights 记录。
+ */
+export class HighlightLibraryItem {
+  readonly highlight: Highlight;
+  readonly articleTitle: string;
+  readonly articleLink: string;
+  readonly feedTitle: string;
+
+  constructor(highlight: Highlight, articleTitle: string, articleLink: string, feedTitle: string) {
+    this.highlight = highlight;
+    this.articleTitle = articleTitle;
+    this.articleLink = articleLink;
+    this.feedTitle = feedTitle;
+  }
+}

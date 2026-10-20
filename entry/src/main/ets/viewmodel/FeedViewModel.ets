@@ -132,6 +132,8 @@ export class FeedViewModel {
   @Trace feedArticles: Article[] = [];
   /** 当前打开的文章 id（详情页用）。@Trace：详情页在原文内切换文章时需驱动重渲染。 */
   @Trace currentArticleId: string = '';
+  /** 打开详情页后要定位到的标注 id（标注聚合页点进来时用；详情页消费后清空）。 */
+  @Trace pendingHighlightId: string = '';
 
   /** 一天的毫秒数（日期分组用）。 */
   private static readonly DAY_MS: number = 24 * 60 * 60 * 1000;

@@ -12,7 +12,7 @@ import { common } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { Article } from '../model/Feed';
-import { Highlight } from '../model/Highlight';
+import { Highlight, HighlightLibraryItem } from '../model/Highlight';
 import { ArticleDbConstants, ReaderState } from '../common/constants/RssConstants';
 import { toPlainText } from '../common/utils/HtmlText';
 
@@ -458,6 +458,51 @@ export class ArticleStore {
   /** 删除一条标注。 */
   deleteHighlight(id: string): void {
     this.exec('DELETE FROM ' + ArticleDbConstants.TABLE_HIGHLIGHTS + ' WHERE id = ?', [id]);
+  }
+
+  /**
+   * 全部标注（JOIN 文章表拿标题 / 链接 / 来源），按创建时间倒序。
+   * 文章被删掉时用 LEFT JOIN 仍能带出标注（标题为空），避免标注凭空消失。
+   */
+  async listAllHighlights(): Promise<HighlightLibraryItem[]> {
+    const store: relationalStore.RdbStore | undefined = this.store;
+    const result: HighlightLibraryItem[] = [];
+    if (store === undefined) {
+      return result;
+    }
+    try {
+      const rs: relationalStore.ResultSet = await store.querySql(
+        'SELECT h.id AS hid, h.article_id AS aid, h.quote AS quote, h.note AS note, h.color AS color,' +
+        ' h.created_at AS created, h.anchor_text AS anchor, h.anchor_ratio AS ratio,' +
+        ' COALESCE(a.title, \'\') AS atitle, COALESCE(a.link, \'\') AS alink,' +
+        ' COALESCE(a.feed_title, \'\') AS fname' +
+        ' FROM ' + ArticleDbConstants.TABLE_HIGHLIGHTS + ' h' +
+        ' LEFT JOIN ' + ArticleDbConstants.TABLE_ARTICLES + ' a ON a.id = h.article_id' +
+        ' ORDER BY h.created_at DESC');
+      try {
+        while (rs.goToNextRow()) {
+          const item: Highlight = new Highlight(
+            rs.getString(rs.getColumnIndex('hid')),
+            rs.getString(rs.getColumnIndex('aid')),
+            rs.getString(rs.getColumnIndex('quote')),
+            rs.getString(rs.getColumnIndex('note')),
+            rs.getString(rs.getColumnIndex('color')),
+            rs.getLong(rs.getColumnIndex('created')),
+            rs.getString(rs.getColumnIndex('anchor')),
+            rs.getDouble(rs.getColumnIndex('ratio')));
+          result.push(new HighlightLibraryItem(item,
+            rs.getString(rs.getColumnIndex('atitle')),
+            rs.getString(rs.getColumnIndex('alink')),
+            rs.getString(rs.getColumnIndex('fname'))));
+        }
+      } finally {
+        rs.close();
+      }
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.error(DOMAIN, TAG, 'listAllHighlights failed: %{public}d', error.code);
+    }
+    return result;
   }
 
   /** 统计标注总数（设置页「储存」区展示用）。 */

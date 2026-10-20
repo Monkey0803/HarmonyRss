@@ -59,6 +59,7 @@ import { SubscriptionsView } from '../views/SubscriptionsView';
 import { FeedArticlesView } from '../views/FeedArticlesView';
 import { EffectPreviewView } from '../views/EffectPreviewView';
 import { feedViewModel } from '../viewmodel/FeedViewModel';
+import { HighlightsView } from '../views/HighlightsView';
 import { deepLink, DEEP_LINK_EVENT, DeepLinkParams } from '../service/DeepLink';
 import { Article } from '../model/Feed';
 
@@ -80,6 +81,7 @@ struct Index {
   private settingsScroller: Scroller = new Scroller();
   /** 目的页各自的 Scroller：绑定给对应 HdsNavDestination，让标题栏材质随其滚动跟手渐变。 */
   private feedArticlesScroller: Scroller = new Scroller();
+  private highlightsScroller: Scroller = new Scroller();
   private articleScroller: Scroller = new Scroller();
 
   /** 收到 Ability 的深链事件后消费（应用已在前台时点卡片的路径）。 */
@@ -598,6 +600,15 @@ struct Index {
       // 不透明背板：与详情页一致，走系统原生转场不穿透。
       .backgroundColor($r('app.color.hm_web_surface'))
       .bindToScrollable([this.feedArticlesScroller])
+    } else if (name === RouterConstants.PAGE_HIGHLIGHTS) {
+      HdsNavDestination() {
+        HighlightsView({ navPathStack: this.navPathStack, scroller: this.highlightsScroller })
+      }
+      .titleBar(this.titleOptions($r('app.string.hl_library_title')))
+      .titleMode(HdsNavDestinationTitleMode.MINI)
+      // 不透明背板：与详情页一致，走系统原生转场不穿透。
+      .backgroundColor($r('app.color.hm_web_surface'))
+      .bindToScrollable([this.highlightsScroller])
     } else if (name === RouterConstants.PAGE_EFFECT) {
       HdsNavDestination() {
         EffectPreviewView()

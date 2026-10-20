@@ -26,6 +26,7 @@ import { appSettings } from '../model/AppSettings';
 import { ARCHIVE_OPTIONS, LIST_DENSITY_OPTIONS, ROW_LAYOUT_OPTIONS, SUMMARY_LINES_OPTIONS, ChoiceOption, ChoiceSet, THEME_OPTIONS, LANGUAGE_OPTIONS, MATERIAL_TYPE_OPTIONS, MATERIAL_LEVEL_OPTIONS, BACKGROUND_OPTIONS, LOGO_OPTIONS, AUTO_REFRESH_OPTIONS, READER_FONT_OPTIONS, READER_LINE_OPTIONS, READER_FAMILY_OPTIONS, READER_WIDTH_OPTIONS, READER_ALIGN_OPTIONS, READER_THEME_OPTIONS } from '../model/SettingsOptions';
 import { settingsViewModel } from '../viewmodel/SettingsViewModel';
 import { feedViewModel } from '../viewmodel/FeedViewModel';
+import { articleStore } from '../service/ArticleStore';
 import { antiPeep } from '../service/AntiPeep';
 import { safeArea } from '../service/SafeAreaController';
 import { AppLogo } from '../common/components/AppLogo';
@@ -322,9 +323,17 @@ export struct SettingsTabView {
   @Param navPathStack: NavPathStack = new NavPathStack();
   @Param scroller: Scroller = new Scroller();
 
-  /** 进设置页时刷新一次正文缓存占用（存储区展示用）。 */
+  /** 标注条数（进页面时读一次，够用于入口行的展示）。 */
+  @Local highlightCount: number = 0;
+
+  /** 进设置页时刷新一次正文缓存占用（存储区展示用）与标注条数。 */
   aboutToAppear(): void {
     feedViewModel.refreshCacheStats();
+    this.reloadHighlightCount();
+  }
+
+  private async reloadHighlightCount(): Promise<void> {
+    this.highlightCount = await articleStore.countHighlights();
   }
 
   /** 开启通知前先申请系统授权；失败则提示并保持关闭。 */
@@ -730,6 +739,24 @@ export struct SettingsTabView {
           .padding({ left: $r('app.float.space_m'), right: $r('app.float.space_m') })
           .onClick(() => {
             this.refreshNow();
+          })
+          Divider().color($r('app.color.hm_divider'))
+          Row() {
+            SettingLeading($r('sys.symbol.paintpalette'), $r('app.string.hl_library_title'))
+            Blank()
+            Text($r('app.string.hl_panel_title', this.highlightCount))
+              .fontSize($r('app.float.font_size_caption'))
+              .fontColor($r('app.color.hm_text_secondary'))
+            SymbolGlyph($r('sys.symbol.chevron_right'))
+              .fontSize($r('app.float.font_size_caption'))
+              .fontColor([$r('app.color.hm_text_secondary')])
+              .padding({ left: $r('app.float.space_xs') })
+          }
+          .width('100%')
+          .height($r('app.float.row_height'))
+          .padding({ left: $r('app.float.space_m'), right: $r('app.float.space_m') })
+          .onClick(() => {
+            this.navPathStack.pushPath(new NavPathInfo(RouterConstants.PAGE_HIGHLIGHTS, ''));
           })
           Divider().color($r('app.color.hm_divider'))
           OptionSelectRow({

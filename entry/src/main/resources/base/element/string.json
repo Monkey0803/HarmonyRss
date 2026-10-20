@@ -501,6 +501,26 @@
       "value": "Highlight removed"
     },
     {
+      "name": "hl_library_title",
+      "value": "Highlights"
+    },
+    {
+      "name": "hl_export_md",
+      "value": "Markdown"
+    },
+    {
+      "name": "hl_export_json",
+      "value": "JSON"
+    },
+    {
+      "name": "hl_export_empty",
+      "value": "Nothing to export yet"
+    },
+    {
+      "name": "hl_article_gone",
+      "value": "The article is no longer in the local cache"
+    },
+    {
       "name": "read_panel_title",
       "value": "Reading layout"
     },
