@@ -12,6 +12,16 @@ export class WidgetConstants {
   static readonly KEY_UNREAD: string = 'unread';
   /** 前三条标题的 key；与卡片 @Local t1/t2/t3 同名。 */
   static readonly KEY_TITLE_PREFIX: string = 't';
+  /** 前三条标题对应文章 id 的 key；与卡片 @Local i1/i2/i3 同名。 */
+  static readonly KEY_ID_PREFIX: string = 'i';
+  /** 最近同步时间（HH:mm）的 key；与卡片 @Local sync 同名。 */
+  static readonly KEY_SYNC: string = 'sync';
+
+  /** 卡片 → 应用：深链要打开的文章 id（postCardAction router 的 params key）。 */
+  static readonly PARAM_ARTICLE_ID: string = 'articleId';
+  /** 卡片 → 提供方：message 事件的参数 key 与取值。 */
+  static readonly PARAM_EVENT: string = 'event';
+  static readonly EVENT_REFRESH: string = 'refresh';
 
   /** 小卡片（2*2）：只放未读数 + 1 条标题。 */
   static readonly DIMENSION_SMALL: string = 'small';

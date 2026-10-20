@@ -59,6 +59,7 @@ import { SubscriptionsView } from '../views/SubscriptionsView';
 import { FeedArticlesView } from '../views/FeedArticlesView';
 import { EffectPreviewView } from '../views/EffectPreviewView';
 import { feedViewModel } from '../viewmodel/FeedViewModel';
+import { deepLink, DEEP_LINK_EVENT } from '../service/DeepLink';
 import { Article } from '../model/Feed';
 
 @Entry
@@ -81,8 +82,17 @@ struct Index {
   private feedArticlesScroller: Scroller = new Scroller();
   private articleScroller: Scroller = new Scroller();
 
+  /** 收到 Ability 的深链事件后消费（应用已在前台时点卡片的路径）。 */
+  private onDeepLinkEvent: () => void = () => {
+    this.consumeDeepLink();
+  };
+
   aboutToAppear(): void {
+    feedViewModel.subscribeArticles(this.onArticlesReadyDeepLink);
     const context: common.Context | undefined = this.getUIContext().getHostContext();
+    if (context !== undefined) {
+      context.eventHub.on(DEEP_LINK_EVENT, this.onDeepLinkEvent);
+    }
     settingsViewModel.init(context as common.Context);
     feedViewModel.init(context as common.Context);
     // 恢复上次停留的页签（偏好是异步读出来的，两个触发点都调一次，见 restoreTab）。
@@ -109,12 +119,62 @@ struct Index {
   }
 
   aboutToDisappear(): void {
+    const context: common.Context | undefined = this.getUIContext().getHostContext();
+    if (context !== undefined) {
+      context.eventHub.off(DEEP_LINK_EVENT, this.onDeepLinkEvent);
+    }
+    feedViewModel.unsubscribeArticles(this.onArticlesReadyDeepLink);
     antiPeep.stop();
     gripSensor.stop();
   }
 
+  /**
+   * 消费卡片 / 通知带进来的深链：定位文章并 push 详情页。
+   * 必须在回到前台时也跑一次 —— 应用已经在运行时点卡片走的是 onNewWant，页面不会重建。
+   */
+  private consumeDeepLink(): void {
+    const articleId: string = deepLink.peek();
+    if (articleId.length > 0) {
+      this.tryOpenDeepLink(articleId);
+    }
+  }
+
+  /**
+   * 打开深链文章：成功返回 true。
+   *
+   * 顺序很关键：**先查（不产生副作用）→ 先清空待处理 id → 再打开**。
+   * openArticle 会 publish，publish 会通知列表订阅者（本页也在订阅），
+   * 若那时 id 还在，就会递归回到这里（真实踩过：无限递归把页面栈弄坏）。
+   */
+  private tryOpenDeepLink(articleId: string): boolean {
+    if (!feedViewModel.hasArticle(articleId)) {
+      return false;
+    }
+    deepLink.take();
+    feedViewModel.openArticleById(articleId);
+    // 切回「阅读」页签，再压详情页（页面栈是全局的，不切页签会压在设置页上面）。
+    this.currentTab = TabIndex.HOME;
+    this.navPathStack.pushPath(new NavPathInfo(RouterConstants.PAGE_ARTICLE, ''));
+    return true;
+  }
+
+  /**
+   * 冷启动时本地缓存是异步读出来的，onPageShow 那一刻文章列表可能还是空的 ——
+   * 所以列表第一次有数据后再给深链一次机会；仍然找不到说明文章已被清理，丢弃不再重试。
+   */
+  private onArticlesReadyDeepLink: () => void = () => {
+    const articleId: string = deepLink.peek();
+    if (articleId.length === 0 || feedViewModel.articlesTotal === 0) {
+      return;
+    }
+    if (!this.tryOpenDeepLink(articleId)) {
+      deepLink.take();
+    }
+  };
+
   /** 回到前台（或页面重新显示）时，按设置的自动刷新间隔决定是否抓取。 */
   onPageShow(): void {
+    this.consumeDeepLink();
     feedViewModel.maybeAutoRefresh();
   }
 

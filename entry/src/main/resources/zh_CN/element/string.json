@@ -449,6 +449,10 @@
       "value": "宽松"
     },
     {
+      "name": "widget_refresh",
+      "value": "刷新卡片数据"
+    },
+    {
       "name": "read_panel_title",
       "value": "阅读排版"
     },

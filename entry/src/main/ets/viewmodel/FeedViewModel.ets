@@ -404,6 +404,34 @@ export class FeedViewModel {
     }
   }
 
+  /**
+   * 文章是否已在内存列表里（纯查询，**不触发任何状态变更**）。
+   * 深链消费必须先查再开：openArticle 会 publish，而 publish 又会通知订阅者，
+   * 若那时深链 id 还没清空，就会递归进来（真实踩过：无限递归把页面栈搞坏）。
+   */
+  hasArticle(articleId: string): boolean {
+    for (let i = 0; i < this.all.length; i += 1) {
+      if (this.all[i].id === articleId) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * 按 id 打开文章（卡片 / 通知深链用）：找到就标记已读并设为当前文章，返回是否找到。
+   * 找不到（例如文章已被清理）时不做任何改变，由调用方决定是否提示。
+   */
+  openArticleById(articleId: string): boolean {
+    for (let i = 0; i < this.all.length; i += 1) {
+      if (this.all[i].id === articleId) {
+        this.openArticle(articleId);
+        return true;
+      }
+    }
+    return false;
+  }
+
   /** 打开单个订阅源的文章列表页：记录目标源并刷新单源列表。 */
   openFeed(feed: FeedSource): void {
     this.detailFeedId = feed.id;

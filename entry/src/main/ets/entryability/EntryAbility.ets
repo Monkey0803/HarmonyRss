@@ -3,12 +3,15 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { safeArea } from '../service/SafeAreaController';
+import { deepLink, DEEP_LINK_EVENT } from '../service/DeepLink';
 
 const DOMAIN: number = 0x0000;
 const TAG: string = 'HdsEntry';
 
 export default class EntryAbility extends UIAbility {
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {
+    // 卡片 / 通知带进来的深链参数先存起来，页面挂载后再取。
+    deepLink.accept(want);
     // 主题由设置页控制；这里先跟随系统，恢复订阅后由 ThemeController 覆盖。
     try {
       this.context.getApplicationContext().setColorMode(ConfigurationConstant.ColorMode.COLOR_MODE_NOT_SET);
@@ -37,6 +40,17 @@ export default class EntryAbility extends UIAbility {
       const fallback: string = '#' + (colorValue >>> 0).toString(16).padStart(8, '0').toUpperCase();
       mainWindow.setWindowBackgroundColor(fallback);
     });
+  }
+
+  /** 应用已在运行时再次被拉起（点卡片 / 点通知）：want 走这里，同样先存深链。 */
+  onNewWant(want: Want, launchParam: AbilityConstant.LaunchParam): void {
+    deepLink.accept(want);
+    // 页面可能已经在最前面：onPageShow 不会再触发，用事件通知它立刻消费。
+    try {
+      this.context.eventHub.emit(DEEP_LINK_EVENT);
+    } catch (err) {
+      hilog.error(DOMAIN, TAG, 'emit deep link failed');
+    }
   }
 
   onDestroy(): void {

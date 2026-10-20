@@ -93,14 +93,22 @@ export class CacheStats {
   }
 }
 
-/** 卡片展示用的轻量快照：未读数 + 最新几条标题（不把整库读进内存）。 */
+/**
+ * 卡片展示用的轻量快照：未读数 + 最新几条（标题 + id）+ 最近一次抓取时间。
+ * 带 id 是为了让卡片点击能深链到具体文章；带 fetched_at 是为了在卡片上显示「最近同步」。
+ */
 export class WidgetSnapshot {
   readonly unread: number;
   readonly titles: string[];
+  readonly ids: string[];
+  /** 最近一次抓取时间戳（0 表示本地还没有抓到过）。 */
+  readonly lastFetchedAt: number;
 
-  constructor(unread: number, titles: string[]) {
+  constructor(unread: number, titles: string[], ids: string[], lastFetchedAt: number) {
     this.unread = unread;
     this.titles = titles;
+    this.ids = ids;
+    this.lastFetchedAt = lastFetchedAt;
   }
 }
 
@@ -158,10 +166,12 @@ export class ArticleStore {
   async widgetSnapshot(limit: number): Promise<WidgetSnapshot> {
     const store: relationalStore.RdbStore | undefined = this.store;
     if (store === undefined) {
-      return new WidgetSnapshot(0, []);
+      return new WidgetSnapshot(0, [], [], 0);
     }
     let unread: number = 0;
+    let lastFetchedAt: number = 0;
     const titles: string[] = [];
+    const ids: string[] = [];
     try {
       const countRs: relationalStore.ResultSet = await store.querySql(
         'SELECT COUNT(*) AS c FROM ' + ArticleDbConstants.TABLE_ARTICLES + ' WHERE is_read = 0');
@@ -171,20 +181,29 @@ export class ArticleStore {
         countRs.close();
       }
       const titleRs: relationalStore.ResultSet = await store.querySql(
-        'SELECT title FROM ' + ArticleDbConstants.TABLE_ARTICLES +
+        'SELECT id, title FROM ' + ArticleDbConstants.TABLE_ARTICLES +
         ' ORDER BY published_at DESC LIMIT ?', [limit]);
       try {
         while (titleRs.goToNextRow() && titles.length < limit) {
           titles.push(titleRs.getString(titleRs.getColumnIndex('title')));
+          ids.push(titleRs.getString(titleRs.getColumnIndex('id')));
         }
       } finally {
         titleRs.close();
+      }
+      // 最近抓取时间：卡片上显示「最近同步」用（取全库最大值，不依赖内存状态）。
+      const fetchRs: relationalStore.ResultSet = await store.querySql(
+        'SELECT COALESCE(MAX(fetched_at), 0) AS f FROM ' + ArticleDbConstants.TABLE_ARTICLES);
+      try {
+        lastFetchedAt = fetchRs.goToNextRow() ? fetchRs.getLong(fetchRs.getColumnIndex('f')) : 0;
+      } finally {
+        fetchRs.close();
       }
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       hilog.error(DOMAIN, TAG, 'widgetSnapshot failed: %{public}d', error.code);
     }
-    return new WidgetSnapshot(unread, titles);
+    return new WidgetSnapshot(unread, titles, ids, lastFetchedAt);
   }
 
   /** 读取本地缓存（按发布时间倒序）。 */

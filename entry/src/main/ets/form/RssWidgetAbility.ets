@@ -17,6 +17,7 @@ import { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { articleStore, WidgetSnapshot } from '../service/ArticleStore';
 import { WidgetConstants } from '../common/constants/WidgetConstants';
+import { DateUtil } from '../common/utils/DateUtil';
 
 const DOMAIN: number = 0x0000;
 const TAG: string = 'RssWidgetAbility';
@@ -46,6 +47,24 @@ export default class RssWidgetAbility extends FormExtensionAbility {
       this.dimensions.set(formId, dimension);
     }
     this.refresh(formId);
+  }
+
+  /**
+   * 卡片上的「刷新」按钮走 message 事件：这里重读本地库并推回卡片。
+   * 卡片进程不能联网（FormExtensionAbility 与 UIAbility 不是同一个进程），所以这里只刷本地数据；
+   * 真正的联网抓取仍由应用自身（打开时 / 自动刷新）与 WorkScheduler 后台任务负责。
+   */
+  onFormEvent(formId: string, message: string): void {
+    try {
+      const parsed: Record<string, Object> = JSON.parse(message) as Record<string, Object>;
+      const event: Object | undefined = parsed[WidgetConstants.PARAM_EVENT];
+      if (typeof event === 'string' && event === WidgetConstants.EVENT_REFRESH) {
+        this.refresh(formId);
+      }
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.error(DOMAIN, TAG, 'onFormEvent parse failed: %{public}d', error.code);
+    }
   }
 
   onRemoveForm(formId: string): void {
@@ -78,7 +97,14 @@ export default class RssWidgetAbility extends FormExtensionAbility {
     const titles: string[] = snapshot.titles;
     data[WidgetConstants.KEY_UNREAD] = snapshot.unread;
     for (let i = 0; i < titles.length; i += 1) {
-      data[WidgetConstants.KEY_TITLE_PREFIX + (i + 1).toString()] = titles[i];
+      const suffix: string = (i + 1).toString();
+      data[WidgetConstants.KEY_TITLE_PREFIX + suffix] = titles[i];
+      if (i < snapshot.ids.length) {
+        data[WidgetConstants.KEY_ID_PREFIX + suffix] = snapshot.ids[i];
+      }
+    }
+    if (snapshot.lastFetchedAt > 0) {
+      data[WidgetConstants.KEY_SYNC] = DateUtil.clock(snapshot.lastFetchedAt);
     }
     return data;
   }
@@ -89,7 +115,11 @@ export default class RssWidgetAbility extends FormExtensionAbility {
       'unread': 0,
       't1': '',
       't2': '',
-      't3': ''
+      't3': '',
+      'i1': '',
+      'i2': '',
+      'i3': '',
+      'sync': ''
     };
     if (dimension.length > 0) {
       data[WidgetConstants.KEY_DIMENSION] = dimension;

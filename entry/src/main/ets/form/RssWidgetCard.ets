@@ -19,6 +19,12 @@ struct RssWidgetCard {
   @Local t1: string = '';
   @Local t2: string = '';
   @Local t3: string = '';
+  /** 与 t1/t2/t3 一一对应的文章 id：点标题时带着它拉起应用深链到该文章。 */
+  @Local i1: string = '';
+  @Local i2: string = '';
+  @Local i3: string = '';
+  /** 最近同步时间（HH:mm），由提供方从本地库的最近抓取时间算好下发。 */
+  @Local sync: string = '';
   /** 卡片尺寸语义值：small（2*2）/ large（2*4）。由提供方下发，默认按大卡片渲染。 */
   @Local dimension: string = WidgetConstants.DIMENSION_LARGE;
 
@@ -26,8 +32,34 @@ struct RssWidgetCard {
     return this.dimension === WidgetConstants.DIMENSION_SMALL;
   }
 
+  /**
+   * 点标题：带着文章 id 拉起应用并直达详情（id 为空时退化成只打开应用）。
+   * params 必须是显式声明类型的对象：ArkTS 不允许无类型对象字面量。
+   */
+  private openArticle(articleId: string): void {
+    const params: Record<string, Object> = {};
+    if (articleId.length > 0) {
+      params[WidgetConstants.PARAM_ARTICLE_ID] = articleId;
+    }
+    postCardAction(this, {
+      action: 'router',
+      abilityName: 'EntryAbility',
+      params: params
+    });
+  }
+
+  /** 通知提供方按本地库最新数据重刷卡片（卡片刷新按钮用）。 */
+  private requestRefresh(): void {
+    const params: Record<string, Object> = {};
+    params[WidgetConstants.PARAM_EVENT] = WidgetConstants.EVENT_REFRESH;
+    postCardAction(this, {
+      action: 'message',
+      params: params
+    });
+  }
+
   @Builder
-  TitleLine(text: string) {
+  TitleLine(text: string, articleId: string) {
     Row({ space: $r('app.float.space_s') }) {
       Divider()
         .vertical(true)
@@ -43,6 +75,9 @@ struct RssWidgetCard {
         .layoutWeight(1)
     }
     .width('100%')
+    .onClick(() => {
+      this.openArticle(articleId);
+    })
   }
 
   /** 无数据时的占位（两种尺寸共用）。 */
@@ -67,6 +102,16 @@ struct RssWidgetCard {
       Text($r('app.string.home_unread_count', this.unread))
         .fontSize($r('app.float.font_size_caption'))
         .fontColor($r('app.color.hm_brand'))
+
+      // 刷新按钮：只让提供方重读本地库（卡片进程无法联网抓取，联网交给后台任务）。
+      SymbolGlyph($r('sys.symbol.arrow_clockwise'))
+        .fontSize($r('app.float.font_size_caption'))
+        .fontColor([$r('app.color.hm_text_secondary')])
+        .padding({ left: $r('app.float.space_xs') })
+        .accessibilityText($r('app.string.widget_refresh'))
+        .onClick(() => {
+          this.requestRefresh();
+        })
     }
     .width('100%')
   }
@@ -76,7 +121,7 @@ struct RssWidgetCard {
       this.Header()
 
       if (this.t1.length > 0) {
-        this.TitleLine(this.t1)
+        this.TitleLine(this.t1, this.i1)
       } else {
         this.EmptyHint()
       }
@@ -84,10 +129,17 @@ struct RssWidgetCard {
       // 2*2 只放一条标题；2*4 再补两条，避免小卡片内容溢出。
       if (!this.isSmall()) {
         if (this.t2.length > 0) {
-          this.TitleLine(this.t2)
+          this.TitleLine(this.t2, this.i2)
         }
         if (this.t3.length > 0) {
-          this.TitleLine(this.t3)
+          this.TitleLine(this.t3, this.i3)
+        }
+        // 2*4 才放「最近同步」：小卡片没地方，放了必然溢出。
+        if (this.sync.length > 0) {
+          Text($r('app.string.home_last_sync', this.sync))
+            .fontSize($r('app.float.font_size_caption'))
+            .fontColor($r('app.color.hm_text_secondary'))
+            .maxLines(1)
         }
       }
     }

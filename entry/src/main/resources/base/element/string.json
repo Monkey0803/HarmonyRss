@@ -449,6 +449,10 @@
       "value": "Comfortable"
     },
     {
+      "name": "widget_refresh",
+      "value": "Refresh card data"
+    },
+    {
       "name": "read_panel_title",
       "value": "Reading layout"
     },
