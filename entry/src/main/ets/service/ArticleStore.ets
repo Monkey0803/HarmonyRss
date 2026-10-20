@@ -30,6 +30,7 @@ const SQL_CREATE: string =
   'published_at INTEGER NOT NULL DEFAULT 0, ' +
   'is_read INTEGER NOT NULL DEFAULT 0, ' +
   'is_starred INTEGER NOT NULL DEFAULT 0, ' +
+  'is_saved INTEGER NOT NULL DEFAULT 0, ' +
   'fetched_at INTEGER NOT NULL DEFAULT 0, ' +
   'image_url TEXT NOT NULL DEFAULT \'\', ' +
   'author TEXT NOT NULL DEFAULT \'\', ' +
@@ -63,6 +64,9 @@ const SQL_ADD_PAGE_LAST_MODIFIED: string =
 /** Reader 正文的纯文本（提供搜索 / 复制 / 朗读复用）。 */
 const SQL_ADD_PLAIN_TEXT: string =
   'ALTER TABLE ' + ArticleDbConstants.TABLE_ARTICLES + ' ADD COLUMN plain_text TEXT NOT NULL DEFAULT \'\'';
+/** 稍后读（老库补列）。 */
+const SQL_ADD_SAVED: string =
+  'ALTER TABLE ' + ArticleDbConstants.TABLE_ARTICLES + ' ADD COLUMN is_saved INTEGER NOT NULL DEFAULT 0';
 /** Reader 视图的结构化正文 HTML（提取 + 净化后）。 */
 const SQL_ADD_READER: string =
   'ALTER TABLE ' + ArticleDbConstants.TABLE_ARTICLES + ' ADD COLUMN reader_html TEXT NOT NULL DEFAULT \'\'';
@@ -73,7 +77,7 @@ const SQL_INSERT: string =
   ' image_url, author, content_html) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
 
 const SQL_SELECT_ALL: string =
-  'SELECT id, feed_id, feed_title, title, link, summary, content, published_at, is_read, is_starred,' +
+  'SELECT id, feed_id, feed_title, title, link, summary, content, published_at, is_read, is_starred, is_saved,' +
   ' image_url, author, progress, progress_ratio, reader_html, content_html, plain_text,' +
   ' page_etag, page_last_modified' +
   ' FROM ' + ArticleDbConstants.TABLE_ARTICLES + ' ORDER BY published_at DESC';
@@ -121,6 +125,7 @@ export class ArticleStore {
       this.addColumnIfNeeded(SQL_ADD_PLAIN_TEXT);
       this.addColumnIfNeeded(SQL_ADD_PAGE_ETAG);
       this.addColumnIfNeeded(SQL_ADD_PAGE_LAST_MODIFIED);
+      this.addColumnIfNeeded(SQL_ADD_SAVED);
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       hilog.error(DOMAIN, TAG, 'open failed: %{public}d', error.code);
@@ -207,6 +212,7 @@ export class ArticleStore {
           article.author = rs.getString(rs.getColumnIndex('author'));
           article.read = rs.getLong(rs.getColumnIndex('is_read')) === 1;
           article.starred = rs.getLong(rs.getColumnIndex('is_starred')) === 1;
+          article.saved = rs.getLong(rs.getColumnIndex('is_saved')) === 1;
           // 用 getDouble 读：老数据里可能残留小数（列是 INTEGER，但 SQLite 动态类型允许 REAL）。
           article.progress = rs.getDouble(rs.getColumnIndex('progress'));
           article.progressRatio = rs.getDouble(rs.getColumnIndex('progress_ratio'));
@@ -275,6 +281,40 @@ export class ArticleStore {
   setStarred(id: string, starred: boolean): void {
     this.exec('UPDATE ' + ArticleDbConstants.TABLE_ARTICLES + ' SET is_starred = ? WHERE id = ?',
       [starred ? 1 : 0, id]);
+  }
+
+  setSaved(id: string, saved: boolean): void {
+    this.exec('UPDATE ' + ArticleDbConstants.TABLE_ARTICLES + ' SET is_saved = ? WHERE id = ?',
+      [saved ? 1 : 0, id]);
+  }
+
+  /**
+   * 批量改状态（多选操作用）。逐条 UPDATE：批量条数是用户一次能选中的量级（几十条），
+   * 用 IN (?,?,...) 反而要做占位符拼接，收益不大。
+   */
+  setReadMany(ids: string[], read: boolean): void {
+    for (let i = 0; i < ids.length; i += 1) {
+      this.setRead(ids[i], read);
+    }
+  }
+
+  setStarredMany(ids: string[], starred: boolean): void {
+    for (let i = 0; i < ids.length; i += 1) {
+      this.setStarred(ids[i], starred);
+    }
+  }
+
+  setSavedMany(ids: string[], saved: boolean): void {
+    for (let i = 0; i < ids.length; i += 1) {
+      this.setSaved(ids[i], saved);
+    }
+  }
+
+  /** 批量删除（多选「删除」用）：只删列表条目与已缓存正文。 */
+  deleteMany(ids: string[]): void {
+    for (let i = 0; i < ids.length; i += 1) {
+      this.exec('DELETE FROM ' + ArticleDbConstants.TABLE_ARTICLES + ' WHERE id = ?', [ids[i]]);
+    }
   }
 
   /**

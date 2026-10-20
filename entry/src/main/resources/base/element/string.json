@@ -301,6 +301,74 @@
       "value": "Earlier"
     },
     {
+      "name": "filter_saved",
+      "value": "Later"
+    },
+    {
+      "name": "filter_archived",
+      "value": "Archive"
+    },
+    {
+      "name": "action_save",
+      "value": "Save for later"
+    },
+    {
+      "name": "action_unsave",
+      "value": "Remove from later"
+    },
+    {
+      "name": "action_mark_above_read",
+      "value": "Above read"
+    },
+    {
+      "name": "action_delete",
+      "value": "Delete"
+    },
+    {
+      "name": "select_count",
+      "value": "%d selected"
+    },
+    {
+      "name": "select_all",
+      "value": "Select all"
+    },
+    {
+      "name": "select_done",
+      "value": "Done"
+    },
+    {
+      "name": "delete_selected_confirm_title",
+      "value": "Delete selected articles?"
+    },
+    {
+      "name": "delete_selected_confirm_message",
+      "value": "The %d selected articles will be removed from the local cache."
+    },
+    {
+      "name": "row_archive_rule",
+      "value": "Archive rule"
+    },
+    {
+      "name": "opt_archive_off",
+      "value": "Never"
+    },
+    {
+      "name": "opt_archive_7",
+      "value": "Read > 7 days"
+    },
+    {
+      "name": "opt_archive_14",
+      "value": "Read > 14 days"
+    },
+    {
+      "name": "opt_archive_30",
+      "value": "Read > 30 days"
+    },
+    {
+      "name": "opt_archive_90",
+      "value": "Read > 90 days"
+    },
+    {
       "name": "read_panel_title",
       "value": "Reading layout"
     },

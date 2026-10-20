@@ -58,7 +58,11 @@ export const ARTICLE_ID_SEPARATOR: string = '|';
 export enum ArticleFilter {
   ALL = 'all',
   UNREAD = 'unread',
-  STARRED = 'starred'
+  STARRED = 'starred',
+  /** 稍后读（手动标记，永不自动归档）。 */
+  SAVED = 'saved',
+  /** 归档：已读且超过「归档规则」天数。 */
+  ARCHIVED = 'archived'
 }
 
 /**
@@ -79,7 +83,8 @@ export enum ReaderViewMode {
 
 /** 首页筛选值归一：脏值一律退回「全部」。 */
 export function normalizeArticleFilter(value: string): string {
-  if (value === ArticleFilter.UNREAD || value === ArticleFilter.STARRED) {
+  if (value === ArticleFilter.UNREAD || value === ArticleFilter.STARRED ||
+    value === ArticleFilter.SAVED || value === ArticleFilter.ARCHIVED) {
     return value;
   }
   return ArticleFilter.ALL;

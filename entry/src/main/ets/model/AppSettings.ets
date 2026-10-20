@@ -6,6 +6,7 @@
  */
 
 import { ArticleFilter, GroupMode, ReaderViewMode } from '../common/constants/RssConstants';
+import { ArchiveRule } from '../common/constants/SettingsConstants';
 import { THEME_OPTIONS, LANGUAGE_OPTIONS, MATERIAL_TYPE_OPTIONS, MATERIAL_LEVEL_OPTIONS, BACKGROUND_OPTIONS, LOGO_OPTIONS, AUTO_REFRESH_OPTIONS, READER_FONT_OPTIONS, READER_LINE_OPTIONS, READER_FAMILY_OPTIONS, READER_WIDTH_OPTIONS, READER_ALIGN_OPTIONS, READER_THEME_OPTIONS } from './SettingsOptions';
 
 @ObservedV2
@@ -68,6 +69,8 @@ export class AppSettings {
   @Trace lastTabIndex: number = 0;
   /** 详情页阅读模式：ReaderViewMode.READER | ReaderViewMode.WEB。 */
   @Trace readerViewMode: string = ReaderViewMode.READER;
+  /** 归档规则：ArchiveRule（已读且超过该天数的文章不进主列表，进「归档」）。 */
+  @Trace archiveRule: string = ArchiveRule.DAYS_30;
 }
 
 /** 全局唯一设置实例。 */

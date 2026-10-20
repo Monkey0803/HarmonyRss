@@ -89,6 +89,9 @@ export struct HomeTabView {
       // 列表内容即可穿过透明标题栏下方（品牌行 + 筛选条挂在标题栏上，见 Index）。
       Row().width('100%').height(safeArea.contentTopInsetVp + CommonConstants.FILTER_BAR_HEIGHT_VP)
 
+      if (feedViewModel.selecting) {
+        this.SelectionBar()
+      } else {
       Row({ space: $r('app.float.space_m') }) {
         SymbolGlyph($r('sys.symbol.arrow_clockwise'))
           .fontSize($r('app.float.icon_size'))
@@ -140,8 +143,9 @@ export struct HomeTabView {
           })
       }
       .width('100%')
+      }
 
-      if (this.searchOpen) {
+      if (this.searchOpen && !feedViewModel.selecting) {
         Row({ space: $r('app.float.space_s') }) {
           TextInput({ text: feedViewModel.keyword, placeholder: $r('app.string.home_search_hint') })
             .type(InputType.Normal)
@@ -311,8 +315,18 @@ export struct HomeTabView {
     ListItem() {
       ArticleListItem({
         article: item,
+        selecting: feedViewModel.selecting,
+        picked: feedViewModel.selectedIds.indexOf(item.id) >= 0,
         onOpen: () => {
-          this.openArticle(item);
+          // 多选态下点行 = 勾选 / 取消勾选，不打开详情
+          if (feedViewModel.selecting) {
+            feedViewModel.toggleSelect(item.id);
+          } else {
+            this.openArticle(item);
+          }
+        },
+        onLongPress: () => {
+          feedViewModel.beginSelect(item.id);
         },
         onToggleStar: (id: string) => {
           feedViewModel.toggleStar(id);
@@ -321,6 +335,101 @@ export struct HomeTabView {
     }
     .margin({ bottom: $r('app.float.space_s') })
     .swipeAction({ end: this.SwipeActions(item) })
+  }
+
+  /**
+   * 多选工具条：选中数量 + 全选 / 完成，下面一行是批量动作。
+   * 长按进入后出现在列表首条（选择模式里不再显示刷新 / 筛选那一行，避免两套入口打架）。
+   */
+  @Builder
+  SelectionBar() {
+    Column({ space: $r('app.float.space_s') }) {
+      Row({ space: $r('app.float.space_m') }) {
+        Text($r('app.string.select_count', feedViewModel.selectedIds.length))
+          .fontSize($r('app.float.font_size_caption'))
+          .fontColor($r('app.color.hm_text_primary'))
+        Blank()
+        Text($r('app.string.select_all'))
+          .fontSize($r('app.float.font_size_caption'))
+          .fontColor($r('app.color.hm_brand'))
+          .padding($r('app.float.space_s'))
+          .onClick(() => {
+            feedViewModel.selectAllVisible();
+          })
+        Text($r('app.string.select_done'))
+          .fontSize($r('app.float.font_size_caption'))
+          .fontColor($r('app.color.hm_brand'))
+          .padding($r('app.float.space_s'))
+          .onClick(() => {
+            feedViewModel.exitSelect();
+          })
+      }
+      .width('100%')
+
+      Row({ space: $r('app.float.space_s') }) {
+        this.SelectionAction($r('app.string.action_mark_read'), () => {
+          feedViewModel.markReadMany(feedViewModel.selectedIds, true);
+        })
+        this.SelectionAction($r('app.string.action_mark_unread'), () => {
+          feedViewModel.markReadMany(feedViewModel.selectedIds, false);
+        })
+        this.SelectionAction($r('app.string.filter_starred'), () => {
+          feedViewModel.markStarredMany(feedViewModel.selectedIds, true);
+        })
+        this.SelectionAction($r('app.string.filter_saved'), () => {
+          feedViewModel.markSavedMany(feedViewModel.selectedIds, true);
+        })
+        this.SelectionAction($r('app.string.action_mark_above_read'), () => {
+          feedViewModel.markAboveRead(feedViewModel.anchorId);
+        })
+        this.SelectionAction($r('app.string.action_delete'), () => {
+          this.confirmDeleteSelected();
+        })
+      }
+      .width('100%')
+    }
+    .width('100%')
+    .padding($r('app.float.space_m'))
+    .backgroundColor($r('app.color.hm_card_background'))
+    .borderRadius($r('app.float.radius_card'))
+  }
+
+  /** 多选里的一个动作按钮（等分宽度，文案短）。 */
+  @Builder
+  SelectionAction(label: ResourceStr, action: () => void) {
+    Text(label)
+      .fontSize($r('app.float.font_size_caption'))
+      .fontColor($r('app.color.hm_brand'))
+      .textAlign(TextAlign.Center)
+      .layoutWeight(1)
+      .padding({ top: $r('app.float.space_s'), bottom: $r('app.float.space_s') })
+      .onClick(() => {
+        action();
+      })
+  }
+
+  /** 批量删除确认。 */
+  private confirmDeleteSelected(): void {
+    const cancelButton: AlertDialogButtonBaseOptions = {
+      value: $r('app.string.dialog_cancel'),
+      action: () => {
+      }
+    };
+    const confirmButton: AlertDialogButtonBaseOptions = {
+      value: $r('app.string.dialog_confirm'),
+      fontColor: $r('app.color.hm_danger'),
+      action: () => {
+        feedViewModel.deleteMany(feedViewModel.selectedIds);
+      }
+    };
+    const params: AlertDialogParamWithButtons = {
+      title: $r('app.string.delete_selected_confirm_title'),
+      message: $r('app.string.delete_selected_confirm_message', feedViewModel.selectedIds.length),
+      autoCancel: true,
+      primaryButton: cancelButton,
+      secondaryButton: confirmButton
+    };
+    this.getUIContext().showAlertDialog(MaterialController.dialogParams(params, appSettings.immersiveOn));
   }
 
   /** 列表左滑操作：收藏 / 已读切换（ArkUI 原生 swipeAction，V2 组件可用）。 */
@@ -335,6 +444,15 @@ export struct HomeTabView {
         .height('100%')
         .onClick(() => {
           feedViewModel.toggleStar(article.id);
+        })
+      Button(article.saved ? $r('app.string.action_unsave') : $r('app.string.action_save'))
+        .buttonStyle(ButtonStyleMode.NORMAL)
+        .fontSize($r('app.float.font_size_caption'))
+        .fontColor($r('app.color.hm_on_brand'))
+        .backgroundColor($r('app.color.hm_brand'))
+        .height('100%')
+        .onClick(() => {
+          feedViewModel.toggleSaved(article.id);
         })
       Button(article.read ? $r('app.string.action_mark_unread') : $r('app.string.action_mark_read'))
         .buttonStyle(ButtonStyleMode.NORMAL)
@@ -412,7 +530,9 @@ export struct HomeTabView {
       .scrollBar(BarState.Off)
       // 触底续页：多加载一屏
       .onReachEnd(() => {
-        feedViewModel.loadMore();
+        if (!feedViewModel.selecting) {
+          feedViewModel.loadMore();
+        }
       })
       // 内容穿透标题栏：超出列表范围的部分不裁剪，滚到标题栏下方的列表项也不会被回收。
       .clip(false)

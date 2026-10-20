@@ -120,8 +120,10 @@ export class Article {
   author: string;
   /** 已读（持久化到本地库）。 */
   @Trace read: boolean;
-  /** 收藏 / 稍后读（持久化到本地库）。 */
+  /** 收藏（持久化到本地库）。 */
   @Trace starred: boolean;
+  /** 稍后读（持久化到本地库）：与收藏分开，便于「先收藏、稍后读」两种语义各自成列表。 */
+  @Trace saved: boolean = false;
   /**
    * 阅读进度：上次读到的滚动位置（px；网页原文与提取正文共用同一个值）。
    * 由详情页写入本地库，重新打开时恢复；0 表示从头开始。

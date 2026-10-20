@@ -51,6 +51,34 @@ export enum AutoRefreshInterval {
   MIN_60 = '60'
 }
 
+/** 归档规则：已读且超过阈值的文章不进主列表（OFF 表示不归档）。 */
+export enum ArchiveRule {
+  OFF = 'off',
+  DAYS_7 = '7',
+  DAYS_14 = '14',
+  DAYS_30 = '30',
+  DAYS_90 = '90'
+}
+
+/** 归档规则的天数映射（OFF 用 0 表示不归档）。 */
+export class ArchiveDays {
+  static of(rule: string): number {
+    if (rule === ArchiveRule.DAYS_7) {
+      return 7;
+    }
+    if (rule === ArchiveRule.DAYS_14) {
+      return 14;
+    }
+    if (rule === ArchiveRule.DAYS_30) {
+      return 30;
+    }
+    if (rule === ArchiveRule.DAYS_90) {
+      return 90;
+    }
+    return 0;
+  }
+}
+
 /** 自动刷新间隔的分钟数映射（OFF 用 -1 表示不自动刷新）。 */
 export class AutoRefreshMinutes {
   static readonly OFF: number = -1;

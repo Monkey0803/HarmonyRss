@@ -21,7 +21,7 @@ import { buildOpml, OpmlEntry } from '../service/OpmlCodec';
 import { toArticles } from '../service/ArticleMapper';
 import { GroupMode, ArticleFilter, FeedError, FeedFetchError, ReaderState } from '../common/constants/RssConstants';
 import { appSettings } from '../model/AppSettings';
-import { AutoRefreshMinutes } from '../common/constants/SettingsConstants';
+import { ArchiveDays, AutoRefreshMinutes } from '../common/constants/SettingsConstants';
 import { settingsStore } from '../service/SettingsStore';
 import { settingsViewModel } from './SettingsViewModel';
 
@@ -112,6 +112,12 @@ export class FeedViewModel {
   @Trace groupMode: string = appSettings.listGroupMode;
   /** 分组数据（groupMode !== NONE 时有效；每组自带数据源，组内仍虚拟化）。 */
   @Trace groups: ArticleGroup[] = [];
+  /** 是否处于多选模式（长按进入）。 */
+  @Trace selecting: boolean = false;
+  /** 多选选中的文章 id（数组整体替换，保证 @Trace 能观察到最后一次变更）。 */
+  @Trace selectedIds: string[] = [];
+  /** 多选锚点（长按的那一行，「以上已读」以它为界）。 */
+  @Trace anchorId: string = '';
   /** 已加载条数（分页游标）。 */
   @Trace visibleCount: number = CommonConstants.LIST_PAGE_SIZE;
   /** 搜索关键词（标题 / 摘要 / 正文，大小写不敏感）。 */
@@ -798,6 +804,149 @@ export class FeedViewModel {
     this.publish();
   }
 
+  /** 稍后读切换（列表左滑 / 批量用）。 */
+  toggleSaved(articleId: string): void {
+    for (let i = 0; i < this.all.length; i += 1) {
+      if (this.all[i].id === articleId) {
+        const next: boolean = !this.all[i].saved;
+        this.all[i].saved = next;
+        articleStore.setSaved(articleId, next);
+        break;
+      }
+    }
+    this.publish();
+  }
+
+  /** 批量：已读 / 未读。 */
+  markReadMany(ids: string[], read: boolean): void {
+    const wanted: Map<string, boolean> = new Map<string, boolean>();
+    for (let i = 0; i < ids.length; i += 1) {
+      wanted.set(ids[i], true);
+    }
+    for (let i = 0; i < this.all.length; i += 1) {
+      if (wanted.get(this.all[i].id) === true) {
+        this.all[i].read = read;
+      }
+    }
+    articleStore.setReadMany(ids, read);
+    this.exitSelect();
+    this.publish();
+  }
+
+  /** 批量：收藏。 */
+  markStarredMany(ids: string[], starred: boolean): void {
+    const wanted: Map<string, boolean> = new Map<string, boolean>();
+    for (let i = 0; i < ids.length; i += 1) {
+      wanted.set(ids[i], true);
+    }
+    for (let i = 0; i < this.all.length; i += 1) {
+      if (wanted.get(this.all[i].id) === true) {
+        this.all[i].starred = starred;
+      }
+    }
+    articleStore.setStarredMany(ids, starred);
+    this.exitSelect();
+    this.publish();
+  }
+
+  /** 批量：稍后读。 */
+  markSavedMany(ids: string[], saved: boolean): void {
+    const wanted: Map<string, boolean> = new Map<string, boolean>();
+    for (let i = 0; i < ids.length; i += 1) {
+      wanted.set(ids[i], true);
+    }
+    for (let i = 0; i < this.all.length; i += 1) {
+      if (wanted.get(this.all[i].id) === true) {
+        this.all[i].saved = saved;
+      }
+    }
+    articleStore.setSavedMany(ids, saved);
+    this.exitSelect();
+    this.publish();
+  }
+
+  /** 批量：删除（同时从内存列表移除）。 */
+  deleteMany(ids: string[]): void {
+    const wanted: Map<string, boolean> = new Map<string, boolean>();
+    for (let i = 0; i < ids.length; i += 1) {
+      wanted.set(ids[i], true);
+    }
+    const kept: Article[] = [];
+    for (let i = 0; i < this.all.length; i += 1) {
+      if (wanted.get(this.all[i].id) !== true) {
+        kept.push(this.all[i]);
+      }
+    }
+    this.all = kept;
+    articleStore.deleteMany(ids);
+    this.exitSelect();
+    this.publish();
+  }
+
+  /**
+   * 标记「此处以上」为已读：锚点行之前的条目（不含锚点自己，用户还要读它）。
+   * 依据当前列表顺序判定「以上」，因此分组 / 排序切换后仍符合视觉预期。
+   */
+  markAboveRead(anchorId: string): void {
+    let index: number = -1;
+    for (let i = 0; i < this.articles.length; i += 1) {
+      if (this.articles[i].id === anchorId) {
+        index = i;
+        break;
+      }
+    }
+    if (index <= 0) {
+      return;
+    }
+    const above: Article[] = this.articles.slice(0, index);
+    const ids: string[] = [];
+    for (let i = 0; i < above.length; i += 1) {
+      if (!above[i].read) {
+        above[i].read = true;
+        ids.push(above[i].id);
+      }
+    }
+    if (ids.length > 0) {
+      articleStore.setReadMany(ids, true);
+    }
+    this.publish();
+  }
+
+  /** 进入多选（长按某行）。 */
+  beginSelect(articleId: string): void {
+    this.selecting = true;
+    this.anchorId = articleId;
+    this.selectedIds = this.selectedIds.indexOf(articleId) >= 0 ? this.selectedIds : [articleId];
+  }
+
+  /** 多选态下点某行：加入 / 移出选中。 */
+  toggleSelect(articleId: string): void {
+    if (!this.selecting) {
+      return;
+    }
+    if (this.selectedIds.indexOf(articleId) >= 0) {
+      this.selectedIds = this.selectedIds.filter((id: string) => id !== articleId);
+    } else {
+      this.selectedIds = this.selectedIds.concat([articleId]);
+    }
+  }
+
+  /** 退出多选。 */
+  exitSelect(): void {
+    this.selecting = false;
+    this.selectedIds = [];
+    this.anchorId = '';
+  }
+
+  /** 全选当前列表已加载的条目。 */
+  selectAllVisible(): void {
+    const ids: string[] = [];
+    for (let i = 0; i < this.articles.length; i += 1) {
+      ids.push(this.articles[i].id);
+    }
+    this.selectedIds = ids;
+  }
+
   /** 全部标为已读。 */
   markAllRead(): void {
     for (let i = 0; i < this.all.length; i += 1) {
@@ -952,6 +1101,12 @@ export class FeedViewModel {
     }
   }
 
+  /** 外部条件（如归档规则）变化后重算列表。 */
+  republish(): void {
+    this.resetPaging();
+    this.publish();
+  }
+
   /** 订阅列表内容变化（组件 aboutToAppear 调用）。 */
   subscribeArticles(listener: () => void): void {
     if (this.articleListeners.indexOf(listener) < 0) {
@@ -1098,16 +1253,50 @@ export class FeedViewModel {
     if (this.scopeFeedId.length > 0 && item.feedId !== this.scopeFeedId) {
       return false;
     }
+    if (this.keyword.length > 0 && !matchesKeyword(item, this.keyword.toLowerCase())) {
+      return false;
+    }
+    if (this.filter === ArticleFilter.ARCHIVED) {
+      return this.isArchived(item);
+    }
+    // 归档的文章只在「归档」里出现；其余视图一律排除（否则规则形同虚设）。
+    if (this.isArchived(item)) {
+      return false;
+    }
     if (this.filter === ArticleFilter.UNREAD && item.read) {
       return false;
     }
     if (this.filter === ArticleFilter.STARRED && !item.starred) {
       return false;
     }
-    if (this.keyword.length > 0 && !matchesKeyword(item, this.keyword.toLowerCase())) {
+    if (this.filter === ArticleFilter.SAVED && !item.saved) {
       return false;
     }
     return true;
+  }
+
+  /**
+   * 是否已归档：已读、且发布时间超过「归档规则」的天数。
+   * 稍后读（saved）永远不归档 —— 用户明确标记要留着的东西不该自己消失。
+   * 发布时间缺失（0）的保守视为不归档。
+   */
+  private isArchived(item: Article): boolean {
+    const days: number = ArchiveDays.of(appSettings.archiveRule);
+    if (days <= 0 || item.saved || !item.read || item.publishedAt <= 0) {
+      return false;
+    }
+    return Date.now() - item.publishedAt > days * FeedViewModel.DAY_MS;
+  }
+
+  /** 当前筛选下被判为归档的条数（设置页 / 筛选条提示用）。 */
+  archivedCount(): number {
+    let count: number = 0;
+    for (let i = 0; i < this.all.length; i += 1) {
+      if (this.isArchived(this.all[i])) {
+        count += 1;
+      }
+    }
+    return count;
   }
 
   /**

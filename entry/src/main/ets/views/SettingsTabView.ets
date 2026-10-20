@@ -23,7 +23,7 @@ import {
   SnackBarOperationType
 } from '@kit.UIDesignKit';
 import { appSettings } from '../model/AppSettings';
-import { ChoiceOption, ChoiceSet, THEME_OPTIONS, LANGUAGE_OPTIONS, MATERIAL_TYPE_OPTIONS, MATERIAL_LEVEL_OPTIONS, BACKGROUND_OPTIONS, LOGO_OPTIONS, AUTO_REFRESH_OPTIONS, READER_FONT_OPTIONS, READER_LINE_OPTIONS, READER_FAMILY_OPTIONS, READER_WIDTH_OPTIONS, READER_ALIGN_OPTIONS, READER_THEME_OPTIONS } from '../model/SettingsOptions';
+import { ARCHIVE_OPTIONS, ChoiceOption, ChoiceSet, THEME_OPTIONS, LANGUAGE_OPTIONS, MATERIAL_TYPE_OPTIONS, MATERIAL_LEVEL_OPTIONS, BACKGROUND_OPTIONS, LOGO_OPTIONS, AUTO_REFRESH_OPTIONS, READER_FONT_OPTIONS, READER_LINE_OPTIONS, READER_FAMILY_OPTIONS, READER_WIDTH_OPTIONS, READER_ALIGN_OPTIONS, READER_THEME_OPTIONS } from '../model/SettingsOptions';
 import { settingsViewModel } from '../viewmodel/SettingsViewModel';
 import { feedViewModel } from '../viewmodel/FeedViewModel';
 import { antiPeep } from '../service/AntiPeep';
@@ -49,6 +49,7 @@ enum SettingField {
   TITLE_BAR_SCROLL = 'titleBarScroll',
   STATUS_BAR_SCROLL = 'statusBarScroll',
   AUTO_REFRESH = 'autoRefresh',
+  ARCHIVE_RULE = 'archiveRule',
   READER_FONT = 'readerFont',
   READER_LINE = 'readerLine',
   READER_FAMILY = 'readerFamily',
@@ -92,6 +93,8 @@ struct OptionSelectRow {
         return appSettings.materialLevel;
       case SettingField.LANGUAGE:
         return appSettings.languageMode;
+      case SettingField.ARCHIVE_RULE:
+        return appSettings.archiveRule;
       case SettingField.AUTO_REFRESH:
         return appSettings.autoRefresh;
       case SettingField.READER_FONT:
@@ -646,6 +649,16 @@ export struct SettingsTabView {
             field: SettingField.AUTO_REFRESH,
             onPick: (id: string) => {
               settingsViewModel.setAutoRefresh(id, this.hostContext());
+            }
+          })
+          Divider().color($r('app.color.hm_divider'))
+          OptionSelectRow({
+            icon: $r('sys.symbol.externaldrive'),
+            title: $r('app.string.row_archive_rule'),
+            choice: ARCHIVE_OPTIONS,
+            field: SettingField.ARCHIVE_RULE,
+            onPick: (id: string) => {
+              settingsViewModel.setArchiveRule(id);
             }
           })
           Divider().color($r('app.color.hm_divider'))

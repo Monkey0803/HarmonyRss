@@ -17,6 +17,12 @@ export struct ArticleListItem {
   @Event onOpen: () => void = () => {};
   /** 切换收藏。 */
   @Event onToggleStar: (id: string) => void = () => {};
+  /** 长按进入多选。 */
+  @Event onLongPress: () => void = () => {};
+  /** 父级是否处于多选模式。 */
+  @Param selecting: boolean = false;
+  /** 本行是否被选中（仅多选模式有意义）。 */
+  @Param picked: boolean = false;
 
   /**
    * 读了一半（进度比例 2%–98%）：用来在标题下补一条细进度线，提示「可以接着读」。
@@ -29,11 +35,19 @@ export struct ArticleListItem {
 
   build() {
     Row({ space: $r('app.float.space_m') }) {
-      Row()
-        .width($r('app.float.feed_dot_size'))
-        .height($r('app.float.feed_dot_size'))
-        .backgroundColor(this.article.read ? $r('app.color.hm_divider') : $r('app.color.hm_brand'))
-        .borderRadius($r('app.float.feed_dot_size'))
+      if (this.selecting) {
+        // 多选态：未读点换成勾选圈（选中的用品牌色实心）
+        SymbolGlyph(this.picked ? $r('sys.symbol.checkmark_circle') : $r('sys.symbol.circle'))
+          .fontSize($r('app.float.icon_size'))
+          .fontColor([this.picked ? $r('app.color.hm_brand') : $r('app.color.hm_text_secondary')])
+          .padding({ left: $r('app.float.space_xs'), right: $r('app.float.space_xs') })
+      } else {
+        Row()
+          .width($r('app.float.feed_dot_size'))
+          .height($r('app.float.feed_dot_size'))
+          .backgroundColor(this.article.read ? $r('app.color.hm_divider') : $r('app.color.hm_brand'))
+          .borderRadius($r('app.float.feed_dot_size'))
+      }
 
       Column({ space: $r('app.float.space_xs') }) {
         Text(this.article.title)
@@ -101,24 +115,42 @@ export struct ArticleListItem {
           .interpolation(ImageInterpolation.Medium)
       }
 
+      // 稍后读标记：只是一枚状态图标（切换在左滑 / 批量里做，行内不抢点击）
+      if (this.article.saved) {
+        SymbolGlyph($r('sys.symbol.bookmark_fill'))
+          .fontSize($r('app.float.font_size_caption'))
+          .fontColor([$r('app.color.hm_brand')])
+          .accessibilityText($r('app.string.filter_saved'))
+      }
+
       // 收藏 / 稍后读：与整行点击互不干扰。
       // 命中区用 padding 撑到 ~46vp（图标 22vp，接近 48vp 的最小点击区建议）：命中区太小
       // 容易点空，点空会落到整行的 onClick 上把文章打开并标已读 —— 表现为「收藏点不动 / 阅读状态不对」。
-      SymbolGlyph(this.article.starred ? $r('sys.symbol.star_fill') : $r('sys.symbol.star'))
-        .fontSize($r('app.float.icon_size'))
-        .fontColor([this.article.starred ? $r('app.color.hm_brand') : $r('app.color.hm_text_secondary')])
-        .padding($r('app.float.space_m'))
-        .accessibilityText(this.article.starred ? $r('app.string.action_unstar') : $r('app.string.action_star'))
-        .onClick(() => {
-          this.onToggleStar(this.article.id);
-        })
+      if (!this.selecting) {
+        SymbolGlyph(this.article.starred ? $r('sys.symbol.star_fill') : $r('sys.symbol.star'))
+          .fontSize($r('app.float.icon_size'))
+          .fontColor([this.article.starred ? $r('app.color.hm_brand') : $r('app.color.hm_text_secondary')])
+          .padding($r('app.float.space_m'))
+          .accessibilityText(this.article.starred ? $r('app.string.action_unstar') : $r('app.string.action_star'))
+          .onClick(() => {
+            this.onToggleStar(this.article.id);
+          })
+      }
     }
     .width('100%')
     .padding($r('app.float.space_m'))
-    .backgroundColor($r('app.color.hm_card_background'))
+    .backgroundColor(this.selecting && this.picked
+      ? $r('app.color.hm_menu_item_selected')
+      : $r('app.color.hm_card_background'))
     .borderRadius($r('app.float.radius_card'))
     .onClick(() => {
       this.onOpen();
     })
+    // 长按进多选（多选态里长按不做别的事，避免误触）
+    .gesture(LongPressGesture().onAction(() => {
+      if (!this.selecting) {
+        this.onLongPress();
+      }
+    }))
   }
 }

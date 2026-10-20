@@ -1,5 +1,5 @@
 /*
- * FilterSegmentBar.ets — 阅读页签的「全部 / 未读 / 收藏」筛选分段控件 + 全部已读。
+ * FilterSegmentBar.ets — 阅读页签的「全部 / 未读 / 收藏 / 稍后读 / 归档」筛选分段控件 + 全部已读。
  *
  * 位置：挂在 HdsNavigation 标题栏的 bottomBuilder 上（不是内容区）——沉浸光感是区域级能力，
  * 只有 Navigation/NavDestination 标题栏与横向 Tabs 底部 TabBar 里组件才真正吃到系统材质，
@@ -19,35 +19,35 @@ import { ArticleFilter } from '../common/constants/RssConstants';
 const DOMAIN: number = 0x0000;
 const TAG: string = 'FilterSegmentBar';
 
+/** 分段控件的顺序：取值与下标一一对应（新增筛选只要往这两张表里加）。 */
+const FILTER_ORDER: string[] = [
+  ArticleFilter.ALL,
+  ArticleFilter.UNREAD,
+  ArticleFilter.STARRED,
+  ArticleFilter.SAVED,
+  ArticleFilter.ARCHIVED
+];
+
 /** 筛选值 → 分段控件选中下标。 */
 function filterIndexOf(filter: string): number {
-  if (filter === ArticleFilter.UNREAD) {
-    return 1;
-  }
-  if (filter === ArticleFilter.STARRED) {
-    return 2;
-  }
-  return 0;
+  const index: number = FILTER_ORDER.indexOf(filter);
+  return index < 0 ? 0 : index;
 }
 
 /** 分段控件下标 → 筛选值。 */
 function filterAt(index: number): string {
-  if (index === 1) {
-    return ArticleFilter.UNREAD;
-  }
-  if (index === 2) {
-    return ArticleFilter.STARRED;
-  }
-  return ArticleFilter.ALL;
+  return (index >= 0 && index < FILTER_ORDER.length) ? FILTER_ORDER[index] : ArticleFilter.ALL;
 }
 
 @ComponentV2
 export struct FilterSegmentBar {
-  /** 筛选分段控件的选项（全部 / 未读 / 收藏）。 */
+  /** 筛选分段控件的选项（全部 / 未读 / 收藏 / 稍后读 / 归档），顺序与 FILTER_ORDER 一致。 */
   private filterItems: SegmentButtonV2Items = new SegmentButtonV2Items([
     { text: $r('app.string.filter_all') },
     { text: $r('app.string.filter_unread') },
-    { text: $r('app.string.filter_starred') }
+    { text: $r('app.string.filter_starred') },
+    { text: $r('app.string.filter_saved') },
+    { text: $r('app.string.filter_archived') }
   ]);
 
   /**

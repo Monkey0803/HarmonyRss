@@ -6,6 +6,8 @@
 
 import { common } from '@kit.AbilityKit';
 import { ReaderTypography } from '../common/constants/SettingsConstants';
+import { ARCHIVE_OPTIONS } from '../model/SettingsOptions';
+import { feedViewModel } from './FeedViewModel';
 import { appSettings } from '../model/AppSettings';
 import { settingsStore } from '../service/SettingsStore';
 import { ThemeController } from '../service/ThemeController';
@@ -108,6 +110,14 @@ export class SettingsViewModel {
   }
 
   /** 自动刷新间隔：'off' | '15' | '30' | '60'（分钟）；同时重排后台任务。 */
+  /** 归档规则：已读且超过 N 天不进主列表（进「归档」筛选）。 */
+  setArchiveRule(id: string): void {
+    appSettings.archiveRule = ARCHIVE_OPTIONS.normalize(id);
+    settingsStore.save();
+    // 规则变了，首页列表要立刻重算（原来主列表里的条目可能该进归档，反之亦然）。
+    feedViewModel.republish();
+  }
+
   setAutoRefresh(id: string, context: common.Context): void {
     appSettings.autoRefresh = id;
     settingsStore.save();

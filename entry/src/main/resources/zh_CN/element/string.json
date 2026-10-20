@@ -301,6 +301,74 @@
       "value": "更早"
     },
     {
+      "name": "filter_saved",
+      "value": "稍后读"
+    },
+    {
+      "name": "filter_archived",
+      "value": "归档"
+    },
+    {
+      "name": "action_save",
+      "value": "稍后读"
+    },
+    {
+      "name": "action_unsave",
+      "value": "取消稍后读"
+    },
+    {
+      "name": "action_mark_above_read",
+      "value": "以上已读"
+    },
+    {
+      "name": "action_delete",
+      "value": "删除"
+    },
+    {
+      "name": "select_count",
+      "value": "已选 %d 条"
+    },
+    {
+      "name": "select_all",
+      "value": "全选"
+    },
+    {
+      "name": "select_done",
+      "value": "完成"
+    },
+    {
+      "name": "delete_selected_confirm_title",
+      "value": "删除选中的文章？"
+    },
+    {
+      "name": "delete_selected_confirm_message",
+      "value": "将把选中的 %d 篇文章从本地缓存中移除。"
+    },
+    {
+      "name": "row_archive_rule",
+      "value": "归档规则"
+    },
+    {
+      "name": "opt_archive_off",
+      "value": "不归档"
+    },
+    {
+      "name": "opt_archive_7",
+      "value": "已读超过 7 天"
+    },
+    {
+      "name": "opt_archive_14",
+      "value": "已读超过 14 天"
+    },
+    {
+      "name": "opt_archive_30",
+      "value": "已读超过 30 天"
+    },
+    {
+      "name": "opt_archive_90",
+      "value": "已读超过 90 天"
+    },
+    {
       "name": "read_panel_title",
       "value": "阅读排版"
     },
