@@ -369,6 +369,34 @@
       "value": "Read > 90 days"
     },
     {
+      "name": "home_last_sync",
+      "value": "Synced %s"
+    },
+    {
+      "name": "home_never_synced",
+      "value": "Not synced yet"
+    },
+    {
+      "name": "row_refresh_now",
+      "value": "Refresh now"
+    },
+    {
+      "name": "action_retry",
+      "value": "Retry"
+    },
+    {
+      "name": "action_scope_feed",
+      "value": "Only this feed"
+    },
+    {
+      "name": "toast_refreshing",
+      "value": "Refreshing…"
+    },
+    {
+      "name": "snack_refreshed",
+      "value": "Feeds updated"
+    },
+    {
       "name": "read_panel_title",
       "value": "Reading layout"
     },

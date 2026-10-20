@@ -97,6 +97,14 @@
       "value": "8"
     },
     {
+      "name": "badge_size",
+      "value": "16"
+    },
+    {
+      "name": "badge_font_size",
+      "value": "10"
+    },
+    {
       "name": "menu_item_height",
       "value": "48"
     },

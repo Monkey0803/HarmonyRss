@@ -8,7 +8,12 @@
 
 import { Article } from '../model/Feed';
 import { feedViewModel } from '../viewmodel/FeedViewModel';
+import { ArticleDataSource } from '../viewmodel/ArticleDataSource';
 import { ArticleListItem } from './ArticleListItem';
+import { FeedError } from '../common/constants/RssConstants';
+import { appSettings } from '../model/AppSettings';
+import { MaterialController } from '../service/MaterialController';
+import { FeedErrorText } from '../common/utils/FeedErrorText';
 import { RouterConstants } from '../common/constants/RouterConstants';
 import { CommonConstants } from '../common/constants/CommonConstants';
 import { safeArea } from '../service/SafeAreaController';
@@ -19,6 +24,31 @@ export struct FeedArticlesView {
   @Param scroller: Scroller = new Scroller();
   /** 排序方向：true = 最新在前（默认），false = 最早在前。 */
   @Local newestFirst: boolean = true;
+  /** 下拉刷新中（Refresh 组件受控）。 */
+  @Local refreshing: boolean = false;
+  /** 列表数据源（虚拟化）。 */
+  private dataSource: ArticleDataSource = new ArticleDataSource();
+
+  private syncArticles: () => void = () => {
+    this.dataSource.setItems(this.ordered());
+  };
+
+  aboutToAppear(): void {
+    feedViewModel.subscribeArticles(this.syncArticles);
+    this.dataSource.setItems(this.ordered());
+  }
+
+  aboutToDisappear(): void {
+    feedViewModel.unsubscribeArticles(this.syncArticles);
+  }
+
+  /** 下拉刷新：只抓当前这个源。 */
+  private reload(): void {
+    this.refreshing = true;
+    feedViewModel.refreshCurrentFeed().then(() => {
+      this.refreshing = false;
+    });
+  }
 
   /** 本地排序：对 ViewModel 的倒序列表做升/降序拷贝（读取 @Trace feedArticles 建立刷新依赖）。 */
   private ordered(): Article[] {
@@ -91,6 +121,7 @@ export struct FeedArticlesView {
           .fontColor($r('app.color.hm_brand'))
           .onClick(() => {
             this.newestFirst = !this.newestFirst;
+            this.dataSource.setItems(this.ordered());
           })
       }
       .width('100%')
@@ -101,13 +132,42 @@ export struct FeedArticlesView {
   }
 
   build() {
+    Refresh({ refreshing: this.refreshing }) {
     // 单列表承载「页头 + 文章项」，整页随列表滚动穿过透明标题栏（与首页一致）。
     List({ scroller: this.scroller }) {
       ListItem() {
         this.Header()
       }
 
-      if (feedViewModel.feedArticles.length === 0) {
+      if (feedViewModel.loading && feedViewModel.feedArticles.length === 0) {
+        // 首屏加载：这个源还没抓到内容时给个明确状态（以前是空白 + 空态文案打架）
+        ListItem() {
+          Text($r('app.string.home_loading'))
+            .fontSize($r('app.float.font_size_caption'))
+            .fontColor($r('app.color.hm_text_secondary'))
+            .padding($r('app.float.space_2xl'))
+        }
+      } else if (feedViewModel.errorCode !== FeedError.NONE && feedViewModel.feedArticles.length === 0) {
+        // 错误态：显示具体原因 + 重试
+        ListItem() {
+          Column({ space: $r('app.float.space_m') }) {
+            Text(FeedErrorText.of(feedViewModel.errorCode))
+              .fontSize($r('app.float.font_size_caption'))
+              .fontColor($r('app.color.hm_danger'))
+              .textAlign(TextAlign.Center)
+            Button($r('app.string.action_retry'))
+              .buttonStyle(ButtonStyleMode.NORMAL)
+              .fontColor($r('app.color.hm_on_brand'))
+              .backgroundColor($r('app.color.hm_brand'))
+              .onClick(() => {
+                this.reload();
+              })
+          }
+          .width('100%')
+          .padding($r('app.float.space_2xl'))
+          .alignItems(HorizontalAlign.Center)
+        }
+      } else if (feedViewModel.feedArticles.length === 0) {
         ListItem() {
           Text($r('app.string.home_empty_title'))
             .fontSize($r('app.float.font_size_title'))
@@ -115,7 +175,8 @@ export struct FeedArticlesView {
             .padding($r('app.float.space_2xl'))
         }
       } else {
-        ForEach(this.ordered(), (item: Article) => {
+        // 虚拟化：单个源也可能上百条
+        LazyForEach(this.dataSource, (item: Article) => {
           ListItem() {
             ArticleListItem({
               article: item,
@@ -144,6 +205,13 @@ export struct FeedArticlesView {
     .clip(false)
     .cachedCount(3, true)
     .padding({ left: $r('app.float.space_l'), right: $r('app.float.space_l') })
+    }
+    // 下拉刷新：必须由 onRefreshing 驱动并复位 refreshing，否则指示器停在顶部不复位。
+    .onRefreshing(() => {
+      this.reload();
+    })
+    .width('100%')
+    .height('100%')
     .backgroundColor($r('app.color.hm_page_transparent'))
   }
 }

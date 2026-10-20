@@ -15,6 +15,7 @@ import { MaterialController } from '../service/MaterialController';
 import { feedViewModel } from '../viewmodel/FeedViewModel';
 import { CommonConstants } from '../common/constants/CommonConstants';
 import { ArticleListItem } from './ArticleListItem';
+import { DateUtil } from '../common/utils/DateUtil';
 import { RouterConstants } from '../common/constants/RouterConstants';
 import { ArticleFilter, FeedError, GroupMode } from '../common/constants/RssConstants';
 import { FeedErrorText } from '../common/utils/FeedErrorText';
@@ -104,6 +105,14 @@ export struct HomeTabView {
           .onClick(() => {
             this.reload();
           })
+
+        // 最近同步时间：抓取完成后更新（lastUpdated 是 @Trace，会驱动这里重建）
+        if (feedViewModel.lastUpdated > 0) {
+          Text($r('app.string.home_last_sync', DateUtil.clock(feedViewModel.lastUpdated)))
+            .fontSize($r('app.float.font_size_caption'))
+            .fontColor($r('app.color.hm_text_secondary'))
+            .maxLines(1)
+        }
 
         Text($r('app.string.home_unread_count', feedViewModel.unreadShown))
           .fontSize($r('app.float.font_size_caption'))

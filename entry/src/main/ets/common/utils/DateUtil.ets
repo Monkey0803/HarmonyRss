@@ -22,6 +22,15 @@ export class DateUtil {
     return parts.join('-') + ' ' + clock.join(':');
   }
 
+  /** HH:mm（表头显示「最近同步」用）；时间戳非法时返回空串。 */
+  static clock(timestamp: number): string {
+    if (timestamp <= 0) {
+      return '';
+    }
+    const date: Date = new Date(timestamp);
+    return DateUtil.pad(date.getHours(), 2) + ':' + DateUtil.pad(date.getMinutes(), 2);
+  }
+
   private static pad(value: number, length: number): string {
     let text: string = value.toString();
     while (text.length < length) {

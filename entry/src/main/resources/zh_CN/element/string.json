@@ -369,6 +369,34 @@
       "value": "已读超过 90 天"
     },
     {
+      "name": "home_last_sync",
+      "value": "%s 已同步"
+    },
+    {
+      "name": "home_never_synced",
+      "value": "尚未同步"
+    },
+    {
+      "name": "row_refresh_now",
+      "value": "立即刷新"
+    },
+    {
+      "name": "action_retry",
+      "value": "重试"
+    },
+    {
+      "name": "action_scope_feed",
+      "value": "只看该源"
+    },
+    {
+      "name": "toast_refreshing",
+      "value": "正在刷新…"
+    },
+    {
+      "name": "snack_refreshed",
+      "value": "订阅源已更新"
+    },
+    {
       "name": "read_panel_title",
       "value": "阅读排版"
     },

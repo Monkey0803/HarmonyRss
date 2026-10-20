@@ -33,6 +33,7 @@ import { ToastUtil } from '../common/utils/ToastUtil';
 import { CommonConstants } from '../common/constants/CommonConstants';
 import { RouterConstants } from '../common/constants/RouterConstants';
 import { BackgroundKind } from '../common/constants/SettingsConstants';
+import { DateUtil } from '../common/utils/DateUtil';
 import { MaterialController } from '../service/MaterialController';
 
 /** 设置页每一行绑定到 appSettings 的哪个字段。 */
@@ -323,6 +324,24 @@ export struct SettingsTabView {
     if (value && !granted) {
       ToastUtil.show(this.getUIContext(), $r('app.string.toast_notify_denied'));
     }
+  }
+
+  /** 手动刷新：抓取全部订阅源，完成后用 SnackBar 反馈。 */
+  private refreshNow(): void {
+    if (feedViewModel.loading) {
+      ToastUtil.show(this.getUIContext(), $r('app.string.toast_refreshing'));
+      return;
+    }
+    feedViewModel.refreshAll().then(() => {
+      const bar: HdsSnackBar = new HdsSnackBar(this.getUIContext());
+      const icon: SnackBarIconOptions = { icon: $r('sys.symbol.checkmark_circle') };
+      const message: SnackBarMessageOptions = { title: $r('app.string.snack_refreshed') };
+      const operation: SnackBarOperationOptions = {
+        operationType: SnackBarOperationType.CLOSE_BUTTON_ONLY,
+        closeButtonAccessibilityText: $r('app.string.snack_dismiss')
+      };
+      bar.show(icon, message, operation, { duration: 2000 } as SnackBarStyleOptions);
+    });
   }
 
   private hostContext(): common.UIAbilityContext {
@@ -650,6 +669,22 @@ export struct SettingsTabView {
             onPick: (id: string) => {
               settingsViewModel.setAutoRefresh(id, this.hostContext());
             }
+          })
+          Divider().color($r('app.color.hm_divider'))
+          Row() {
+            SettingLeading($r('sys.symbol.arrow_clockwise'), $r('app.string.row_refresh_now'))
+            Blank()
+            Text(feedViewModel.lastUpdated > 0
+              ? $r('app.string.home_last_sync', DateUtil.clock(feedViewModel.lastUpdated))
+              : $r('app.string.home_never_synced'))
+              .fontSize($r('app.float.font_size_caption'))
+              .fontColor($r('app.color.hm_text_secondary'))
+          }
+          .width('100%')
+          .height($r('app.float.row_height'))
+          .padding({ left: $r('app.float.space_m'), right: $r('app.float.space_m') })
+          .onClick(() => {
+            this.refreshNow();
           })
           Divider().color($r('app.color.hm_divider'))
           OptionSelectRow({

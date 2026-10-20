@@ -114,6 +114,8 @@ export struct ArticleDetailView {
   private panStartX: number = -1;
   /** 沉浸态切换上报给外壳（标题栏由 HdsNavDestination.hideTitleBar 控制）。 */
   @Event onImmersiveChange: (hidden: boolean) => void = () => {};
+  /** 导航栈：「只看该源」要退回首页列表（范围 chip 在首页顶部）。 */
+  @Param navPathStack: NavPathStack = new NavPathStack();
   /** 文内查找：查找条显隐、查询串、命中数与当前下标。 */
   @Local findOpen: boolean = false;
   @Local findQuery: string = '';
@@ -359,6 +361,18 @@ export struct ArticleDetailView {
     } else {
       this.toast($r('app.string.toast_action_failed'));
     }
+  }
+
+  /**
+   * 只看该源：把首页列表收敛到这篇文章的来源，并退回首页（范围 chip 显示在首页顶部，可一键清除）。
+   * 源已被删时提示且不动作。
+   */
+  private scopeToThisFeed(article: Article): void {
+    if (!feedViewModel.scopeToFeedById(article.feedId)) {
+      this.toast($r('app.string.toast_action_failed'));
+      return;
+    }
+    this.navPathStack.popToIndex(0);
   }
 
   private async openInBrowser(article: Article): Promise<void> {
@@ -633,6 +647,13 @@ export struct ArticleDetailView {
       })
         .onClick(() => {
           this.copyLink(article);
+        })
+      MenuItem({
+        content: $r('app.string.action_scope_feed'),
+        symbolStartIcon: this.menuIcon($r('sys.symbol.folder'))
+      })
+        .onClick(() => {
+          this.scopeToThisFeed(article);
         })
       MenuItem({
         content: $r('app.string.action_open_browser'),

@@ -362,6 +362,48 @@ export class FeedViewModel {
     this.publish();
   }
 
+  /** 按 id 找订阅源。 */
+  private findFeed(feedId: string): FeedSource | undefined {
+    for (let i = 0; i < this.feeds.length; i += 1) {
+      if (this.feeds[i].id === feedId) {
+        return this.feeds[i];
+      }
+    }
+    return undefined;
+  }
+
+  /**
+   * 只看某个订阅源（文章详情页「只看该源」用）：按 id 定位订阅源并进入单源范围。
+   * 找不到（源已被删）时不改变当前范围，返回 false 让调用方决定提示。
+   */
+  scopeToFeedById(feedId: string): boolean {
+    const feed: FeedSource | undefined = this.findFeed(feedId);
+    if (feed === undefined) {
+      return false;
+    }
+    this.scopeToFeed(feed);
+    return true;
+  }
+
+  /**
+   * 只刷新当前打开的单源列表页（下拉刷新用）。
+   * 与 refreshAll 的区别：只抓这一个源，不动其它源，也不清全局错误码之外的语义。
+   */
+  async refreshCurrentFeed(): Promise<void> {
+    const feed: FeedSource | undefined = this.findFeed(this.detailFeedId);
+    if (feed === undefined) {
+      return;
+    }
+    this.loading = true;
+    this.errorCode = FeedError.NONE;
+    const fresh: Article[] = [];
+    const failed: number = await this.fetchFeeds([feed], fresh);
+    await this.commitFresh(fresh);
+    if (failed > 0) {
+      this.errorCode = this.lastFailureCode;
+    }
+  }
+
   /** 打开单个订阅源的文章列表页：记录目标源并刷新单源列表。 */
   openFeed(feed: FeedSource): void {
     this.detailFeedId = feed.id;
