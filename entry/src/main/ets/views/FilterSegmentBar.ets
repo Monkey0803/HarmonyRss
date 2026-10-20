@@ -114,15 +114,26 @@ export struct FilterSegmentBar {
       .layoutWeight(1)
       .alignItems(VerticalAlign.Center)
 
-      Button($r('app.string.home_mark_all_read'))
-        .buttonStyle(ButtonStyleMode.TEXTUAL)
-        .fontSize($r('app.float.font_size_caption'))
-        .fontColor($r('app.color.hm_text_secondary'))
-        .flexShrink(0)
-        .enabled(feedViewModel.unreadTotal > 0)
-        .onClick(() => {
-          this.confirmMarkAllRead();
-        })
+      // 「全部已读」：做成有底色的胶囊按钮（图标 + 文案），否则纯文字会被当成标签、看不出可点。
+      Button({ type: ButtonType.Capsule, stateEffect: true }) {
+        Row({ space: $r('app.float.space_xxs') }) {
+          SymbolGlyph($r('sys.symbol.checkmark_circle'))
+            .fontSize($r('app.float.icon_size_small'))
+            .fontColor([$r('app.color.hm_brand')])
+          Text($r('app.string.home_mark_all_read'))
+            .fontSize($r('app.float.font_size_caption'))
+            .fontColor($r('app.color.hm_brand'))
+        }
+        .alignItems(VerticalAlign.Center)
+      }
+      .height($r('app.float.value_chip_height'))
+      .padding({ left: $r('app.float.space_m'), right: $r('app.float.space_m') })
+      .backgroundColor($r('app.color.hm_card_background'))
+      .flexShrink(0)
+      .enabled(feedViewModel.unreadTotal > 0)
+      .onClick(() => {
+        this.confirmMarkAllRead();
+      })
     }
     .width('100%')
     .height('100%')
