@@ -38,6 +38,10 @@ export class PreferencesConstants {
   /** 新文章通知开关。 */
   static readonly KEY_NOTIFY_NEW: string = 'notifyNewArticles';
   static readonly KEY_IMMERSIVE_ON: string = 'immersiveOn';
+  /** 首页列表排序：true = 最新在前。 */
+  static readonly KEY_LIST_NEWEST_FIRST: string = 'listNewestFirst';
+  /** 首页列表分组方式：'none' | 'feed' | 'date'。 */
+  static readonly KEY_LIST_GROUP_MODE: string = 'listGroupMode';
   static readonly KEY_POINT_LIGHT: string = 'pointLightEnabled';
   static readonly KEY_GRIP_ENABLED: string = 'gripEnabled';
   static readonly KEY_ANTI_PEEP_ENABLED: string = 'antiPeepEnabled';

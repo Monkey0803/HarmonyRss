@@ -5,6 +5,7 @@
  * 单例（appSettings），界面直接 import 读写即可，不需要在组件间层层传参。
  */
 
+import { GroupMode } from '../common/constants/RssConstants';
 import { THEME_OPTIONS, LANGUAGE_OPTIONS, MATERIAL_TYPE_OPTIONS, MATERIAL_LEVEL_OPTIONS, BACKGROUND_OPTIONS, LOGO_OPTIONS, AUTO_REFRESH_OPTIONS, READER_FONT_OPTIONS, READER_LINE_OPTIONS, READER_FAMILY_OPTIONS, READER_WIDTH_OPTIONS, READER_ALIGN_OPTIONS, READER_THEME_OPTIONS } from './SettingsOptions';
 
 @ObservedV2
@@ -57,6 +58,10 @@ export class AppSettings {
   @Trace readerTheme: string = READER_THEME_OPTIONS.defaultValue;
   /** 后台抓取到新文章时是否发系统通知。 */
   @Trace notifyNewArticles: boolean = false;
+  /** 首页列表排序：true = 最新在前（默认），false = 最旧在前。 */
+  @Trace listNewestFirst: boolean = true;
+  /** 首页列表分组方式：'none' = 平铺，'feed' = 按订阅源，'date' = 按日期。 */
+  @Trace listGroupMode: string = GroupMode.NONE;
 }
 
 /** 全局唯一设置实例。 */

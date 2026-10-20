@@ -261,6 +261,46 @@
       "value": "切换排序"
     },
     {
+      "name": "list_group_unread",
+      "value": "%d 未读"
+    },
+    {
+      "name": "sort_newest",
+      "value": "最新在前"
+    },
+    {
+      "name": "sort_oldest",
+      "value": "最旧在前"
+    },
+    {
+      "name": "group_none",
+      "value": "平铺列表"
+    },
+    {
+      "name": "group_by_feed",
+      "value": "按订阅源分组"
+    },
+    {
+      "name": "group_by_date",
+      "value": "按日期分组"
+    },
+    {
+      "name": "group_today",
+      "value": "今天"
+    },
+    {
+      "name": "group_yesterday",
+      "value": "昨天"
+    },
+    {
+      "name": "group_this_week",
+      "value": "本周"
+    },
+    {
+      "name": "group_earlier",
+      "value": "更早"
+    },
+    {
       "name": "read_panel_title",
       "value": "阅读排版"
     },

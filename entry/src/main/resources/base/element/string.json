@@ -261,6 +261,46 @@
       "value": "Toggle sort order"
     },
     {
+      "name": "list_group_unread",
+      "value": "%d unread"
+    },
+    {
+      "name": "sort_newest",
+      "value": "Newest first"
+    },
+    {
+      "name": "sort_oldest",
+      "value": "Oldest first"
+    },
+    {
+      "name": "group_none",
+      "value": "Flat list"
+    },
+    {
+      "name": "group_by_feed",
+      "value": "Group by feed"
+    },
+    {
+      "name": "group_by_date",
+      "value": "Group by date"
+    },
+    {
+      "name": "group_today",
+      "value": "Today"
+    },
+    {
+      "name": "group_yesterday",
+      "value": "Yesterday"
+    },
+    {
+      "name": "group_this_week",
+      "value": "This week"
+    },
+    {
+      "name": "group_earlier",
+      "value": "Earlier"
+    },
+    {
       "name": "read_panel_title",
       "value": "Reading layout"
     },

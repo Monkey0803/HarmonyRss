@@ -14,13 +14,16 @@ import { feedService, FeedFetchResult, ResolvedFeed } from '../service/FeedServi
 import { feedDiscovery } from '../service/FeedDiscovery';
 import { articleStore, CacheStats } from '../service/ArticleStore';
 import { CommonConstants } from '../common/constants/CommonConstants';
+import { ArticleDataSource, ArticleGroup } from './ArticleDataSource';
 import { articleContentService } from '../service/ArticleContentService';
 import { ParsedArticle, ParsedFeed } from '../service/RssParser';
 import { buildOpml, OpmlEntry } from '../service/OpmlCodec';
 import { toArticles } from '../service/ArticleMapper';
-import { ArticleFilter, FeedError, FeedFetchError, ReaderState } from '../common/constants/RssConstants';
+import { GroupMode, ArticleFilter, FeedError, FeedFetchError, ReaderState } from '../common/constants/RssConstants';
 import { appSettings } from '../model/AppSettings';
 import { AutoRefreshMinutes } from '../common/constants/SettingsConstants';
+import { settingsStore } from '../service/SettingsStore';
+import { settingsViewModel } from './SettingsViewModel';
 
 const MINUTE_MS: number = 60 * 1000;
 
@@ -91,8 +94,8 @@ export class FeedViewModel {
   @Trace articles: Article[] = [];
   /** 当前筛选：'all' | 'unread' | 'starred'。 */
   @Trace filter: string = ArticleFilter.ALL;
-  /** 列表排序：true = 最新在前（默认），false = 最旧在前。 */
-  @Trace newestFirst: boolean = true;
+  /** 列表排序：true = 最新在前（默认），false = 最旧在前。初值取用户上次的选择。 */
+  @Trace newestFirst: boolean = appSettings.listNewestFirst;
   /** 当前筛选/排序下的总条数（分页展示用：articles 只是其中已加载的一页）。 */
   @Trace articlesTotal: number = 0;
   /** 是否正在抓取。 */
@@ -105,6 +108,10 @@ export class FeedViewModel {
   @Trace unreadTotal: number = 0;
   /** 当前范围（订阅源 + 关键词）下的未读数，表头展示用。 */
   @Trace unreadShown: number = 0;
+  /** 列表分组方式：平铺 / 按订阅源 / 按日期。初值取用户上次的选择。 */
+  @Trace groupMode: string = appSettings.listGroupMode;
+  /** 分组数据（groupMode !== NONE 时有效；每组自带数据源，组内仍虚拟化）。 */
+  @Trace groups: ArticleGroup[] = [];
   /** 已加载条数（分页游标）。 */
   @Trace visibleCount: number = CommonConstants.LIST_PAGE_SIZE;
   /** 搜索关键词（标题 / 摘要 / 正文，大小写不敏感）。 */
@@ -119,6 +126,9 @@ export class FeedViewModel {
   @Trace feedArticles: Article[] = [];
   /** 当前打开的文章 id（详情页用）。@Trace：详情页在原文内切换文章时需驱动重渲染。 */
   @Trace currentArticleId: string = '';
+
+  /** 一天的毫秒数（日期分组用）。 */
+  private static readonly DAY_MS: number = 24 * 60 * 60 * 1000;
 
   /** 全量文章（缓存 + 本次抓取），未读统计与筛选都基于它。 */
   private all: Article[] = [];
@@ -138,6 +148,11 @@ export class FeedViewModel {
       return;
     }
     this.started = true;
+    // 列表展示偏好（排序 / 分组）是异步从偏好库恢复的，先等它就绪再对齐，
+    // 否则首屏会先按默认值渲染一次（换偏好后重启看到顺序被重置）。
+    await settingsViewModel.whenReady();
+    this.newestFirst = appSettings.listNewestFirst;
+    this.groupMode = appSettings.listGroupMode;
     this.feeds = await feedStore.load(context);
     await articleStore.open(context);
     // 老数据补一次正文纯文本（有上限）：让搜索能命中「之前已提取过正文」的那些文章。
@@ -919,7 +934,14 @@ export class FeedViewModel {
       return this.newestFirst ? b.publishedAt - a.publishedAt : a.publishedAt - b.publishedAt;
     });
     this.articlesTotal = visible.length;
-    this.articles = this.visibleCount < visible.length ? visible.slice(0, this.visibleCount) : visible;
+    if (this.groupMode === GroupMode.NONE) {
+      this.groups = [];
+      this.articles = this.visibleCount < visible.length ? visible.slice(0, this.visibleCount) : visible;
+    } else {
+      // 分组模式不再分页：列表本身已经虚拟化，切成组头视图时也不该被「只加载了 50 条」截断。
+      this.articles = visible;
+      this.groups = this.buildGroups(visible);
+    }
     this.feedArticles = this.collectFeedArticles();
     this.recomputeUnread();
     for (let i = 0; i < this.articleListeners.length; i += 1) {
@@ -953,14 +975,114 @@ export class FeedViewModel {
 
   /** 还有未加载的条目（界面用来显示「加载更多」尾行）。 */
   hasMore(): boolean {
-    return this.visibleCount < this.articlesTotal;
+    return this.groupMode === GroupMode.NONE && this.visibleCount < this.articlesTotal;
   }
 
   /** 切换排序：最新 / 最旧，并回到第一页。 */
   toggleSort(): void {
-    this.newestFirst = !this.newestFirst;
+    this.setSort(!this.newestFirst);
+  }
+
+  /** 设置排序方向（最新在前 / 最旧在前），并记住选择。 */
+  setSort(newestFirst: boolean): void {
+    this.newestFirst = newestFirst;
     this.visibleCount = CommonConstants.LIST_PAGE_SIZE;
+    appSettings.listNewestFirst = newestFirst;
+    settingsStore.save();
     this.publish();
+  }
+
+  /** 设置分组方式：平铺 / 按订阅源 / 按日期，并记住选择。 */
+  setGroupMode(mode: string): void {
+    if (this.groupMode === mode) {
+      return;
+    }
+    this.groupMode = mode;
+    appSettings.listGroupMode = mode;
+    settingsStore.save();
+    this.publish();
+  }
+
+  /**
+   * 把（已筛选并排好序的）列表按当前分组方式切分成组。
+   * 组顺序沿用列表顺序：按订阅源时是「出现顺序」，按日期时是「时间顺序」。
+   */
+  private buildGroups(list: Article[]): ArticleGroup[] {
+    const order: string[] = [];
+    const buckets: Map<string, Article[]> = new Map<string, Article[]>();
+    const titles: Map<string, ResourceStr> = new Map<string, ResourceStr>();
+    for (let i = 0; i < list.length; i += 1) {
+      const item: Article = list[i];
+      const key: string = this.groupMode === GroupMode.FEED
+        ? item.feedId
+        : FeedViewModel.dateBucket(item.publishedAt);
+      let bucket: Article[] | undefined = buckets.get(key);
+      if (bucket === undefined) {
+        bucket = [];
+        buckets.set(key, bucket);
+        order.push(key);
+        titles.set(key, this.groupMode === GroupMode.FEED
+          ? item.feedTitle
+          : FeedViewModel.dateBucketTitle(key));
+      }
+      bucket.push(item);
+    }
+
+    const result: ArticleGroup[] = [];
+    for (let i = 0; i < order.length; i += 1) {
+      const items: Article[] | undefined = buckets.get(order[i]);
+      const title: ResourceStr | undefined = titles.get(order[i]);
+      if (items === undefined || title === undefined) {
+        continue;
+      }
+      let unread: number = 0;
+      for (let j = 0; j < items.length; j += 1) {
+        if (!items[j].read) {
+          unread += 1;
+        }
+      }
+      const source: ArticleDataSource = new ArticleDataSource();
+      source.setItems(items);
+      result.push(new ArticleGroup(order[i], title, unread, items.length, source));
+    }
+    return result;
+  }
+
+  /** 日期桶：今天 / 昨天 / 本周 / 更早（以周一为一周之始）。 */
+  private static dateBucket(ts: number): string {
+    const today: number = FeedViewModel.startOfDay(Date.now());
+    if (ts >= today) {
+      return 'today';
+    }
+    if (ts >= today - FeedViewModel.DAY_MS) {
+      return 'yesterday';
+    }
+    const weekday: number = (new Date(today).getDay() + 6) % 7;
+    if (ts >= today - weekday * FeedViewModel.DAY_MS) {
+      return 'this_week';
+    }
+    return 'earlier';
+  }
+
+  /** 时间戳所在自然日的 00:00。 */
+  private static startOfDay(ts: number): number {
+    const d: Date = new Date(ts);
+    d.setHours(0, 0, 0, 0);
+    return d.getTime();
+  }
+
+  /** 日期桶标题。 */
+  private static dateBucketTitle(key: string): ResourceStr {
+    if (key === 'today') {
+      return $r('app.string.group_today');
+    }
+    if (key === 'yesterday') {
+      return $r('app.string.group_yesterday');
+    }
+    if (key === 'this_week') {
+      return $r('app.string.group_this_week');
+    }
+    return $r('app.string.group_earlier');
   }
 
   /** 回到第一页（筛选 / 关键词 / 范围 / 刷新后调用）。 */

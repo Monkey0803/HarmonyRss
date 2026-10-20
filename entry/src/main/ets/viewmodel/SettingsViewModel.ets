@@ -26,10 +26,22 @@ export class SettingsViewModel {
   /** 应用级（全局）沉浸光感是否开启（由 module.json5 的 metadata 决定，运行时读取）。 */
   @Trace globalImmersive: boolean = false;
 
+  /** 设置恢复完成的信号：列表展示偏好（排序/分组）要先读到，靠它对齐时序。 */
+  private ready: Promise<void> | undefined = undefined;
+
   /** 启动时装配：恢复落盘设置 → 应用主题与语言 → 恢复防窥订阅（不弹窗）→ 同步后台任务。 */
   init(context: common.Context): void {
-    this.load(context);
+    this.ready = this.load(context);
     backgroundRefresh.sync(context);
+  }
+
+  /** 等待设置恢复完成（未 init 时立即返回；可重复 await）。 */
+  async whenReady(): Promise<void> {
+    const pending: Promise<void> | undefined = this.ready;
+    if (pending === undefined) {
+      return;
+    }
+    await pending;
   }
 
   private async load(context: common.Context): Promise<void> {

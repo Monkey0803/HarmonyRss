@@ -74,6 +74,9 @@ export class SettingsStore {
       appSettings.pointLightEnabled = store.getSync(PreferencesConstants.KEY_POINT_LIGHT, appSettings.pointLightEnabled) as boolean;
       appSettings.gripEnabled = store.getSync(PreferencesConstants.KEY_GRIP_ENABLED, appSettings.gripEnabled) as boolean;
       appSettings.antiPeepEnabled = store.getSync(PreferencesConstants.KEY_ANTI_PEEP_ENABLED, appSettings.antiPeepEnabled) as boolean;
+      appSettings.listNewestFirst =
+        store.getSync(PreferencesConstants.KEY_LIST_NEWEST_FIRST, appSettings.listNewestFirst) as boolean;
+      appSettings.listGroupMode = store.getSync(PreferencesConstants.KEY_LIST_GROUP_MODE, appSettings.listGroupMode) as string;
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       console.error('SettingsStore.load failed: ' + error.code.toString());
@@ -113,6 +116,8 @@ export class SettingsStore {
       store.putSync(PreferencesConstants.KEY_READER_ALIGN, appSettings.readerAlign);
       store.putSync(PreferencesConstants.KEY_READER_THEME, appSettings.readerTheme);
       store.putSync(PreferencesConstants.KEY_NOTIFY_NEW, appSettings.notifyNewArticles);
+      store.putSync(PreferencesConstants.KEY_LIST_NEWEST_FIRST, appSettings.listNewestFirst);
+      store.putSync(PreferencesConstants.KEY_LIST_GROUP_MODE, appSettings.listGroupMode);
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       console.error('SettingsStore.putSync failed: ' + error.code.toString());

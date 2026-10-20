@@ -9,12 +9,14 @@
  */
 
 import { Article } from '../model/Feed';
-import { ArticleDataSource } from '../viewmodel/ArticleDataSource';
+import { ArticleDataSource, ArticleGroup } from '../viewmodel/ArticleDataSource';
+import { appSettings } from '../model/AppSettings';
+import { MaterialController } from '../service/MaterialController';
 import { feedViewModel } from '../viewmodel/FeedViewModel';
 import { CommonConstants } from '../common/constants/CommonConstants';
 import { ArticleListItem } from './ArticleListItem';
 import { RouterConstants } from '../common/constants/RouterConstants';
-import { ArticleFilter, FeedError } from '../common/constants/RssConstants';
+import { ArticleFilter, FeedError, GroupMode } from '../common/constants/RssConstants';
 import { FeedErrorText } from '../common/utils/FeedErrorText';
 import { safeArea } from '../service/SafeAreaController';
 
@@ -114,16 +116,17 @@ export struct HomeTabView {
 
         Blank()
 
-        // 排序：最新 / 最旧（同一个说明性图标，靠旋转区分方向，避免依赖不确定的符号名）
+        // 排序 + 分组：点开菜单选择（图标按当前排序方向旋转）
         SymbolGlyph($r('sys.symbol.arrow_down_and_line_horizontal_and_arrow_up'))
           .fontSize($r('app.float.icon_size'))
-          .fontColor([$r('app.color.hm_text_secondary')])
+          .fontColor([feedViewModel.groupMode === GroupMode.NONE
+            ? $r('app.color.hm_text_secondary')
+            : $r('app.color.hm_brand')])
           .padding($r('app.float.space_xs'))
           .rotate({ angle: feedViewModel.newestFirst ? 0 : 180 })
           .accessibilityText($r('app.string.list_sort_toggle'))
-          .onClick(() => {
-            feedViewModel.toggleSort();
-          })
+          .bindMenu(this.SortMenu(),
+            MaterialController.menuOptions({ placement: Placement.BottomRight }, appSettings.immersiveOn))
 
         SymbolGlyph($r('sys.symbol.magnifyingglass'))
           .fontSize($r('app.float.icon_size'))
@@ -225,6 +228,101 @@ export struct HomeTabView {
     .alignItems(HorizontalAlign.Center)
   }
 
+  /** 排序/分组菜单：两段（排序方向、分组方式），当前项高亮。 */
+  @Builder
+  SortMenu() {
+    Menu() {
+      MenuItem(this.MenuItemRow($r('app.string.sort_newest'), feedViewModel.newestFirst, (): void => {
+        feedViewModel.setSort(true);
+      }))
+      MenuItem(this.MenuItemRow($r('app.string.sort_oldest'), !feedViewModel.newestFirst, (): void => {
+        feedViewModel.setSort(false);
+      }))
+      MenuItem(this.MenuItemRow($r('app.string.group_none'), feedViewModel.groupMode === GroupMode.NONE, (): void => {
+        feedViewModel.setGroupMode(GroupMode.NONE);
+      }))
+      MenuItem(this.MenuItemRow($r('app.string.group_by_feed'), feedViewModel.groupMode === GroupMode.FEED, (): void => {
+        feedViewModel.setGroupMode(GroupMode.FEED);
+      }))
+      MenuItem(this.MenuItemRow($r('app.string.group_by_date'), feedViewModel.groupMode === GroupMode.DATE, (): void => {
+        feedViewModel.setGroupMode(GroupMode.DATE);
+      }))
+    }
+    // 不设宽度时菜单会按「两列栅格」撑得很宽，这里收成一条紧凑菜单。
+    .width($r('app.float.menu_width'))
+    .radius($r('app.float.radius_card'))
+  }
+
+  /**
+   * 菜单项内容：选中项用品牌色 + 高亮底。
+   *
+   * 两个坑：
+   * 1) 高度必须给定值 —— MenuItem 的内容区没有可用的父高度，height('100%') 会被解析成无穷大，
+   *    菜单被撑成一条超出屏幕的长面板（只剩第一项可见）；
+   * 2) 点击要挂在**内容行**上，MenuItem(...) 上挂的 onClick 不会触发（与设置页的选项菜单一致）。
+   */
+  @Builder
+  MenuItemRow(label: ResourceStr, selected: boolean, action: () => void) {
+    Row() {
+      Text(label)
+        .fontSize($r('app.float.font_size_body'))
+        .fontWeight(selected ? FontWeight.Medium : FontWeight.Regular)
+        .fontColor(selected ? $r('app.color.hm_brand') : $r('app.color.hm_text_primary'))
+    }
+    .width('100%')
+    .height($r('app.float.menu_item_height'))
+    .padding({ left: $r('app.float.space_m'), right: $r('app.float.space_m') })
+    .alignItems(VerticalAlign.Center)
+    .margin({ left: $r('app.float.space_xs'), right: $r('app.float.space_xs') })
+    .backgroundColor(selected ? $r('app.color.hm_menu_item_selected') : $r('app.color.hm_page_transparent'))
+    .borderRadius($r('app.float.radius_menu_item'))
+    .onClick(() => {
+      action();
+    })
+  }
+
+  /** 分组视图的组头：组名 + 未读数。 */
+  @Builder
+  GroupHeader(group: ArticleGroup) {
+    Row({ space: $r('app.float.space_s') }) {
+      Text(group.title)
+        .fontSize($r('app.float.font_size_caption'))
+        .fontWeight(FontWeight.Medium)
+        .fontColor($r('app.color.hm_text_primary'))
+        .maxLines(1)
+        .textOverflow({ overflow: TextOverflow.Ellipsis })
+      if (group.unread > 0) {
+        Text($r('app.string.list_group_unread', group.unread))
+          .fontSize($r('app.float.font_size_caption'))
+          .fontColor($r('app.color.hm_text_secondary'))
+      }
+    }
+    .width('100%')
+    .padding({
+      left: $r('app.float.space_s'),
+      top: $r('app.float.space_s'),
+      bottom: $r('app.float.space_s')
+    })
+  }
+
+  /** 组内一条文章（平铺与分组共用同一种行）。 */
+  @Builder
+  ArticleRow(item: Article) {
+    ListItem() {
+      ArticleListItem({
+        article: item,
+        onOpen: () => {
+          this.openArticle(item);
+        },
+        onToggleStar: (id: string) => {
+          feedViewModel.toggleStar(id);
+        }
+      })
+    }
+    .margin({ bottom: $r('app.float.space_s') })
+    .swipeAction({ end: this.SwipeActions(item) })
+  }
+
   /** 列表左滑操作：收藏 / 已读切换（ArkUI 原生 swipeAction，V2 组件可用）。 */
   @Builder
   SwipeActions(article: Article) {
@@ -271,22 +369,23 @@ export struct HomeTabView {
             this.EmptyState()
           }
         } else {
-          // 虚拟化：只构建可见区域附近的条目（配合 ViewModel 的分页，条数多也不掉帧）
-          LazyForEach(this.dataSource, (item: Article) => {
-            ListItem() {
-              ArticleListItem({
-                article: item,
-                onOpen: () => {
-                  this.openArticle(item);
-                },
-                onToggleStar: (id: string) => {
-                  feedViewModel.toggleStar(id);
-                }
-              })
-            }
-            .margin({ bottom: $r('app.float.space_s') })
-            .swipeAction({ end: this.SwipeActions(item) })
-          }, (item: Article) => item.id)
+          if (feedViewModel.groupMode === GroupMode.NONE) {
+            // 虚拟化：只构建可见区域附近的条目（配合 ViewModel 的分页，条数多也不掉帧）
+            LazyForEach(this.dataSource, (item: Article) => {
+              this.ArticleRow(item)
+            }, (item: Article) => item.id)
+          } else {
+            // 分组：组头吸顶，组内条目仍然虚拟化
+            ForEach(feedViewModel.groups, (group: ArticleGroup) => {
+              ListItemGroup({ header: this.GroupHeader(group) })
+                .divider({ strokeWidth: 0 })
+                .margin({ bottom: $r('app.float.space_s') })
+
+              LazyForEach(group.source, (item: Article) => {
+                this.ArticleRow(item)
+              }, (item: Article) => item.id)
+            }, (group: ArticleGroup) => group.key)
+          }
 
           // 触底续页：还有下一屏时给一条提示尾行（滚到底自动加载）
           if (feedViewModel.hasMore()) {

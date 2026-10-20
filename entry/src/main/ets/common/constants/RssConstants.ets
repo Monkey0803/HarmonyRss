@@ -61,6 +61,16 @@ export enum ArticleFilter {
   STARRED = 'starred'
 }
 
+/**
+ * 文章列表分组方式。
+ * NONE：平铺（按时间排一列）；FEED：按订阅源分组；DATE：按日期分组（今天/昨天/本周/更早）。
+ */
+export enum GroupMode {
+  NONE = 'none',
+  FEED = 'feed',
+  DATE = 'date'
+}
+
 /** 文章本地缓存（RDB）相关常量。 */
 export class ArticleDbConstants {
   static readonly DB_NAME: string = 'harmony_rss.db';

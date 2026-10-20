@@ -55,3 +55,30 @@ export class ArticleDataSource implements IDataSource {
     }
   }
 }
+
+/**
+ * 分组视图里的一组文章。
+ *
+ * 每组自带一个数据源，这样列表可以用「ListItemGroup + LazyForEach」组织：
+ * 组头由 ListItemGroup 的 header 承载，组内条目仍然虚拟化。
+ */
+export class ArticleGroup {
+  /** 组标识（订阅源 id 或日期桶 key）。 */
+  readonly key: string;
+  /** 组标题（订阅源名，或「今天」「昨天」等）。 */
+  readonly title: ResourceStr;
+  /** 组内未读数。 */
+  readonly unread: number;
+  /** 组内条目总数。 */
+  readonly total: number;
+  /** 组内条目的数据源。 */
+  readonly source: ArticleDataSource;
+
+  constructor(key: string, title: ResourceStr, unread: number, total: number, source: ArticleDataSource) {
+    this.key = key;
+    this.title = title;
+    this.unread = unread;
+    this.total = total;
+    this.source = source;
+  }
+}
