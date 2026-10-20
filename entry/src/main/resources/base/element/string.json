@@ -453,6 +453,10 @@
       "value": "Refresh card data"
     },
     {
+      "name": "notify_action_mark_read",
+      "value": "Mark read"
+    },
+    {
       "name": "read_panel_title",
       "value": "Reading layout"
     },
@@ -1046,7 +1050,7 @@
     },
     {
       "name": "notify_new_text",
-      "value": "Latest: %s"
+      "value": "%s: %s"
     },
     {
       "name": "toast_notify_denied",

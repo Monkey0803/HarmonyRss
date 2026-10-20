@@ -7,6 +7,8 @@
  */
 
 import { notificationManager } from '@kit.NotificationKit';
+import { Article } from '../model/Feed';
+import { DeepLinkParams } from './DeepLink';
 import { common, wantAgent, Want, WantAgent } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
@@ -43,8 +45,17 @@ export class NotifyService {
     }
   }
 
-  /** 发布「N 篇新文章」通知；未授权或 count 为 0 时直接返回。 */
-  async publishNewArticles(context: common.Context, count: number, sampleTitle: string): Promise<void> {
+  /**
+   * 发布「N 篇新文章」通知。
+   *
+   * - 文案按来源聚合：单源直接给来源名 + 一条标题；多源给「来源名 等 M 个源」+ 一条标题；
+   * - wantAgent 带上首篇文章 id → 点击直达该文章；
+   * - 附一个「标记已读」动作按钮（同一个 id + action=markRead）。
+   *
+   * 未授权或 count 为 0 时直接返回；任何一步失败都静默降级（通知不能影响抓取本身）。
+   */
+  async publishNewArticles(context: common.Context, added: Article[]): Promise<void> {
+    const count: number = added.length;
     if (count <= 0 || !this.isEnabled()) {
       return;
     }
@@ -52,20 +63,31 @@ export class NotifyService {
       const title: string = context.resourceManager.getStringSync(
         $r('app.string.notify_new_title').id, count);
       const text: string = context.resourceManager.getStringSync(
-        $r('app.string.notify_new_text').id, sampleTitle);
+        $r('app.string.notify_new_text').id,
+        this.sourceSummary(added), added[0].title);
       const normal: notificationManager.NotificationBasicContent = { title: title, text: text };
       const content: notificationManager.NotificationContent = {
         notificationContentType: notificationManager.ContentType.NOTIFICATION_CONTENT_BASIC_TEXT,
         normal: normal
       };
-      // wantAgent 可选：构建失败时通知仍发布，只是点击不跳转。
       const request: notificationManager.NotificationRequest = {
         id: NOTIFY_ID,
         content: content
       };
-      const agent: WantAgent | undefined = await this.buildWantAgent(context);
+      const articleId: string = added[0].id;
+      const agent: WantAgent | undefined = await this.buildWantAgent(context, articleId, '');
       if (agent !== undefined) {
         request.wantAgent = agent;
+        const markRead: WantAgent | undefined =
+          await this.buildWantAgent(context, articleId, DeepLinkParams.ACTION_MARK_READ);
+        if (markRead !== undefined) {
+          const markReadLabel: string =
+            context.resourceManager.getStringSync($r('app.string.notify_action_mark_read').id);
+          const buttons: Array<notificationManager.NotificationActionButton> = [
+            { title: markReadLabel, wantAgent: markRead }
+          ];
+          request.actionButtons = buttons;
+        }
       }
       await notificationManager.publish(request);
     } catch (err) {
@@ -74,12 +96,45 @@ export class NotifyService {
     }
   }
 
-  /** 点击通知回到应用主 Ability；构建失败返回 undefined（通知降级为不可点击）。 */
-  private async buildWantAgent(context: common.Context): Promise<WantAgent | undefined> {
+  /**
+   * 文案里的来源部分：单源用来源名，多源用「来源名 等 M 个源」。
+   * 按来源去重（同一个源的多篇只算一个），来源名取首篇的 feedTitle。
+   */
+  private sourceSummary(added: Article[]): string {
+    const sources: string[] = [];
+    for (let i = 0; i < added.length; i += 1) {
+      const name: string = added[i].feedTitle;
+      if (name.length > 0 && sources.indexOf(name) < 0) {
+        sources.push(name);
+      }
+    }
+    if (sources.length === 0) {
+      return '';
+    }
+    if (sources.length === 1) {
+      return sources[0];
+    }
+    return sources[0] + ' +' + (sources.length - 1).toString();
+  }
+
+  /**
+   * 构建点击通知 / 动作按钮要用的 wantAgent：带上文章 id（与可选的 action）。
+   * 构建失败返回 undefined（通知降级为不可点击）。
+   */
+  private async buildWantAgent(context: common.Context, articleId: string,
+    action: string): Promise<WantAgent | undefined> {
     try {
+      const parameters: Record<string, Object> = {};
+      if (articleId.length > 0) {
+        parameters[DeepLinkParams.ARTICLE_ID] = articleId;
+      }
+      if (action.length > 0) {
+        parameters[DeepLinkParams.ACTION] = action;
+      }
       const want: Want = {
         bundleName: context.applicationInfo.name,
-        abilityName: MAIN_ABILITY
+        abilityName: MAIN_ABILITY,
+        parameters: parameters
       };
       const info: wantAgent.WantAgentInfo = {
         wants: [want],

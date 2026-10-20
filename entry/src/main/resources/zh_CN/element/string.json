@@ -453,6 +453,10 @@
       "value": "刷新卡片数据"
     },
     {
+      "name": "notify_action_mark_read",
+      "value": "标记已读"
+    },
+    {
       "name": "read_panel_title",
       "value": "阅读排版"
     },
@@ -1046,7 +1050,7 @@
     },
     {
       "name": "notify_new_text",
-      "value": "最新：%s"
+      "value": "%s：%s"
     },
     {
       "name": "toast_notify_denied",

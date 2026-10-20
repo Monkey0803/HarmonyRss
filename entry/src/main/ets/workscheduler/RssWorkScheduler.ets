@@ -78,13 +78,10 @@ export default class RssWorkScheduler extends WorkSchedulerExtensionAbility {
       const after: number = await articleStore.countAll();
       const added: number = after - before;
       if (added > 0) {
-        await notifyService.publishNewArticles(context, added, this.firstTitle(fresh));
+        await notifyService.publishNewArticles(context, fresh);
       }
     }
   }
 
-  /** 通知正文里给一个标题示例（优先未读的最新一条，这里直接取抓取到的第一条）。 */
-  private firstTitle(fresh: Article[]): string {
-    return fresh.length > 0 ? fresh[0].title : '';
-  }
+
 }

@@ -59,7 +59,7 @@ import { SubscriptionsView } from '../views/SubscriptionsView';
 import { FeedArticlesView } from '../views/FeedArticlesView';
 import { EffectPreviewView } from '../views/EffectPreviewView';
 import { feedViewModel } from '../viewmodel/FeedViewModel';
-import { deepLink, DEEP_LINK_EVENT } from '../service/DeepLink';
+import { deepLink, DEEP_LINK_EVENT, DeepLinkParams } from '../service/DeepLink';
 import { Article } from '../model/Feed';
 
 @Entry
@@ -150,7 +150,13 @@ struct Index {
     if (!feedViewModel.hasArticle(articleId)) {
       return false;
     }
+    const action: string = deepLink.takeAction();
     deepLink.take();
+    if (action === DeepLinkParams.ACTION_MARK_READ) {
+      // 通知上的「标记已读」按钮：只改状态，不抢用户的当前页面。
+      feedViewModel.markReadMany([articleId], true);
+      return true;
+    }
     feedViewModel.openArticleById(articleId);
     // 切回「阅读」页签，再压详情页（页面栈是全局的，不切页签会压在设置页上面）。
     this.currentTab = TabIndex.HOME;

@@ -11,6 +11,7 @@
  */
 
 import { WidgetConstants } from '../common/constants/WidgetConstants';
+import { DeepLinkParams } from '../service/DeepLink';
 
 @Entry
 @ComponentV2
@@ -39,7 +40,7 @@ struct RssWidgetCard {
   private openArticle(articleId: string): void {
     const params: Record<string, Object> = {};
     if (articleId.length > 0) {
-      params[WidgetConstants.PARAM_ARTICLE_ID] = articleId;
+      params[DeepLinkParams.ARTICLE_ID] = articleId;
     }
     postCardAction(this, {
       action: 'router',
