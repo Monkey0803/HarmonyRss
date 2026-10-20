@@ -91,6 +91,11 @@ struct Index {
     });
   }
 
+  /** 分栏模式：宽窗口用 Split，窄窗口用 Stack（单栏）。 */
+  private navMode(): NavigationMode {
+    return safeArea.wide ? NavigationMode.Split : NavigationMode.Stack;
+  }
+
   /**
    * 回到上次停留的页签（越界时退回首页）。
    *
@@ -600,12 +605,19 @@ struct Index {
         .height('100%')
         .backgroundColor($r('app.color.hm_page_transparent'))
       }
+      // 分栏：宽窗口（折叠屏展开 / 平板）自动切成「左列表 + 右正文」两栏，窄窗口保持单栏堆叠。
+      // 断点由 SafeAreaController 依窗口宽度维护（windowSizeChange 时重算）。
+      .mode(this.navMode())
+      .navBarWidth(CommonConstants.SPLIT_NAV_WIDTH_VP)
+      .navBarWidthRange({
+        minWidth: CommonConstants.SPLIT_NAV_MIN_VP,
+        maxWidth: CommonConstants.SPLIT_NAV_MAX_VP
+      })
       .titleBar(this.rootTitleOptions())
       // 紧凑标题栏（默认 FREE 是大标题模式，标题上下留白很大）。
       .titleMode(HdsNavigationTitleMode.MINI)
       // 根页面没有上一级：MINI 模式下会默认显示返回键，这里隐藏。
       .hideBackButton(true)
-      .mode(NavigationMode.Stack)
       .navDestination(this.pageMap)
       // 先声明动态显隐，再绑定可滚动容器 —— 顺序不能反：真机上「先 bindToScrollable 后 dynamicHideTitleBar」
       // 会导致动态显隐完全不生效（已实测），官方样例也是这个顺序。

@@ -5,6 +5,13 @@
  * 一律走 resources（color.json / string.json / float.json）。
  */
 export class CommonConstants {
+  /** 分栏断点（vp）：窗口宽度达到这个值就走「列表 + 正文」两栏。 */
+  static readonly SPLIT_BREAKPOINT_VP: number = 600;
+  /** 分栏时左栏默认宽度（vp）。 */
+  static readonly SPLIT_NAV_WIDTH_VP: number = 360;
+  /** 分栏时左栏宽度范围（vp）。 */
+  static readonly SPLIT_NAV_MIN_VP: number = 320;
+  static readonly SPLIT_NAV_MAX_VP: number = 460;
   /** 页签角标最多显示到这个数，超过显示「99+」。 */
   static readonly BADGE_MAX_COUNT: number = 99;
   /** 列表分页：首屏与每次续页加载的条数。 */
