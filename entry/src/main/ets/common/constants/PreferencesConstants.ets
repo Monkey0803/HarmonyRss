@@ -42,6 +42,12 @@ export class PreferencesConstants {
   static readonly KEY_LIST_NEWEST_FIRST: string = 'listNewestFirst';
   /** 首页列表分组方式：'none' | 'feed' | 'date'。 */
   static readonly KEY_LIST_GROUP_MODE: string = 'listGroupMode';
+  /** 首页筛选：'all' | 'unread' | 'starred'。 */
+  static readonly KEY_HOME_FILTER: string = 'homeFilter';
+  /** 上次停留的页签下标（阅读 / 订阅源 / 设置 …）。 */
+  static readonly KEY_LAST_TAB: string = 'lastTabIndex';
+  /** 详情页阅读模式：'reader' = 阅读器，其它 = 原文。 */
+  static readonly KEY_READER_VIEW_MODE: string = 'readerViewMode';
   static readonly KEY_POINT_LIGHT: string = 'pointLightEnabled';
   static readonly KEY_GRIP_ENABLED: string = 'gripEnabled';
   static readonly KEY_ANTI_PEEP_ENABLED: string = 'antiPeepEnabled';

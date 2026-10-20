@@ -71,6 +71,25 @@ export enum GroupMode {
   DATE = 'date'
 }
 
+/** 详情页阅读模式：阅读器（正文提取）/ 网页原文。 */
+export enum ReaderViewMode {
+  READER = 'reader',
+  WEB = 'web'
+}
+
+/** 首页筛选值归一：脏值一律退回「全部」。 */
+export function normalizeArticleFilter(value: string): string {
+  if (value === ArticleFilter.UNREAD || value === ArticleFilter.STARRED) {
+    return value;
+  }
+  return ArticleFilter.ALL;
+}
+
+/** 阅读模式归一：脏值一律退回「阅读器」。 */
+export function normalizeReaderViewMode(value: string): string {
+  return value === ReaderViewMode.WEB ? ReaderViewMode.WEB : ReaderViewMode.READER;
+}
+
 /** 文章本地缓存（RDB）相关常量。 */
 export class ArticleDbConstants {
   static readonly DB_NAME: string = 'harmony_rss.db';

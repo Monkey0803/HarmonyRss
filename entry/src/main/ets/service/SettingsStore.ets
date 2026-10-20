@@ -11,6 +11,7 @@ import { appSettings } from '../model/AppSettings';
 import { THEME_OPTIONS, LANGUAGE_OPTIONS, MATERIAL_TYPE_OPTIONS, MATERIAL_LEVEL_OPTIONS, BACKGROUND_OPTIONS, LOGO_OPTIONS, AUTO_REFRESH_OPTIONS, READER_FONT_OPTIONS, READER_LINE_OPTIONS, READER_FAMILY_OPTIONS, READER_WIDTH_OPTIONS, READER_ALIGN_OPTIONS, READER_THEME_OPTIONS } from '../model/SettingsOptions';
 import { PreferencesConstants } from '../common/constants/PreferencesConstants';
 import { ReaderTypography } from '../common/constants/SettingsConstants';
+import { normalizeArticleFilter, normalizeReaderViewMode } from '../common/constants/RssConstants';
 
 export class SettingsStore {
   private store: preferences.Preferences | undefined = undefined;
@@ -77,6 +78,11 @@ export class SettingsStore {
       appSettings.listNewestFirst =
         store.getSync(PreferencesConstants.KEY_LIST_NEWEST_FIRST, appSettings.listNewestFirst) as boolean;
       appSettings.listGroupMode = store.getSync(PreferencesConstants.KEY_LIST_GROUP_MODE, appSettings.listGroupMode) as string;
+      appSettings.homeFilter = normalizeArticleFilter(
+        store.getSync(PreferencesConstants.KEY_HOME_FILTER, appSettings.homeFilter) as string);
+      appSettings.readerViewMode = normalizeReaderViewMode(
+        store.getSync(PreferencesConstants.KEY_READER_VIEW_MODE, appSettings.readerViewMode) as string);
+      appSettings.lastTabIndex = store.getSync(PreferencesConstants.KEY_LAST_TAB, appSettings.lastTabIndex) as number;
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       console.error('SettingsStore.load failed: ' + error.code.toString());
@@ -118,6 +124,9 @@ export class SettingsStore {
       store.putSync(PreferencesConstants.KEY_NOTIFY_NEW, appSettings.notifyNewArticles);
       store.putSync(PreferencesConstants.KEY_LIST_NEWEST_FIRST, appSettings.listNewestFirst);
       store.putSync(PreferencesConstants.KEY_LIST_GROUP_MODE, appSettings.listGroupMode);
+      store.putSync(PreferencesConstants.KEY_HOME_FILTER, appSettings.homeFilter);
+      store.putSync(PreferencesConstants.KEY_READER_VIEW_MODE, appSettings.readerViewMode);
+      store.putSync(PreferencesConstants.KEY_LAST_TAB, appSettings.lastTabIndex);
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       console.error('SettingsStore.putSync failed: ' + error.code.toString());

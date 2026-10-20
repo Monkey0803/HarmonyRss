@@ -92,8 +92,8 @@ export class FeedViewModel {
   @Trace feeds: FeedSource[] = [];
   /** 当前筛选下的文章列表（界面直接渲染这一份）。 */
   @Trace articles: Article[] = [];
-  /** 当前筛选：'all' | 'unread' | 'starred'。 */
-  @Trace filter: string = ArticleFilter.ALL;
+  /** 当前筛选：'all' | 'unread' | 'starred'。初值取用户上次的选择。 */
+  @Trace filter: string = appSettings.homeFilter;
   /** 列表排序：true = 最新在前（默认），false = 最旧在前。初值取用户上次的选择。 */
   @Trace newestFirst: boolean = appSettings.listNewestFirst;
   /** 当前筛选/排序下的总条数（分页展示用：articles 只是其中已加载的一页）。 */
@@ -153,6 +153,7 @@ export class FeedViewModel {
     await settingsViewModel.whenReady();
     this.newestFirst = appSettings.listNewestFirst;
     this.groupMode = appSettings.listGroupMode;
+    this.filter = appSettings.homeFilter;
     this.feeds = await feedStore.load(context);
     await articleStore.open(context);
     // 老数据补一次正文纯文本（有上限）：让搜索能命中「之前已提取过正文」的那些文章。
@@ -323,6 +324,8 @@ export class FeedViewModel {
     }
     this.filter = filter;
     this.resetPaging();
+    appSettings.homeFilter = filter;
+    settingsStore.save();
     this.publish();
   }
 

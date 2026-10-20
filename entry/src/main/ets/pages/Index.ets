@@ -35,6 +35,7 @@ import {
 import { LengthMetrics } from '@kit.ArkUI';
 import { appSettings } from '../model/AppSettings';
 import { settingsViewModel } from '../viewmodel/SettingsViewModel';
+import { settingsStore } from '../service/SettingsStore';
 import { MaterialController } from '../service/MaterialController';
 import { antiPeep } from '../service/AntiPeep';
 import { gripSensor } from '../service/GripSensor';
@@ -63,7 +64,7 @@ import { Article } from '../model/Feed';
 @Entry
 @ComponentV2
 struct Index {
-  @Local currentTab: number = CommonConstants.DEFAULT_TAB_INDEX;
+  @Local currentTab: number = appSettings.lastTabIndex;
   /** 详情页沉浸阅读：由详情页点按正文中部切换，控制 HdsNavDestination 标题栏显隐。 */
   @Local articleBarsHidden: boolean = false;
   /** 添加订阅源面板：显隐、输入地址、提交中（入口在悬浮页签栏的 miniBar 上）。 */
@@ -84,6 +85,22 @@ struct Index {
     const context: common.Context | undefined = this.getUIContext().getHostContext();
     settingsViewModel.init(context as common.Context);
     feedViewModel.init(context as common.Context);
+    // 恢复上次停留的页签（偏好是异步读出来的，两个触发点都调一次，见 restoreTab）。
+    settingsViewModel.whenReady().then(() => {
+      this.restoreTab();
+    });
+  }
+
+  /**
+   * 回到上次停留的页签（越界时退回首页）。
+   *
+   * 注意：HdsTabs 的 `index` 必须受控于 `currentTab`（见 build），否则只改状态只会让自绘页签栏
+   * 变色、内容区仍停在首页；控制器命令在挂载前发出去会被丢掉，受控 index 没有这个时序问题。
+   */
+  private restoreTab(): void {
+    const max: number = IMAGE_DOMAIN ? TabIndex.IMAGES : TabIndex.SETTINGS;
+    const saved: number = appSettings.lastTabIndex;
+    this.currentTab = saved >= 0 && saved <= max ? saved : CommonConstants.DEFAULT_TAB_INDEX;
   }
 
   aboutToDisappear(): void {
@@ -503,7 +520,8 @@ struct Index {
       this.BackgroundLayer()
 
       HdsNavigation(this.navPathStack) {
-        HdsTabs({ controller: this.tabsController }) {
+        // index 受控于 currentTab：只改状态就能切内容（不用控制器命令，避免挂载时序问题）。
+        HdsTabs({ index: this.currentTab, controller: this.tabsController }) {
           TabContent() {
             HomeTabView({
               navPathStack: this.navPathStack,
@@ -541,8 +559,15 @@ struct Index {
         // 禁用左右滑动切页签：只能点页签栏切换，避免与内容区的横向手势冲突。
         .scrollable(false)
         .barFloatingStyle(this.floatingStyle())
+        // 挂载完成后再补一次恢复（whenReady 可能早于挂载，命令会被丢掉）
+        .onAppear(() => {
+          this.restoreTab();
+        })
         .onChange((index: number) => {
           this.currentTab = index;
+          // 记住停留的页签：下次打开直接回到这里。
+          appSettings.lastTabIndex = index;
+          settingsStore.save();
         })
         .width('100%')
         .height('100%')

@@ -5,7 +5,7 @@
  * 单例（appSettings），界面直接 import 读写即可，不需要在组件间层层传参。
  */
 
-import { GroupMode } from '../common/constants/RssConstants';
+import { ArticleFilter, GroupMode, ReaderViewMode } from '../common/constants/RssConstants';
 import { THEME_OPTIONS, LANGUAGE_OPTIONS, MATERIAL_TYPE_OPTIONS, MATERIAL_LEVEL_OPTIONS, BACKGROUND_OPTIONS, LOGO_OPTIONS, AUTO_REFRESH_OPTIONS, READER_FONT_OPTIONS, READER_LINE_OPTIONS, READER_FAMILY_OPTIONS, READER_WIDTH_OPTIONS, READER_ALIGN_OPTIONS, READER_THEME_OPTIONS } from './SettingsOptions';
 
 @ObservedV2
@@ -62,6 +62,12 @@ export class AppSettings {
   @Trace listNewestFirst: boolean = true;
   /** 首页列表分组方式：'none' = 平铺，'feed' = 按订阅源，'date' = 按日期。 */
   @Trace listGroupMode: string = GroupMode.NONE;
+  /** 首页筛选：'all' = 全部，'unread' = 未读，'starred' = 收藏。 */
+  @Trace homeFilter: string = ArticleFilter.ALL;
+  /** 上次停留的页签下标。 */
+  @Trace lastTabIndex: number = 0;
+  /** 详情页阅读模式：ReaderViewMode.READER | ReaderViewMode.WEB。 */
+  @Trace readerViewMode: string = ReaderViewMode.READER;
 }
 
 /** 全局唯一设置实例。 */

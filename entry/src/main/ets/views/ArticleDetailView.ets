@@ -47,6 +47,8 @@ import {
   runFindScript
 } from '../service/ReaderFind';
 import { readerStyle } from '../service/ReaderStyle';
+import { settingsStore } from '../service/SettingsStore';
+import { ReaderViewMode } from '../common/constants/RssConstants';
 import { buildReaderDocument } from '../service/ReaderDocument';
 import {
   parsePosition,
@@ -63,8 +65,9 @@ const DOMAIN: number = 0x0000;
 const TAG: string = 'ArticleDetailView';
 
 /** 阅读模式：reader = 结构化正文；web = 网页原文。 */
-const MODE_READER: string = 'reader';
-const MODE_WEB: string = 'web';
+// 与偏好里存的值同源：ReaderViewMode 在 RssConstants 定义，这里只做本地别名。
+const MODE_READER: string = ReaderViewMode.READER;
+const MODE_WEB: string = ReaderViewMode.WEB;
 
 /** 横向滑动手势的触发距离（vp）：左滑下一篇、右滑上一篇。 */
 const SWIPE_DISTANCE_VP: number = 60;
@@ -77,7 +80,7 @@ const EMPTY_ARTICLE: Article = new Article('', '', '', '', '', '', '', 0);
 @ComponentV2
 export struct ArticleDetailView {
   /** 当前阅读模式。 */
-  @Local viewMode: string = MODE_READER;
+  @Local viewMode: string = appSettings.readerViewMode;
   @Local loading: boolean = true;
   /** 提取失败：可退网页原文 / 纯文本。 */
   @Local readerFailed: boolean = false;
@@ -432,6 +435,16 @@ export struct ArticleDetailView {
     }
   }
 
+  /**
+   * 设置阅读模式并记住选择（只在用户手动切换时调用）。
+   * 自动回退（如正文提取失败退网页）不写偏好，否则用户下次进来会被迫停在原文模式。
+   */
+  private applyViewMode(mode: string): void {
+    this.viewMode = mode;
+    appSettings.readerViewMode = mode;
+    settingsStore.save();
+  }
+
   /** 切换阅读模式。 */
   private switchMode(): void {
     const article: Article | undefined = feedViewModel.currentArticle();
@@ -442,10 +455,10 @@ export struct ArticleDetailView {
       if (article.link.length === 0) {
         return;
       }
-      this.viewMode = MODE_WEB;
+      this.applyViewMode(MODE_WEB);
       this.loading = true;
     } else {
-      this.viewMode = MODE_READER;
+      this.applyViewMode(MODE_READER);
       this.startReader();
     }
   }
@@ -640,7 +653,16 @@ export struct ArticleDetailView {
   }
 
   aboutToAppear(): void {
-    this.startReader();
+    // 恢复上次用的阅读模式：上次停在「网页原文」时直接进 Web，
+    // 不能再跑一遍 startReader()（它会无条件把 viewMode 拽回阅读器）。
+    const article: Article | undefined = feedViewModel.currentArticle();
+    if (appSettings.readerViewMode === MODE_WEB && article !== undefined && article.link.length > 0) {
+      this.viewMode = MODE_WEB;
+      this.loading = true;
+    } else {
+      this.viewMode = MODE_READER;
+      this.startReader();
+    }
     if (appSettings.readerKeepScreenOn) {
       screenAwake.set(true, this.getUIContext().getHostContext());
     }
