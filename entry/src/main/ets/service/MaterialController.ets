@@ -123,13 +123,16 @@ export class MaterialController {
    *
    * 与弹层同属 ArkUI 组件级轨道（API 26+ 且设备支持），但控件尺寸小、面积薄，用 THIN，
    * 并开启按压形变与点光源，替代默认按压态。不支持时返回 undefined（调用方退回模糊兜底）。
+   *
+   * 探针同样用 uiMaterial.isImmersiveMaterialSupported()（组件级轨道），不能用
+   * hdsMaterial.getSystemMaterialTypes()（HDS 轨道）—— 两者不总是同时可用。
    */
   static controlMaterial(immersiveOn: boolean): uiMaterial.Material | undefined {
     if (!immersiveOn || !deviceInfo.apiAvailable('26.0.0')) {
       return undefined;
     }
     try {
-      if (MaterialController.supportedTypes().length === 0) {
+      if (!uiMaterial.isImmersiveMaterialSupported()) {
         return undefined;
       }
       return new uiMaterial.ImmersiveMaterial({
