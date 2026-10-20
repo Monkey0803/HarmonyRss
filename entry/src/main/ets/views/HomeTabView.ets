@@ -463,6 +463,16 @@ export struct HomeTabView {
         .onClick(() => {
           feedViewModel.toggleSaved(article.id);
         })
+      // 只看该源：把首页收敛到这个来源（列表里就能用，不必先进详情页）
+      Button($r('app.string.action_scope_feed'))
+        .buttonStyle(ButtonStyleMode.NORMAL)
+        .fontSize($r('app.float.font_size_caption'))
+        .fontColor($r('app.color.hm_on_brand'))
+        .backgroundColor($r('app.color.hm_text_secondary'))
+        .height('100%')
+        .onClick(() => {
+          feedViewModel.scopeToFeedById(article.feedId);
+        })
       Button(article.read ? $r('app.string.action_mark_unread') : $r('app.string.action_mark_read'))
         .buttonStyle(ButtonStyleMode.NORMAL)
         .fontSize($r('app.float.font_size_caption'))
