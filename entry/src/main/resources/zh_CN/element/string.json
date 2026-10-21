@@ -985,6 +985,70 @@
       "value": "该订阅源已存在"
     },
     {
+      "name": "subs_paste",
+      "value": "粘贴"
+    },
+    {
+      "name": "subs_preview_title",
+      "value": "确认订阅"
+    },
+    {
+      "name": "subs_preview_latest",
+      "value": "最新文章"
+    },
+    {
+      "name": "subs_preview_no_items",
+      "value": "该订阅源暂无文章"
+    },
+    {
+      "name": "subs_confirm",
+      "value": "订阅"
+    },
+    {
+      "name": "subs_batch_result",
+      "value": "新增 %d 个 · 已存在 %d 个 · 失败 %d 个"
+    },
+    {
+      "name": "subs_duplicate_site",
+      "value": "疑似与「%s」是同一站点"
+    },
+    {
+      "name": "subs_edit_url",
+      "value": "编辑订阅地址"
+    },
+    {
+      "name": "subs_edit_url_hint",
+      "value": "新的订阅地址"
+    },
+    {
+      "name": "subs_bulk_move",
+      "value": "移动到分组"
+    },
+    {
+      "name": "subs_bulk_remove",
+      "value": "删除"
+    },
+    {
+      "name": "subs_bulk_enter",
+      "value": "多选"
+    },
+    {
+      "name": "subs_bulk_selected",
+      "value": "已选 %d 个"
+    },
+    {
+      "name": "subs_bulk_remove_message",
+      "value": "删除已选的 %d 个订阅源及其文章？"
+    },
+    {
+      "name": "share_ability_desc",
+      "value": "把分享的链接加入 RSS"
+    },
+    {
+      "name": "share_page_title",
+      "value": "添加到 RSS"
+    },
+    {
       "name": "err_fetch_failed",
       "value": "获取失败，请检查网络或地址。"
     },

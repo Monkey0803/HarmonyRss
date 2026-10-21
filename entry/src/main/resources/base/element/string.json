@@ -985,6 +985,70 @@
       "value": "This feed is already subscribed"
     },
     {
+      "name": "subs_paste",
+      "value": "Paste"
+    },
+    {
+      "name": "subs_preview_title",
+      "value": "Confirm subscription"
+    },
+    {
+      "name": "subs_preview_latest",
+      "value": "Latest articles"
+    },
+    {
+      "name": "subs_preview_no_items",
+      "value": "No articles in this feed yet"
+    },
+    {
+      "name": "subs_confirm",
+      "value": "Subscribe"
+    },
+    {
+      "name": "subs_batch_result",
+      "value": "%d added · %d duplicate · %d failed"
+    },
+    {
+      "name": "subs_duplicate_site",
+      "value": "Looks like the same site as \"%s\""
+    },
+    {
+      "name": "subs_edit_url",
+      "value": "Edit feed URL"
+    },
+    {
+      "name": "subs_edit_url_hint",
+      "value": "New feed URL"
+    },
+    {
+      "name": "subs_bulk_move",
+      "value": "Move to group"
+    },
+    {
+      "name": "subs_bulk_remove",
+      "value": "Remove"
+    },
+    {
+      "name": "subs_bulk_enter",
+      "value": "Select"
+    },
+    {
+      "name": "subs_bulk_selected",
+      "value": "%d selected"
+    },
+    {
+      "name": "subs_bulk_remove_message",
+      "value": "Remove %d selected feeds and their articles?"
+    },
+    {
+      "name": "share_ability_desc",
+      "value": "Add a shared link to RSS"
+    },
+    {
+      "name": "share_page_title",
+      "value": "Add to RSS"
+    },
+    {
       "name": "err_fetch_failed",
       "value": "Failed to load the feed. Check the network or URL."
     },

@@ -9,11 +9,13 @@
 import { common } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { Article, FeedGroup, FeedListItem, FeedSource } from '../model/Feed';
+import { BatchResult, FeedPreview, PreviewItem } from '../model/FeedPreview';
 import { feedStore } from '../service/FeedStore';
 import { feedService, FeedFetchResult, ResolvedFeed } from '../service/FeedService';
 import { feedDiscovery } from '../service/FeedDiscovery';
 import { articleStore, CacheStats } from '../service/ArticleStore';
 import { CommonConstants } from '../common/constants/CommonConstants';
+import { UrlText } from '../common/utils/UrlText';
 import { ArticleDataSource, ArticleGroup } from './ArticleDataSource';
 import { articleContentService } from '../service/ArticleContentService';
 import { ParsedArticle, ParsedFeed } from '../service/RssParser';
@@ -41,6 +43,9 @@ function errorCodeOf(err: Object): FeedError {
 
 /** 启动时回填正文纯文本的最大条数（一次性迁移用）。 */
 const BACKFILL_PLAIN_TEXT_LIMIT: number = 200;
+
+/** 「添加订阅源」预览里展示的最新条数。 */
+const PREVIEW_ITEM_LIMIT: number = 3;
 
 /**
  * 关键词匹配：标题 / 摘要 / feed 正文 / 提取后的正文纯文本（关键词已转小写）。
@@ -100,6 +105,8 @@ export class FeedViewModel {
   @Trace articlesTotal: number = 0;
   /** 是否正在抓取。 */
   @Trace loading: boolean = false;
+  /** 是否正在批量添加（面板据此显示进度 / 禁用按钮）。 */
+  @Trace batchRunning: boolean = false;
   /** 最近一次操作的结果码，视图据此映射文案。 */
   @Trace errorCode: FeedError = FeedError.NONE;
   /** 最近一次成功刷新的时间戳。 */
@@ -147,11 +154,18 @@ export class FeedViewModel {
    */
   private articleListeners: Array<() => void> = [];
   private started: boolean = false;
+  /** 是否已完成「完整启动装配」（回填 + 联网抓取），避免重复触发。 */
+  private initialized: boolean = false;
   /** 最近一次批量抓取中，最后一个失败源的错误码（用于全量失败时上报）。 */
   private lastFailureCode: FeedError = FeedError.FETCH_FAILED;
 
-  /** 启动装配：订阅源 → 本地缓存（离线可读）→ 联网抓取。 */
-  async init(context: common.Context): Promise<void> {
+  /**
+   * 轻量装配：订阅源 → 本地缓存（离线可读），**不触发联网抓取**。
+   *
+   * 供「系统分享」等只需读写订阅 / 文章的入口复用：分享扩展进程里没必要（也不应该）在分享面板
+   * 打开的瞬间跑一次全量抓取。幂等，重复调用无副作用。
+   */
+  async ensureReady(context: common.Context): Promise<void> {
     if (this.started) {
       return;
     }
@@ -164,6 +178,17 @@ export class FeedViewModel {
     this.filter = appSettings.homeFilter;
     this.feeds = await feedStore.load(context);
     await articleStore.open(context);
+    this.all = await articleStore.loadRecent();
+    this.publish();
+  }
+
+  /** 启动装配：订阅源 → 本地缓存（离线可读）→ 联网抓取。 */
+  async init(context: common.Context): Promise<void> {
+    if (this.initialized) {
+      return;
+    }
+    this.initialized = true;
+    await this.ensureReady(context);
     // 老数据补一次正文纯文本（有上限）：让搜索能命中「之前已提取过正文」的那些文章。
     await articleStore.backfillPlainText(BACKFILL_PLAIN_TEXT_LIMIT);
     this.all = await articleStore.loadRecent();
@@ -301,9 +326,17 @@ export class FeedViewModel {
     feedStore.save(this.feeds);
   }
 
+  /**
+   * 订阅列表里是否已有该地址（两侧都做归一化，降低「同址不同写法」漏判）。
+   * 空地址不算重复。
+   */
   private hasUrl(feeds: FeedSource[], url: string): boolean {
+    const target: string = UrlText.normalizeUrlInput(url);
+    if (target.length === 0) {
+      return false;
+    }
     for (let i = 0; i < feeds.length; i += 1) {
-      if (feeds[i].url === url) {
+      if (UrlText.normalizeUrlInput(feeds[i].url) === target) {
         return true;
       }
     }
@@ -752,55 +785,169 @@ export class FeedViewModel {
     return undefined;
   }
 
-  /** 新增订阅源：先抓一次校验可用性，成功才入库。 */
-  async addFeed(url: string): Promise<boolean> {
-    const trimmed: string = url.trim();
-    if (trimmed.length === 0) {
+  /**
+   * 解析一个地址并组装「添加前预览」（不落库）。
+   * 失败（空 / 重复 / 网络 / 不是订阅源）时置 errorCode 并返回 undefined。
+   * 恰好 1 个地址时界面走这条路径；批量添加则内部逐项调用它。
+   */
+  async previewFeed(url: string): Promise<FeedPreview | undefined> {
+    const normalized: string = UrlText.normalizeUrlInput(url);
+    if (normalized.length === 0) {
       this.errorCode = FeedError.EMPTY_URL;
-      return false;
+      return undefined;
     }
-    for (let i = 0; i < this.feeds.length; i += 1) {
-      if (this.feeds[i].url === trimmed) {
-        this.errorCode = FeedError.DUPLICATE_URL;
-        return false;
-      }
+    if (this.hasUrl(this.feeds, normalized)) {
+      this.errorCode = FeedError.DUPLICATE_URL;
+      return undefined;
     }
     this.loading = true;
     try {
       // 可能是 feed 地址，也可能是站点主页 —— 后者要靠自动发现找出真正的 feed。
-      const resolved: ResolvedFeed | undefined = await this.resolveFeed(trimmed);
+      const resolved: ResolvedFeed | undefined = await this.resolveFeed(normalized);
       if (resolved === undefined) {
         this.errorCode = FeedError.NOT_A_FEED;
-        return false;
+        return undefined;
       }
       // 发现出来的地址可能已经订阅过（用户贴了主页，而该 feed 已在列表里）。
       if (this.hasUrl(this.feeds, resolved.url)) {
         this.errorCode = FeedError.DUPLICATE_URL;
-        return false;
+        return undefined;
       }
       const title: string = resolved.parsed.title.length > 0 ? resolved.parsed.title : resolved.url;
-      const feed: FeedSource = new FeedSource(resolved.url, title, resolved.url, resolved.parsed.siteUrl);
-      this.rememberValidators(feed, resolved.etag, resolved.lastModified);
-      const nextFeeds: FeedSource[] = this.feeds.slice();
-      nextFeeds.push(feed);
-      this.feeds = nextFeeds;
-      const fresh: Article[] = [];
-      toArticles(feed, resolved.parsed, fresh);
-      articleStore.insertNew(fresh);
-      await this.reloadFromStore();
-      this.publish();
+      const latest: PreviewItem[] = [];
+      const count: number = resolved.parsed.articles.length;
+      const limit: number = count < PREVIEW_ITEM_LIMIT ? count : PREVIEW_ITEM_LIMIT;
+      for (let i = 0; i < limit; i += 1) {
+        const item: ParsedArticle = resolved.parsed.articles[i];
+        latest.push(new PreviewItem(item.title, item.publishedAt));
+      }
       this.errorCode = FeedError.NONE;
-      this.lastUpdated = Date.now();
-      feedStore.save(this.feeds);
-      return true;
+      return new FeedPreview(normalized, resolved.url, title, resolved.parsed.siteUrl, count, latest,
+        resolved.parsed, resolved.etag, resolved.lastModified,
+        this.duplicateSiteTitleFor(resolved.url, resolved.parsed.siteUrl));
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       this.errorCode = errorCodeOf(err);
-      console.error('addFeed failed: ' + describeError(error));
+      console.error('previewFeed failed: ' + describeError(error));
+      return undefined;
+    } finally {
+      this.loading = false;
+    }
+  }
+
+  /** 确认预览并落库：title / group 为用户在预览里的选择（title 空则回落 feed 自身标题）。 */
+  async commitFeed(preview: FeedPreview, title: string, group: string): Promise<boolean> {
+    this.loading = true;
+    try {
+      const resolved: ResolvedFeed =
+        new ResolvedFeed(preview.resolvedUrl, preview.parsed, preview.etag, preview.lastModified);
+      return await this.commitResolved(resolved, title, group);
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      this.errorCode = errorCodeOf(err);
+      console.error('commitFeed failed: ' + describeError(error));
       return false;
     } finally {
       this.loading = false;
     }
+  }
+
+  /**
+   * 新增订阅源（非交互路径：OPML、批量、后台复用）：解析后按默认标题、未分组落库。
+   * 交互式单条添加请改用 previewFeed + commitFeed。
+   */
+  async addFeed(url: string): Promise<boolean> {
+    const preview: FeedPreview | undefined = await this.previewFeed(url);
+    if (preview === undefined) {
+      return false;
+    }
+    return await this.commitFeed(preview, '', '');
+  }
+
+  /**
+   * 批量添加：把多行 / 逗号分隔的输入逐项添加（共享一个分组）。
+   * 逐项独立成败，返回汇总；单项失败不会中断整批。
+   */
+  async addFeeds(text: string, group: string): Promise<BatchResult> {
+    const result: BatchResult = new BatchResult();
+    const urls: string[] = UrlText.splitUrlLines(text);
+    if (urls.length === 0) {
+      this.errorCode = FeedError.EMPTY_URL;
+      return result;
+    }
+    this.batchRunning = true;
+    try {
+      for (let i = 0; i < urls.length; i += 1) {
+        const preview: FeedPreview | undefined = await this.previewFeed(urls[i]);
+        if (preview === undefined) {
+          if (this.errorCode === FeedError.DUPLICATE_URL) {
+            result.duplicate += 1;
+          } else {
+            result.failed += 1;
+          }
+          continue;
+        }
+        const ok: boolean = await this.commitFeed(preview, '', group);
+        if (ok) {
+          result.added += 1;
+        } else if (this.errorCode === FeedError.DUPLICATE_URL) {
+          result.duplicate += 1;
+        } else {
+          result.failed += 1;
+        }
+      }
+    } finally {
+      this.batchRunning = false;
+    }
+    return result;
+  }
+
+  /**
+   * 落库一个已解析的订阅源（previewFeed / addFeed / 未来入口共用）。
+   * 自定义标题优先于 feed 自身标题：toArticles 会用 feed 标题回写文章行，因此确认后要把
+   * 用户标题再补一次（源与文章行都要改）。
+   */
+  private async commitResolved(resolved: ResolvedFeed, title: string, group: string): Promise<boolean> {
+    if (this.hasUrl(this.feeds, resolved.url)) {
+      this.errorCode = FeedError.DUPLICATE_URL;
+      return false;
+    }
+    const customTitle: string = title.trim();
+    const fallback: string = resolved.parsed.title.length > 0 ? resolved.parsed.title : resolved.url;
+    const initial: string = customTitle.length > 0 ? customTitle : fallback;
+    const feed: FeedSource = new FeedSource(resolved.url, initial, resolved.url, resolved.parsed.siteUrl, group.trim());
+    this.rememberValidators(feed, resolved.etag, resolved.lastModified);
+    const nextFeeds: FeedSource[] = this.feeds.slice();
+    nextFeeds.push(feed);
+    this.feeds = nextFeeds;
+    this.normalizeOrder();
+    const fresh: Article[] = [];
+    toArticles(feed, resolved.parsed, fresh);
+    articleStore.insertNew(fresh);
+    // toArticles 可能把 feed 标题改成了 feed 自身标题；用户自定义标题要盖回去（源 + 文章行）。
+    if (customTitle.length > 0 && feed.title !== customTitle) {
+      feed.title = customTitle;
+      articleStore.updateFeedTitle(feed.id, customTitle);
+    }
+    await this.reloadFromStore();
+    this.publish();
+    this.errorCode = FeedError.NONE;
+    this.lastUpdated = Date.now();
+    feedStore.save(this.feeds);
+    return true;
+  }
+
+  /** 预览时判断是否与已有订阅同站点（疑似重复）；返回那个已有订阅的标题，没有返回空串。 */
+  private duplicateSiteTitleFor(resolvedUrl: string, siteUrl: string): string {
+    const candidate: string = siteUrl.length > 0 ? siteUrl : resolvedUrl;
+    for (let i = 0; i < this.feeds.length; i += 1) {
+      const feed: FeedSource = this.feeds[i];
+      const other: string = feed.siteUrl.length > 0 ? feed.siteUrl : feed.url;
+      if (UrlText.isSameSite(other, candidate)) {
+        return feed.title;
+      }
+    }
+    return '';
   }
 
   /**
@@ -855,6 +1002,65 @@ export class FeedViewModel {
     articleStore.deleteByFeed(feedId);
     this.publish();
     feedStore.save(this.feeds);
+  }
+
+  /**
+   * 替换某个订阅源的地址：保留原标题与分组，删掉旧源与旧文章，再按新地址重建。
+   * 地址无法解析 / 已被别的源占用时返回 false（errorCode 由 previewFeed 设置）。
+   */
+  async replaceFeedUrl(feedId: string, newUrl: string): Promise<boolean> {
+    let current: FeedSource | undefined = undefined;
+    for (let i = 0; i < this.feeds.length; i += 1) {
+      if (this.feeds[i].id === feedId) {
+        current = this.feeds[i];
+        break;
+      }
+    }
+    if (current === undefined) {
+      return false;
+    }
+    const title: string = current.title;
+    const group: string = current.group;
+    const preview: FeedPreview | undefined = await this.previewFeed(newUrl);
+    if (preview === undefined) {
+      return false;
+    }
+    this.loading = true;
+    try {
+      this.removeFeed(feedId);
+      const resolved: ResolvedFeed =
+        new ResolvedFeed(preview.resolvedUrl, preview.parsed, preview.etag, preview.lastModified);
+      return await this.commitResolved(resolved, title, group);
+    } finally {
+      this.loading = false;
+    }
+  }
+
+  /** 批量：把多个订阅源移动到同一分组（空串 = 移出分组）。 */
+  setFeedGroupMany(ids: string[], group: string): void {
+    if (ids.length === 0) {
+      return;
+    }
+    const name: string = group.trim();
+    const wanted: Set<string> = new Set();
+    for (let i = 0; i < ids.length; i += 1) {
+      wanted.add(ids[i]);
+    }
+    for (let i = 0; i < this.feeds.length; i += 1) {
+      if (wanted.has(this.feeds[i].id)) {
+        this.feeds[i].group = name;
+      }
+    }
+    this.normalizeOrder();
+    feedStore.save(this.feeds);
+    this.publish();
+  }
+
+  /** 批量删除订阅源（含各自的文章）。 */
+  removeFeeds(ids: string[]): void {
+    for (let i = 0; i < ids.length; i += 1) {
+      this.removeFeed(ids[i]);
+    }
   }
 
   /** 打开文章：记录当前 id 并标记已读。 */

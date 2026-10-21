@@ -46,9 +46,8 @@ import { TabIndex } from '../common/constants/NavigationConstants';
 import { RouterConstants } from '../common/constants/RouterConstants';
 import { BackgroundKind } from '../common/constants/SettingsConstants';
 import { IMAGE_DOMAIN } from '../common/constants/DomainConstants';
-import { FeedError } from '../common/constants/RssConstants';
-import { FeedErrorText } from '../common/utils/FeedErrorText';
 import { HomeTabView } from '../views/HomeTabView';
+import { AddFeedPanel } from '../views/AddFeedPanel';
 import { FilterSegmentBar } from '../views/FilterSegmentBar';
 import { BrandTitle } from '../views/BrandTitle';
 import { SettingsTabView } from '../views/SettingsTabView';
@@ -61,6 +60,7 @@ import { EffectPreviewView } from '../views/EffectPreviewView';
 import { feedViewModel } from '../viewmodel/FeedViewModel';
 import { HighlightsView } from '../views/HighlightsView';
 import { deepLink, DEEP_LINK_EVENT, DeepLinkParams } from '../service/DeepLink';
+import { shareHandoff } from '../service/ShareHandoff';
 import { Article } from '../model/Feed';
 
 @Entry
@@ -69,10 +69,10 @@ struct Index {
   @Local currentTab: number = appSettings.lastTabIndex;
   /** 详情页沉浸阅读：由详情页点按正文中部切换，控制 HdsNavDestination 标题栏显隐。 */
   @Local articleBarsHidden: boolean = false;
-  /** 添加订阅源面板：显隐、输入地址、提交中（入口在悬浮页签栏的 miniBar 上）。 */
+  /** 添加订阅源面板：显隐（入口在悬浮页签栏的 miniBar 上）。 */
   @Local showAddSheet: boolean = false;
-  @Local addUrl: string = '';
-  @Local addSubmitting: boolean = false;
+  /** 分享进入时预填到添加面板的地址（多行）。 */
+  @Local pendingAddText: string = '';
   @Local navPathStack: NavPathStack = new NavPathStack();
   private tabsController: HdsTabsController = new HdsTabsController();
   /** 每个页签独立的 Scroller：绑定给 HdsNavigation 做滚动联动，互不干扰。 */
@@ -100,6 +100,11 @@ struct Index {
     // 恢复上次停留的页签（偏好是异步读出来的，两个触发点都调一次，见 restoreTab）。
     settingsViewModel.whenReady().then(() => {
       this.restoreTab();
+    });
+    // 分享进入：接收方解析出地址后（可能晚于本页挂载）打开添加面板并预填。
+    shareHandoff.onReady((urls: string[]) => {
+      this.pendingAddText = urls.join('\n');
+      this.showAddSheet = true;
     });
   }
 
@@ -442,56 +447,16 @@ struct Index {
     })
   }
 
-  /** 添加订阅源底部面板：输入地址 → 校验并入库抓取。 */
+  /** 添加订阅源底部面板：复用可复用面板 AddFeedPanel，成功即收起。 */
   @Builder
-  AddFeedSheet() {
-    Column({ space: $r('app.float.space_m') }) {
-      Text($r('app.string.home_add_feed_title'))
-        .fontSize($r('app.float.font_size_title'))
-        .fontWeight(FontWeight.Bold)
-        .fontColor($r('app.color.hm_text_primary'))
-        .width('100%')
-
-      Row({ space: $r('app.float.space_s') }) {
-        TextInput({ text: this.addUrl, placeholder: $r('app.string.subs_url_hint') })
-          .type(InputType.Normal)
-          .fontSize($r('app.float.font_size_body'))
-          .layoutWeight(1)
-          .onChange((value: string) => {
-            this.addUrl = value;
-          })
-        Button(this.addSubmitting ? $r('app.string.subs_adding') : $r('app.string.subs_add'))
-          .buttonStyle(ButtonStyleMode.NORMAL)
-          .fontSize($r('app.float.font_size_body'))
-          .fontColor($r('app.color.hm_on_brand'))
-          .backgroundColor($r('app.color.hm_brand'))
-          .enabled(!this.addSubmitting)
-          .onClick(() => {
-            this.submitAdd();
-          })
+  AddFeedPanelSheet() {
+    AddFeedPanel({
+      initialText: this.pendingAddText,
+      onSubmitResult: () => {
+        this.pendingAddText = '';
+        this.showAddSheet = false;
       }
-      .width('100%')
-
-      if (feedViewModel.errorCode !== FeedError.NONE) {
-        Text(FeedErrorText.of(feedViewModel.errorCode))
-          .fontSize($r('app.float.font_size_caption'))
-          .fontColor($r('app.color.hm_danger'))
-      }
-    }
-    .width('100%')
-    .padding($r('app.float.space_l'))
-    .alignItems(HorizontalAlign.Start)
-  }
-
-  /** 从悬浮页签栏添加订阅源：成功则清空输入并关闭面板，失败保留输入以便修正。 */
-  private async submitAdd(): Promise<void> {
-    this.addSubmitting = true;
-    const ok: boolean = await feedViewModel.addFeed(this.addUrl);
-    this.addSubmitting = false;
-    if (ok) {
-      this.addUrl = '';
-      this.showAddSheet = false;
-    }
+    })
   }
 
   /** 内置背景图资源（默认 / 极光 / 暮色）。 */
@@ -711,10 +676,11 @@ struct Index {
     .height('100%')
     // 背景图关闭时露出的兜底色（与窗口层 start_window_background 一致，含深浅色适配）。
     .backgroundColor($r('app.color.start_window_background'))
-    .bindSheet(this.showAddSheet, this.AddFeedSheet(), MaterialController.sheetOptions({
-      height: 240,
+    .bindSheet(this.showAddSheet, this.AddFeedPanelSheet(), MaterialController.sheetOptions({
+      height: 420,
       dragBar: true,
       onDisappear: () => {
+        this.pendingAddText = '';
         this.showAddSheet = false;
       }
     }, appSettings.immersiveOn))

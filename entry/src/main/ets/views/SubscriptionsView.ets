@@ -9,7 +9,6 @@
 import { common } from '@kit.AbilityKit';
 import { FeedListItem, FeedSource } from '../model/Feed';
 import { feedViewModel } from '../viewmodel/FeedViewModel';
-import { FeedError } from '../common/constants/RssConstants';
 import { FeedErrorText } from '../common/utils/FeedErrorText';
 import { safeArea } from '../service/SafeAreaController';
 import { CommonConstants } from '../common/constants/CommonConstants';
@@ -19,12 +18,12 @@ import { OpmlEntry, parseOpml } from '../service/OpmlCodec';
 import { RouterConstants } from '../common/constants/RouterConstants';
 import { MaterialController } from '../service/MaterialController';
 import { appSettings } from '../model/AppSettings';
+import { AddFeedPanel } from './AddFeedPanel';
 
 @ComponentV2
 export struct SubscriptionsView {
   @Param navPathStack: NavPathStack = new NavPathStack();
   @Param scroller: Scroller = new Scroller();
-  @Local inputUrl: string = '';
   @Local submitting: boolean = false;
   /** 就地重命名：正在编辑的订阅源 id 与草稿名。 */
   @Local editingId: string = '';
@@ -32,6 +31,12 @@ export struct SubscriptionsView {
   /** 就地编辑分组：正在编辑分组的订阅源 id 与草稿分组名。 */
   @Local groupEditId: string = '';
   @Local draftGroup: string = '';
+  /** 就地编辑订阅地址：正在编辑的订阅源 id 与草稿地址。 */
+  @Local urlEditId: string = '';
+  @Local draftUrl: string = '';
+  /** 多选批量管理：是否处于选择态与选中的订阅源 id。 */
+  @Local selecting: boolean = false;
+  @Local selectedIds: string[] = [];
 
   private hostContext(): common.UIAbilityContext {
     const context: common.Context | undefined = this.getUIContext().getHostContext();
@@ -40,15 +45,6 @@ export struct SubscriptionsView {
 
   private toast(message: ResourceStr): void {
     ToastUtil.show(this.getUIContext(), message);
-  }
-
-  private async submit(): Promise<void> {
-    this.submitting = true;
-    const ok: boolean = await feedViewModel.addFeed(this.inputUrl);
-    this.submitting = false;
-    if (ok) {
-      this.inputUrl = '';
-    }
   }
 
   /** 导入 OPML：选文件 → 解析 → 去重入库并抓取。 */
@@ -86,32 +82,127 @@ export struct SubscriptionsView {
     }
   }
 
-  private errorText(): ResourceStr {
-    return FeedErrorText.of(feedViewModel.errorCode);
+  /** 是否处于就地编辑（重命名 / 分组 / 地址）。 */
+  private isEditing(feedId: string): boolean {
+    return this.editingId === feedId || this.groupEditId === feedId || this.urlEditId === feedId;
+  }
+
+  private isSelected(feedId: string): boolean {
+    return this.selectedIds.indexOf(feedId) >= 0;
+  }
+
+  private enterSelect(feedId: string): void {
+    this.selecting = true;
+    this.selectedIds = [feedId];
+  }
+
+  private toggleSelect(feedId: string): void {
+    if (!this.selecting) {
+      return;
+    }
+    if (this.isSelected(feedId)) {
+      this.selectedIds = this.selectedIds.filter((id: string) => id !== feedId);
+    } else {
+      this.selectedIds = this.selectedIds.concat([feedId]);
+    }
+  }
+
+  private exitSelect(): void {
+    this.selecting = false;
+    this.selectedIds = [];
+  }
+
+  /** 批量删除前确认。 */
+  private confirmRemoveMany(): void {
+    const count: number = this.selectedIds.length;
+    if (count === 0) {
+      return;
+    }
+    const cancelButton: AlertDialogButtonBaseOptions = {
+      value: $r('app.string.dialog_cancel'),
+      action: () => {
+      }
+    };
+    const removeButton: AlertDialogButtonBaseOptions = {
+      value: $r('app.string.subs_remove'),
+      fontColor: $r('app.color.hm_danger'),
+      action: () => {
+        feedViewModel.removeFeeds(this.selectedIds);
+        this.exitSelect();
+      }
+    };
+    const params: AlertDialogParamWithButtons = {
+      title: $r('app.string.subs_remove_confirm_title'),
+      message: $r('app.string.subs_bulk_remove_message', count),
+      autoCancel: true,
+      primaryButton: cancelButton,
+      secondaryButton: removeButton
+    };
+    this.getUIContext().showAlertDialog(MaterialController.dialogParams(params, appSettings.immersiveOn));
+  }
+
+  /** 批量移动分组的菜单。 */
+  @Builder
+  BulkGroupMenu() {
+    Menu() {
+      MenuItem({ content: $r('app.string.group_ungrouped') })
+        .onClick(() => {
+          feedViewModel.setFeedGroupMany(this.selectedIds, '');
+          this.exitSelect();
+        })
+      ForEach(feedViewModel.groupNames(), (name: string) => {
+        MenuItem({ content: name })
+          .onClick(() => {
+            feedViewModel.setFeedGroupMany(this.selectedIds, name);
+            this.exitSelect();
+          })
+      }, (name: string) => name)
+    }
+    .radius($r('app.float.radius_card'))
+  }
+
+  /** 多选态动作条：已选数量 + 移动分组 / 删除 / 取消。 */
+  @Builder
+  SelectBar() {
+    Row({ space: $r('app.float.space_s') }) {
+      Text($r('app.string.subs_bulk_selected', this.selectedIds.length))
+        .fontSize($r('app.float.font_size_body'))
+        .fontColor($r('app.color.hm_text_primary'))
+      Blank()
+      Button($r('app.string.subs_bulk_move'))
+        .buttonStyle(ButtonStyleMode.TEXTUAL)
+        .fontSize($r('app.float.font_size_caption'))
+        .fontColor($r('app.color.hm_brand'))
+        .bindMenu(this.BulkGroupMenu(), MaterialController.menuOptions({}, appSettings.immersiveOn))
+      Button($r('app.string.subs_bulk_remove'))
+        .buttonStyle(ButtonStyleMode.TEXTUAL)
+        .fontSize($r('app.float.font_size_caption'))
+        .fontColor($r('app.color.hm_danger'))
+        .onClick(() => {
+          this.confirmRemoveMany();
+        })
+      Button($r('app.string.dialog_cancel'))
+        .buttonStyle(ButtonStyleMode.TEXTUAL)
+        .fontSize($r('app.float.font_size_caption'))
+        .fontColor($r('app.color.hm_text_secondary'))
+        .onClick(() => {
+          this.exitSelect();
+        })
+    }
+    .width('100%')
+    .padding($r('app.float.space_m'))
+    .backgroundColor($r('app.color.hm_card_background'))
+    .borderRadius($r('app.float.radius_card'))
   }
 
   @Builder
   Editor() {
     Column({ space: $r('app.float.space_s') }) {
-      Row({ space: $r('app.float.space_s') }) {
-        TextInput({ text: this.inputUrl, placeholder: $r('app.string.subs_url_hint') })
-          .type(InputType.Normal)
-          .fontSize($r('app.float.font_size_body'))
-          .layoutWeight(1)
-          .onChange((value: string) => {
-            this.inputUrl = value;
-          })
-        Button(this.submitting ? $r('app.string.subs_adding') : $r('app.string.subs_add'))
-          .buttonStyle(ButtonStyleMode.NORMAL)
-          .fontSize($r('app.float.font_size_body'))
-          .fontColor($r('app.color.hm_on_brand'))
-          .backgroundColor($r('app.color.hm_brand'))
-          .enabled(!this.submitting)
-          .onClick(() => {
-            this.submit();
-          })
-      }
-      .width('100%')
+      // 复用添加面板：多行输入 + 预览确认 + 分组选择 + 剪贴板预填。
+      AddFeedPanel({
+        onSubmitResult: () => {
+        }
+      })
 
       // OPML 迁移：导入 / 导出都走系统文档选择器，无需存储权限。
       Row({ space: $r('app.float.space_s') }) {
@@ -134,18 +225,21 @@ export struct SubscriptionsView {
         Blank()
       }
       .width('100%')
-
-      if (feedViewModel.errorCode !== FeedError.NONE) {
-        Text(this.errorText())
-          .fontSize($r('app.float.font_size_caption'))
-          .fontColor($r('app.color.hm_danger'))
-      }
+      .padding({ left: $r('app.float.space_l'), right: $r('app.float.space_l'), bottom: $r('app.float.space_l') })
     }
     .width('100%')
-    .padding($r('app.float.space_l'))
     .backgroundColor($r('app.color.hm_card_background'))
     .borderRadius($r('app.float.radius_card'))
     .alignItems(HorizontalAlign.Start)
+  }
+
+  /** 保存编辑后的订阅地址：保留原标题与分组，失败时提示。 */
+  private async saveUrl(feedId: string): Promise<void> {
+    const ok: boolean = await feedViewModel.replaceFeedUrl(feedId, this.draftUrl);
+    this.urlEditId = '';
+    if (!ok) {
+      this.toast(FeedErrorText.of(feedViewModel.errorCode));
+    }
   }
 
   /** 删除前确认：避免误触把订阅源和它的文章一起删掉。 */
@@ -230,6 +324,11 @@ export struct SubscriptionsView {
           this.editingId = feed.id;
           this.draftTitle = feed.title;
         })
+      MenuItem({ content: $r('app.string.subs_edit_url') })
+        .onClick(() => {
+          this.urlEditId = feed.id;
+          this.draftUrl = feed.url;
+        })
       MenuItem({ content: $r('app.string.group_clear') })
         .onClick(() => {
           feedViewModel.setFeedGroup(feed.id, '');
@@ -253,6 +352,10 @@ export struct SubscriptionsView {
         .onClick(() => {
           feedViewModel.moveFeed(feed.id, 1);
         })
+      MenuItem({ content: $r('app.string.subs_bulk_enter') })
+        .onClick(() => {
+          this.enterSelect(feed.id);
+        })
       MenuItem({ content: $r('app.string.subs_remove') })
         .contentFontColor($r('app.color.hm_danger'))
         .onClick(() => {
@@ -265,6 +368,14 @@ export struct SubscriptionsView {
   @Builder
   FeedRow(feed: FeedSource) {
     Row({ space: $r('app.float.space_m') }) {
+      if (this.selecting) {
+        Checkbox({ name: feed.id })
+          .select(this.isSelected(feed.id))
+          .onChange(() => {
+            this.toggleSelect(feed.id);
+          })
+      }
+
       // 信息区点击 = 进入该源的单源视图（返回阅读页只看这个订阅源的文章）。
       Column({ space: $r('app.float.space_xs') }) {
         if (this.groupEditId === feed.id) {
@@ -307,6 +418,25 @@ export struct SubscriptionsView {
               })
           }
           .width('100%')
+        } else if (this.urlEditId === feed.id) {
+          Row({ space: $r('app.float.space_s') }) {
+            TextInput({ text: this.draftUrl, placeholder: $r('app.string.subs_edit_url_hint') })
+              .type(InputType.Normal)
+              .fontSize($r('app.float.font_size_body'))
+              .layoutWeight(1)
+              .onChange((value: string) => {
+                this.draftUrl = value;
+              })
+            Button($r('app.string.dialog_save'))
+              .buttonStyle(ButtonStyleMode.NORMAL)
+              .fontSize($r('app.float.font_size_caption'))
+              .fontColor($r('app.color.hm_on_brand'))
+              .backgroundColor($r('app.color.hm_brand'))
+              .onClick(() => {
+                this.saveUrl(feed.id);
+              })
+          }
+          .width('100%')
         } else {
           Text(feed.title)
             .fontSize($r('app.float.font_size_body'))
@@ -341,13 +471,20 @@ export struct SubscriptionsView {
       .layoutWeight(1)
       .alignItems(HorizontalAlign.Start)
       .onClick(() => {
-        if (this.editingId !== feed.id && this.groupEditId !== feed.id) {
+        // 选择态：点信息区即勾选 / 取消勾选，不进入单源视图。
+        if (this.selecting) {
+          this.toggleSelect(feed.id);
+          return;
+        }
+        if (!this.isEditing(feed.id)) {
           feedViewModel.openFeed(feed);
           this.navPathStack.pushPath(new NavPathInfo(RouterConstants.PAGE_FEED_ARTICLES, ''));
         }
       })
 
-      if (this.editingId === feed.id || this.groupEditId === feed.id) {
+      if (this.selecting) {
+        // 选择态由左侧勾选框承担交互，不再显示溢出菜单。
+      } else if (this.isEditing(feed.id)) {
         Button($r('app.string.dialog_cancel'))
           .buttonStyle(ButtonStyleMode.TEXTUAL)
           .fontSize($r('app.float.font_size_caption'))
@@ -355,6 +492,7 @@ export struct SubscriptionsView {
           .onClick(() => {
             this.editingId = '';
             this.groupEditId = '';
+            this.urlEditId = '';
           })
       } else {
         SymbolGlyph($r('sys.symbol.more'))
@@ -376,6 +514,10 @@ export struct SubscriptionsView {
       Row().width('100%').height(safeArea.contentTopInsetVp)
 
       this.Editor()
+
+      if (this.selecting) {
+        this.SelectBar()
+      }
 
       if (feedViewModel.feeds.length === 0) {
         Text($r('app.string.subs_empty'))
