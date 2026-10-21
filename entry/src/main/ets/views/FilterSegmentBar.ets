@@ -65,6 +65,15 @@ export struct FilterSegmentBar {
     }
   }
 
+  /**
+   * 是否需要补「模糊 + 半透明底色」兜底。
+   * 只在设置要求材质、但设备/系统给不出材质时才补：有材质时任何背景色/模糊都盖在材质之上。
+   */
+  private needsFallback(): boolean {
+    return MaterialController.segmentMaterialWanted(appSettings.immersiveOn, appSettings.materialType)
+      && !MaterialController.controlsSupported(appSettings.immersiveOn);
+  }
+
   /** 全部已读前确认。 */
   private confirmMarkAllRead(): void {
     const cancelButton: AlertDialogButtonBaseOptions = {
@@ -100,15 +109,16 @@ export struct FilterSegmentBar {
           onItemClicked: (index: number) => {
             feedViewModel.setFilter(filterAt(index));
           },
-          // 特殊系统资源值：未选中态跟随主题文字色。
+          // 特殊系统资源值：未选中态跟随主题文字色，配合材质 colorInvert 自动反色。
           itemFontColor: this.safeColor($r('sys.color.font_primary')),
           itemSelectedFontColor: this.safeColor(Color.Black),
-          // 沉浸光感：优先组件级系统材质（标题栏属生效区域，会真渲染）；不支持时退回模糊兜底。
-          backgroundSystemMaterial: MaterialController.controlMaterial(appSettings.immersiveOn),
-          buttonBackgroundColor: appSettings.immersiveOn
+          // 沉浸光感：跟随设置页（总开关 / 材质类型 / 材质等级）；给不出材质时退回「模糊 + 半透明」玻璃面。
+          backgroundSystemMaterial: MaterialController.segmentMaterial(appSettings.immersiveOn,
+            appSettings.materialType, appSettings.materialLevel),
+          buttonBackgroundColor: this.needsFallback()
             ? this.safeColor($r('app.color.hm_glass_scrim'))
             : undefined,
-          buttonBackgroundBlurStyle: appSettings.immersiveOn ? BlurStyle.COMPONENT_THICK : undefined
+          buttonBackgroundBlurStyle: this.needsFallback() ? BlurStyle.COMPONENT_THICK : undefined
         })
       }
       .layoutWeight(1)

@@ -151,6 +151,62 @@ export class MaterialController {
     }
   }
 
+  /**
+   * 分段按钮（SegmentButtonV2）背景板用的组件级沉浸光感材质。
+   *
+   * 按官方「设置背景板材质」范例取 ULTRA_THIN：按钮面积小、需要透出底下的标题栏内容；
+   * colorInvert 让文字随材质下方背景自动反色（配合 itemFontColor 传系统资源色），
+   * interactive 提供按压形变，lightEffect 用系统交互色做流光。
+   *
+   * 跟随设置页：总开关关掉、或材质类型选「无」时不给材质；材质等级越高越厚（精致 → THIN，
+   * 其余 → ULTRA_THIN —— colorInvert 只在这两档生效）。不可用时返回 undefined，调用方补兜底。
+   */
+  static segmentMaterial(immersiveOn: boolean, typeId: string, levelId: string): uiMaterial.Material | undefined {
+    if (!MaterialController.segmentMaterialWanted(immersiveOn, typeId) || !deviceInfo.apiAvailable('26.0.0')) {
+      return undefined;
+    }
+    try {
+      if (!uiMaterial.isImmersiveMaterialSupported()) {
+        return undefined;
+      }
+      return new uiMaterial.ImmersiveMaterial({
+        style: levelId === MaterialGrade.EXQUISITE ? uiMaterial.ImmersiveStyle.THIN : uiMaterial.ImmersiveStyle.ULTRA_THIN,
+        colorInvert: true,
+        interactive: true,
+        lightEffect: { color: $r('sys.color.interactive_click') }
+      });
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      console.error('uiMaterial.ImmersiveMaterial failed: ' + error.code.toString());
+      return undefined;
+    }
+  }
+
+  /** 设置层面是否要求分段按钮有材质（总开关开 + 类型不是「无」）。 */
+  static segmentMaterialWanted(immersiveOn: boolean, typeId: string): boolean {
+    return immersiveOn && typeId !== MaterialKind.NONE;
+  }
+
+  /**
+   * 标题栏悬浮胶囊用的材质（组件级轨道）。
+   *
+   * 与 controlMaterial 同源（THIN + 交互形变 + 点光源），但返回类型非空：
+   * 调用方已用 controlMaterial 探测过可用性，这里仅在不可用时给一个「有对象但无效果」的
+   * 默认材质，避免在 ArkTS 里为了收窄类型写类型断言。
+   */
+  static titleMaterial(immersiveOn: boolean): uiMaterial.Material {
+    const material: uiMaterial.Material | undefined = MaterialController.controlMaterial(immersiveOn);
+    if (material !== undefined) {
+      return material;
+    }
+    return new uiMaterial.ImmersiveMaterial({ style: uiMaterial.ImmersiveStyle.THIN });
+  }
+
+  /** 组件级沉浸光感是否可用（标题栏悬浮胶囊是否走材质背板）。 */
+  static controlsSupported(immersiveOn: boolean): boolean {
+    return MaterialController.controlMaterial(immersiveOn) !== undefined;
+  }
+
   /** 上下文菜单（bindMenu）注入沉浸光感；不支持时原样返回。 */
   static menuOptions(options: ContextMenuOptions, immersiveOn: boolean): ContextMenuOptions {
     const material: uiMaterial.Material | undefined = MaterialController.overlayMaterial(immersiveOn);

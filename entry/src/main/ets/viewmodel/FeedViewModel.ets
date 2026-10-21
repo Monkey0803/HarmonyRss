@@ -103,6 +103,12 @@ export class FeedViewModel {
   @Trace newestFirst: boolean = appSettings.listNewestFirst;
   /** 当前筛选/排序下的总条数（分页展示用：articles 只是其中已加载的一页）。 */
   @Trace articlesTotal: number = 0;
+  /**
+   * 列表版本号：每次 publish 自增。
+   * LazyForEach 只按键值复用子组件，原地改文章字段（已读 / 收藏等）时数组引用不变，
+   * 视图侧据此判断「需要把最新数组重新灌进数据源」；分组视图也用它让组节点重建。
+   */
+  @Trace articlesRevision: number = 0;
   /** 是否正在抓取。 */
   @Trace loading: boolean = false;
   /** 是否正在批量添加（面板据此显示进度 / 禁用按钮）。 */
@@ -1374,6 +1380,7 @@ export class FeedViewModel {
     }
     this.feedArticles = this.collectFeedArticles();
     this.recomputeUnread();
+    this.articlesRevision += 1;
     for (let i = 0; i < this.articleListeners.length; i += 1) {
       this.articleListeners[i]();
     }

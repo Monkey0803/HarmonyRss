@@ -8,7 +8,7 @@
 
 import { Article } from '../model/Feed';
 import { feedViewModel } from '../viewmodel/FeedViewModel';
-import { ArticleDataSource } from '../viewmodel/ArticleDataSource';
+import { ArticleDataSource, articleRowKey } from '../viewmodel/ArticleDataSource';
 import { ArticleListItem } from './ArticleListItem';
 import { FeedError } from '../common/constants/RssConstants';
 import { appSettings } from '../model/AppSettings';
@@ -190,7 +190,7 @@ export struct FeedArticlesView {
           }
           .margin({ bottom: $r('app.float.space_s') })
           .swipeAction({ end: this.SwipeActions(item) })
-        }, (item: Article) => item.id)
+        }, (item: Article) => articleRowKey(item))
       }
 
       // 无页签栏的详情页：底部预留系统导航条高度。

@@ -357,30 +357,34 @@ struct Index {
   }
 
   /**
-   * 常驻材质标题栏样式：不做「滚动渐显」，背板与材质一直在。
+   * 详情页标题栏样式：整条背板保持透明，沉浸光感交给标题胶囊自身（见 ArticleTitlePill）。
    *
-   * 详情页的正文是 Web / Reader 文档（不是 ArkUI 滚动容器），滚动偏移没法通过 bindToScrollable
-   * 喂给标题栏，渐显永远不会触发；而正文又铺满整页从标题栏下方穿过，若背板透明，文章文字会直接
-   * 透到标题下面。所以详情页固定用这一份：观感与首页标题栏滚起来之后一致。
+   * 详情页正文是 Web / Reader 文档，标题栏整条的材质采样不到 Web 画面（实测背后无模糊），
+   * 若给整条铺半透明底就变成一块实心白板，和底部悬浮胶囊的观感对不上。
+   * 因此这里不再给背板着色，改用与底部操作栏同一套「悬浮胶囊 + 沉浸光感」的视觉语言。
    */
   private stickyTitleStyle(): TitleBarStyleOptions {
-    // 详情页正文是 Web / Reader 文档，材质与背景模糊都采样不到它的画面（实测标题栏背后无模糊），
-    // 所以这里固定补一层半透明底：标题栏在正文之上始终读得出是一块玻璃面，标题也始终清晰。
-    const scrolled: HdsNavigationTitleBarStyle = {
-      backgroundStyle: { backgroundColor: $r('app.color.hm_glass_scrim') }
+    const transparent: HdsNavigationTitleBarStyle = {
+      backgroundStyle: { backgroundColor: Color.Transparent }
     };
     const style: TitleBarStyleOptions = {
-      originalStyle: scrolled,
-      scrollEffectStyle: scrolled,
+      originalStyle: transparent,
+      scrollEffectStyle: transparent,
       systemMaterialEffect: this.materialParams()
     };
     return style;
   }
 
-  /** 详情页标题栏配置：常驻材质 + 当前文章标题。 */
+  /**
+   * 详情页标题栏配置：返回键沿用 HDS 原生（自带沉浸光感圆形按钮），
+   * 标题换成与底部操作栏同款的悬浮胶囊（见 ArticleTitlePill）。
+   */
   private articleTitleOptions(): HdsNavigationTitleBarOptions {
-    const title: HdsNavigationTitle = { mainTitle: this.articleTitle() };
-    const content: TitleBarContentOptions = { title: title };
+    const content: TitleBarContentOptions = {
+      stackBuilder: (): void => {
+        this.ArticleTitlePill();
+      }
+    };
     const options: HdsNavigationTitleBarOptions = {
       avoidLayoutSafeArea: true,
       enableComponentSafeArea: false,
@@ -388,6 +392,52 @@ struct Index {
       style: this.stickyTitleStyle()
     };
     return options;
+  }
+
+  /**
+   * 详情页标题胶囊：与底部悬浮操作栏同款（沉浸光感材质 + 胶囊圆角）。
+   *
+   * 左移 72vp 让开 HDS 原生返回键（它自带沉浸光感圆形背板，与胶囊同源）——
+   * stackBuilder 里的内容从标题栏起点开始排，不挪开就会整块压住返回键。
+   */
+  @Builder
+  ArticleTitlePill() {
+    if (MaterialController.controlsSupported(appSettings.immersiveOn)) {
+      Row() {
+        this.ArticleTitleText()
+      }
+      .height(CommonConstants.TITLE_BAR_HEIGHT_VP)
+      .padding({ left: $r('app.float.space_m'), right: $r('app.float.space_m') })
+      .margin({ left: 72 })
+      .borderRadius(CommonConstants.TITLE_BAR_HEIGHT_VP / 2)
+      .clip(true)
+      // 与底部悬浮栏同源的组件级沉浸光感材质（THIN，带按压光感反馈）。
+      .systemMaterial(MaterialController.titleMaterial(appSettings.immersiveOn))
+    } else {
+      Row() {
+        this.ArticleTitleText()
+      }
+      .height(CommonConstants.TITLE_BAR_HEIGHT_VP)
+      .padding({ left: $r('app.float.space_m'), right: $r('app.float.space_m') })
+      .margin({ left: 72 })
+      .borderRadius(CommonConstants.TITLE_BAR_HEIGHT_VP / 2)
+      .clip(true)
+      // 材质不可用时的兜底：与首页标题栏滚起来之后一致的半透明玻璃底。
+      .backgroundColor($r('app.color.hm_glass_scrim'))
+    }
+  }
+
+  /** 标题胶囊里的文章标题文本。 */
+  @Builder
+  ArticleTitleText() {
+    Text(this.articleTitle())
+      .fontSize($r('app.float.font_size_section'))
+      .fontWeight(FontWeight.Medium)
+      .fontColor($r('app.color.hm_text_primary'))
+      .maxLines(1)
+      .textOverflow({ overflow: TextOverflow.Ellipsis })
+      .layoutWeight(1)
+      .margin({ left: $r('app.float.space_xs') })
   }
 
   private floatingStyle(): HdsTabsFloatingStyle {

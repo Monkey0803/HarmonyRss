@@ -8,6 +8,20 @@
  * 这里只做「把最新的数组同步进来 + 通知列表刷新」，不持有业务逻辑。
  */
 
+import { Article } from '../model/Feed';
+
+/**
+ * LazyForEach 的行键值。
+ *
+ * LazyForEach 只按键值判断是否重建子组件：键不变时即使数据源通知了刷新，也会复用旧节点、
+ * 不再读取新的属性 —— 已读 / 收藏这类「原地改对象字段」的状态就永远不更新。
+ * 因此把会影响行渲染的可变字段并入键值（id 保持稳定身份）。
+ */
+export function articleRowKey(item: Article): string {
+  return item.id + '_' + (item.read ? '1' : '0') + '_' + (item.starred ? '1' : '0') +
+    '_' + Math.round(item.progressRatio * 100);
+}
+
 /** 列表数据源：持有一份不可变数组，替换时通知刷新。 */
 export class ArticleDataSource implements IDataSource {
   private items: object[] = [];

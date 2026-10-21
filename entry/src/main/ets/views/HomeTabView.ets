@@ -9,7 +9,7 @@
  */
 
 import { Article } from '../model/Feed';
-import { ArticleDataSource, ArticleGroup } from '../viewmodel/ArticleDataSource';
+import { ArticleDataSource, ArticleGroup, articleRowKey } from '../viewmodel/ArticleDataSource';
 import { appSettings } from '../model/AppSettings';
 import { MaterialController } from '../service/MaterialController';
 import { feedViewModel } from '../viewmodel/FeedViewModel';
@@ -34,13 +34,10 @@ export struct HomeTabView {
 
   /**
    * 列表内容变化时同步到数据源：ViewModel 负责筛选/排序/分页，这里只管把结果灌进去。
-   * 用 isSame 做一次引用比较，避免每次 publish 都整表重建。
+   * 必须每次都灌：文章的已读 / 收藏是原地改字段，数组引用不变，只比较引用会漏掉这类变更。
    */
   private syncArticles: () => void = () => {
-    const next: Article[] = feedViewModel.articles;
-    if (!this.dataSource.isSame(next)) {
-      this.dataSource.setItems(next);
-    }
+    this.dataSource.setItems(feedViewModel.articles);
   };
 
   aboutToAppear(): void {
@@ -510,7 +507,7 @@ export struct HomeTabView {
             // 虚拟化：只构建可见区域附近的条目（配合 ViewModel 的分页，条数多也不掉帧）
             LazyForEach(this.dataSource, (item: Article) => {
               this.ArticleRow(item)
-            }, (item: Article) => item.id)
+            }, (item: Article) => articleRowKey(item))
           } else {
             // 分组：组头吸顶，组内条目仍然虚拟化
             ForEach(feedViewModel.groups, (group: ArticleGroup) => {
@@ -520,8 +517,8 @@ export struct HomeTabView {
 
               LazyForEach(group.source, (item: Article) => {
                 this.ArticleRow(item)
-              }, (item: Article) => item.id)
-            }, (group: ArticleGroup) => group.key)
+              }, (item: Article) => articleRowKey(item))
+            }, (group: ArticleGroup) => group.key + '_' + feedViewModel.articlesRevision)
           }
 
           // 触底续页：还有下一屏时给一条提示尾行（滚到底自动加载）
