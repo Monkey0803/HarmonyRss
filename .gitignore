@@ -18,6 +18,8 @@ node_modules/
 .idea/
 .vscode/
 *.iml
+# IDE 插件（DevEco CodeGenie）注入的产物目录，不属于工程源码
+.codegenie/
 
 # 本机配置
 local.properties
