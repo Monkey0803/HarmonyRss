@@ -1966,6 +1966,8 @@ export struct ArticleDetailView {
       .height('100%')
       .justifyContent(FlexAlign.Start)
       .alignItems(HorizontalAlign.Start)
+      // 只让查找条自己吃手势，空白区域透传给正文（否则整层会挡住 Web 滚动与点按）。
+      .hitTestBehavior(HitTestMode.Transparent)
 
       // 进度条层：铺满整页、内容贴顶，但不吃手势（正文滚动 / 点按照常）。
       Column() {
