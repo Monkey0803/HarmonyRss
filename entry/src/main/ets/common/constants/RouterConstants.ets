@@ -19,4 +19,10 @@ export class RouterConstants {
   static readonly PAGE_STORAGE: string = 'storage';
   /** 单源设置页。 */
   static readonly PAGE_FEED_SETTINGS: string = 'feedSettings';
+  /** 标签管理页（多选 AND 筛选）。 */
+  static readonly PAGE_TAGS: string = 'tags';
+  /** 单个标签（或多标签 AND）下的文章列表页。 */
+  static readonly PAGE_TAG_ARTICLES: string = 'tagArticles';
+  /** 智能文件夹管理页。 */
+  static readonly PAGE_SMART_FOLDERS: string = 'smartFolders';
 }

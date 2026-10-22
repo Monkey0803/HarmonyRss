@@ -37,6 +37,11 @@ export class SearchViewModel {
   @Trace searched: boolean = false;
   /** 检索索引是否可用（false = LIKE 降级，功能仍可用）。 */
   @Trace indexed: boolean = true;
+  /**
+   * 待执行的查询串：由「智能文件夹」在跳转前写入，搜索页进入时消费一次并清空。
+   * 用独立字段而不是直接改 raw，是为了避免与搜索页自己的输入草稿互相覆盖。
+   */
+  @Trace pendingQuery: string = '';
 
   private offset: number = 0;
   /** 查询代次：丢弃过期请求的结果（快速连续输入时）。 */
@@ -106,6 +111,20 @@ export class SearchViewModel {
   /** 是否展示「空输入」引导。 */
   showHint(): boolean {
     return this.raw.trim().length === 0 && !this.searching;
+  }
+
+  /**
+   * 取出待执行的查询串（智能文件夹跳转过来时）：读取后立即清空，避免返回 / 重进时重复执行。
+   */
+  takePendingQuery(): string {
+    const query: string = this.pendingQuery;
+    this.pendingQuery = '';
+    return query;
+  }
+
+  /** 当前查询串（保存为智能文件夹时用；空输入时返回空串）。 */
+  currentRaw(): string {
+    return this.raw.trim();
   }
 
   /** 是否展示「无结果」。 */

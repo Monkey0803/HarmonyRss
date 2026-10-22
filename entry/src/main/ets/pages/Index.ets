@@ -62,6 +62,9 @@ import { HighlightsView } from '../views/HighlightsView';
 import { SearchView } from '../views/SearchView';
 import { StorageView } from '../views/StorageView';
 import { FeedSettingsView } from '../views/FeedSettingsView';
+import { TagsView } from '../views/TagsView';
+import { TagArticlesView } from '../views/TagArticlesView';
+import { SmartFoldersView } from '../views/SmartFoldersView';
 import { deepLink, DEEP_LINK_EVENT, DeepLinkParams } from '../service/DeepLink';
 import { shareHandoff } from '../service/ShareHandoff';
 import { Article } from '../model/Feed';
@@ -89,6 +92,9 @@ struct Index {
   private searchScroller: Scroller = new Scroller();
   private storageScroller: Scroller = new Scroller();
   private feedSettingsScroller: Scroller = new Scroller();
+  private tagsScroller: Scroller = new Scroller();
+  private tagArticlesScroller: Scroller = new Scroller();
+  private smartFoldersScroller: Scroller = new Scroller();
 
   /** 收到 Ability 的深链事件后消费（应用已在前台时点卡片的路径）。 */
   private onDeepLinkEvent: () => void = () => {
@@ -684,6 +690,30 @@ struct Index {
       .titleMode(HdsNavDestinationTitleMode.MINI)
       .backgroundColor($r('app.color.hm_web_surface'))
       .bindToScrollable([this.feedSettingsScroller])
+    } else if (name === RouterConstants.PAGE_TAGS) {
+      HdsNavDestination() {
+        TagsView({ navPathStack: this.navPathStack, scroller: this.tagsScroller })
+      }
+      .titleBar(this.titleOptions($r('app.string.tag_title')))
+      .titleMode(HdsNavDestinationTitleMode.MINI)
+      .backgroundColor($r('app.color.hm_web_surface'))
+      .bindToScrollable([this.tagsScroller])
+    } else if (name === RouterConstants.PAGE_TAG_ARTICLES) {
+      HdsNavDestination() {
+        TagArticlesView({ navPathStack: this.navPathStack, scroller: this.tagArticlesScroller })
+      }
+      .titleBar(this.titleOptions($r('app.string.tag_articles_title')))
+      .titleMode(HdsNavDestinationTitleMode.MINI)
+      .backgroundColor($r('app.color.hm_web_surface'))
+      .bindToScrollable([this.tagArticlesScroller])
+    } else if (name === RouterConstants.PAGE_SMART_FOLDERS) {
+      HdsNavDestination() {
+        SmartFoldersView({ navPathStack: this.navPathStack, scroller: this.smartFoldersScroller })
+      }
+      .titleBar(this.titleOptions($r('app.string.smart_folder_title')))
+      .titleMode(HdsNavDestinationTitleMode.MINI)
+      .backgroundColor($r('app.color.hm_web_surface'))
+      .bindToScrollable([this.smartFoldersScroller])
     }
   }
 

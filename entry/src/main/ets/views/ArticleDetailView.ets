@@ -71,6 +71,9 @@ import {
 } from '../service/ReaderProgress';
 import { appSettings } from '../model/AppSettings';
 import { ReaderTypography } from '../common/constants/SettingsConstants';
+import { TagWithCount } from '../model/Tag';
+import { tagViewModel } from '../viewmodel/TagViewModel';
+import { TagPickerSheet } from './TagPickerSheet';
 
 const DOMAIN: number = 0x0000;
 const TAG: string = 'ArticleDetailView';
@@ -84,6 +87,8 @@ const MODE_WEB: string = ReaderViewMode.WEB;
 const SWIPE_DISTANCE_VP: number = 60;
 /** 过度滚动触发「触底检测」的最小位移（vp）。 */
 const OVERSCROLL_TRIGGER_VP: number = 24;
+/** 标题下方标签条的固定高度（vp）：正文整体下移同样高度，chips 才不会压住首行文字。 */
+const TAG_STRIP_VP: number = 44;
 
 /** 空文章占位：@Builder 内不能声明局部变量，用辅助方法返回兜底对象避免 undefined 判空。 */
 const EMPTY_ARTICLE: Article = new Article('', '', '', '', '', '', '', 0);
@@ -122,6 +127,8 @@ export struct ArticleDetailView {
   @Local selectedText: string = '';
   /** 当前文章的标注（本地库读出；正文里靠注入脚本重放高亮）。 */
   @Local highlights: Highlight[] = [];
+  /** 当前文章的标签（标题下方的 chips；由 TagViewModel 读出）。 */
+  @Local articleTags: TagWithCount[] = [];
   /** 正在编辑的标注（弹面板改备注 / 改色 / 删除）。 */
   @Local editingHighlightId: string = '';
   /** 备注输入草稿。 */
@@ -512,7 +519,7 @@ export struct ArticleDetailView {
     if (article === undefined || this.readerHtml.length === 0) {
       return;
     }
-    const doc: string = buildReaderDocument(this.readerHtml, safeArea.contentTopInsetVp, safeArea.contentBottomInsetVp);
+    const doc: string = buildReaderDocument(this.readerHtml, 0, safeArea.contentBottomInsetVp);
     try {
       this.readerController.loadData(doc, 'text/html', 'UTF-8', article.link);
     } catch (err) {
@@ -544,6 +551,60 @@ export struct ArticleDetailView {
     this.viewMode = mode;
     appSettings.readerViewMode = mode;
     settingsStore.save();
+  }
+
+  // ---- 标签（标题下方 chips） ----
+
+  /** 读出当前文章的标签（切换文章 / 打标完成后都调一次）。 */
+  private async loadTags(): Promise<void> {
+    const article: Article | undefined = feedViewModel.currentArticle();
+    if (article === undefined) {
+      this.articleTags = [];
+      return;
+    }
+    this.articleTags = await tagViewModel.tagsOf(article.id);
+  }
+
+  /** 打开标签选择器（复用底部面板，见 sheetMode = 'tags'）。 */
+  private openTagSheet(): void {
+    this.openSheet('tags');
+  }
+
+  private hasTagId(id: string): boolean {
+    for (let i = 0; i < this.articleTags.length; i += 1) {
+      if (this.articleTags[i].id === id) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * 选择器确认：把差异写回库（只增删本篇文章的关联），随后刷新 chips 与标签计数。
+   * 以「差集」而不是全量重建：不误删文章上其它标签，也不会重复插入已有标签。
+   */
+  private async applyTagSelection(ids: string[]): Promise<void> {
+    const article: Article | undefined = feedViewModel.currentArticle();
+    if (article === undefined) {
+      return;
+    }
+    const removed: TagWithCount[] = this.articleTags.filter((tag: TagWithCount) => ids.indexOf(tag.id) < 0);
+    const added: string[] = ids.filter((id: string) => !this.hasTagId(id));
+    for (let i = 0; i < removed.length; i += 1) {
+      await tagViewModel.removeTagFromArticle(removed[i].id, article.id);
+    }
+    for (let i = 0; i < added.length; i += 1) {
+      await tagViewModel.addTagsToArticles([article.id], added[i]);
+    }
+    if (removed.length > 0 || added.length > 0) {
+      await tagViewModel.load();
+    }
+    await this.loadTags();
+  }
+
+  /** 当前文章的标签 id（给选择器做初始选中）。 */
+  private tagIds(): string[] {
+    return this.articleTags.map((tag: TagWithCount) => tag.id);
   }
 
   // ---- 正文标注（高亮 + 备注） ----
@@ -752,6 +813,7 @@ export struct ArticleDetailView {
     // 网页原文模式：Web 的 src 随 article.link 变化自动重载，等 onPageEnd 收尾。
     this.playSwitchAnimation(slideFrom);
     this.loadHighlights();
+    this.loadTags();
   }
 
   /**
@@ -933,6 +995,7 @@ export struct ArticleDetailView {
       this.startReader();
     }
     this.loadHighlights();
+    this.loadTags();
     if (appSettings.readerKeepScreenOn) {
       screenAwake.set(true, this.getUIContext().getHostContext());
     }
@@ -1174,9 +1237,23 @@ export struct ArticleDetailView {
       this.HighlightPanel()
     } else if (this.sheetMode === 'hlEdit') {
       this.HighlightEditor()
+    } else if (this.sheetMode === 'tags') {
+      this.TagSheet()
     } else {
       this.ReadSheet()
     }
+  }
+
+  /** 标签选择器面板：复用 TagPickerSheet（详情页 / 批量打标同一套）。 */
+  @Builder
+  TagSheet() {
+    TagPickerSheet({
+      selectedTagIds: this.tagIds(),
+      onConfirm: (ids: string[]) => {
+        this.applyTagSelection(ids);
+        this.closeSheet();
+      }
+    })
   }
 
   /** 标注面板：列出本文全部标注，点一条跳过去，右侧「改色 / 备注 / 删除」。 */
@@ -1604,7 +1681,7 @@ export struct ArticleDetailView {
               this.handleBodyTouch(event);
             })
             .onControllerAttached(() => {
-              const doc: string = buildReaderDocument(this.readerHtml, safeArea.contentTopInsetVp, safeArea.contentBottomInsetVp);
+              const doc: string = buildReaderDocument(this.readerHtml, 0, safeArea.contentBottomInsetVp);
               try {
                 this.readerController.loadData(doc, 'text/html', 'UTF-8', this.cur().link);
               } catch (err) {
@@ -2014,6 +2091,89 @@ export struct ArticleDetailView {
     }
   }
 
+  /** 一个标签 chip（点击进入选择器，可快速增删）。 */
+  @Builder
+  TagChip(tag: TagWithCount) {
+    Text(tag.name)
+      .fontSize($r('app.float.font_size_caption'))
+      .fontColor($r('app.color.hm_brand'))
+      .maxLines(1)
+      .textOverflow({ overflow: TextOverflow.Ellipsis })
+      .constraintSize({ maxWidth: 160 })
+      .height($r('app.float.value_chip_height'))
+      .padding({ left: $r('app.float.space_m'), right: $r('app.float.space_m') })
+      .margin({ right: $r('app.float.space_xs'), bottom: $r('app.float.space_xxs') })
+      .backgroundColor($r('app.color.hm_value_chip_background'))
+      .borderRadius($r('app.float.radius_chip'))
+      .onClick(() => {
+        this.openTagSheet();
+      })
+  }
+
+  /**
+   * 标题下方的标签条：已有标签横排（可左右滑动）+ 右侧「+」。
+   * 正文顶部预留同样高度（见 build 里的 TAG_STRIP_VP），所以这里不会压住正文首行。
+   */
+  @Builder
+  TagChips() {
+    if (this.hasArticle()) {
+      Row({ space: $r('app.float.space_xs') }) {
+        if (this.articleTags.length > 0) {
+          // 横排、可左右滑动：标签多时不换行（换行会超出预留高度压住正文）。
+          Scroll() {
+            Row() {
+              ForEach(this.articleTags, (tag: TagWithCount) => {
+                this.TagChip(tag)
+              }, (tag: TagWithCount) => tag.id + '_' + tag.name)
+            }
+            .height($r('app.float.value_chip_height'))
+            .alignItems(VerticalAlign.Center)
+          }
+          .scrollable(ScrollDirection.Horizontal)
+          .scrollBar(BarState.Off)
+          .layoutWeight(1)
+          .height($r('app.float.value_chip_height'))
+          .align(Alignment.Start)
+        } else {
+          Blank()
+        }
+
+        SymbolGlyph($r('sys.symbol.plus'))
+          .fontSize($r('app.float.font_size_caption'))
+          .fontColor([$r('app.color.hm_brand')])
+          .height($r('app.float.value_chip_height'))
+          .padding({ left: $r('app.float.space_m'), right: $r('app.float.space_m') })
+          .backgroundColor($r('app.color.hm_value_chip_background'))
+          .borderRadius($r('app.float.radius_chip'))
+          .accessibilityText($r('app.string.tag_picker_title'))
+          .onClick(() => {
+            this.openTagSheet();
+          })
+      }
+      .width('100%')
+      .height(TAG_STRIP_VP)
+      .padding({ left: $r('app.float.space_l'), right: $r('app.float.space_l') })
+      .alignItems(VerticalAlign.Top)
+    }
+  }
+
+  /**
+   * 正文顶部让位：
+   * - Reader 文档自身有 CSS 顶部内边距（contentTopInsetVp），这里只需再让出标签条高度；
+   * - 网页原文是裸 WebView，不会读取 CSS 内边距，必须在这里补上「标题栏 + 标签条」两段，
+   *   否则标签条会压住网页首行（HTML/表格类文章肉眼可见被遮挡）。
+   * - 纯文本模式在滚动内容里已有 contentTopInsetVp 占位，同样只需让出标签条高度。
+   */
+  private bodyTopPadding(): number {
+    if (this.viewMode === MODE_WEB || this.viewMode === MODE_READER) {
+      // Reader 文档与网页原文都由外层统一让位：文档自身的 topPad 传 0，
+      // 避免 safeArea 尚未就绪时文档内边距为 0、而标签条已按最新值定位导致遮挡。
+      return TAG_STRIP_VP + safeArea.contentTopInsetVp;
+    }
+    // 纯文本模式在滚动内容里已有 contentTopInsetVp 占位，外层只让出标签条。
+    return TAG_STRIP_VP;
+  }
+
   build() {
     Stack({ alignContent: Alignment.Bottom }) {
       // 正文铺满整页（含标题栏与悬浮底栏下方），从两栏下方穿过 —— 与首页 barOverlap(true) 同源；
@@ -2024,6 +2184,9 @@ export struct ArticleDetailView {
       }
       .width('100%')
       .height('100%')
+      // 顶部预留标签条高度：chips 浮在这一条里，不压住正文首行。
+      .padding({ top: this.bodyTopPadding() })
+      .backgroundColor($r('app.color.hm_web_surface'))
       .translate({ x: this.bodyShift })
       .opacity(this.bodyAlpha)
 
@@ -2075,12 +2238,25 @@ export struct ArticleDetailView {
       .justifyContent(FlexAlign.Start)
       .alignItems(HorizontalAlign.Start)
       .hitTestBehavior(HitTestMode.None)
+
+      // 标签条层：标题栏下方一条，chip / 「+」自己吃手势，其余区域透传给正文。
+      Column() {
+        Row()
+          .width('100%')
+          .height(safeArea.contentTopInsetVp)
+        this.TagChips()
+      }
+      .width('100%')
+      .height('100%')
+      .justifyContent(FlexAlign.Start)
+      .alignItems(HorizontalAlign.Start)
+      .hitTestBehavior(HitTestMode.Transparent)
     }
     .width('100%')
     .height('100%')
     .backgroundColor($r('app.color.hm_page_transparent'))
     .bindSheet(this.showSheet, this.SheetContent(), MaterialController.sheetOptions({
-      height: this.sheetMode === 'read' ? SheetSize.LARGE : SheetSize.MEDIUM,
+      height: this.sheetMode === 'read' || this.sheetMode === 'tags' ? SheetSize.LARGE : SheetSize.MEDIUM,
       dragBar: true,
       onDisappear: () => {
         this.showSheet = false;

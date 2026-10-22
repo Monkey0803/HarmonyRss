@@ -20,6 +20,8 @@ import { MaterialController } from '../service/MaterialController';
 import { appSettings } from '../model/AppSettings';
 import { AddFeedPanel } from './AddFeedPanel';
 import { DateUtil } from '../common/utils/DateUtil';
+import { tagViewModel } from '../viewmodel/TagViewModel';
+import { smartFolderViewModel } from '../viewmodel/SmartFolderViewModel';
 
 @ComponentV2
 export struct SubscriptionsView {
@@ -42,6 +44,79 @@ export struct SubscriptionsView {
   private hostContext(): common.UIAbilityContext {
     const context: common.Context | undefined = this.getUIContext().getHostContext();
     return context as common.UIAbilityContext;
+  }
+
+  /**
+   * 进入页签 / 回到本页时刷新两个入口的计数。
+   * 计数本身读的是 @ObservedV2 单例的 @Trace 数组长度，任何打标 / 增删操作后都会自动更新；
+   * 这里再主动 load 一次，冷启动首个渲染也有数据。
+   */
+  aboutToAppear(): void {
+    this.refreshCounts();
+  }
+
+  /** 刷新标签 / 智能文件夹计数（入口行可见时调用）。 */
+  refreshCounts(): void {
+    tagViewModel.load();
+    smartFolderViewModel.load();
+  }
+
+  /**
+   * 入口行的外观（参数只收常量：图标 / 动作 / 类型）。
+   * 计数在 builder 体内直接读 @Trace 状态：@Builder 的参数是值传递、不参与刷新，
+   * 把 `$r(..., count)` 当参数传进来会导致计数变化后文案不更新。
+   */
+  @Builder
+  EntryRowFrame(icon: Resource, action: () => void, kind: number) {
+    Row({ space: $r('app.float.space_m') }) {
+      SymbolGlyph(icon)
+        .fontSize($r('app.float.icon_size'))
+        .fontColor([$r('app.color.hm_brand')])
+      Text(kind === 0
+        ? $r('app.string.tag_entry', tagViewModel.tags.length)
+        : $r('app.string.smart_folder_entry', smartFolderViewModel.folders.length))
+        .fontSize($r('app.float.font_size_body'))
+        .fontColor($r('app.color.hm_text_primary'))
+        .maxLines(1)
+        .textOverflow({ overflow: TextOverflow.Ellipsis })
+        .layoutWeight(1)
+      SymbolGlyph($r('sys.symbol.chevron_right'))
+        .fontSize($r('app.float.icon_size_small'))
+        .fontColor([$r('app.color.hm_text_secondary')])
+    }
+    .width('100%')
+    .padding($r('app.float.space_m'))
+    .backgroundColor($r('app.color.hm_card_background'))
+    .borderRadius($r('app.float.radius_card'))
+    .onClick(() => {
+      action();
+    })
+  }
+
+  /** 标签入口：计数直接读 @Trace 数组长度，任何打标 / 删标后自动刷新。 */
+  @Builder
+  TagEntry() {
+    this.EntryRowFrame($r('sys.symbol.checkmark_circle'), () => {
+      this.navPathStack.pushPath(new NavPathInfo(RouterConstants.PAGE_TAGS, ''));
+    }, 0)
+  }
+
+  /** 智能文件夹入口。 */
+  @Builder
+  SmartFolderEntry() {
+    this.EntryRowFrame($r('sys.symbol.folder_fill'), () => {
+      this.navPathStack.pushPath(new NavPathInfo(RouterConstants.PAGE_SMART_FOLDERS, ''));
+    }, 1)
+  }
+
+  /** 两个入口：标签 / 智能文件夹（放在添加区下方、订阅列表上方）。 */
+  @Builder
+  LibraryEntries() {
+    Column({ space: $r('app.float.space_s') }) {
+      this.TagEntry()
+      this.SmartFolderEntry()
+    }
+    .width('100%')
   }
 
   private toast(message: ResourceStr): void {
@@ -535,6 +610,8 @@ export struct SubscriptionsView {
       Row().width('100%').height(safeArea.contentTopInsetVp)
 
       this.Editor()
+
+      this.LibraryEntries()
 
       if (this.selecting) {
         this.SelectBar()

@@ -8,9 +8,15 @@
 import { common } from '@kit.AbilityKit';
 import { SearchHit, SearchState } from '../model/Search';
 import { searchViewModel } from '../viewmodel/SearchViewModel';
+import { smartFolderViewModel } from '../viewmodel/SmartFolderViewModel';
+import { SmartFolder } from '../model/Tag';
+import { SmartFolderError, validateSmartFolder } from '../service/SmartFolderStore';
 import { DateUtil } from '../common/utils/DateUtil';
 import { safeArea } from '../service/SafeAreaController';
 import { RouterConstants } from '../common/constants/RouterConstants';
+import { MaterialController } from '../service/MaterialController';
+import { appSettings } from '../model/AppSettings';
+import { ToastUtil } from '../common/utils/ToastUtil';
 
 /** 片段分片：一段普通文本或一段命中词。 */
 class SnippetSegment {
@@ -82,15 +88,134 @@ export struct SearchView {
   @Local draft: string = '';
   /** 打开命中在途（避免连点重复 push）。 */
   @Local opening: boolean = false;
+  /** 「保存为智能文件夹」面板显隐与名称草稿。 */
+  @Local showSaveSheet: boolean = false;
+  @Local folderName: string = '';
+  @Local saveError: string = SmartFolderError.NONE;
 
-  aboutToAppear(): void {
+  async aboutToAppear(): Promise<void> {
     const context: common.Context | undefined = this.getUIContext().getHostContext();
     if (context !== undefined) {
-      searchViewModel.init(context);
+      try {
+        await searchViewModel.init(context);
+      } catch (err) {
+        // 偏好库打不开时检索仍可用（历史为空），不因初始化失败挡住 pendingQuery 的执行。
+      }
+    }
+    // 智能文件夹跳转过来：取出待执行查询（读后即清空），填进输入框并自动提交。
+    const pending: string = searchViewModel.takePendingQuery();
+    if (pending.length > 0) {
+      this.draft = pending;
+      this.submit(pending);
+      return;
     }
     if (searchViewModel.raw.length > 0) {
       this.draft = searchViewModel.raw;
     }
+  }
+
+  /** 校验失败原因 → 界面文案。 */
+  private saveErrorText(): ResourceStr {
+    if (this.saveError === SmartFolderError.NAME_EMPTY || this.saveError === SmartFolderError.NAME_TOO_LONG) {
+      return $r('app.string.smart_folder_name_invalid');
+    }
+    if (this.saveError === SmartFolderError.QUERY_TOO_LONG) {
+      return $r('app.string.smart_folder_query_too_long');
+    }
+    if (this.saveError === SmartFolderError.LIMIT_REACHED) {
+      return $r('app.string.smart_folder_limit_reached');
+    }
+    return $r('app.string.smart_folder_query_empty');
+  }
+
+  /** 打开保存面板：查询为空先提示，不弹面板。 */
+  private openSaveSheet(): void {
+    if (searchViewModel.currentRaw().length === 0) {
+      ToastUtil.show(this.getUIContext(), $r('app.string.smart_folder_query_empty'));
+      return;
+    }
+    this.folderName = '';
+    this.saveError = SmartFolderError.NONE;
+    this.showSaveSheet = true;
+  }
+
+  /** 保存当前查询为智能文件夹（校验名称 / 查询 / 数量上限，失败给具体提示）。 */
+  private async saveFolder(): Promise<void> {
+    const query: string = searchViewModel.currentRaw();
+    const error: string = validateSmartFolder(this.folderName, query,
+      smartFolderViewModel.folders.length, true);
+    if (error !== SmartFolderError.NONE) {
+      this.saveError = error;
+      return;
+    }
+    const created: SmartFolder | undefined = await smartFolderViewModel.create(this.folderName, query);
+    if (created === undefined) {
+      this.saveError = smartFolderViewModel.lastError;
+      return;
+    }
+    this.showSaveSheet = false;
+    ToastUtil.show(this.getUIContext(), $r('app.string.smart_folder_saved'));
+  }
+
+  /** 保存面板内容（bindSheet）。 */
+  @Builder
+  SaveFolderSheet() {
+    Column({ space: $r('app.float.space_m') }) {
+      Text($r('app.string.smart_folder_save_current'))
+        .fontSize($r('app.float.font_size_section'))
+        .fontWeight(FontWeight.Medium)
+        .fontColor($r('app.color.hm_text_primary'))
+        .width('100%')
+
+      Text(searchViewModel.currentRaw())
+        .fontSize($r('app.float.font_size_caption'))
+        .fontColor($r('app.color.hm_text_secondary'))
+        .maxLines(3)
+        .textOverflow({ overflow: TextOverflow.Ellipsis })
+        .width('100%')
+        .padding($r('app.float.space_m'))
+        .backgroundColor($r('app.color.hm_value_chip_background'))
+        .borderRadius($r('app.float.radius_menu_item'))
+
+      TextInput({ text: this.folderName, placeholder: $r('app.string.smart_folder_name_hint') })
+        .type(InputType.Normal)
+        .fontSize($r('app.float.font_size_body'))
+        .width('100%')
+        .onChange((value: string) => {
+          this.folderName = value;
+          this.saveError = SmartFolderError.NONE;
+        })
+
+      if (this.saveError !== SmartFolderError.NONE) {
+        Text(this.saveErrorText())
+          .fontSize($r('app.float.font_size_caption'))
+          .fontColor($r('app.color.hm_danger'))
+          .width('100%')
+      }
+
+      Row() {
+        Blank()
+        Button($r('app.string.dialog_cancel'))
+          .buttonStyle(ButtonStyleMode.TEXTUAL)
+          .fontSize($r('app.float.font_size_caption'))
+          .fontColor($r('app.color.hm_text_secondary'))
+          .onClick(() => {
+            this.showSaveSheet = false;
+          })
+        Button($r('app.string.dialog_save'))
+          .buttonStyle(ButtonStyleMode.NORMAL)
+          .fontSize($r('app.float.font_size_caption'))
+          .fontColor($r('app.color.hm_on_brand'))
+          .backgroundColor($r('app.color.hm_brand'))
+          .onClick(() => {
+            this.saveFolder();
+          })
+      }
+      .width('100%')
+    }
+    .width('100%')
+    .padding($r('app.float.space_l'))
+    .alignItems(HorizontalAlign.Start)
   }
 
   private submit(text: string): void {
@@ -248,6 +373,23 @@ export struct SearchView {
         }
       }
       .width('100%')
+
+      // 结果区入口：把当前查询存成智能文件夹（不改变搜索历史行为）。
+      if (searchViewModel.currentRaw().length > 0) {
+        Row({ space: $r('app.float.space_xs') }) {
+          SymbolGlyph($r('sys.symbol.folder_fill'))
+            .fontSize($r('app.float.font_size_caption'))
+            .fontColor([$r('app.color.hm_brand')])
+          Text($r('app.string.smart_folder_save_current'))
+            .fontSize($r('app.float.font_size_caption'))
+            .fontColor($r('app.color.hm_brand'))
+        }
+        .width('100%')
+        .padding({ top: $r('app.float.space_xs'), bottom: $r('app.float.space_xs') })
+        .onClick(() => {
+          this.openSaveSheet();
+        })
+      }
     }
     .width('100%')
     .padding($r('app.float.space_m'))
@@ -375,5 +517,12 @@ export struct SearchView {
       searchViewModel.loadMore();
     })
     .backgroundColor($r('app.color.hm_page_transparent'))
+    .bindSheet(this.showSaveSheet, this.SaveFolderSheet(), MaterialController.sheetOptions({
+      height: 360,
+      dragBar: true,
+      onDisappear: () => {
+        this.showSaveSheet = false;
+      }
+    }, appSettings.immersiveOn))
   }
 }

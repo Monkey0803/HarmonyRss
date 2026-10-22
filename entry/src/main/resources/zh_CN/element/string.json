@@ -1575,6 +1575,182 @@
     {
       "name": "search_index_fallback",
       "value": "已使用基础匹配（索引不可用）"
+    },
+    {
+      "name": "tag_title",
+      "value": "标签"
+    },
+    {
+      "name": "tag_entry",
+      "value": "标签（%d）"
+    },
+    {
+      "name": "tag_empty",
+      "value": "还没有标签"
+    },
+    {
+      "name": "tag_new_hint",
+      "value": "新建标签名"
+    },
+    {
+      "name": "tag_new",
+      "value": "新建标签"
+    },
+    {
+      "name": "tag_name_invalid",
+      "value": "请输入标签名（最多 32 个字符）"
+    },
+    {
+      "name": "tag_limit_reached",
+      "value": "标签数量已达上限（100 个）"
+    },
+    {
+      "name": "tag_rename",
+      "value": "重命名"
+    },
+    {
+      "name": "tag_rename_hint",
+      "value": "标签名"
+    },
+    {
+      "name": "tag_remove",
+      "value": "删除标签"
+    },
+    {
+      "name": "tag_remove_confirm_title",
+      "value": "删除标签？"
+    },
+    {
+      "name": "tag_remove_confirm_message",
+      "value": "文章内容保留，仅移除该标签。"
+    },
+    {
+      "name": "tag_view_results",
+      "value": "查看结果"
+    },
+    {
+      "name": "tag_articles_title",
+      "value": "标签文章"
+    },
+    {
+      "name": "tag_picker_title",
+      "value": "标签"
+    },
+    {
+      "name": "tag_picker_empty",
+      "value": "还没有标签，可在下方新建"
+    },
+    {
+      "name": "tag_apply",
+      "value": "应用"
+    },
+    {
+      "name": "tag_select_hint",
+      "value": "请至少选择一个标签"
+    },
+    {
+      "name": "tag_added",
+      "value": "已添加标签"
+    },
+    {
+      "name": "tag_removed",
+      "value": "已移除标签"
+    },
+    {
+      "name": "tag_batch_done",
+      "value": "已为 %d 篇文章打标签"
+    },
+    {
+      "name": "tag_action_failed",
+      "value": "标签操作失败"
+    },
+    {
+      "name": "tag_manage_hint",
+      "value": "选择标签后查看同时具备这些标签的文章"
+    },
+    {
+      "name": "smart_folder_title",
+      "value": "智能文件夹"
+    },
+    {
+      "name": "smart_folder_entry",
+      "value": "智能文件夹（%d）"
+    },
+    {
+      "name": "smart_folder_empty",
+      "value": "还没有智能文件夹"
+    },
+    {
+      "name": "smart_folder_new",
+      "value": "新建智能文件夹"
+    },
+    {
+      "name": "smart_folder_name_hint",
+      "value": "文件夹名称"
+    },
+    {
+      "name": "smart_folder_query_hint",
+      "value": "查询条件，如 from:Feed is:unread AI"
+    },
+    {
+      "name": "smart_folder_query_label",
+      "value": "查询条件"
+    },
+    {
+      "name": "smart_folder_save_current",
+      "value": "保存为智能文件夹"
+    },
+    {
+      "name": "smart_folder_saved",
+      "value": "已保存为智能文件夹"
+    },
+    {
+      "name": "smart_folder_query_empty",
+      "value": "查询条件不能为空"
+    },
+    {
+      "name": "smart_folder_name_invalid",
+      "value": "请输入名称（最多 32 个字符）"
+    },
+    {
+      "name": "smart_folder_limit_reached",
+      "value": "智能文件夹已达上限（50 个）"
+    },
+    {
+      "name": "smart_folder_query_too_long",
+      "value": "查询条件过长（最多 512 个字符）"
+    },
+    {
+      "name": "smart_folder_edit",
+      "value": "编辑"
+    },
+    {
+      "name": "smart_folder_save",
+      "value": "保存"
+    },
+    {
+      "name": "smart_folder_remove",
+      "value": "删除智能文件夹"
+    },
+    {
+      "name": "smart_folder_remove_confirm_title",
+      "value": "删除智能文件夹？"
+    },
+    {
+      "name": "smart_folder_remove_confirm_message",
+      "value": "仅删除已保存的查询，文章不受影响。"
+    },
+    {
+      "name": "smart_folder_move_up",
+      "value": "上移"
+    },
+    {
+      "name": "smart_folder_move_down",
+      "value": "下移"
+    },
+    {
+      "name": "smart_folder_open_failed",
+      "value": "无法打开该智能文件夹"
     }
   ]
 }

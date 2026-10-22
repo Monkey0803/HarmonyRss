@@ -111,8 +111,31 @@ export class ArticleDbConstants {
   static readonly TABLE_ARTICLES_FTS_CJK: string = 'articles_fts_cjk';
   /** 回收站（与 articles 同构 + deleted_at）：清理可撤销 7 天。 */
   static readonly TABLE_ARTICLES_TRASH: string = 'articles_trash';
-  /** 当前数据库结构版本（v1 = 初始表；v2 = 索引 + FTS + 回收站；v3 = 中文检索索引）。 */
-  static readonly SCHEMA_VERSION: number = 3;
+  /** 标签表（id / name / name_key / created_at）。 */
+  static readonly TABLE_TAGS: string = 'tags';
+  /** 文章 ↔ 标签关联表（article_id + tag_id 联合主键）。 */
+  static readonly TABLE_ARTICLE_TAGS: string = 'article_tags';
+  /** 智能文件夹表（名称 + 检索语法原始串 + 排序位）。 */
+  static readonly TABLE_SMART_FOLDERS: string = 'smart_folders';
+  /**
+   * 当前数据库结构版本
+   * （v1 = 初始表；v2 = 索引 + FTS + 回收站；v3 = 中文检索索引；v4 = 标签 + 智能文件夹）。
+   */
+  static readonly SCHEMA_VERSION: number = 4;
+}
+
+/** 标签 / 智能文件夹的数量与长度上限（软上限：超限时界面给提示，不静默丢数据）。 */
+export class TagConstants {
+  /** 标签数量上限。 */
+  static readonly MAX_TAGS: number = 100;
+  /** 智能文件夹数量上限。 */
+  static readonly MAX_SMART_FOLDERS: number = 50;
+  /** 标签名最大字符数（归一后）。 */
+  static readonly TAG_NAME_MAX: number = 32;
+  /** 智能文件夹查询串最大字符数。 */
+  static readonly SMART_FOLDER_QUERY_MAX: number = 512;
+  /** 标签文章列表单页条数（轻量列 + 分页，避免一次读入过多行）。 */
+  static readonly ARTICLES_PAGE_SIZE: number = 50;
 }
 
 /** 全文检索相关常量。 */

@@ -21,6 +21,8 @@ import cjkTokenizerTest from './CjkTokenizer.test';
 import searchPlanTest from './SearchPlan.test';
 import retentionTest from './Retention.test';
 import feedStoreTest from './FeedStore.test';
+import tagStoreTest from './TagStore.test';
+import smartFolderTest from './SmartFolder.test';
 
 export default function testsuite() {
   htmlDomTest();
@@ -39,4 +41,6 @@ export default function testsuite() {
   searchPlanTest();
   retentionTest();
   feedStoreTest();
+  tagStoreTest();
+  smartFolderTest();
 }

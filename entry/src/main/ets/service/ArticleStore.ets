@@ -170,6 +170,45 @@ const SQL_INDEXES: string[] = [
     ArticleDbConstants.TABLE_HIGHLIGHTS + '(article_id)'
 ];
 
+/**
+ * v4 标签表：name 是展示名（归一后），name_key 是去重键（小写 + 空白折叠），
+ * 用 UNIQUE 约束兜住并发 / 重启后的重复创建。
+ */
+const SQL_CREATE_TAGS: string =
+  'CREATE TABLE IF NOT EXISTS ' + ArticleDbConstants.TABLE_TAGS + ' (' +
+  'id TEXT PRIMARY KEY, ' +
+  'name TEXT NOT NULL, ' +
+  'name_key TEXT NOT NULL UNIQUE, ' +
+  'created_at INTEGER NOT NULL DEFAULT 0)';
+
+/**
+ * v4 文章 ↔ 标签关联表：联合主键保证「同一标签重复添加不产生重复关联」。
+ * 关联行随文章删除 / 回收站过期清除而清理，但移入 / 移出回收站时**保留**（恢复后标签仍在）。
+ */
+const SQL_CREATE_ARTICLE_TAGS: string =
+  'CREATE TABLE IF NOT EXISTS ' + ArticleDbConstants.TABLE_ARTICLE_TAGS + ' (' +
+  'article_id TEXT NOT NULL, ' +
+  'tag_id TEXT NOT NULL, ' +
+  'PRIMARY KEY (article_id, tag_id))';
+
+/** v4 智能文件夹表：只存检索语法原始串 + 手动排序位。 */
+const SQL_CREATE_SMART_FOLDERS: string =
+  'CREATE TABLE IF NOT EXISTS ' + ArticleDbConstants.TABLE_SMART_FOLDERS + ' (' +
+  'id TEXT PRIMARY KEY, ' +
+  'name TEXT NOT NULL, ' +
+  'query TEXT NOT NULL, ' +
+  'sort_order INTEGER NOT NULL DEFAULT 0, ' +
+  'created_at INTEGER NOT NULL DEFAULT 0, ' +
+  'updated_at INTEGER NOT NULL DEFAULT 0)';
+
+/** v4 索引：按标签反查文章（复合）、智能文件夹排序。 */
+const SQL_INDEXES_V4: string[] = [
+  'CREATE INDEX IF NOT EXISTS idx_article_tags_tag ON ' +
+    ArticleDbConstants.TABLE_ARTICLE_TAGS + '(tag_id, article_id)',
+  'CREATE INDEX IF NOT EXISTS idx_smart_folders_order ON ' +
+    ArticleDbConstants.TABLE_SMART_FOLDERS + '(sort_order)'
+];
+
 /** 正文列（loadBody 结果）。 */
 export class ArticleBody {
   readonly content: string;
@@ -231,6 +270,15 @@ function placeholders(count: number): string {
 
 export class ArticleStore {
   private store: relationalStore.RdbStore | undefined = undefined;
+  /** open() 是否已开始（用于区分「还没打开」与「正在打开」）。 */
+  private openStarted: boolean = false;
+  /** open() 是否已结束（成功或降级）。 */
+  private readyResolved: boolean = false;
+  private readyResolve: (() => void) | undefined = undefined;
+  /** 库就绪信号：open() 结束后 resolve，供标签 / 智能文件夹等旁路 Store 等待，避免冷启动读到空库。 */
+  private readyPromise: Promise<void> = new Promise<void>((resolve: () => void) => {
+    this.readyResolve = resolve;
+  });
   /** FTS 是否可用（建表失败 / 迁移降级时为 false，检索走 LIKE）。 */
   private ftsReady: boolean = false;
   /** 中文二元组索引是否可用（建表失败时为 false，中文检索降级为 LIKE）。 */
@@ -246,6 +294,7 @@ export class ArticleStore {
 
   /** 打开（必要时建表 / 迁移）本地库。失败时降级为「无缓存」而不是崩溃。 */
   async open(context: common.Context): Promise<void> {
+    this.openStarted = true;
     try {
       const config: relationalStore.StoreConfig = {
         name: ArticleDbConstants.DB_NAME,
@@ -288,6 +337,8 @@ export class ArticleStore {
       this.addColumnIfNeeded(SQL_ADD_PAGE_LAST_MODIFIED);
       this.addColumnIfNeeded(SQL_ADD_SAVED);
       this.store.executeSync(SQL_CREATE_HIGHLIGHTS);
+      // 标签 / 智能文件夹：即使库已是最新版本也执行一遍（自愈：上次建表失败 / 被打断）。
+      this.createTagTables();
       // 结构迁移失败不删库：仅降级（无检索 / 无回收站），下次启动会重试。
       try {
         await this.migrate();
@@ -307,9 +358,32 @@ export class ArticleStore {
       this.ftsReady = false;
       this.cjkReady = false;
     }
+    this.markReady();
   }
 
-  /** 版本化迁移：v1 = 初始表；v2 = 索引 + 回收站 + FTS；v3 = 中文检索索引。 */
+  /**
+   * 等待库打开结束（成功或降级）。
+   * open() 尚未开始时立即返回，避免旁路 Store 在测试 / 无库场景下永久挂起。
+   */
+  whenReady(): Promise<void> {
+    if (this.readyResolved || !this.openStarted) {
+      return Promise.resolve();
+    }
+    return this.readyPromise;
+  }
+
+  private markReady(): void {
+    if (this.readyResolved) {
+      return;
+    }
+    this.readyResolved = true;
+    const resolve: (() => void) | undefined = this.readyResolve;
+    if (resolve !== undefined) {
+      resolve();
+    }
+  }
+
+  /** 版本化迁移：v1 = 初始表；v2 = 索引 + 回收站 + FTS；v3 = 中文检索索引；v4 = 标签 + 智能文件夹。 */
   private async migrate(): Promise<void> {
     const store: relationalStore.RdbStore | undefined = this.store;
     if (store === undefined) {
@@ -323,6 +397,7 @@ export class ArticleStore {
     }
     if (version >= ArticleDbConstants.SCHEMA_VERSION) {
       // 已是最新版本：仍确认两张索引真的可用（上次可能建表失败 / 重建被打断），必要时补建并在后台重建。
+      // 三张 v4 表已在 open() 里用 CREATE TABLE IF NOT EXISTS 自愈过，这里不重复。
       const mainStale: boolean = await this.ensureMainIndex();
       const cjkStale: boolean = await this.ensureCjkIndex();
       if (mainStale) {
@@ -333,7 +408,7 @@ export class ArticleStore {
       }
       return;
     }
-    // 结构升级（v1 → v2 → v3，语句都可重复执行）。
+    // 结构升级（v1 → v2 → v3 → v4，语句都可重复执行）。
     for (let i = 0; i < SQL_INDEXES.length; i += 1) {
       try {
         store.executeSync(SQL_INDEXES[i]);
@@ -343,6 +418,7 @@ export class ArticleStore {
       }
     }
     store.executeSync(SQL_CREATE_TRASH);
+    this.createTagTables();
     const mainStale: boolean = await this.ensureMainIndex();
     const cjkStale: boolean = await this.ensureCjkIndex();
     try {
@@ -358,6 +434,40 @@ export class ArticleStore {
     if (cjkStale) {
       this.backgroundRebuildCjk();
     }
+  }
+
+  /**
+   * 建 v4 的三张表与索引（可重复执行）。
+   *
+   * 每条单独 try/catch：任何一条失败都只记日志、不影响其它语句，也不影响阅读 / 检索主链路 ——
+   * 标签功能降级为「页面空态」，下次启动再自愈。
+   */
+  private createTagTables(): void {
+    const statements: string[] = [SQL_CREATE_TAGS, SQL_CREATE_ARTICLE_TAGS, SQL_CREATE_SMART_FOLDERS];
+    for (let i = 0; i < statements.length; i += 1) {
+      try {
+        this.store?.executeSync(statements[i]);
+      } catch (err) {
+        const error: BusinessError = err as BusinessError;
+        hilog.error(DOMAIN, TAG, 'create tag table failed: %{public}d', error.code);
+      }
+    }
+    for (let i = 0; i < SQL_INDEXES_V4.length; i += 1) {
+      try {
+        this.store?.executeSync(SQL_INDEXES_V4[i]);
+      } catch (err) {
+        const error: BusinessError = err as BusinessError;
+        hilog.warn(DOMAIN, TAG, 'create tag index failed: %{public}d', error.code);
+      }
+    }
+  }
+
+  /**
+   * 暴露共享连接：标签 / 智能文件夹 Store 复用它，避免同进程重复打开同名数据库。
+   * undefined 表示库不可用（打开失败 / 正在降级），调用方应返回空态而不是抛错。
+   */
+  getStore(): relationalStore.RdbStore | undefined {
+    return this.store;
   }
 
   /** 后台重建主索引（升级 / 补建后回填，不阻塞启动）。 */
@@ -950,14 +1060,24 @@ export class ArticleStore {
 
   /**
    * 批量删除（用户主动删除）：只删列表条目与已缓存正文，**不进回收站**。
-   * 同步删除 FTS 行，避免检索命中已删除文章。
+   * 同步删除 FTS 行与标签关联，避免检索命中已删除文章 / 残留孤儿关联。
    */
   deleteMany(ids: string[]): void {
     this.deleteFtsRows(ids);
     this.cjkDeleteRows(ids);
+    this.deleteTagLinks(ids);
     for (let i = 0; i < ids.length; i += 1) {
       this.exec('DELETE FROM ' + ArticleDbConstants.TABLE_ARTICLES + ' WHERE id = ?', [ids[i]]);
     }
+  }
+
+  /** 删除一批文章的标签关联（文章真正消失时调用；移入 / 移出回收站不调用）。 */
+  private deleteTagLinks(ids: string[]): void {
+    if (ids.length === 0) {
+      return;
+    }
+    this.exec('DELETE FROM ' + ArticleDbConstants.TABLE_ARTICLE_TAGS +
+      ' WHERE article_id IN (' + placeholders(ids.length) + ')', ids);
   }
 
   /**
@@ -1662,18 +1782,28 @@ export class ArticleStore {
     }
   }
 
-  /** 清理过期回收站条目（deleted_at < beforeTs）。 */
+  /** 清理过期回收站条目（deleted_at < beforeTs）；这些文章真正消失，标签关联一并清理。 */
   async purgeTrash(beforeTs: number): Promise<number> {
     const store: relationalStore.RdbStore | undefined = this.store;
     if (store === undefined) {
       return 0;
     }
     try {
-      const count: number = await this.queryCount(store,
-        'SELECT COUNT(*) AS c FROM ' + ArticleDbConstants.TABLE_ARTICLES_TRASH + ' WHERE deleted_at < ?',
-        [beforeTs]);
+      // 先取 id：关联表在事务外按 id 批量删除，避免留下孤儿标签关联。
+      const ids: string[] = [];
+      const rs: relationalStore.ResultSet = await store.querySql(
+        'SELECT id FROM ' + ArticleDbConstants.TABLE_ARTICLES_TRASH + ' WHERE deleted_at < ?', [beforeTs]);
+      try {
+        while (rs.goToNextRow()) {
+          ids.push(rs.getString(rs.getColumnIndex('id')));
+        }
+      } finally {
+        rs.close();
+      }
+      const count: number = ids.length;
       await store.executeSql('DELETE FROM ' + ArticleDbConstants.TABLE_ARTICLES_TRASH +
         ' WHERE deleted_at < ?', [beforeTs]);
+      this.deleteTagLinks(ids);
       return count;
     } catch (err) {
       const error: BusinessError = err as BusinessError;
@@ -2073,7 +2203,7 @@ export class ArticleStore {
     this.exec('UPDATE ' + ArticleDbConstants.TABLE_ARTICLES + ' SET is_read = 1 WHERE is_read = 0', []);
   }
 
-  /** 删除订阅源及其文章（含索引）。 */
+  /** 删除订阅源及其文章（含索引与标签关联）。 */
   deleteByFeed(feedId: string): void {
     if (this.ftsReady) {
       this.exec('DELETE FROM ' + ArticleDbConstants.TABLE_ARTICLES_FTS +
@@ -2085,6 +2215,9 @@ export class ArticleStore {
         ' WHERE article_id IN (SELECT id FROM ' + ArticleDbConstants.TABLE_ARTICLES + ' WHERE feed_id = ?)',
         [feedId]);
     }
+    this.exec('DELETE FROM ' + ArticleDbConstants.TABLE_ARTICLE_TAGS +
+      ' WHERE article_id IN (SELECT id FROM ' + ArticleDbConstants.TABLE_ARTICLES + ' WHERE feed_id = ?)',
+      [feedId]);
     this.exec('DELETE FROM ' + ArticleDbConstants.TABLE_ARTICLES + ' WHERE feed_id = ?', [feedId]);
   }
 

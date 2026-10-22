@@ -20,12 +20,17 @@ import { RouterConstants } from '../common/constants/RouterConstants';
 import { ArticleFilter, FeedError, GroupMode } from '../common/constants/RssConstants';
 import { FeedErrorText } from '../common/utils/FeedErrorText';
 import { safeArea } from '../service/SafeAreaController';
+import { TagPickerSheet } from './TagPickerSheet';
+import { tagViewModel } from '../viewmodel/TagViewModel';
+import { ToastUtil } from '../common/utils/ToastUtil';
 
 @ComponentV2
 export struct HomeTabView {
   @Param navPathStack: NavPathStack = new NavPathStack();
   @Param scroller: Scroller = new Scroller();
   @Local refreshing: boolean = false;
+  /** 批量打标面板显隐（多选工具条「标签」入口）。 */
+  @Local showTagSheet: boolean = false;
   /** 「添加订阅源」入口在悬浮页签栏的 miniBar 上（Index 持有面板），这里只发请求。 */
   @Event onAddFeedRequest: () => void = () => {};
   /** 列表数据源（LazyForEach 虚拟化用）。 */
@@ -363,6 +368,9 @@ export struct HomeTabView {
         this.SelectionAction($r('app.string.action_mark_above_read'), () => {
           feedViewModel.markAboveRead(feedViewModel.anchorId);
         })
+        this.SelectionAction($r('app.string.tag_title'), () => {
+          this.showTagSheet = true;
+        })
         this.SelectionAction($r('app.string.action_delete'), () => {
           this.confirmDeleteSelected();
         })
@@ -387,6 +395,34 @@ export struct HomeTabView {
       .onClick(() => {
         action();
       })
+  }
+
+  /** 批量打标面板：选中标签后把当前选中的文章全部关联上。 */
+  @Builder
+  TagSheet() {
+    TagPickerSheet({
+      selectedTagIds: [],
+      onConfirm: (ids: string[]) => {
+        this.showTagSheet = false;
+        this.applyTags(ids);
+      }
+    })
+  }
+
+  /**
+   * 批量打标：逐个标签关联全部选中文章（INSERT OR IGNORE，重复添加不产生重复行），
+   * 完成后退出多选并提示成功篇数。
+   */
+  private async applyTags(tagIds: string[]): Promise<void> {
+    const ids: string[] = feedViewModel.selectedIds.slice();
+    if (ids.length === 0 || tagIds.length === 0) {
+      return;
+    }
+    for (let i = 0; i < tagIds.length; i += 1) {
+      await tagViewModel.addTagsToArticles(ids, tagIds[i]);
+    }
+    ToastUtil.show(this.getUIContext(), $r('app.string.tag_batch_done', ids.length));
+    feedViewModel.exitSelect();
   }
 
   /** 批量删除确认。 */
@@ -538,5 +574,13 @@ export struct HomeTabView {
     .width('100%')
     .height('100%')
     .backgroundColor($r('app.color.hm_page_transparent'))
+    // 批量打标面板：多选工具条「标签」打开（与详情页共用同一个选择器）。
+    .bindSheet(this.showTagSheet, this.TagSheet(), MaterialController.sheetOptions({
+      height: SheetSize.MEDIUM,
+      dragBar: true,
+      onDisappear: () => {
+        this.showTagSheet = false;
+      }
+    }, appSettings.immersiveOn))
   }
 }

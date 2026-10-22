@@ -1575,6 +1575,182 @@
     {
       "name": "search_index_fallback",
       "value": "Using basic matching (index unavailable)"
+    },
+    {
+      "name": "tag_title",
+      "value": "Tags"
+    },
+    {
+      "name": "tag_entry",
+      "value": "Tags (%d)"
+    },
+    {
+      "name": "tag_empty",
+      "value": "No tags yet"
+    },
+    {
+      "name": "tag_new_hint",
+      "value": "New tag name"
+    },
+    {
+      "name": "tag_new",
+      "value": "New tag"
+    },
+    {
+      "name": "tag_name_invalid",
+      "value": "Enter a tag name (max 32 characters)"
+    },
+    {
+      "name": "tag_limit_reached",
+      "value": "Tag limit reached (100)"
+    },
+    {
+      "name": "tag_rename",
+      "value": "Rename"
+    },
+    {
+      "name": "tag_rename_hint",
+      "value": "Tag name"
+    },
+    {
+      "name": "tag_remove",
+      "value": "Delete tag"
+    },
+    {
+      "name": "tag_remove_confirm_title",
+      "value": "Delete tag?"
+    },
+    {
+      "name": "tag_remove_confirm_message",
+      "value": "Articles keep their content; only the tag is removed."
+    },
+    {
+      "name": "tag_view_results",
+      "value": "View results"
+    },
+    {
+      "name": "tag_articles_title",
+      "value": "Tagged articles"
+    },
+    {
+      "name": "tag_picker_title",
+      "value": "Tags"
+    },
+    {
+      "name": "tag_picker_empty",
+      "value": "No tags yet — create one below"
+    },
+    {
+      "name": "tag_apply",
+      "value": "Apply"
+    },
+    {
+      "name": "tag_select_hint",
+      "value": "Select at least one tag"
+    },
+    {
+      "name": "tag_added",
+      "value": "Tag added"
+    },
+    {
+      "name": "tag_removed",
+      "value": "Tag removed"
+    },
+    {
+      "name": "tag_batch_done",
+      "value": "%d articles tagged"
+    },
+    {
+      "name": "tag_action_failed",
+      "value": "Tag action failed"
+    },
+    {
+      "name": "tag_manage_hint",
+      "value": "Select tags to see articles that have all of them"
+    },
+    {
+      "name": "smart_folder_title",
+      "value": "Smart folders"
+    },
+    {
+      "name": "smart_folder_entry",
+      "value": "Smart folders (%d)"
+    },
+    {
+      "name": "smart_folder_empty",
+      "value": "No smart folders yet"
+    },
+    {
+      "name": "smart_folder_new",
+      "value": "New smart folder"
+    },
+    {
+      "name": "smart_folder_name_hint",
+      "value": "Folder name"
+    },
+    {
+      "name": "smart_folder_query_hint",
+      "value": "Query, e.g. from:Feed is:unread AI"
+    },
+    {
+      "name": "smart_folder_query_label",
+      "value": "Query"
+    },
+    {
+      "name": "smart_folder_save_current",
+      "value": "Save as smart folder"
+    },
+    {
+      "name": "smart_folder_saved",
+      "value": "Smart folder saved"
+    },
+    {
+      "name": "smart_folder_query_empty",
+      "value": "Query can't be empty"
+    },
+    {
+      "name": "smart_folder_name_invalid",
+      "value": "Enter a name (max 32 characters)"
+    },
+    {
+      "name": "smart_folder_limit_reached",
+      "value": "Smart folder limit reached (50)"
+    },
+    {
+      "name": "smart_folder_query_too_long",
+      "value": "Query is too long (max 512 characters)"
+    },
+    {
+      "name": "smart_folder_edit",
+      "value": "Edit"
+    },
+    {
+      "name": "smart_folder_save",
+      "value": "Save"
+    },
+    {
+      "name": "smart_folder_remove",
+      "value": "Delete smart folder"
+    },
+    {
+      "name": "smart_folder_remove_confirm_title",
+      "value": "Delete smart folder?"
+    },
+    {
+      "name": "smart_folder_remove_confirm_message",
+      "value": "Only the saved query is removed; articles stay."
+    },
+    {
+      "name": "smart_folder_move_up",
+      "value": "Move up"
+    },
+    {
+      "name": "smart_folder_move_down",
+      "value": "Move down"
+    },
+    {
+      "name": "smart_folder_open_failed",
+      "value": "This folder can't be opened"
     }
   ]
 }
