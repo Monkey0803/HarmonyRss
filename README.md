@@ -6,6 +6,10 @@ HarmonyOS（ArkTS）RSS 阅读器。基于 **UI Design Kit（HDS）** 组件与 
 ## 功能
 
 - **订阅与阅读**：RSS 2.0 / Atom 1.0 / JSON Feed；分组管理、OPML 导入导出、未读/收藏筛选。
+- **自建服务同步（Google Reader API）**：接入 FreshRSS / Tiny Tiny RSS / Miniflux，账密登录后按地址
+  合并订阅（保留本地独有源）、增量拉取文章并去重；已读 / 收藏双向同步（本地变更入队批量回写，
+  远端状态拉回只改状态列），冲突按 push-first 收敛。密码存入系统 Asset Store，不落明文；
+  支持 http 明文地址（需显式开启）与回前台按间隔自动同步（默认关）。设置 → 系统 → 账号与服务。
 - **长期历史 + 可撤销清理**：默认永久保留全部历史（不再有 1000 篇上限）；可选 30 / 90 / 365 天或
   「仅保留未读与收藏」。清理前预览影响条数，收藏 / 稍后读 / 有高亮 / 当前打开的文章永不删除，
   被清理文章进入回收站 7 天内可恢复。设置页「存储与保留」展示总占用、按源占用，支持重建检索索引。
@@ -39,6 +43,7 @@ entry/src/main/ets/
   common/      常量、通用组件与工具
   model/       领域模型（@ObservedV2）与设置项
   service/     平台能力与纯逻辑（网络 / 存储 / 解析 / 提取 / 渲染 / 检索 / 保留策略）
+  service/remote/  远端服务（GReader 协议 / HTTP / 凭据 / 同步编排）
   viewmodel/   FeedViewModel / SettingsViewModel / SearchViewModel / StorageViewModel
   views/       页面与组件（纯展示）
   form/        桌面卡片

@@ -25,4 +25,6 @@ export class RouterConstants {
   static readonly PAGE_TAG_ARTICLES: string = 'tagArticles';
   /** 智能文件夹管理页。 */
   static readonly PAGE_SMART_FOLDERS: string = 'smartFolders';
+  /** 远端账号与服务页（FrashRSS / GReader API）。 */
+  static readonly PAGE_REMOTE: string = 'remoteService';
 }

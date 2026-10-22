@@ -33,6 +33,7 @@ import { ArchiveDays, AutoRefreshMinutes, FullTextMode, TriState } from '../comm
 import { settingsStore } from '../service/SettingsStore';
 import { settingsViewModel } from './SettingsViewModel';
 import { retentionService } from '../service/RetentionService';
+import { remoteSyncService } from '../service/remote/RemoteSyncService';
 
 const MINUTE_MS: number = 60 * 1000;
 
@@ -199,6 +200,19 @@ export class FeedViewModel {
     this.groupMode = appSettings.listGroupMode;
     this.filter = appSettings.homeFilter;
     this.feeds = await feedStore.load(context);
+    // 远端同步通过回调读写订阅源与文章列表（避免 Service 反向依赖 ViewModel）。
+    remoteSyncService.bindFeedSource(
+      (): FeedSource[] => this.feeds,
+      (feeds: FeedSource[]): void => {
+        this.feeds = feeds;
+        feedStore.save(this.feeds);
+        this.publish();
+      },
+      (): void => {
+        this.reloadAfterRetention().catch((err: BusinessError) => {
+          console.warn('remote reload failed: ' + err.message);
+        });
+      });
     await articleStore.open(context);
     this.all = await articleStore.loadForList();
     retentionService.configure(context, this.feeds);
@@ -1308,6 +1322,7 @@ export class FeedViewModel {
         const next: boolean = !this.all[i].starred;
         this.all[i].starred = next;
         articleStore.setStarred(articleId, next);
+        remoteSyncService.enqueueState(articleId, undefined, next);
         break;
       }
     }
@@ -1339,6 +1354,9 @@ export class FeedViewModel {
       }
     }
     articleStore.setReadMany(ids, read);
+    for (let i = 0; i < ids.length; i += 1) {
+      remoteSyncService.enqueueState(ids[i], read, undefined);
+    }
     this.exitSelect();
     this.publish();
   }
@@ -1355,6 +1373,9 @@ export class FeedViewModel {
       }
     }
     articleStore.setStarredMany(ids, starred);
+    for (let i = 0; i < ids.length; i += 1) {
+      remoteSyncService.enqueueState(ids[i], undefined, starred);
+    }
     this.exitSelect();
     this.publish();
   }
@@ -1418,6 +1439,9 @@ export class FeedViewModel {
     }
     if (ids.length > 0) {
       articleStore.setReadMany(ids, true);
+      for (let i = 0; i < ids.length; i += 1) {
+        remoteSyncService.enqueueState(ids[i], true, undefined);
+      }
     }
     this.publish();
   }
@@ -1459,10 +1483,17 @@ export class FeedViewModel {
 
   /** 全部标为已读。 */
   markAllRead(): void {
+    const changed: string[] = [];
     for (let i = 0; i < this.all.length; i += 1) {
-      this.all[i].read = true;
+      if (!this.all[i].read) {
+        this.all[i].read = true;
+        changed.push(this.all[i].id);
+      }
     }
     articleStore.markAllRead();
+    for (let i = 0; i < changed.length; i += 1) {
+      remoteSyncService.enqueueState(changed[i], true, undefined);
+    }
     this.publish();
   }
 
@@ -1473,6 +1504,7 @@ export class FeedViewModel {
         const next: boolean = !this.all[i].read;
         this.all[i].read = next;
         articleStore.setRead(articleId, next);
+        remoteSyncService.enqueueState(articleId, next, undefined);
         break;
       }
     }
@@ -1613,6 +1645,7 @@ export class FeedViewModel {
       if (this.all[i].id === articleId && !this.all[i].read) {
         this.all[i].read = true;
         articleStore.setRead(articleId, true);
+        remoteSyncService.enqueueState(articleId, true, undefined);
         break;
       }
     }

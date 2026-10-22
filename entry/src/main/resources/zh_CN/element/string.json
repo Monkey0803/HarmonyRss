@@ -1751,6 +1751,226 @@
     {
       "name": "smart_folder_open_failed",
       "value": "无法打开该智能文件夹"
+    },
+    {
+      "name": "remote_entry_title",
+      "value": "账号与服务"
+    },
+    {
+      "name": "remote_title",
+      "value": "账号与服务"
+    },
+    {
+      "name": "remote_section_connect",
+      "value": "连接服务"
+    },
+    {
+      "name": "remote_field_base_url",
+      "value": "服务地址"
+    },
+    {
+      "name": "remote_field_base_url_hint",
+      "value": "https://rss.example.com"
+    },
+    {
+      "name": "remote_field_username",
+      "value": "用户名"
+    },
+    {
+      "name": "remote_field_password",
+      "value": "密码"
+    },
+    {
+      "name": "remote_allow_http",
+      "value": "允许明文 HTTP"
+    },
+    {
+      "name": "remote_allow_http_hint",
+      "value": "仅用于信任的自建服务；HTTP 流量不加密。"
+    },
+    {
+      "name": "remote_connect",
+      "value": "连接"
+    },
+    {
+      "name": "remote_connecting",
+      "value": "正在连接…"
+    },
+    {
+      "name": "remote_connected",
+      "value": "已连接"
+    },
+    {
+      "name": "remote_not_connected",
+      "value": "未连接"
+    },
+    {
+      "name": "remote_section_status",
+      "value": "同步状态"
+    },
+    {
+      "name": "remote_status_service",
+      "value": "服务类型"
+    },
+    {
+      "name": "remote_status_service_value",
+      "value": "Google Reader API"
+    },
+    {
+      "name": "remote_status_base_url",
+      "value": "地址"
+    },
+    {
+      "name": "remote_status_username",
+      "value": "账号"
+    },
+    {
+      "name": "remote_status_last_sync",
+      "value": "最近同步"
+    },
+    {
+      "name": "remote_status_never",
+      "value": "尚未同步"
+    },
+    {
+      "name": "remote_status_pending",
+      "value": "待同步变更"
+    },
+    {
+      "name": "remote_status_failures",
+      "value": "连续失败"
+    },
+    {
+      "name": "remote_status_last_error",
+      "value": "最近错误"
+    },
+    {
+      "name": "remote_sync_now",
+      "value": "立即同步"
+    },
+    {
+      "name": "remote_syncing",
+      "value": "正在同步…"
+    },
+    {
+      "name": "remote_logout",
+      "value": "退出登录"
+    },
+    {
+      "name": "remote_logout_confirm_title",
+      "value": "退出登录？"
+    },
+    {
+      "name": "remote_logout_confirm_message",
+      "value": "本地文章与阅读状态会保留。你也可以同时清除同步映射与待同步队列。"
+    },
+    {
+      "name": "remote_logout_keep",
+      "value": "保留本地数据"
+    },
+    {
+      "name": "remote_logout_clear",
+      "value": "清除同步数据"
+    },
+    {
+      "name": "remote_logout_done",
+      "value": "已退出登录"
+    },
+    {
+      "name": "remote_phase_feeds",
+      "value": "正在拉取订阅…"
+    },
+    {
+      "name": "remote_phase_articles",
+      "value": "正在拉取文章…"
+    },
+    {
+      "name": "remote_phase_push",
+      "value": "正在回写阅读状态…"
+    },
+    {
+      "name": "remote_phase_pull",
+      "value": "正在应用远端状态…"
+    },
+    {
+      "name": "remote_phase_done",
+      "value": "同步完成"
+    },
+    {
+      "name": "remote_progress",
+      "value": "已同步 %d / %d 个订阅源"
+    },
+    {
+      "name": "remote_error_network",
+      "value": "无法连接服务，请检查地址与网络。"
+    },
+    {
+      "name": "remote_error_tls",
+      "value": "证书不受信任，请使用有效证书或允许 HTTP。"
+    },
+    {
+      "name": "remote_error_auth",
+      "value": "账号或密码错误。"
+    },
+    {
+      "name": "remote_error_api",
+      "value": "服务未开启 Google Reader API。"
+    },
+    {
+      "name": "remote_error_rate",
+      "value": "服务端限流，请稍后重试。"
+    },
+    {
+      "name": "remote_error_server",
+      "value": "服务端错误，请稍后重试。"
+    },
+    {
+      "name": "remote_error_parse",
+      "value": "服务端返回了无法解析的内容。"
+    },
+    {
+      "name": "remote_error_insecure",
+      "value": "已禁用 HTTP。如需使用该地址，请开启「允许明文 HTTP」。"
+    },
+    {
+      "name": "remote_error_empty",
+      "value": "请填写服务地址、用户名和密码。"
+    },
+    {
+      "name": "remote_error_busy",
+      "value": "已有同步正在进行。"
+    },
+    {
+      "name": "remote_error_not_connected",
+      "value": "请先连接服务。"
+    },
+    {
+      "name": "remote_sync_done",
+      "value": "同步完成"
+    },
+    {
+      "name": "remote_sync_summary",
+      "value": "%d 个订阅源 · %d 篇文章 · %d 条状态回写"
+    },
+    {
+      "name": "remote_form_hint",
+      "value": "支持 FreshRSS、Tiny Tiny RSS、Miniflux（Google Reader API）。"
+    },
+    {
+      "name": "remote_aux_credentials",
+      "value": "凭据保存在系统 Asset Store，不会明文存储。"
+    },
+    {
+      "name": "remote_empty_status",
+      "value": "连接服务后可同步订阅与阅读状态。"
+    },
+    {
+      "name": "remote_status_feeds",
+      "value": "远端订阅"
+    },
+    {
+      "name": "remote_auto_sync",
+      "value": "自动同步"
     }
   ]
 }

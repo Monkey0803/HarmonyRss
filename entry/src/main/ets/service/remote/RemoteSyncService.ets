@@ -1,0 +1,683 @@
+/*
+ * RemoteSyncService.ets — 远端同步编排（Google Reader API）。
+ *
+ * 职责：连接 / 登录、订阅合并、文章增量拉取、已读与收藏双向同步、自动同步判断、退出登录。
+ * 本地库始终是离线权威副本：所有失败只记录，不破坏本地数据；凭据只走 Asset Store。
+ *
+ * 纯逻辑辅助（mergeFeeds / decideState / buildEditTagBatches）与副作用分离，便于单测。
+ */
+
+import { hilog } from '@kit.PerformanceAnalysisKit';
+import {
+  ArticleState,
+  EditTagOp,
+  OutboxItem,
+  RemoteAccount,
+  RemoteArticle,
+  RemoteConnectResult,
+  RemoteContentsPage,
+  RemoteError,
+  RemoteErrorCode,
+  RemoteFeed,
+  RemoteIdPage,
+  RemoteMapping,
+  SyncResult,
+  SyncStatus
+} from '../../model/Remote';
+import { Article, FeedSource } from '../../model/Feed';
+import { RemoteSyncConstants } from '../../common/constants/RssConstants';
+import { buildArticleId } from '../ArticleMapper';
+import { ParsedArticle } from '../RssParser';
+import { articleStore } from '../ArticleStore';
+import { remoteAccountStore } from '../RemoteAccountStore';
+import { remoteCredentials } from './RemoteCredentials';
+import {
+  GReaderClient,
+  gReaderClient,
+  isInsecureUrl,
+  normalizeBaseUrl,
+  ProbeResult
+} from './GReaderClient';
+import {
+  buildEditTagBatches,
+  decideState,
+  feedKey,
+  FeedMergeResult,
+  mergeFeeds
+} from './RemoteSyncPlan';
+import { appSettings } from '../../model/AppSettings';
+
+const DOMAIN: number = 0x0000;
+const TAG: string = 'RemoteSyncService';
+
+/** 纯逻辑在 RemoteSyncPlan 中实现；这里 re-export，保持「同步服务对外提供纯函数」的契约。 */
+export { FeedMergeResult, mergeFeeds, decideState, buildEditTagBatches, feedKey };
+
+/** 自动同步间隔（分钟）；off / 脏值为 0。 */
+function autoSyncMinutes(value: string): number {
+  if (value === RemoteSyncConstants.AUTO_SYNC_15) {
+    return 15;
+  }
+  if (value === RemoteSyncConstants.AUTO_SYNC_30) {
+    return 30;
+  }
+  if (value === RemoteSyncConstants.AUTO_SYNC_60) {
+    return 60;
+  }
+  return 0;
+}
+
+/** 远端文章的标题 / 摘要等转成本地 Article（本地 id 与本地抓取一致，天然去重）。 */
+function toLocalArticle(feed: FeedSource, item: RemoteArticle): Article {
+  const parsedTitle: string = item.title.length > 0
+    ? item.title
+    : (item.link.length > 0 ? item.link : item.remoteId);
+  // 远端文章也走同一套本地 id 规则：feedId + 链接（无链接时用标题）。
+  const parsed: ParsedArticle = new ParsedArticle(parsedTitle, item.link, item.summary,
+    item.content, item.publishedAt, '', item.author, item.contentHtml);
+  const id: string = buildArticleId(feed.id, parsed);
+  const article: Article = new Article(id, feed.id, feed.title, parsedTitle, item.link,
+    item.summary, item.content, item.publishedAt, '', item.author, item.contentHtml);
+  article.read = item.read;
+  article.starred = item.starred;
+  return article;
+}
+
+@ObservedV2
+export class RemoteSyncService {
+  /** 是否正在同步（账号页按钮禁用 / 进度展示）。 */
+  @Trace syncing: boolean = false;
+  /** 当前阶段：'idle' | 'feeds' | 'articles' | 'push' | 'pull' | 'done'。 */
+  @Trace phase: string = 'idle';
+  /** 文章拉取进度：已处理的订阅源数 / 总数。 */
+  @Trace progressDone: number = 0;
+  @Trace progressTotal: number = 0;
+  /** 最近一次失败的错误码（用于账号页即时提示）。 */
+  @Trace lastErrorCode: string = '';
+
+  private account: RemoteAccount | undefined = undefined;
+  private accountLoaded: boolean = false;
+  private authToken: string = '';
+  private authAccountId: string = '';
+  /** 订阅源读写桥（避免 Service 反向依赖 ViewModel 造成循环导入）。 */
+  private feedProvider: (() => FeedSource[]) | undefined = undefined;
+  private feedChanged: ((feeds: FeedSource[]) => void) | undefined = undefined;
+  private articlesChanged: (() => void) | undefined = undefined;
+  private client: GReaderClient = gReaderClient;
+
+  /** 由 FeedViewModel 注册：读取当前订阅、回写合并结果、刷新文章列表。 */
+  bindFeedSource(provider: () => FeedSource[], onFeedsChanged: (feeds: FeedSource[]) => void,
+    onArticlesChanged: () => void): void {
+    this.feedProvider = provider;
+    this.feedChanged = onFeedsChanged;
+    this.articlesChanged = onArticlesChanged;
+  }
+
+  /** 当前账号（可能为 undefined）。 */
+  currentAccount(): RemoteAccount | undefined {
+    return this.account;
+  }
+
+  /** 立即读一次账号（启动 / 进入账号页时调用）。 */
+  async ensureAccount(force: boolean = false): Promise<RemoteAccount | undefined> {
+    if (this.accountLoaded && !force) {
+      return this.account;
+    }
+    this.account = await remoteAccountStore.loadAccount();
+    this.accountLoaded = true;
+    return this.account;
+  }
+
+  /**
+   * 本地状态变更入队。未连接账号时零开销直接返回。
+   * 故意用 void 返回 + fire-and-forget：状态切换不应被数据库写入阻塞。
+   */
+  enqueueState(articleId: string, read?: boolean, starred?: boolean): void {
+    if (articleId.length === 0 || (read === undefined && starred === undefined)) {
+      return;
+    }
+    if (this.accountLoaded && this.account === undefined) {
+      return;
+    }
+    this.ensureAccount().then((account: RemoteAccount | undefined) => {
+      if (account === undefined) {
+        return;
+      }
+      remoteAccountStore.enqueueState(articleId, read, starred);
+    }).catch((err: Error) => {
+      hilog.warn(DOMAIN, TAG, 'enqueue failed: %{public}s', err.message);
+    });
+  }
+
+  /** 连接：URL 归一 → 探测 → 登录 → 存凭据/账号 → 首次同步。 */
+  async connect(baseUrl: string, username: string, password: string,
+    allowHttp: boolean): Promise<RemoteConnectResult> {
+    const user: string = username.trim();
+    if (baseUrl.trim().length === 0 || user.length === 0 || password.length === 0) {
+      return new RemoteConnectResult(false, RemoteErrorCode.EMPTY, 'missing fields');
+    }
+    const normalized: string = normalizeBaseUrl(baseUrl);
+    if (normalized.length === 0) {
+      return new RemoteConnectResult(false, RemoteErrorCode.EMPTY, 'invalid url');
+    }
+    if (isInsecureUrl(normalized) && !allowHttp) {
+      return new RemoteConnectResult(false, RemoteErrorCode.INSECURE_HTTP, 'http not allowed');
+    }
+    try {
+      const probe: ProbeResult = await this.client.probe(normalized);
+      if (!probe.reachable) {
+        return new RemoteConnectResult(false, RemoteErrorCode.NETWORK, 'unreachable');
+      }
+      const auth: string = await this.client.login(normalized, user, password);
+      const remoteFeeds: RemoteFeed[] = await this.client.fetchSubscriptions(normalized, auth);
+      // 复用已有账号 id（更换地址 / 密码时保持映射与游标）。
+      const previous: RemoteAccount | undefined = await remoteAccountStore.loadAccount();
+      const account: RemoteAccount = previous !== undefined
+        ? previous
+        : new RemoteAccount(this.newAccountId(), normalized, user, RemoteSyncConstants.SERVICE_TYPE_GREADER);
+      // 换服务地址时旧映射 / 游标指向另一台服务器，必须清掉，否则会误判增量与回写目标。
+      if (previous !== undefined && previous.baseUrl !== normalized) {
+        await remoteAccountStore.clearOutbox();
+        await remoteAccountStore.clearMappings();
+        await remoteAccountStore.clearState();
+      }
+      account.baseUrl = normalized;
+      account.username = user;
+      account.serviceType = RemoteSyncConstants.SERVICE_TYPE_GREADER;
+      account.enabled = true;
+      account.failureCount = 0;
+      account.lastError = '';
+      await remoteCredentials.save(account.id, password);
+      await remoteAccountStore.saveAccount(account);
+      this.account = account;
+      this.accountLoaded = true;
+      this.authToken = auth;
+      this.authAccountId = account.id;
+      const result: RemoteConnectResult =
+        new RemoteConnectResult(true, RemoteErrorCode.NONE, '', remoteFeeds.length);
+      // 首次同步：失败不影响「已连接」，但把原因带回界面。
+      try {
+        await this.runSync(account);
+      } catch (err) {
+        result.syncError = this.codeOf(err);
+        hilog.warn(DOMAIN, TAG, 'first sync failed: %{public}s', result.syncError);
+      }
+      return result;
+    } catch (err) {
+      const code: RemoteErrorCode = this.codeOfObject(err);
+      hilog.warn(DOMAIN, TAG, 'connect failed: %{public}s', code.toString());
+      return new RemoteConnectResult(false, code, 'connect failed');
+    }
+  }
+
+  /** 手动同步。 */
+  async syncNow(): Promise<SyncResult> {
+    if (this.syncing) {
+      throw new RemoteError(RemoteErrorCode.BUSY, 'sync already running');
+    }
+    const account: RemoteAccount | undefined = await this.ensureAccount();
+    if (account === undefined) {
+      throw new RemoteError(RemoteErrorCode.NOT_CONNECTED, 'no account');
+    }
+    return await this.runSync(account);
+  }
+
+  /** 同步主流程（push-first：先回写本地变更，再拉远端状态）。 */
+  private async runSync(account: RemoteAccount): Promise<SyncResult> {
+    this.syncing = true;
+    this.lastErrorCode = '';
+    this.progressDone = 0;
+    this.progressTotal = 0;
+    const result: SyncResult = new SyncResult();
+    try {
+      const auth: string = await this.ensureAuth(account);
+      // 1) 订阅合并
+      this.phase = 'feeds';
+      const remoteFeeds: RemoteFeed[] = await this.client.fetchSubscriptions(account.baseUrl, auth);
+      await remoteAccountStore.setState('remote_feed_count', remoteFeeds.length.toString());
+      const provider = this.feedProvider;
+      const localFeeds: FeedSource[] = provider !== undefined ? provider() : [];
+      const merged: FeedMergeResult = mergeFeeds(localFeeds, remoteFeeds);
+      result.feedsAdded = merged.added;
+      const feedChanged = this.feedChanged;
+      if (merged.changed && feedChanged !== undefined) {
+        feedChanged(merged.feeds);
+      }
+      // 2) 文章增量拉取
+      this.phase = 'articles';
+      this.progressTotal = remoteFeeds.length;
+      await this.pullArticles(account, auth, remoteFeeds, merged.feeds, result);
+      // 3) 回写本地状态（先 push，保证本地最近操作不被远端旧状态覆盖）
+      this.phase = 'push';
+      await this.pushStates(account, auth, result);
+      // 4) 拉回远端状态
+      this.phase = 'pull';
+      await this.pullStates(account, auth, result);
+      const now: number = Date.now();
+      account.lastSyncAt = now;
+      account.failureCount = 0;
+      account.lastError = '';
+      await remoteAccountStore.setState('last_sync_at', now.toString());
+      await remoteAccountStore.saveAccount(account);
+      this.phase = 'done';
+      this.notifyArticlesChanged();
+      return result;
+    } catch (err) {
+      const code: RemoteErrorCode = this.codeOfObject(err);
+      // 凭据 / token 失效：清掉内存 token，下次同步重新 ClientLogin。
+      if (code === RemoteErrorCode.AUTH) {
+        this.authToken = '';
+        this.authAccountId = '';
+      }
+      this.lastErrorCode = code.toString();
+      account.failureCount = account.failureCount + 1;
+      account.lastError = code.toString();
+      await remoteAccountStore.saveAccount(account);
+      this.phase = 'idle';
+      throw new RemoteError(code, 'sync failed');
+    } finally {
+      this.syncing = false;
+    }
+  }
+
+  private async ensureAuth(account: RemoteAccount): Promise<string> {
+    if (this.authToken.length > 0 && this.authAccountId === account.id) {
+      return this.authToken;
+    }
+    const password: string | undefined = await remoteCredentials.read(account.id);
+    if (password === undefined) {
+      throw new RemoteError(RemoteErrorCode.AUTH, 'missing credentials');
+    }
+    const token: string = await this.client.login(account.baseUrl, account.username, password);
+    this.authToken = token;
+    this.authAccountId = account.id;
+    return token;
+  }
+
+  /** 拉文章：每源分页，首次只取第一页；重复 remote_id / 重复 link 不重复插入。 */
+  private async pullArticles(account: RemoteAccount, auth: string, remoteFeeds: RemoteFeed[],
+    localFeeds: FeedSource[], result: SyncResult): Promise<void> {
+    const remoteByKey: Map<string, RemoteFeed> = new Map<string, RemoteFeed>();
+    for (let i = 0; i < remoteFeeds.length; i += 1) {
+      const key: string = feedKey(remoteFeeds[i].url);
+      if (key.length > 0 && !remoteByKey.has(key)) {
+        remoteByKey.set(key, remoteFeeds[i]);
+      }
+    }
+    const seenRemote: Set<string> = new Set<string>();
+    let total: number = 0;
+    for (let f = 0; f < localFeeds.length; f += 1) {
+      const feed: FeedSource = localFeeds[f];
+      const remote: RemoteFeed | undefined = remoteByKey.get(feedKey(feed.url));
+      if (remote === undefined) {
+        this.progressDone = f + 1;
+        continue;
+      }
+      const cursorText: string = await remoteAccountStore.getState('cursor_' + feed.id);
+      const cursor: number = cursorText.length > 0 ? Number.parseInt(cursorText, 10) : 0;
+      const safeCursor: number = Number.isNaN(cursor) ? 0 : cursor;
+      const articles: Article[] = [];
+      const mappings: RemoteMapping[] = [];
+      let continuation: string = '';
+      let pages: number = 0;
+      let maxPublished: number = safeCursor;
+      const pageLimit: number = safeCursor <= 0 ? 1 : RemoteSyncConstants.MAX_PAGES_PER_FEED;
+      while (pages < pageLimit && total < RemoteSyncConstants.MAX_ARTICLES_PER_SYNC) {
+        const page: RemoteContentsPage = await this.client.fetchContents(account.baseUrl, auth,
+          remote.url, continuation, RemoteSyncConstants.PAGE_SIZE);
+        pages += 1;
+        if (page.items.length === 0) {
+          break;
+        }
+        let pageHasNew: boolean = false;
+        for (let i = 0; i < page.items.length; i += 1) {
+          const item: RemoteArticle = page.items[i];
+          if (safeCursor > 0 && item.publishedAt > 0 && item.publishedAt <= safeCursor) {
+            continue;
+          }
+          pageHasNew = true;
+          if (seenRemote.has(item.remoteId)) {
+            continue;
+          }
+          seenRemote.add(item.remoteId);
+          const article: Article = toLocalArticle(feed, item);
+          articles.push(article);
+          mappings.push(new RemoteMapping(item.remoteId, article.id, feed.id));
+          if (item.publishedAt > maxPublished) {
+            maxPublished = item.publishedAt;
+          }
+          total += 1;
+          if (total >= RemoteSyncConstants.MAX_ARTICLES_PER_SYNC) {
+            break;
+          }
+        }
+        if (safeCursor > 0 && !pageHasNew) {
+          break;
+        }
+        if (page.continuation.length === 0) {
+          break;
+        }
+        continuation = page.continuation;
+      }
+      if (articles.length > 0) {
+        const inserted: number = await articleStore.insertRemote(articles, mappings);
+        result.articlesAdded += inserted;
+      }
+      if (maxPublished > safeCursor) {
+        await remoteAccountStore.setState('cursor_' + feed.id, maxPublished.toString());
+      }
+      this.progressDone = f + 1;
+      if (total >= RemoteSyncConstants.MAX_ARTICLES_PER_SYNC) {
+        break;
+      }
+    }
+  }
+
+  /** 回写本地已读 / 收藏（每批 50 条，失败累加重试与最近错误）。 */
+  private async pushStates(account: RemoteAccount, auth: string, result: SyncResult): Promise<void> {
+    const pending: OutboxItem[] =
+      await remoteAccountStore.pendingItems(RemoteSyncConstants.MAX_ARTICLES_PER_SYNC);
+    if (pending.length === 0) {
+      return;
+    }
+    const mappings: RemoteMapping[] = await remoteAccountStore.allMappings();
+    const remoteIds: Map<string, string> = new Map<string, string>();
+    const localIds: Map<string, string> = new Map<string, string>();
+    for (let i = 0; i < mappings.length; i += 1) {
+      remoteIds.set(mappings[i].articleId, mappings[i].remoteId);
+      if (!localIds.has(mappings[i].remoteId)) {
+        localIds.set(mappings[i].remoteId, mappings[i].articleId);
+      }
+    }
+    const batches: EditTagOp[][] = buildEditTagBatches(pending,
+      remoteIds, RemoteSyncConstants.WRITE_BATCH);
+    if (batches.length === 0) {
+      // 没有任何可回写的映射：直接清掉，避免队列永久积压。
+      const ids: string[] = [];
+      for (let i = 0; i < pending.length; i += 1) {
+        ids.push(pending[i].articleId);
+      }
+      await remoteAccountStore.ackItems(ids);
+      return;
+    }
+    let writeToken: string = '';
+    const attempted: Set<string> = new Set<string>();
+    for (let b = 0; b < batches.length; b += 1) {
+      if (writeToken.length === 0) {
+        writeToken = await this.client.fetchWriteToken(account.baseUrl, auth);
+      }
+      const batch: EditTagOp[] = batches[b];
+      // 同一组增删标签的条目合并成一次 edit-tag（减少请求数，满足 50 条 5 秒内回写）。
+      const groupKeys: string[] = [];
+      const groups: Map<string, EditTagOp[]> = new Map<string, EditTagOp[]>();
+      for (let i = 0; i < batch.length; i += 1) {
+        const op: EditTagOp = batch[i];
+        const key: string = op.addTags.join(',') + '|' + op.removeTags.join(',');
+        let bucket: EditTagOp[] | undefined = groups.get(key);
+        if (bucket === undefined) {
+          bucket = [];
+          groups.set(key, bucket);
+          groupKeys.push(key);
+        }
+        bucket.push(op);
+      }
+      for (let g = 0; g < groupKeys.length; g += 1) {
+        const ops: EditTagOp[] | undefined = groups.get(groupKeys[g]);
+        if (ops === undefined || ops.length === 0) {
+          continue;
+        }
+        const remoteIdsInGroup: string[] = [];
+        for (let i = 0; i < ops.length; i += 1) {
+          remoteIdsInGroup.push(ops[i].remoteId);
+        }
+        try {
+          await this.client.editTagMany(account.baseUrl, auth, writeToken,
+            remoteIdsInGroup, ops[0].addTags, ops[0].removeTags);
+          const acked: string[] = [];
+          for (let i = 0; i < ops.length; i += 1) {
+            const mapped: string | undefined = localIds.get(ops[i].remoteId);
+            if (mapped !== undefined) {
+              acked.push(mapped);
+              attempted.add(mapped);
+            }
+            result.statesPushed += 1;
+          }
+          if (acked.length > 0) {
+            await remoteAccountStore.ackItems(acked);
+          }
+        } catch (err) {
+          // 部分实现不支持一次带多个 i：多 id 失败时退回逐条回写，保证兼容。
+          if (ops.length > 1) {
+            for (let i = 0; i < ops.length; i += 1) {
+              const single: EditTagOp = ops[i];
+              const mapped: string | undefined = localIds.get(single.remoteId);
+              try {
+                await this.client.editTag(account.baseUrl, auth, writeToken,
+                  single.remoteId, single.addTags, single.removeTags);
+                if (mapped !== undefined) {
+                  await remoteAccountStore.ackItems([mapped]);
+                  attempted.add(mapped);
+                }
+                result.statesPushed += 1;
+              } catch (singleErr) {
+                const singleCode: RemoteErrorCode = this.codeOfObject(singleErr);
+                if (mapped !== undefined) {
+                  await remoteAccountStore.failItem(mapped, singleCode.toString());
+                }
+                result.errors.push(singleCode.toString());
+              }
+            }
+            continue;
+          }
+          const code: RemoteErrorCode = this.codeOfObject(err);
+          for (let i = 0; i < ops.length; i += 1) {
+            const mapped: string | undefined = localIds.get(ops[i].remoteId);
+            if (mapped !== undefined) {
+              await remoteAccountStore.failItem(mapped, code.toString());
+            }
+          }
+          result.errors.push(code.toString());
+          if (code === RemoteErrorCode.AUTH) {
+            throw new RemoteError(code, 'auth expired during push');
+          }
+        }
+      }
+    }
+    // 没有远端映射的条目：清掉，避免永久重试。
+    if (attempted.size < pending.length) {
+      const orphans: string[] = [];
+      for (let i = 0; i < pending.length; i += 1) {
+        if (!attempted.has(pending[i].articleId) && !remoteIds.has(pending[i].articleId)) {
+          orphans.push(pending[i].articleId);
+        }
+      }
+      await remoteAccountStore.ackItems(orphans);
+    }
+  }
+
+  /** 拉回远端已读 / 收藏：只更新状态列，不覆盖正文 / 进度 / 标签。 */
+  private async pullStates(account: RemoteAccount, auth: string, result: SyncResult): Promise<void> {
+    let unreadOk: boolean = true;
+    let starredOk: boolean = true;
+    let unread: Set<string> = new Set<string>();
+    let starred: Set<string> = new Set<string>();
+    try {
+      unread = await this.collectIds((continuation: string): Promise<RemoteIdPage> => {
+        return this.client.fetchUnreadIds(account.baseUrl, auth, continuation);
+      });
+    } catch (err) {
+      const code: RemoteErrorCode = this.codeOfObject(err);
+      if (code === RemoteErrorCode.AUTH) {
+        throw new RemoteError(code, 'auth expired during pull');
+      }
+      unreadOk = false;
+      unread = new Set<string>();
+      result.errors.push(code.toString());
+    }
+    try {
+      starred = await this.collectIds((continuation: string): Promise<RemoteIdPage> => {
+        return this.client.fetchStarredIds(account.baseUrl, auth, continuation);
+      });
+    } catch (err) {
+      const code: RemoteErrorCode = this.codeOfObject(err);
+      if (code === RemoteErrorCode.AUTH) {
+        throw new RemoteError(code, 'auth expired during pull');
+      }
+      starredOk = false;
+      starred = new Set<string>();
+      result.errors.push(code.toString());
+    }
+    const mappings: RemoteMapping[] = await remoteAccountStore.allMappings();
+    if (mappings.length === 0) {
+      return;
+    }
+    const pendingIds: Set<string> = new Set<string>();
+    const pending: OutboxItem[] =
+      await remoteAccountStore.pendingItems(RemoteSyncConstants.MAX_ARTICLES_PER_SYNC);
+    for (let i = 0; i < pending.length; i += 1) {
+      pendingIds.add(pending[i].articleId);
+    }
+    const ids: string[] = [];
+    for (let i = 0; i < mappings.length; i += 1) {
+      ids.push(mappings[i].articleId);
+    }
+    const states: ArticleState[] = await articleStore.loadStates(ids);
+    const stateById: Map<string, ArticleState> = new Map<string, ArticleState>();
+    for (let i = 0; i < states.length; i += 1) {
+      stateById.set(states[i].articleId, states[i]);
+    }
+    let pulled: number = 0;
+    for (let i = 0; i < mappings.length; i += 1) {
+      const mapping: RemoteMapping = mappings[i];
+      const local: ArticleState | undefined = stateById.get(mapping.articleId);
+      if (local === undefined) {
+        continue;
+      }
+      const remoteRead: boolean = unreadOk ? !unread.has(mapping.remoteId) : local.read;
+      const remoteStarred: boolean = starredOk ? starred.has(mapping.remoteId) : local.starred;
+      const decision = decideState(local.read, local.starred, remoteRead, remoteStarred,
+        pendingIds.has(mapping.articleId));
+      if (decision.read !== local.read) {
+        articleStore.setReadByRemote(mapping.articleId, decision.read);
+        pulled += 1;
+      }
+      if (decision.starred !== local.starred) {
+        articleStore.setStarredByRemote(mapping.articleId, decision.starred);
+        pulled += 1;
+      }
+    }
+    result.statesPulled = pulled;
+  }
+
+  /** 分页收集 id（最多 MAX_ID_PAGES 页）。 */
+  private async collectIds(fetcher: (continuation: string) => Promise<RemoteIdPage>): Promise<Set<string>> {
+    const ids: Set<string> = new Set<string>();
+    let continuation: string = '';
+    let pages: number = 0;
+    while (pages < RemoteSyncConstants.MAX_ID_PAGES) {
+      const page: RemoteIdPage = await fetcher(continuation);
+      pages += 1;
+      for (let i = 0; i < page.ids.length; i += 1) {
+        ids.add(page.ids[i]);
+      }
+      if (page.continuation.length === 0) {
+        break;
+      }
+      continuation = page.continuation;
+    }
+    return ids;
+  }
+
+  /** 退出登录：默认保留本地文章与状态；clearSyncData = true 时清空映射 / 队列 / 游标。 */
+  async logout(clearSyncData: boolean): Promise<void> {
+    const account: RemoteAccount | undefined = await this.ensureAccount(true);
+    if (account !== undefined) {
+      await remoteCredentials.remove(account.id);
+      if (clearSyncData) {
+        await remoteAccountStore.clearOutbox();
+        await remoteAccountStore.clearMappings();
+        await remoteAccountStore.clearState();
+      }
+      await remoteAccountStore.clearAccount();
+    }
+    this.account = undefined;
+    this.accountLoaded = true;
+    this.authToken = '';
+    this.authAccountId = '';
+    this.phase = 'idle';
+    this.lastErrorCode = '';
+  }
+
+  /** 远端订阅数（上次同步时记录；未同步过为 0）。 */
+  async remoteFeedCount(): Promise<number> {
+    const text: string = await remoteAccountStore.getState('remote_feed_count');
+    if (text.length === 0) {
+      return 0;
+    }
+    const value: number = Number.parseInt(text, 10);
+    return Number.isNaN(value) ? 0 : value;
+  }
+
+  /** 状态快照（账号页展示）。 */
+  async status(): Promise<SyncStatus> {
+    const account: RemoteAccount | undefined = await this.ensureAccount();
+    const pending: number = await remoteAccountStore.pendingCount();
+    if (account === undefined) {
+      return new SyncStatus(0, pending, 0, '', this.phase);
+    }
+    return new SyncStatus(account.lastSyncAt, pending, account.failureCount,
+      account.lastError, this.phase);
+  }
+
+  /** 回前台按设置间隔决定是否自动同步（默认关）。 */
+  maybeAutoSync(): void {
+    if (this.syncing) {
+      return;
+    }
+    const minutes: number = autoSyncMinutes(appSettings.remoteAutoSync);
+    if (minutes <= 0) {
+      return;
+    }
+    this.ensureAccount().then((account: RemoteAccount | undefined) => {
+      if (account === undefined) {
+        return;
+      }
+      const stale: boolean = account.lastSyncAt <= 0 ||
+        Date.now() - account.lastSyncAt >= minutes * 60 * 1000;
+      if (!stale) {
+        return;
+      }
+      this.syncNow().catch((err: Error) => {
+        hilog.info(DOMAIN, TAG, 'auto sync failed: %{public}s', err.message);
+      });
+    }).catch((err: Error) => {
+      hilog.info(DOMAIN, TAG, 'auto sync skipped: %{public}s', err.message);
+    });
+  }
+
+  private notifyArticlesChanged(): void {
+    const listener = this.articlesChanged;
+    if (listener !== undefined) {
+      listener();
+    }
+  }
+
+  private newAccountId(): string {
+    const random: number = Math.floor(Math.random() * 1000000);
+    return RemoteSyncConstants.ACCOUNT_ID_PREFIX + Date.now().toString() + '_' + random.toString();
+  }
+
+  /** 从任意异常取错误码字符串。 */
+  private codeOfObject(err: Object): RemoteErrorCode {
+    if (err instanceof RemoteError) {
+      return err.code;
+    }
+    return RemoteErrorCode.SERVER;
+  }
+
+  private codeOf(err: Object): string {
+    return this.codeOfObject(err).toString();
+  }
+}
+
+export const remoteSyncService: RemoteSyncService = new RemoteSyncService();

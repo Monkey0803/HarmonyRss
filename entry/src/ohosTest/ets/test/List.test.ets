@@ -23,6 +23,9 @@ import retentionTest from './Retention.test';
 import feedStoreTest from './FeedStore.test';
 import tagStoreTest from './TagStore.test';
 import smartFolderTest from './SmartFolder.test';
+import searchPerfTest from './SearchPerf.test';
+import gReaderModelsTest from './GReaderModels.test';
+import remoteSyncPlanTest from './RemoteSyncPlan.test';
 
 export default function testsuite() {
   htmlDomTest();
@@ -43,4 +46,7 @@ export default function testsuite() {
   feedStoreTest();
   tagStoreTest();
   smartFolderTest();
+  searchPerfTest();
+  gReaderModelsTest();
+  remoteSyncPlanTest();
 }

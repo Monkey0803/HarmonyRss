@@ -117,11 +117,51 @@ export class ArticleDbConstants {
   static readonly TABLE_ARTICLE_TAGS: string = 'article_tags';
   /** 智能文件夹表（名称 + 检索语法原始串 + 排序位）。 */
   static readonly TABLE_SMART_FOLDERS: string = 'smart_folders';
+  /** 远端账号表（单账号，但结构支持多条）。 */
+  static readonly TABLE_REMOTE_ACCOUNTS: string = 'remote_accounts';
+  /** 同步游标 / 时间戳（key → value）。 */
+  static readonly TABLE_SYNC_STATE: string = 'sync_state';
+  /** 远端文章 id ↔ 本地文章 id 映射。 */
+  static readonly TABLE_REMOTE_ARTICLE_MAP: string = 'remote_article_map';
+  /** 本地已读 / 收藏变更的待同步队列（同篇聚合）。 */
+  static readonly TABLE_SYNC_OUTBOX: string = 'sync_outbox';
   /**
    * 当前数据库结构版本
-   * （v1 = 初始表；v2 = 索引 + FTS + 回收站；v3 = 中文检索索引；v4 = 标签 + 智能文件夹）。
+   * （v1 = 初始表；v2 = 索引 + FTS + 回收站；v3 = 中文检索索引；v4 = 标签 + 智能文件夹；
+   *   v5 = 远端账号 / 游标 / 映射 / 待同步队列）。
    */
-  static readonly SCHEMA_VERSION: number = 4;
+  static readonly SCHEMA_VERSION: number = 5;
+}
+
+/** 远端同步（Google Reader API）的条数与超时常量。 */
+export class RemoteSyncConstants {
+  /** 文章列表每页条数（stream/contents 的 n）。 */
+  static readonly PAGE_SIZE: number = 100;
+  /** 单个订阅源单次同步最多翻页数（首次同步只用第一页，避免一次性拉爆）。 */
+  static readonly MAX_PAGES_PER_FEED: number = 10;
+  /** 单次同步最多新增的文章数（超出的留待下次）。 */
+  static readonly MAX_ARTICLES_PER_SYNC: number = 2000;
+  /** 状态回写每批条数（edit-tag）。 */
+  static readonly WRITE_BATCH: number = 50;
+  /** id 列表每页条数（stream/items/ids 的 n）。 */
+  static readonly ID_LIST_PAGE: number = 1000;
+  /** id 列表单次同步最多翻页数（防止账号未读数极大时无限翻页）。 */
+  static readonly MAX_ID_PAGES: number = 20;
+  /** 连接超时（毫秒）。 */
+  static readonly CONNECT_TIMEOUT_MS: number = 10000;
+  /** 读取超时（毫秒）。 */
+  static readonly READ_TIMEOUT_MS: number = 20000;
+  /** 远端服务类型（目前仅 Google Reader API）。 */
+  static readonly SERVICE_TYPE_GREADER: string = 'greader';
+  /** 默认 API 路径（用户只填域名 / 根路径时自动补全）。 */
+  static readonly GREADER_DEFAULT_PATH: string = '/api/greader.php';
+  /** 账号 id 前缀。 */
+  static readonly ACCOUNT_ID_PREFIX: string = 'ra_';
+  /** 自动同步间隔（分钟）取值：off / 15 / 30 / 60。 */
+  static readonly AUTO_SYNC_OFF: string = 'off';
+  static readonly AUTO_SYNC_15: string = '15';
+  static readonly AUTO_SYNC_30: string = '30';
+  static readonly AUTO_SYNC_60: string = '60';
 }
 
 /** 标签 / 智能文件夹的数量与长度上限（软上限：超限时界面给提示，不静默丢数据）。 */

@@ -71,4 +71,6 @@ export class PreferencesConstants {
   static readonly KEY_LAST_RETENTION_RUN: string = 'lastRetentionRun';
   /** 搜索历史（JSON 字符串数组，最多 20 条，最新在前）。 */
   static readonly KEY_SEARCH_HISTORY: string = 'searchHistory';
+  /** 远端服务自动同步间隔（'off' | '15' | '30' | '60'；默认关）。 */
+  static readonly KEY_REMOTE_AUTO_SYNC: string = 'remoteAutoSync';
 }

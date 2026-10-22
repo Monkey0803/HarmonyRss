@@ -13,6 +13,14 @@ import { PreferencesConstants } from '../common/constants/PreferencesConstants';
 import { ReaderTypography } from '../common/constants/SettingsConstants';
 import { normalizeArticleFilter, normalizeReaderViewMode } from '../common/constants/RssConstants';
 
+/** 远端自动同步间隔归一：脏值一律退回「关」。 */
+export function normalizeRemoteAutoSync(value: string): string {
+  if (value === '15' || value === '30' || value === '60') {
+    return value;
+  }
+  return 'off';
+}
+
 export class SettingsStore {
   private store: preferences.Preferences | undefined = undefined;
 
@@ -96,6 +104,8 @@ export class SettingsStore {
         store.getSync(PreferencesConstants.KEY_RETENTION_MODE, appSettings.retentionMode) as string);
       appSettings.retentionDays = RETENTION_DAYS_OPTIONS.normalize(
         store.getSync(PreferencesConstants.KEY_RETENTION_DAYS, appSettings.retentionDays) as string);
+      appSettings.remoteAutoSync = normalizeRemoteAutoSync(
+        store.getSync(PreferencesConstants.KEY_REMOTE_AUTO_SYNC, appSettings.remoteAutoSync) as string);
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       console.error('SettingsStore.load failed: ' + error.code.toString());
@@ -146,6 +156,7 @@ export class SettingsStore {
       store.putSync(PreferencesConstants.KEY_LIST_DENSITY, appSettings.listDensity);
       store.putSync(PreferencesConstants.KEY_RETENTION_MODE, appSettings.retentionMode);
       store.putSync(PreferencesConstants.KEY_RETENTION_DAYS, appSettings.retentionDays);
+      store.putSync(PreferencesConstants.KEY_REMOTE_AUTO_SYNC, appSettings.remoteAutoSync);
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       console.error('SettingsStore.putSync failed: ' + error.code.toString());

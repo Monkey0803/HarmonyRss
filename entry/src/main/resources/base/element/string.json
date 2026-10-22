@@ -1751,6 +1751,226 @@
     {
       "name": "smart_folder_open_failed",
       "value": "This folder can't be opened"
+    },
+    {
+      "name": "remote_entry_title",
+      "value": "Account & services"
+    },
+    {
+      "name": "remote_title",
+      "value": "Account & services"
+    },
+    {
+      "name": "remote_section_connect",
+      "value": "Connect a service"
+    },
+    {
+      "name": "remote_field_base_url",
+      "value": "Server address"
+    },
+    {
+      "name": "remote_field_base_url_hint",
+      "value": "https://rss.example.com"
+    },
+    {
+      "name": "remote_field_username",
+      "value": "Username"
+    },
+    {
+      "name": "remote_field_password",
+      "value": "Password"
+    },
+    {
+      "name": "remote_allow_http",
+      "value": "Allow insecure HTTP"
+    },
+    {
+      "name": "remote_allow_http_hint",
+      "value": "Only for a trusted self-hosted server. HTTP traffic is not encrypted."
+    },
+    {
+      "name": "remote_connect",
+      "value": "Connect"
+    },
+    {
+      "name": "remote_connecting",
+      "value": "Connecting…"
+    },
+    {
+      "name": "remote_connected",
+      "value": "Connected"
+    },
+    {
+      "name": "remote_not_connected",
+      "value": "Not connected"
+    },
+    {
+      "name": "remote_section_status",
+      "value": "Sync status"
+    },
+    {
+      "name": "remote_status_service",
+      "value": "Service"
+    },
+    {
+      "name": "remote_status_service_value",
+      "value": "Google Reader API"
+    },
+    {
+      "name": "remote_status_base_url",
+      "value": "Address"
+    },
+    {
+      "name": "remote_status_username",
+      "value": "Account"
+    },
+    {
+      "name": "remote_status_last_sync",
+      "value": "Last sync"
+    },
+    {
+      "name": "remote_status_never",
+      "value": "Never synced"
+    },
+    {
+      "name": "remote_status_pending",
+      "value": "Pending changes"
+    },
+    {
+      "name": "remote_status_failures",
+      "value": "Consecutive failures"
+    },
+    {
+      "name": "remote_status_last_error",
+      "value": "Last error"
+    },
+    {
+      "name": "remote_sync_now",
+      "value": "Sync now"
+    },
+    {
+      "name": "remote_syncing",
+      "value": "Syncing…"
+    },
+    {
+      "name": "remote_logout",
+      "value": "Sign out"
+    },
+    {
+      "name": "remote_logout_confirm_title",
+      "value": "Sign out?"
+    },
+    {
+      "name": "remote_logout_confirm_message",
+      "value": "Local articles and reading state stay available. You can also remove sync mappings and the pending queue."
+    },
+    {
+      "name": "remote_logout_keep",
+      "value": "Keep local data"
+    },
+    {
+      "name": "remote_logout_clear",
+      "value": "Remove sync data"
+    },
+    {
+      "name": "remote_logout_done",
+      "value": "Signed out"
+    },
+    {
+      "name": "remote_phase_feeds",
+      "value": "Fetching subscriptions…"
+    },
+    {
+      "name": "remote_phase_articles",
+      "value": "Fetching articles…"
+    },
+    {
+      "name": "remote_phase_push",
+      "value": "Uploading reading state…"
+    },
+    {
+      "name": "remote_phase_pull",
+      "value": "Applying remote state…"
+    },
+    {
+      "name": "remote_phase_done",
+      "value": "Sync complete"
+    },
+    {
+      "name": "remote_progress",
+      "value": "Synced %d of %d feeds"
+    },
+    {
+      "name": "remote_error_network",
+      "value": "Cannot reach the server. Check the address and your network."
+    },
+    {
+      "name": "remote_error_tls",
+      "value": "The certificate is not trusted. Use a valid certificate or allow HTTP."
+    },
+    {
+      "name": "remote_error_auth",
+      "value": "Wrong username or password."
+    },
+    {
+      "name": "remote_error_api",
+      "value": "Google Reader API is not enabled on this server."
+    },
+    {
+      "name": "remote_error_rate",
+      "value": "The server is rate limiting requests. Try again later."
+    },
+    {
+      "name": "remote_error_server",
+      "value": "The server returned an error. Try again later."
+    },
+    {
+      "name": "remote_error_parse",
+      "value": "Unexpected response from the server."
+    },
+    {
+      "name": "remote_error_insecure",
+      "value": "HTTP is disabled. Turn on “Allow insecure HTTP” to use this address."
+    },
+    {
+      "name": "remote_error_empty",
+      "value": "Please fill in the address, username and password."
+    },
+    {
+      "name": "remote_error_busy",
+      "value": "A sync is already running."
+    },
+    {
+      "name": "remote_error_not_connected",
+      "value": "Connect a service first."
+    },
+    {
+      "name": "remote_sync_done",
+      "value": "Sync complete"
+    },
+    {
+      "name": "remote_sync_summary",
+      "value": "%d feeds · %d articles · %d state updates"
+    },
+    {
+      "name": "remote_form_hint",
+      "value": "Works with FreshRSS, Tiny Tiny RSS and Miniflux (Google Reader API)."
+    },
+    {
+      "name": "remote_aux_credentials",
+      "value": "Credentials are stored in the system Asset Store, never in plain text."
+    },
+    {
+      "name": "remote_empty_status",
+      "value": "Connect a service to sync subscriptions and reading state."
+    },
+    {
+      "name": "remote_status_feeds",
+      "value": "Remote subscriptions"
+    },
+    {
+      "name": "remote_auto_sync",
+      "value": "Auto sync"
     }
   ]
 }

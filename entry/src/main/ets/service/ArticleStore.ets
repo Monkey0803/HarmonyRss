@@ -18,6 +18,7 @@ import { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { Article } from '../model/Feed';
 import { Highlight, HighlightLibraryItem } from '../model/Highlight';
+import { ArticleState, RemoteMapping } from '../model/Remote';
 import {
   CjkQueryPlan,
   FeedStorageStat,
@@ -209,6 +210,60 @@ const SQL_INDEXES_V4: string[] = [
     ArticleDbConstants.TABLE_SMART_FOLDERS + '(sort_order)'
 ];
 
+/**
+ * v5 远端账号表：只存地址 / 账号 / 状态，密码在 Asset Store。
+ * failure_count / last_error 支持「连续失败次数与最近错误」可观测。
+ */
+const SQL_CREATE_REMOTE_ACCOUNTS: string =
+  'CREATE TABLE IF NOT EXISTS ' + ArticleDbConstants.TABLE_REMOTE_ACCOUNTS + ' (' +
+  'id TEXT PRIMARY KEY, ' +
+  'base_url TEXT NOT NULL DEFAULT \'\', ' +
+  'username TEXT NOT NULL DEFAULT \'\', ' +
+  'service_type TEXT NOT NULL DEFAULT \'greader\', ' +
+  'enabled INTEGER NOT NULL DEFAULT 1, ' +
+  'created_at INTEGER NOT NULL DEFAULT 0, ' +
+  'updated_at INTEGER NOT NULL DEFAULT 0, ' +
+  'last_sync_at INTEGER NOT NULL DEFAULT 0, ' +
+  'failure_count INTEGER NOT NULL DEFAULT 0, ' +
+  'last_error TEXT NOT NULL DEFAULT \'\')';
+
+/** v5 同步状态表：key → value（last_sync_at / cursor_<feedId> / state_sync_at）。 */
+const SQL_CREATE_SYNC_STATE: string =
+  'CREATE TABLE IF NOT EXISTS ' + ArticleDbConstants.TABLE_SYNC_STATE + ' (' +
+  'key TEXT PRIMARY KEY, ' +
+  'value TEXT NOT NULL DEFAULT \'\')';
+
+/** v5 远端文章映射：远端 id → 本地文章 id（本地 id 由 buildArticleId 生成）。 */
+const SQL_CREATE_REMOTE_MAP: string =
+  'CREATE TABLE IF NOT EXISTS ' + ArticleDbConstants.TABLE_REMOTE_ARTICLE_MAP + ' (' +
+  'remote_id TEXT PRIMARY KEY, ' +
+  'article_id TEXT NOT NULL, ' +
+  'feed_id TEXT NOT NULL, ' +
+  'updated_at INTEGER NOT NULL DEFAULT 0)';
+
+/** v5 待同步队列：同一篇文章聚合为一行（已读 / 收藏各带目标值）。 */
+const SQL_CREATE_SYNC_OUTBOX: string =
+  'CREATE TABLE IF NOT EXISTS ' + ArticleDbConstants.TABLE_SYNC_OUTBOX + ' (' +
+  'article_id TEXT PRIMARY KEY, ' +
+  'set_read INTEGER NOT NULL DEFAULT 0, ' +
+  'read_value INTEGER NOT NULL DEFAULT 0, ' +
+  'set_starred INTEGER NOT NULL DEFAULT 0, ' +
+  'starred_value INTEGER NOT NULL DEFAULT 0, ' +
+  'updated_at INTEGER NOT NULL DEFAULT 0, ' +
+  'retries INTEGER NOT NULL DEFAULT 0, ' +
+  'last_error TEXT NOT NULL DEFAULT \'\')';
+
+/** v5 索引：按本地文章反查远端 id（回写状态 / 拉回状态都要用）。 */
+const SQL_INDEXES_V5: string[] = [
+  'CREATE INDEX IF NOT EXISTS idx_remote_map_article ON ' +
+    ArticleDbConstants.TABLE_REMOTE_ARTICLE_MAP + '(article_id)'
+];
+
+/** 远端映射写入（重复调用覆盖更新时间）。 */
+const SQL_UPSERT_REMOTE_MAP: string =
+  'INSERT OR REPLACE INTO ' + ArticleDbConstants.TABLE_REMOTE_ARTICLE_MAP +
+  ' (remote_id, article_id, feed_id, updated_at) VALUES (?, ?, ?, ?)';
+
 /** 正文列（loadBody 结果）。 */
 export class ArticleBody {
   readonly content: string;
@@ -339,6 +394,8 @@ export class ArticleStore {
       this.store.executeSync(SQL_CREATE_HIGHLIGHTS);
       // 标签 / 智能文件夹：即使库已是最新版本也执行一遍（自愈：上次建表失败 / 被打断）。
       this.createTagTables();
+      // 远端账号 / 游标 / 映射 / 待同步队列同理：最新版本也自愈。
+      this.createRemoteTables();
       // 结构迁移失败不删库：仅降级（无检索 / 无回收站），下次启动会重试。
       try {
         await this.migrate();
@@ -397,7 +454,8 @@ export class ArticleStore {
     }
     if (version >= ArticleDbConstants.SCHEMA_VERSION) {
       // 已是最新版本：仍确认两张索引真的可用（上次可能建表失败 / 重建被打断），必要时补建并在后台重建。
-      // 三张 v4 表已在 open() 里用 CREATE TABLE IF NOT EXISTS 自愈过，这里不重复。
+      // v4 / v5 的表已在 open() 里用 CREATE TABLE IF NOT EXISTS 自愈过，这里不重复。
+      this.createRemoteTables();
       const mainStale: boolean = await this.ensureMainIndex();
       const cjkStale: boolean = await this.ensureCjkIndex();
       if (mainStale) {
@@ -419,6 +477,7 @@ export class ArticleStore {
     }
     store.executeSync(SQL_CREATE_TRASH);
     this.createTagTables();
+    this.createRemoteTables();
     const mainStale: boolean = await this.ensureMainIndex();
     const cjkStale: boolean = await this.ensureCjkIndex();
     try {
@@ -468,6 +527,34 @@ export class ArticleStore {
    */
   getStore(): relationalStore.RdbStore | undefined {
     return this.store;
+  }
+
+  /**
+   * 建 v5 的四张表与索引（可重复执行）。
+   * 每条单独 try/catch：任何一条失败只记日志，不影响阅读 / 检索主链路 ——
+   * 远端同步功能降级，下次启动再自愈。
+   */
+  private createRemoteTables(): void {
+    const statements: string[] = [
+      SQL_CREATE_REMOTE_ACCOUNTS, SQL_CREATE_SYNC_STATE,
+      SQL_CREATE_REMOTE_MAP, SQL_CREATE_SYNC_OUTBOX
+    ];
+    for (let i = 0; i < statements.length; i += 1) {
+      try {
+        this.store?.executeSync(statements[i]);
+      } catch (err) {
+        const error: BusinessError = err as BusinessError;
+        hilog.error(DOMAIN, TAG, 'create remote table failed: %{public}d', error.code);
+      }
+    }
+    for (let i = 0; i < SQL_INDEXES_V5.length; i += 1) {
+      try {
+        this.store?.executeSync(SQL_INDEXES_V5[i]);
+      } catch (err) {
+        const error: BusinessError = err as BusinessError;
+        hilog.warn(DOMAIN, TAG, 'create remote index failed: %{public}d', error.code);
+      }
+    }
   }
 
   /** 后台重建主索引（升级 / 补建后回填，不阻塞启动）。 */
@@ -1014,9 +1101,112 @@ export class ArticleStore {
     }
   }
 
+  /**
+   * 写入远端拉取到的文章与映射（单事务）。
+   *
+   * - 文章走 INSERT OR IGNORE：本地已存在同 id（同 link）时只补映射，不改正文 / 已读 / 进度；
+   * - 只有真正插入的新行才写主 FTS 与中文索引；
+   * - 映射表按 remote_id 覆盖写（重复同步同一篇不会产生多条）。
+   *
+   * @returns 真正新增的文章条数。
+   */
+  async insertRemote(articles: Article[], mappings: RemoteMapping[]): Promise<number> {
+    const store: relationalStore.RdbStore | undefined = this.store;
+    if (store === undefined || articles.length === 0) {
+      return 0;
+    }
+    const byId: Map<string, Article> = new Map<string, Article>();
+    for (let i = 0; i < articles.length; i += 1) {
+      byId.set(articles[i].id, articles[i]);
+    }
+    const now: number = Date.now();
+    let inserted: number = 0;
+    try {
+      store.beginTransaction();
+      try {
+        for (let i = 0; i < mappings.length; i += 1) {
+          const mapping: RemoteMapping = mappings[i];
+          const item: Article | undefined = byId.get(mapping.articleId);
+          if (item !== undefined) {
+            store.executeSync(SQL_INSERT, [
+              item.id, item.feedId, item.feedTitle, item.title, item.link,
+              item.summary, item.content, item.publishedAt,
+              item.read ? 1 : 0, item.starred ? 1 : 0, now, item.imageUrl, item.author, item.contentHtml
+            ]);
+            const created: boolean = this.lastChanges() > 0;
+            if (created) {
+              inserted += 1;
+              const plain: string = this.plainOf(item.plainText, item.content);
+              if (this.ftsReady) {
+                this.ftsInsert(item.id, item.title, item.summary, plain, item.author);
+              }
+              this.cjkInsert(item.id, item.title, item.summary, plain);
+            }
+            byId.delete(mapping.articleId);
+          }
+          store.executeSync(SQL_UPSERT_REMOTE_MAP,
+            [mapping.remoteId, mapping.articleId, mapping.feedId, now]);
+        }
+        store.commit();
+      } catch (inner) {
+        store.rollBack();
+        throw inner as Error;
+      }
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.error(DOMAIN, TAG, 'insertRemote failed: %{public}d %{public}s',
+        error.code, error.message);
+      return 0;
+    }
+    return inserted;
+  }
+
+  /** 拉回远端已读状态：只改状态列，不触碰正文 / 进度 / 标签。 */
+  setReadByRemote(id: string, read: boolean): void {
+    this.exec('UPDATE ' + ArticleDbConstants.TABLE_ARTICLES + ' SET is_read = ? WHERE id = ?',
+      [read ? 1 : 0, id]);
+  }
+
+  /** 拉回远端收藏状态：只改状态列，不触碰正文 / 进度 / 标签。 */
+  setStarredByRemote(id: string, starred: boolean): void {
+    this.exec('UPDATE ' + ArticleDbConstants.TABLE_ARTICLES + ' SET is_starred = ? WHERE id = ?',
+      [starred ? 1 : 0, id]);
+  }
+
+  /** 批量读取文章状态（拉回远端状态时对比用；按 500 一批避免超长 IN）。 */
+  async loadStates(ids: string[]): Promise<ArticleState[]> {
+    const store: relationalStore.RdbStore | undefined = this.store;
+    const result: ArticleState[] = [];
+    if (store === undefined || ids.length === 0) {
+      return result;
+    }
+    const chunk: number = 500;
+    try {
+      for (let start = 0; start < ids.length; start += chunk) {
+        const slice: string[] = ids.slice(start, start + chunk);
+        const rs: relationalStore.ResultSet = await store.querySql(
+          'SELECT id, is_read, is_starred FROM ' + ArticleDbConstants.TABLE_ARTICLES +
+          ' WHERE id IN (' + placeholders(slice.length) + ')', slice);
+        try {
+          while (rs.goToNextRow()) {
+            result.push(new ArticleState(
+              rs.getString(rs.getColumnIndex('id')),
+              rs.getLong(rs.getColumnIndex('is_read')) === 1,
+              rs.getLong(rs.getColumnIndex('is_starred')) === 1));
+          }
+        } finally {
+          rs.close();
+        }
+      }
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.warn(DOMAIN, TAG, 'loadStates failed: %{public}d', error.code);
+    }
+    return result;
+  }
+
   /** 订阅源标题变化时同步到缓存行，列表里的来源名才不会残留旧值。 */
-  updateFeedTitle(feedId: string, title: string): void {
-    this.exec(
+  updateFeedTitle(feedId: string, title: string): void {    this.exec(
       'UPDATE ' + ArticleDbConstants.TABLE_ARTICLES + ' SET feed_title = ? WHERE feed_id = ?',
       [title, feedId]);
   }

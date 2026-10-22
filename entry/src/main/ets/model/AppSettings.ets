@@ -84,6 +84,8 @@ export class AppSettings {
   @Trace retentionMode: string = RetentionMode.FOREVER;
   /** 保留天数档位：'30' | '90' | '365'（仅 retentionMode === 'days' 生效）。 */
   @Trace retentionDays: string = RetentionDays.D90;
+  /** 远端服务自动同步间隔：'off' | '15' | '30' | '60'（分钟，回前台时判断是否过期）。 */
+  @Trace remoteAutoSync: string = 'off';
 }
 
 /** 全局唯一设置实例。 */

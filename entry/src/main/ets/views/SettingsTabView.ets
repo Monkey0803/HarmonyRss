@@ -801,6 +801,8 @@ export struct SettingsTabView {
               settingsViewModel.setAntiPeepEnabled(value, this.hostContext());
             }
           })
+          Divider().color($r('app.color.hm_divider'))
+          this.NavRow($r('sys.symbol.link'), $r('app.string.remote_entry_title'), RouterConstants.PAGE_REMOTE)
         }
         .width('100%')
         .backgroundColor($r('app.color.hm_card_background'))
