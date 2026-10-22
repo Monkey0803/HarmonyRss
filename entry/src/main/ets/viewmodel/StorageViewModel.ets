@@ -40,11 +40,14 @@ export class StorageViewModel {
   async load(): Promise<void> {
     this.loading = true;
     this.failed = false;
+    // 诊断只查两张索引的条数，先刷一次：避免统计还没算完时首屏显示 0/0。
+    await this.refreshDiagnostics();
     try {
       // 源级保留天数参与估算，先把订阅源同步给保留服务。
       retentionService.setFeeds(feedViewModel.feeds);
       this.cleanable = await retentionService.estimate();
       this.stats = await articleStore.storageStats(this.cleanable);
+      // 统计期间索引可能被后台重建，收尾再刷一次保证与页面一致。
       await this.refreshDiagnostics();
     } catch (err) {
       const error: BusinessError = err as BusinessError;

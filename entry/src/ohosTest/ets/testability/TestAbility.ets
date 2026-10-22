@@ -4,6 +4,7 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
 import { Hypium } from '@ohos/hypium';
 import testsuite from '../test/List.test';
+import { TestContext } from '../test/TestContext';
 
 const ON_DESTROY_ERROR: number = -2;
 
@@ -16,6 +17,8 @@ export default class TestAbility extends UIAbility {
   }
 
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {
+    // 给需要真实 UIAbilityContext 的用例（如 RDB 压测）注入上下文。
+    TestContext.value = this.context;
     const args: abilityDelegatorRegistry.AbilityDelegatorArgs = abilityDelegatorRegistry.getArguments();
     hilog.info(0x0000, 'testTag', '%{public}s', 'start run testcase!!!');
     Hypium.hypiumTest(this.abilityDelegator, args, testsuite);

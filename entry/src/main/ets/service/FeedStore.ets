@@ -117,8 +117,10 @@ export function decodeFeedRecords(text: string): FeedSource[] {
       feeds.push(feed);
     }
   } catch (err) {
+    // JSON.parse 抛的是 SyntaxError，没有 BusinessError.code；直接拼 code 会在 catch 里二次崩溃。
     const error: BusinessError = err as BusinessError;
-    console.error('FeedStore.decode failed: ' + error.code.toString());
+    const detail: string = error.message !== undefined ? error.message : 'invalid json';
+    console.error('FeedStore.decode failed: ' + detail);
   }
   return feeds;
 }

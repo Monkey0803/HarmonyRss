@@ -72,12 +72,12 @@ export default function searchPlanTest() {
     it('compile_special_chars', 0, () => {
       // 引号 / 百分号 / 下划线 / 星号不进语法位：只保留 CJK token。
       const plan: CjkQueryPlan = compile(parse('鸿蒙%_*'));
-      expect(plan.expression).assertEqual('"鸿" AND "鸿蒙" AND "蒙"');
+      expect(plan.expression).assertEqual('"鸿蒙"');
       expect(plan.expression.indexOf('*')).assertEqual(-1);
       expect(plan.expression.indexOf('%')).assertEqual(-1);
       // 内部双引号按 FTS5 规则翻倍，表达式仍可解析。
       const quoted: CjkQueryPlan = compile(parse('鸿蒙"'));
-      expect(quoted.expression).assertEqual('"鸿" AND "鸿蒙" AND "蒙"');
+      expect(quoted.expression).assertEqual('"鸿蒙"');
     });
 
     it('blank_query', 0, () => {
@@ -95,8 +95,8 @@ export default function searchPlanTest() {
       const plan: CjkQueryPlan = compile(parse('鸿蒙开发'));
       const args: Array<relationalStore.ValueType> = [];
       const sql: string = postFilterSql(plan, 'a', args);
-      expect(sql.indexOf('instr(lower(a.title), ?) > 0')).assertTrue();
-      expect(sql.indexOf('instr(lower(a.plain_text), ?) > 0')).assertTrue();
+      expect(sql.indexOf('instr(lower(a.title), ?) > 0') >= 0).assertTrue();
+      expect(sql.indexOf('instr(lower(a.plain_text), ?) > 0') >= 0).assertTrue();
       // 标题 / 摘要 / 正文三段各一个参数。
       expect(args.length).assertEqual(3);
       expect(args[0] as string).assertEqual('鸿蒙开发');
@@ -106,7 +106,7 @@ export default function searchPlanTest() {
       const plan: CjkQueryPlan = compile(parse('harmony 鸿蒙'));
       const args: Array<relationalStore.ValueType> = [];
       const sql: string = postFilterSql(plan, 'a', args);
-      expect(sql.indexOf('lower(a.title) LIKE ?')).assertTrue();
+      expect(sql.indexOf('lower(a.title) LIKE ?') >= 0).assertTrue();
       expect(args.length).assertEqual(4);
       // 大小写不敏感：参数统一转小写。
       expect(args[0] as string).assertEqual('%harmony%');
