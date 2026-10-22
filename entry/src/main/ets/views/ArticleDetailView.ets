@@ -38,7 +38,7 @@ import { ReadSettingsSheet } from './ReadSettingsSheet';
 import { ToastUtil } from '../common/utils/ToastUtil';
 import { toPlainText } from '../common/utils/HtmlText';
 import { screenAwake } from '../service/ScreenAwake';
-import { readerSpeech } from '../service/ReaderSpeech';
+import { readerSpeech, SpeechProgress, SpeechStatus } from '../service/ReaderSpeech';
 import {
   clearFindScript,
   countFindScript,
@@ -131,6 +131,13 @@ export struct ArticleDetailView {
   @Local bodyAlpha: number = 1;
   /** 朗读：是否正在朗读（控制迷你播放条与菜单文案）。 */
   @Local speaking: boolean = false;
+  /** 朗读：是否暂停（播放条显示「继续」）。 */
+  @Local speechPaused: boolean = false;
+  /** 朗读：当前块下标与总块数（长文分句后的进度）。 */
+  @Local speechIndex: number = 0;
+  @Local speechTotal: number = 0;
+  /** 朗读：当前语速倍数。 */
+  @Local speechSpeed: number = 1;
   /** 沉浸阅读：隐藏标题栏与底栏（点按正文中部切换）。 */
   @Local barsHidden: boolean = false;
   /** 横向手势的起手点（px），用于避让系统边缘返回手势。 */
@@ -156,6 +163,7 @@ export struct ArticleDetailView {
   /** 文档内滚动 → ArkTS 的进度回调（javaScriptProxy，页面创建时注册一次）。 */
   private progressBridge: ReaderProgressBridge = new ReaderProgressBridge((ratio: number) => {
     this.progressRatio = ratio;
+    this.handleProgressRatio(ratio);
   });
   /** 正文触摸判定（沉浸阅读的点按）：按下位置与时间。 */
   private tapStartX: number = -1;
@@ -258,6 +266,40 @@ export struct ArticleDetailView {
       });
   }
 
+  /**
+   * 消费「搜索结果点进来」的待定位检索词：正文加载完成后复用页内查找定位首个命中并展开查找条。
+   * 返回是否消费（true 表示本次加载以检索定位为准，不再恢复上次阅读进度）。
+   */
+  private consumePendingSearch(): boolean {
+    const term: string = feedViewModel.pendingSearchTerm;
+    if (term.length === 0) {
+      return false;
+    }
+    feedViewModel.pendingSearchTerm = '';
+    this.findOpen = true;
+    this.applyFind(term);
+    return true;
+  }
+
+  /**
+   * 滚动即已读：生效时，进度 ≥ 80% 视为读完（标记已读并归零进度）。
+   * 未开启该设置的源保持「打开即已读」的旧行为，这里不做任何事。
+   */
+  private handleProgressRatio(ratio: number): void {
+    if (this.finished || ratio < 0.8) {
+      return;
+    }
+    const article: Article | undefined = feedViewModel.currentArticle();
+    if (article === undefined) {
+      return;
+    }
+    if (!feedViewModel.markReadOnScrollEffective(article.feedId)) {
+      return;
+    }
+    this.finished = true;
+    feedViewModel.markFinished(article.id);
+  }
+
   /** 下一个 / 上一个命中项（循环）。 */
   private stepFind(delta: number): void {
     if (this.findCount <= 0) {
@@ -303,12 +345,30 @@ export struct ArticleDetailView {
       this.toast($r('app.string.article_no_content'));
       return;
     }
-    const ok: boolean = await readerSpeech.start(text, (speaking: boolean) => {
-      this.speaking = speaking;
+    const ok: boolean = await readerSpeech.start(text, (progress: SpeechProgress) => {
+      this.speaking = progress.status !== SpeechStatus.IDLE;
+      this.speechPaused = progress.status === SpeechStatus.PAUSED;
+      this.speechIndex = progress.index;
+      this.speechTotal = progress.total;
+      this.speechSpeed = progress.speed;
     });
     if (!ok) {
       this.toast($r('app.string.toast_speech_unsupported'));
     }
+  }
+
+  /** 朗读暂停 / 继续。 */
+  private toggleSpeechPause(): void {
+    if (this.speechPaused) {
+      readerSpeech.resume();
+    } else {
+      readerSpeech.pause();
+    }
+  }
+
+  /** 切换朗读语速（朗读中立即从当前句重读）。 */
+  private cycleSpeechSpeed(): void {
+    this.speechSpeed = readerSpeech.cycleSpeed();
   }
 
   private async copyBody(): Promise<void> {
@@ -1556,6 +1616,11 @@ export struct ArticleDetailView {
               this.loading = false;
               this.bindProgressListener(this.readerController);
               this.replayHighlights(this.readerController);
+              // 搜索命中定位优先于进度恢复（用户是来找那一段的）。
+              if (this.consumePendingSearch()) {
+                this.readerProgressRestored = true;
+                return;
+              }
               const pending: ReaderPosition | undefined = this.pendingRestore;
               if (pending !== undefined) {
                 // 排版变化导致的重建：落回改动前的阅读位置，避免「调字号跳回顶部」。
@@ -1638,8 +1703,12 @@ export struct ArticleDetailView {
             readerStyle.apply(this.webController);
             this.bindProgressListener(this.webController);
             this.replayHighlights(this.webController);
-            // 排版注入完成后再恢复进度，避免字号变化导致落点偏移。
-            this.restoreWebProgress();
+            // 搜索命中定位优先；否则排版注入完成后再恢复进度，避免字号变化导致落点偏移。
+            if (this.consumePendingSearch()) {
+              this.webProgressRestored = true;
+            } else {
+              this.restoreWebProgress();
+            }
           })
           .onOverScroll((event: OnOverScrollEvent) => {
             if (Math.abs(event.yOffset) >= OVERSCROLL_TRIGGER_VP) {
@@ -1802,26 +1871,51 @@ export struct ArticleDetailView {
     }
   }
 
-  /** 朗读迷你条：朗读中出现在底栏上方，可停止。 */
+  /** 朗读迷你条：朗读中出现在底栏上方，可暂停 / 继续、切换语速、停止。 */
   @Builder
   SpeechBar() {
     if (this.speaking) {
-      Row({ space: $r('app.float.space_s') }) {
+      Row({ space: $r('app.float.space_xxs') }) {
         SymbolGlyph($r('sys.symbol.speaker'))
           .fontSize($r('app.float.icon_size_small'))
           .fontColor([$r('app.color.hm_brand')])
 
-        Text($r('app.string.speech_running'))
+        Column({ space: $r('app.float.space_xxs') }) {
+          Text(this.speechPaused ? $r('app.string.speech_paused') : $r('app.string.speech_running'))
+            .fontSize($r('app.float.font_size_caption'))
+            .fontColor($r('app.color.hm_text_primary'))
+            .maxLines(1)
+            .textOverflow({ overflow: TextOverflow.Ellipsis })
+          Text(`${this.speechIndex + 1}/${this.speechTotal}`)
+            .fontSize($r('app.float.font_size_caption'))
+            .fontColor($r('app.color.hm_text_secondary'))
+        }
+        .alignItems(HorizontalAlign.Start)
+        .layoutWeight(1)
+
+        Button(`${this.speechSpeed.toFixed(1)}×`)
+          .buttonStyle(ButtonStyleMode.TEXTUAL)
           .fontSize($r('app.float.font_size_caption'))
-          .fontColor($r('app.color.hm_text_primary'))
-          .layoutWeight(1)
-          .maxLines(1)
-          .textOverflow({ overflow: TextOverflow.Ellipsis })
+          .fontColor($r('app.color.hm_text_secondary'))
+          .padding({ left: $r('app.float.space_xxs'), right: $r('app.float.space_xxs') })
+          .onClick(() => {
+            this.cycleSpeechSpeed();
+          })
+
+        Button(this.speechPaused ? $r('app.string.action_resume_speech') : $r('app.string.action_pause_speech'))
+          .buttonStyle(ButtonStyleMode.TEXTUAL)
+          .fontSize($r('app.float.font_size_caption'))
+          .fontColor($r('app.color.hm_brand'))
+          .padding({ left: $r('app.float.space_xxs'), right: $r('app.float.space_xxs') })
+          .onClick(() => {
+            this.toggleSpeechPause();
+          })
 
         Button($r('app.string.action_stop_speech'))
           .buttonStyle(ButtonStyleMode.TEXTUAL)
           .fontSize($r('app.float.font_size_caption'))
           .fontColor($r('app.color.hm_brand'))
+          .padding({ left: $r('app.float.space_xxs'), right: $r('app.float.space_xxs') })
           .onClick(() => {
             readerSpeech.stop();
           })

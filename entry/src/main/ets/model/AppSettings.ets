@@ -6,7 +6,7 @@
  */
 
 import { ArticleFilter, GroupMode, ReaderViewMode } from '../common/constants/RssConstants';
-import { ArchiveRule, ListDensity, ListRowLayout, SummaryLines } from '../common/constants/SettingsConstants';
+import { ArchiveRule, ListDensity, ListRowLayout, RetentionDays, RetentionMode, SummaryLines } from '../common/constants/SettingsConstants';
 import { THEME_OPTIONS, LANGUAGE_OPTIONS, MATERIAL_TYPE_OPTIONS, MATERIAL_LEVEL_OPTIONS, BACKGROUND_OPTIONS, LOGO_OPTIONS, AUTO_REFRESH_OPTIONS, READER_FONT_OPTIONS, READER_LINE_OPTIONS, READER_FAMILY_OPTIONS, READER_WIDTH_OPTIONS, READER_ALIGN_OPTIONS, READER_THEME_OPTIONS } from './SettingsOptions';
 
 @ObservedV2
@@ -77,6 +77,13 @@ export class AppSettings {
   @Trace listSummaryLines: string = SummaryLines.TWO;
   /** 列表密度：紧凑 / 标准 / 宽松。 */
   @Trace listDensity: string = ListDensity.STANDARD;
+  /**
+   * 保留策略：'forever' | 'days' | 'unread'。
+   * 决定清理任务是否删除本地文章；默认永久（升级绝不因为策略而删历史）。
+   */
+  @Trace retentionMode: string = RetentionMode.FOREVER;
+  /** 保留天数档位：'30' | '90' | '365'（仅 retentionMode === 'days' 生效）。 */
+  @Trace retentionDays: string = RetentionDays.D90;
 }
 
 /** 全局唯一设置实例。 */

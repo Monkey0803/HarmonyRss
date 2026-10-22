@@ -19,6 +19,7 @@ import { RouterConstants } from '../common/constants/RouterConstants';
 import { MaterialController } from '../service/MaterialController';
 import { appSettings } from '../model/AppSettings';
 import { AddFeedPanel } from './AddFeedPanel';
+import { DateUtil } from '../common/utils/DateUtil';
 
 @ComponentV2
 export struct SubscriptionsView {
@@ -319,6 +320,11 @@ export struct SubscriptionsView {
   @Builder
   FeedMenu(feed: FeedSource) {
     Menu() {
+      MenuItem({ content: $r('app.string.feed_settings_entry') })
+        .onClick(() => {
+          feedViewModel.openFeedSettings(feed);
+          this.navPathStack.pushPath(new NavPathInfo(RouterConstants.PAGE_FEED_SETTINGS, ''));
+        })
       MenuItem({ content: $r('app.string.subs_rename') })
         .onClick(() => {
           this.editingId = feed.id;
@@ -457,6 +463,21 @@ export struct SubscriptionsView {
             .fontColor($r('app.color.hm_brand'))
         } else {
           Text($r('app.string.subs_article_count', feed.articleCount))
+            .fontSize($r('app.float.font_size_caption'))
+            .fontColor($r('app.color.hm_text_secondary'))
+        }
+        // 停用标识 / 连续失败 / 最后成功时间（源健康状态）。
+        if (!feed.enabled) {
+          Text($r('app.string.feed_settings_disabled'))
+            .fontSize($r('app.float.font_size_caption'))
+            .fontColor($r('app.color.hm_text_secondary'))
+        }
+        if (feed.failureCount > 0) {
+          Text($r('app.string.health_failure_count', feed.failureCount))
+            .fontSize($r('app.float.font_size_caption'))
+            .fontColor($r('app.color.hm_danger'))
+        } else if (feed.lastUpdated > 0) {
+          Text($r('app.string.health_last_success', DateUtil.format(feed.lastUpdated)))
             .fontSize($r('app.float.font_size_caption'))
             .fontColor($r('app.color.hm_text_secondary'))
         }

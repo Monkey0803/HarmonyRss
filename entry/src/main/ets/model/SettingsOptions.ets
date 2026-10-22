@@ -5,7 +5,7 @@
  * 状态文件可读，SDK 枚举重排也不会错位；读到旧值 / 脏值统一退回默认项。控件（下拉菜单）只认 label。
  */
 
-import { ArchiveRule, ListDensity, ListRowLayout, SummaryLines, ThemeMode, AppLanguage, MaterialKind, MaterialGrade, BackgroundKind, LogoKind, AutoRefreshInterval, ReaderFontSize, ReaderLineHeight, ReaderFontFamily, ReaderWidth, ReaderAlign, ReaderTheme } from '../common/constants/SettingsConstants';
+import { ArchiveRule, ListDensity, ListRowLayout, SummaryLines, ThemeMode, AppLanguage, MaterialKind, MaterialGrade, BackgroundKind, LogoKind, AutoRefreshInterval, ReaderFontSize, ReaderLineHeight, ReaderFontFamily, ReaderWidth, ReaderAlign, ReaderTheme, RetentionMode, RetentionDays, TriState, FullTextMode } from '../common/constants/SettingsConstants';
 
 /** 一个可选项：语义 id + 展示文案。 */
 export class ChoiceOption {
@@ -185,3 +185,50 @@ export const READER_THEME_OPTIONS: ChoiceSet = new ChoiceSet([
   new ChoiceOption(ReaderTheme.SEPIA, $r('app.string.opt_reader_theme_sepia')),
   new ChoiceOption(ReaderTheme.DARK, $r('app.string.opt_reader_theme_dark'))
 ], ReaderTheme.SYSTEM);
+
+/** 保留策略：永久 / 按天数 / 仅保留未读与收藏。 */
+export const RETENTION_MODE_OPTIONS: ChoiceSet = new ChoiceSet([
+  new ChoiceOption(RetentionMode.FOREVER, $r('app.string.retention_mode_forever')),
+  new ChoiceOption(RetentionMode.DAYS, $r('app.string.retention_mode_days')),
+  new ChoiceOption(RetentionMode.UNREAD, $r('app.string.retention_mode_unread'))
+], RetentionMode.FOREVER);
+
+/** 保留天数：30 / 90 / 365 天。 */
+export const RETENTION_DAYS_OPTIONS: ChoiceSet = new ChoiceSet([
+  new ChoiceOption(RetentionDays.D30, $r('app.string.retention_days_30')),
+  new ChoiceOption(RetentionDays.D90, $r('app.string.retention_days_90')),
+  new ChoiceOption(RetentionDays.D365, $r('app.string.retention_days_365'))
+], RetentionDays.D90);
+
+/** 单源抓取间隔：跟随全局 / 15 / 30 / 60 / 180 分钟。 */
+export const FEED_INTERVAL_OPTIONS: ChoiceSet = new ChoiceSet([
+  new ChoiceOption('0', $r('app.string.feed_settings_follow_global')),
+  new ChoiceOption('15', $r('app.string.feed_settings_interval_15')),
+  new ChoiceOption('30', $r('app.string.feed_settings_interval_30')),
+  new ChoiceOption('60', $r('app.string.feed_settings_interval_60')),
+  new ChoiceOption('180', $r('app.string.feed_settings_interval_180'))
+], '0');
+
+/** 单源全文策略：跟随全局 / 自动 / 总是联网 / 从不联网。 */
+export const FULLTEXT_MODE_OPTIONS: ChoiceSet = new ChoiceSet([
+  new ChoiceOption(FullTextMode.GLOBAL, $r('app.string.feed_settings_follow_global')),
+  new ChoiceOption(FullTextMode.AUTO, $r('app.string.feed_settings_fulltext_auto')),
+  new ChoiceOption(FullTextMode.ALWAYS, $r('app.string.feed_settings_fulltext_always')),
+  new ChoiceOption(FullTextMode.NEVER, $r('app.string.feed_settings_fulltext_never'))
+], FullTextMode.GLOBAL);
+
+/** 单源保留天数：跟随全局 / 30 / 90 / 365 / 永久（0 表示永久）。 */
+export const FEED_RETENTION_OPTIONS: ChoiceSet = new ChoiceSet([
+  new ChoiceOption('global', $r('app.string.feed_settings_follow_global')),
+  new ChoiceOption(RetentionDays.D30, $r('app.string.retention_days_30')),
+  new ChoiceOption(RetentionDays.D90, $r('app.string.retention_days_90')),
+  new ChoiceOption(RetentionDays.D365, $r('app.string.retention_days_365')),
+  new ChoiceOption('forever', $r('app.string.retention_forever'))
+], 'global');
+
+/** 三态覆盖：跟随全局 / 开 / 关。 */
+export const TRI_STATE_OPTIONS: ChoiceSet = new ChoiceSet([
+  new ChoiceOption(TriState.GLOBAL, $r('app.string.feed_settings_follow_global')),
+  new ChoiceOption(TriState.ON, $r('app.string.feed_settings_on')),
+  new ChoiceOption(TriState.OFF, $r('app.string.feed_settings_off'))
+], TriState.GLOBAL);

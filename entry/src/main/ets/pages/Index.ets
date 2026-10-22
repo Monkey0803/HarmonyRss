@@ -59,6 +59,9 @@ import { FeedArticlesView } from '../views/FeedArticlesView';
 import { EffectPreviewView } from '../views/EffectPreviewView';
 import { feedViewModel } from '../viewmodel/FeedViewModel';
 import { HighlightsView } from '../views/HighlightsView';
+import { SearchView } from '../views/SearchView';
+import { StorageView } from '../views/StorageView';
+import { FeedSettingsView } from '../views/FeedSettingsView';
 import { deepLink, DEEP_LINK_EVENT, DeepLinkParams } from '../service/DeepLink';
 import { shareHandoff } from '../service/ShareHandoff';
 import { Article } from '../model/Feed';
@@ -83,6 +86,9 @@ struct Index {
   private feedArticlesScroller: Scroller = new Scroller();
   private highlightsScroller: Scroller = new Scroller();
   private articleScroller: Scroller = new Scroller();
+  private searchScroller: Scroller = new Scroller();
+  private storageScroller: Scroller = new Scroller();
+  private feedSettingsScroller: Scroller = new Scroller();
 
   /** 收到 Ability 的深链事件后消费（应用已在前台时点卡片的路径）。 */
   private onDeepLinkEvent: () => void = () => {
@@ -142,29 +148,36 @@ struct Index {
   private consumeDeepLink(): void {
     const articleId: string = deepLink.peek();
     if (articleId.length > 0) {
-      this.tryOpenDeepLink(articleId);
+      this.tryOpenDeepLink(articleId).catch(() => {
+      });
     }
   }
 
   /**
    * 打开深链文章：成功返回 true。
    *
-   * 顺序很关键：**先查（不产生副作用）→ 先清空待处理 id → 再打开**。
-   * openArticle 会 publish，publish 会通知列表订阅者（本页也在订阅），
+   * 顺序很关键：**先清空待处理 id → 再加载 / 打开**。
+   * ensureArticleLoaded / openArticle 都会 publish，publish 会通知列表订阅者（本页也在订阅），
    * 若那时 id 还在，就会递归回到这里（真实踩过：无限递归把页面栈弄坏）。
    */
-  private tryOpenDeepLink(articleId: string): boolean {
-    if (!feedViewModel.hasArticle(articleId)) {
-      return false;
+  private async tryOpenDeepLink(articleId: string): Promise<boolean> {
+    if (deepLink.peek() !== articleId) {
+      // 已被其它路径消费（例如列表就绪回调先跑了一步）。
+      return true;
     }
     const action: string = deepLink.takeAction();
     deepLink.take();
+    // 内存里没有时先从库兜底加载（文章可能还没进入当前分页 / 刚被搜索到）。
+    const loaded: boolean = await feedViewModel.ensureArticleLoaded(articleId);
+    if (!loaded) {
+      return false;
+    }
     if (action === DeepLinkParams.ACTION_MARK_READ) {
       // 通知上的「标记已读」按钮：只改状态，不抢用户的当前页面。
       feedViewModel.markReadMany([articleId], true);
       return true;
     }
-    feedViewModel.openArticleById(articleId);
+    await feedViewModel.openArticleById(articleId);
     // 切回「阅读」页签，再压详情页（页面栈是全局的，不切页签会压在设置页上面）。
     this.currentTab = TabIndex.HOME;
     this.navPathStack.pushPath(new NavPathInfo(RouterConstants.PAGE_ARTICLE, ''));
@@ -180,9 +193,13 @@ struct Index {
     if (articleId.length === 0 || feedViewModel.articlesTotal === 0) {
       return;
     }
-    if (!this.tryOpenDeepLink(articleId)) {
+    this.tryOpenDeepLink(articleId).then((ok: boolean) => {
+      if (!ok) {
+        deepLink.take();
+      }
+    }).catch(() => {
       deepLink.take();
-    }
+    });
   };
 
   /** 回到前台（或页面重新显示）时，按设置的自动刷新间隔决定是否抓取。 */
@@ -395,10 +412,21 @@ struct Index {
   }
 
   /**
+   * 标题胶囊右侧留白（vp）：与底部悬浮操作栏一致。
+   *
+   * 操作栏宽度 = 屏宽 - 2×贴边留白 - 跟手余量，且居中摆放，
+   * 因此它离屏幕左右边缘的实际留白 = 贴边留白 + 跟手余量 / 2。
+   */
+  private titlePillRightMargin(): number {
+    return CommonConstants.BAR_SIDE_MARGIN_VP + CommonConstants.BAR_HANDEDNESS_ROOM_VP / 2;
+  }
+
+  /**
    * 详情页标题胶囊：与底部悬浮操作栏同款（沉浸光感材质 + 胶囊圆角）。
    *
    * 左移 72vp 让开 HDS 原生返回键（它自带沉浸光感圆形背板，与胶囊同源）——
    * stackBuilder 里的内容从标题栏起点开始排，不挪开就会整块压住返回键。
+   * 右侧留白与底部操作栏对齐，胶囊不再贴到屏幕右边缘。
    */
   @Builder
   ArticleTitlePill() {
@@ -408,7 +436,7 @@ struct Index {
       }
       .height(CommonConstants.TITLE_BAR_HEIGHT_VP)
       .padding({ left: $r('app.float.space_m'), right: $r('app.float.space_m') })
-      .margin({ left: 72 })
+      .margin({ left: 72, right: this.titlePillRightMargin() })
       .borderRadius(CommonConstants.TITLE_BAR_HEIGHT_VP / 2)
       .clip(true)
       // 与底部悬浮栏同源的组件级沉浸光感材质（THIN，带按压光感反馈）。
@@ -419,7 +447,7 @@ struct Index {
       }
       .height(CommonConstants.TITLE_BAR_HEIGHT_VP)
       .padding({ left: $r('app.float.space_m'), right: $r('app.float.space_m') })
-      .margin({ left: 72 })
+      .margin({ left: 72, right: this.titlePillRightMargin() })
       .borderRadius(CommonConstants.TITLE_BAR_HEIGHT_VP / 2)
       .clip(true)
       // 材质不可用时的兜底：与首页标题栏滚起来之后一致的半透明玻璃底。
@@ -632,6 +660,30 @@ struct Index {
       .titleMode(HdsNavDestinationTitleMode.MINI)
       // 不透明背板：与详情页一致，走系统原生转场不穿透。
       .backgroundColor($r('app.color.hm_web_surface'))
+    } else if (name === RouterConstants.PAGE_SEARCH) {
+      HdsNavDestination() {
+        SearchView({ navPathStack: this.navPathStack, scroller: this.searchScroller })
+      }
+      .titleBar(this.titleOptions($r('app.string.search_title')))
+      .titleMode(HdsNavDestinationTitleMode.MINI)
+      .backgroundColor($r('app.color.hm_web_surface'))
+      .bindToScrollable([this.searchScroller])
+    } else if (name === RouterConstants.PAGE_STORAGE) {
+      HdsNavDestination() {
+        StorageView({ navPathStack: this.navPathStack, scroller: this.storageScroller })
+      }
+      .titleBar(this.titleOptions($r('app.string.storage_title')))
+      .titleMode(HdsNavDestinationTitleMode.MINI)
+      .backgroundColor($r('app.color.hm_web_surface'))
+      .bindToScrollable([this.storageScroller])
+    } else if (name === RouterConstants.PAGE_FEED_SETTINGS) {
+      HdsNavDestination() {
+        FeedSettingsView({ navPathStack: this.navPathStack, scroller: this.feedSettingsScroller })
+      }
+      .titleBar(this.titleOptions(feedViewModel.settingsFeedTitle()))
+      .titleMode(HdsNavDestinationTitleMode.MINI)
+      .backgroundColor($r('app.color.hm_web_surface'))
+      .bindToScrollable([this.feedSettingsScroller])
     }
   }
 

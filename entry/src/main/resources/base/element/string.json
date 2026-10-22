@@ -193,6 +193,18 @@
       "value": "Reading aloud…"
     },
     {
+      "name": "speech_paused",
+      "value": "Paused"
+    },
+    {
+      "name": "action_pause_speech",
+      "value": "Pause"
+    },
+    {
+      "name": "action_resume_speech",
+      "value": "Resume"
+    },
+    {
       "name": "toast_speech_unsupported",
       "value": "Read-aloud is not supported on this device"
     },
@@ -1199,6 +1211,370 @@
     {
       "name": "widget_empty",
       "value": "No articles yet"
+    },
+    {
+      "name": "retention_mode_forever",
+      "value": "Keep everything"
+    },
+    {
+      "name": "retention_mode_days",
+      "value": "Keep for a period"
+    },
+    {
+      "name": "retention_mode_unread",
+      "value": "Keep unread and saved only"
+    },
+    {
+      "name": "retention_days_30",
+      "value": "30 days"
+    },
+    {
+      "name": "retention_days_90",
+      "value": "90 days"
+    },
+    {
+      "name": "retention_days_365",
+      "value": "365 days"
+    },
+    {
+      "name": "retention_forever",
+      "value": "Forever"
+    },
+    {
+      "name": "search_title",
+      "value": "Search"
+    },
+    {
+      "name": "search_hint",
+      "value": "Search all articles"
+    },
+    {
+      "name": "search_history",
+      "value": "Recent searches"
+    },
+    {
+      "name": "search_clear_history",
+      "value": "Clear history"
+    },
+    {
+      "name": "search_syntax_hint",
+      "value": "Try from:name is:unread after:2026-01-01 \"exact phrase\""
+    },
+    {
+      "name": "search_empty",
+      "value": "Enter a keyword to search your whole library"
+    },
+    {
+      "name": "search_no_result",
+      "value": "No matching articles"
+    },
+    {
+      "name": "search_result_count",
+      "value": "%d results"
+    },
+    {
+      "name": "search_filter_all",
+      "value": "All"
+    },
+    {
+      "name": "search_filter_unread",
+      "value": "Unread"
+    },
+    {
+      "name": "search_filter_starred",
+      "value": "Starred"
+    },
+    {
+      "name": "search_filter_saved",
+      "value": "Saved"
+    },
+    {
+      "name": "search_searching",
+      "value": "Searching…"
+    },
+    {
+      "name": "search_error",
+      "value": "Search failed, please try again"
+    },
+    {
+      "name": "search_index_building",
+      "value": "Rebuilding index…"
+    },
+    {
+      "name": "search_diag_section",
+      "value": "Index diagnostics"
+    },
+    {
+      "name": "search_diag_main_index",
+      "value": "Main index"
+    },
+    {
+      "name": "search_diag_cjk_index",
+      "value": "Chinese index"
+    },
+    {
+      "name": "search_diag_tokenizer",
+      "value": "Chinese tokenizer"
+    },
+    {
+      "name": "search_diag_state_ready",
+      "value": "Ready"
+    },
+    {
+      "name": "search_diag_state_degraded",
+      "value": "Degraded"
+    },
+    {
+      "name": "search_diag_state_available",
+      "value": "Available"
+    },
+    {
+      "name": "search_diag_state_unavailable",
+      "value": "Unavailable"
+    },
+    {
+      "name": "search_diag_indexed",
+      "value": "%d rows"
+    },
+    {
+      "name": "search_diag_last_search",
+      "value": "Last search"
+    },
+    {
+      "name": "search_diag_path_none",
+      "value": "Not run yet"
+    },
+    {
+      "name": "search_diag_path_fts",
+      "value": "Main index"
+    },
+    {
+      "name": "search_diag_path_cjk",
+      "value": "Chinese index"
+    },
+    {
+      "name": "search_diag_path_like",
+      "value": "Full scan"
+    },
+    {
+      "name": "storage_title",
+      "value": "Storage & retention"
+    },
+    {
+      "name": "storage_section_retention",
+      "value": "Retention policy"
+    },
+    {
+      "name": "storage_section_usage",
+      "value": "Storage usage"
+    },
+    {
+      "name": "storage_section_per_feed",
+      "value": "Usage by feed"
+    },
+    {
+      "name": "storage_section_trash",
+      "value": "Recently deleted"
+    },
+    {
+      "name": "storage_section_index",
+      "value": "Search index"
+    },
+    {
+      "name": "storage_total",
+      "value": "%d articles stored"
+    },
+    {
+      "name": "storage_text_size",
+      "value": "Text size: %s"
+    },
+    {
+      "name": "storage_cleanable",
+      "value": "%d articles can be cleaned"
+    },
+    {
+      "name": "storage_clean_now",
+      "value": "Clean now"
+    },
+    {
+      "name": "storage_clean_confirm_title",
+      "value": "Clean old articles?"
+    },
+    {
+      "name": "storage_clean_confirm_message",
+      "value": "%d articles will be moved to Recently deleted and kept for 7 days."
+    },
+    {
+      "name": "storage_clean_done",
+      "value": "Cleaned %d articles"
+    },
+    {
+      "name": "storage_trash_count",
+      "value": "%d articles can be restored"
+    },
+    {
+      "name": "storage_restore",
+      "value": "Restore all"
+    },
+    {
+      "name": "storage_restore_done",
+      "value": "Restored %d articles"
+    },
+    {
+      "name": "storage_rebuild",
+      "value": "Rebuild index"
+    },
+    {
+      "name": "storage_rebuilding",
+      "value": "Rebuilding %d/%d"
+    },
+    {
+      "name": "storage_rebuild_done",
+      "value": "Index rebuilt"
+    },
+    {
+      "name": "storage_empty",
+      "value": "Nothing stored yet"
+    },
+    {
+      "name": "storage_retention_hint",
+      "value": "Starred, saved, highlighted and the open article are never deleted."
+    },
+    {
+      "name": "feed_settings_title",
+      "value": "Feed settings"
+    },
+    {
+      "name": "feed_settings_entry",
+      "value": "Feed settings"
+    },
+    {
+      "name": "feed_settings_enabled",
+      "value": "Fetch new articles"
+    },
+    {
+      "name": "feed_settings_enabled_hint",
+      "value": "Disabled feeds keep their history but are not fetched or notified."
+    },
+    {
+      "name": "feed_settings_interval",
+      "value": "Fetch interval"
+    },
+    {
+      "name": "feed_settings_fulltext",
+      "value": "Full text"
+    },
+    {
+      "name": "feed_settings_retention",
+      "value": "Keep articles"
+    },
+    {
+      "name": "feed_settings_notify",
+      "value": "Notify new articles"
+    },
+    {
+      "name": "feed_settings_scroll_read",
+      "value": "Mark read on scroll"
+    },
+    {
+      "name": "feed_settings_scroll_read_hint",
+      "value": "When on, an article is marked read after scrolling to the end."
+    },
+    {
+      "name": "feed_settings_section_health",
+      "value": "Health"
+    },
+    {
+      "name": "feed_settings_follow_global",
+      "value": "Follow global"
+    },
+    {
+      "name": "feed_settings_on",
+      "value": "On"
+    },
+    {
+      "name": "feed_settings_off",
+      "value": "Off"
+    },
+    {
+      "name": "feed_settings_interval_15",
+      "value": "Every 15 min"
+    },
+    {
+      "name": "feed_settings_interval_30",
+      "value": "Every 30 min"
+    },
+    {
+      "name": "feed_settings_interval_60",
+      "value": "Every hour"
+    },
+    {
+      "name": "feed_settings_interval_180",
+      "value": "Every 3 hours"
+    },
+    {
+      "name": "feed_settings_fulltext_auto",
+      "value": "Auto"
+    },
+    {
+      "name": "feed_settings_fulltext_always",
+      "value": "Always fetch original"
+    },
+    {
+      "name": "feed_settings_fulltext_never",
+      "value": "Never fetch original"
+    },
+    {
+      "name": "health_last_success",
+      "value": "Last success：%s"
+    },
+    {
+      "name": "health_failure_count",
+      "value": "%d consecutive failures"
+    },
+    {
+      "name": "health_never",
+      "value": "Never synced"
+    },
+    {
+      "name": "health_retry",
+      "value": "Retry now"
+    },
+    {
+      "name": "health_retrying",
+      "value": "Retrying…"
+    },
+    {
+      "name": "health_ok",
+      "value": "Healthy"
+    },
+    {
+      "name": "retention_days_label",
+      "value": "Keep for"
+    },
+    {
+      "name": "storage_show_all",
+      "value": "Show all feeds"
+    },
+    {
+      "name": "storage_show_less",
+      "value": "Show less"
+    },
+    {
+      "name": "feed_settings_section_policy",
+      "value": "Fetch & retention"
+    },
+    {
+      "name": "feed_settings_disabled",
+      "value": "Fetching off"
+    },
+    {
+      "name": "storage_retention_mode",
+      "value": "Retention"
+    },
+    {
+      "name": "search_index_fallback",
+      "value": "Using basic matching (index unavailable)"
     }
   ]
 }

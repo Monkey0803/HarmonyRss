@@ -8,7 +8,7 @@ import { preferences } from '@kit.ArkData';
 import { common } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { appSettings } from '../model/AppSettings';
-import { ARCHIVE_OPTIONS, LIST_DENSITY_OPTIONS, ROW_LAYOUT_OPTIONS, SUMMARY_LINES_OPTIONS, THEME_OPTIONS, LANGUAGE_OPTIONS, MATERIAL_TYPE_OPTIONS, MATERIAL_LEVEL_OPTIONS, BACKGROUND_OPTIONS, LOGO_OPTIONS, AUTO_REFRESH_OPTIONS, READER_FONT_OPTIONS, READER_LINE_OPTIONS, READER_FAMILY_OPTIONS, READER_WIDTH_OPTIONS, READER_ALIGN_OPTIONS, READER_THEME_OPTIONS } from '../model/SettingsOptions';
+import { ARCHIVE_OPTIONS, LIST_DENSITY_OPTIONS, ROW_LAYOUT_OPTIONS, SUMMARY_LINES_OPTIONS, THEME_OPTIONS, LANGUAGE_OPTIONS, MATERIAL_TYPE_OPTIONS, MATERIAL_LEVEL_OPTIONS, BACKGROUND_OPTIONS, LOGO_OPTIONS, AUTO_REFRESH_OPTIONS, READER_FONT_OPTIONS, READER_LINE_OPTIONS, READER_FAMILY_OPTIONS, READER_WIDTH_OPTIONS, READER_ALIGN_OPTIONS, READER_THEME_OPTIONS, RETENTION_MODE_OPTIONS, RETENTION_DAYS_OPTIONS } from '../model/SettingsOptions';
 import { PreferencesConstants } from '../common/constants/PreferencesConstants';
 import { ReaderTypography } from '../common/constants/SettingsConstants';
 import { normalizeArticleFilter, normalizeReaderViewMode } from '../common/constants/RssConstants';
@@ -91,6 +91,11 @@ export class SettingsStore {
         store.getSync(PreferencesConstants.KEY_LIST_DENSITY, appSettings.listDensity) as string);
       appSettings.archiveRule = ARCHIVE_OPTIONS.normalize(
         store.getSync(PreferencesConstants.KEY_ARCHIVE_RULE, appSettings.archiveRule) as string);
+      // 保留策略：老库没有这两个 key，读出来就是默认值（永久保留，绝不因升级删历史）。
+      appSettings.retentionMode = RETENTION_MODE_OPTIONS.normalize(
+        store.getSync(PreferencesConstants.KEY_RETENTION_MODE, appSettings.retentionMode) as string);
+      appSettings.retentionDays = RETENTION_DAYS_OPTIONS.normalize(
+        store.getSync(PreferencesConstants.KEY_RETENTION_DAYS, appSettings.retentionDays) as string);
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       console.error('SettingsStore.load failed: ' + error.code.toString());
@@ -139,6 +144,8 @@ export class SettingsStore {
       store.putSync(PreferencesConstants.KEY_ROW_LAYOUT, appSettings.listRowLayout);
       store.putSync(PreferencesConstants.KEY_SUMMARY_LINES, appSettings.listSummaryLines);
       store.putSync(PreferencesConstants.KEY_LIST_DENSITY, appSettings.listDensity);
+      store.putSync(PreferencesConstants.KEY_RETENTION_MODE, appSettings.retentionMode);
+      store.putSync(PreferencesConstants.KEY_RETENTION_DAYS, appSettings.retentionDays);
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       console.error('SettingsStore.putSync failed: ' + error.code.toString());

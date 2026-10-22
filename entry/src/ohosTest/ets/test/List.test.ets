@@ -16,6 +16,11 @@ import urlTextTest from './UrlText.test';
 import feedDiscoveryTest from './FeedDiscovery.test';
 import opmlCodecTest from './OpmlCodec.test';
 import shareIntentTest from './ShareIntent.test';
+import searchQueryParserTest from './SearchQueryParser.test';
+import cjkTokenizerTest from './CjkTokenizer.test';
+import searchPlanTest from './SearchPlan.test';
+import retentionTest from './Retention.test';
+import feedStoreTest from './FeedStore.test';
 
 export default function testsuite() {
   htmlDomTest();
@@ -29,4 +34,9 @@ export default function testsuite() {
   feedDiscoveryTest();
   opmlCodecTest();
   shareIntentTest();
+  searchQueryParserTest();
+  cjkTokenizerTest();
+  searchPlanTest();
+  retentionTest();
+  feedStoreTest();
 }

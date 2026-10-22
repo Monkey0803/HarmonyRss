@@ -11,6 +11,7 @@
 
 import { HtmlNode, parseHtml, textContent, findFirst } from './HtmlDom';
 import { sanitizeNode, sanitizeFragment } from './HtmlSanitizer';
+import { toPlainText } from '../common/utils/HtmlText';
 import { ReaderConstants } from '../common/constants/RssConstants';
 
 /** 参与打分的块级标签。 */
@@ -163,6 +164,60 @@ function refineCandidate(root: HtmlNode, candidate: HtmlNode): HtmlNode {
 function bodyOf(root: HtmlNode): HtmlNode {
   const body: HtmlNode | undefined = findFirst(root, 'body');
   return body !== undefined ? body : root;
+}
+
+/** feed 正文是否带块级结构（只有纯文本的 description 不算，需联网抓全文）。 */
+function hasBlockMarkup(html: string): boolean {
+  const lower: string = html.toLowerCase();
+  return lower.indexOf('<p') >= 0 || lower.indexOf('<div') >= 0 || lower.indexOf('<article') >= 0
+    || lower.indexOf('<section') >= 0 || lower.indexOf('<h1') >= 0 || lower.indexOf('<h2') >= 0
+    || lower.indexOf('<ul') >= 0 || lower.indexOf('<figure') >= 0 || lower.indexOf('<br') >= 0;
+}
+
+/** 全部 `<a>` 标签内的文本长度（用于识别「只有链接」的正文）。 */
+function linkTextLengthOf(html: string): number {
+  const lower: string = html.toLowerCase();
+  let total: number = 0;
+  let cursor: number = 0;
+  while (cursor < lower.length) {
+    const start: number = lower.indexOf('<a', cursor);
+    if (start < 0) {
+      break;
+    }
+    const next: string = lower.charAt(start + 2);
+    // 排除 <article / <abbr 这类前缀相同的标签。
+    if (next !== ' ' && next !== '>' && next !== '\n' && next !== '\t') {
+      cursor = start + 2;
+      continue;
+    }
+    const openEnd: number = lower.indexOf('>', start);
+    if (openEnd < 0) {
+      break;
+    }
+    const close: number = lower.indexOf('</a>', openEnd + 1);
+    if (close < 0) {
+      break;
+    }
+    total += toPlainText(html.substring(openEnd + 1, close)).length;
+    cursor = close + '</a>'.length;
+  }
+  return total;
+}
+
+/**
+ * 判断 feed 自带 HTML 是否值得直接当正文：需要有块级结构，且链接文本占比不高。
+ * Hacker News（hnrss）的 description 只有 "Article URL / Comments URL / Points" 这类
+ * 链接堆，不能当正文用，否则阅读器里只剩几个链接、看不到原文内容。
+ */
+export function hasBodyContent(html: string): boolean {
+  if (html.length === 0 || !hasBlockMarkup(html)) {
+    return false;
+  }
+  const plain: string = toPlainText(html);
+  if (plain.length < ReaderConstants.MIN_FEED_BODY_CHARS) {
+    return false;
+  }
+  return linkTextLengthOf(html) <= plain.length * ReaderConstants.MAX_FEED_BODY_LINK_RATIO;
 }
 
 /**

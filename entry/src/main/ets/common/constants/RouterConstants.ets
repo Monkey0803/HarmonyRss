@@ -13,4 +13,10 @@ export class RouterConstants {
   static readonly PAGE_HIGHLIGHTS: string = 'highlights';
   /** 点光源效果预览页。 */
   static readonly PAGE_EFFECT: string = 'effect';
+  /** 全局全文检索页。 */
+  static readonly PAGE_SEARCH: string = 'search';
+  /** 存储与保留页。 */
+  static readonly PAGE_STORAGE: string = 'storage';
+  /** 单源设置页。 */
+  static readonly PAGE_FEED_SETTINGS: string = 'feedSettings';
 }

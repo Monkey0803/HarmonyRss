@@ -5,6 +5,8 @@
  * 就能驱动刷新，不必在组件间层层传参。
  */
 
+import { FullTextMode, TriState } from '../common/constants/SettingsConstants';
+
 /** 一个订阅源。 */
 @ObservedV2
 export class FeedSource {
@@ -16,7 +18,7 @@ export class FeedSource {
   @Trace url: string;
   /** 站点主页（可能为空）。 */
   @Trace siteUrl: string;
-  /** 最近一次成功抓取的时间戳（毫秒）。 */
+  /** 最近一次**成功**抓取的时间戳（毫秒）；失败不更新。 */
   @Trace lastUpdated: number;
   /** 最近一次抓取到的条目数。 */
   @Trace articleCount: number;
@@ -34,6 +36,23 @@ export class FeedSource {
   etag: string = '';
   lastModified: string = '';
 
+  // ---- 单源覆盖设置（默认全部「跟随全局」） ----
+
+  /** 是否参与自动抓取与通知（false 时历史仍可读）。 */
+  @Trace enabled: boolean = true;
+  /** 抓取间隔（分钟）；0 = 跟随全局自动刷新设置。 */
+  @Trace fetchIntervalMinutes: number = 0;
+  /** 全文策略：global / auto / always / never。 */
+  @Trace fullTextMode: string = FullTextMode.GLOBAL;
+  /** 保留天数；0 = 跟随全局保留策略。 */
+  @Trace retentionDays: number = 0;
+  /** 新文章通知：global / on / off。 */
+  @Trace notify: string = TriState.GLOBAL;
+  /** 滚动即已读：global / on / off。 */
+  @Trace markReadOnScroll: string = TriState.GLOBAL;
+  /** 连续抓取失败次数（成功清零）。 */
+  @Trace failureCount: number = 0;
+
   constructor(id: string, title: string, url: string, siteUrl: string, group: string = '') {
     this.id = id;
     this.title = title;
@@ -44,6 +63,42 @@ export class FeedSource {
     this.unreadCount = 0;
     this.group = group;
     this.lastError = '';
+    this.enabled = true;
+    this.fetchIntervalMinutes = 0;
+    this.fullTextMode = FullTextMode.GLOBAL;
+    this.retentionDays = 0;
+    this.notify = TriState.GLOBAL;
+    this.markReadOnScroll = TriState.GLOBAL;
+    this.failureCount = 0;
+  }
+}
+
+/**
+ * 生效设置：由「全局设置 + 源覆盖」推导出的最终行为（只读快照）。
+ * 视图 / 编排只读它，避免各处重复写「global 就取全局」的判断。
+ */
+export class EffectiveFeedSettings {
+  /** 是否参与自动抓取与通知。 */
+  readonly enabled: boolean;
+  /** 生效抓取间隔（分钟）；<= 0 表示不自动抓取。 */
+  readonly intervalMinutes: number;
+  /** 生效全文策略：auto / always / never（已消解 global）。 */
+  readonly fullTextMode: string;
+  /** 生效保留天数；0 表示永久保留。 */
+  readonly retentionDays: number;
+  /** 是否发送新文章通知。 */
+  readonly notifyEnabled: boolean;
+  /** 是否「滚动即已读」（false = 打开即已读，保持旧行为）。 */
+  readonly markReadOnScroll: boolean;
+
+  constructor(enabled: boolean, intervalMinutes: number, fullTextMode: string,
+    retentionDays: number, notifyEnabled: boolean, markReadOnScroll: boolean) {
+    this.enabled = enabled;
+    this.intervalMinutes = intervalMinutes;
+    this.fullTextMode = fullTextMode;
+    this.retentionDays = retentionDays;
+    this.notifyEnabled = notifyEnabled;
+    this.markReadOnScroll = markReadOnScroll;
   }
 }
 
@@ -74,6 +129,19 @@ export class FeedListItem {
     this.count = count;
     this.feed = feed;
   }
+}
+
+/**
+ * 单源设置的局部更新（传哪些字段就改哪些；undefined 表示不改）。
+ * 由 FeedSettingsView 组装后交给 FeedViewModel.updateFeedSettings。
+ */
+export class FeedSettingsPatch {
+  enabled?: boolean;
+  fetchIntervalMinutes?: number;
+  fullTextMode?: string;
+  retentionDays?: number;
+  notify?: string;
+  markReadOnScroll?: string;
 }
 
 /** 一篇文章（聚合视图中的条目）。 */

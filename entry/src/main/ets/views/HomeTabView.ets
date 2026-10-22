@@ -26,7 +26,6 @@ export struct HomeTabView {
   @Param navPathStack: NavPathStack = new NavPathStack();
   @Param scroller: Scroller = new Scroller();
   @Local refreshing: boolean = false;
-  @Local searchOpen: boolean = false;
   /** 「添加订阅源」入口在悬浮页签栏的 miniBar 上（Index 持有面板），这里只发请求。 */
   @Event onAddFeedRequest: () => void = () => {};
   /** 列表数据源（LazyForEach 虚拟化用）。 */
@@ -54,7 +53,8 @@ export struct HomeTabView {
       return;
     }
     this.refreshing = true;
-    await feedViewModel.refreshAll();
+    // 下拉刷新是用户手动动作：force=true 绕过源级间隔（停用源仍然跳过）。
+    await feedViewModel.refreshAll(true);
     this.refreshing = false;
   }
 
@@ -64,9 +64,6 @@ export struct HomeTabView {
   }
 
   private emptyTitle(): ResourceStr {
-    if (feedViewModel.keyword.length > 0) {
-      return $r('app.string.filter_empty_search');
-    }
     if (feedViewModel.filter === ArticleFilter.UNREAD) {
       return $r('app.string.filter_empty_unread');
     }
@@ -137,39 +134,17 @@ export struct HomeTabView {
           .bindMenu(this.SortMenu(),
             MaterialController.menuOptions({ placement: Placement.BottomRight }, appSettings.immersiveOn))
 
+        // 全局检索：压入独立搜索页（列表内关键词过滤已移除，避免两套搜索并存）。
         SymbolGlyph($r('sys.symbol.magnifyingglass'))
           .fontSize($r('app.float.icon_size'))
-          .fontColor([this.searchOpen ? $r('app.color.hm_brand') : $r('app.color.hm_text_secondary')])
+          .fontColor([$r('app.color.hm_text_secondary')])
           .padding($r('app.float.space_xs'))
+          .accessibilityText($r('app.string.search_title'))
           .onClick(() => {
-            this.searchOpen = !this.searchOpen;
-            if (!this.searchOpen) {
-              feedViewModel.setKeyword('');
-            }
+            this.navPathStack.pushPath(new NavPathInfo(RouterConstants.PAGE_SEARCH, ''));
           })
       }
       .width('100%')
-      }
-
-      if (this.searchOpen && !feedViewModel.selecting) {
-        Row({ space: $r('app.float.space_s') }) {
-          TextInput({ text: feedViewModel.keyword, placeholder: $r('app.string.home_search_hint') })
-            .type(InputType.Normal)
-            .fontSize($r('app.float.font_size_body'))
-            .layoutWeight(1)
-            .onChange((value: string) => {
-              feedViewModel.setKeyword(value);
-            })
-          SymbolGlyph($r('sys.symbol.xmark'))
-            .fontSize($r('app.float.icon_size'))
-            .fontColor([$r('app.color.hm_text_secondary')])
-            .padding($r('app.float.space_s'))
-            .onClick(() => {
-              feedViewModel.setKeyword('');
-              this.searchOpen = false;
-            })
-        }
-        .width('100%')
       }
 
       if (feedViewModel.scopeFeedId.length > 0) {

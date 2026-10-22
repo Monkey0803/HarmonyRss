@@ -63,4 +63,12 @@ export class PreferencesConstants {
   static readonly KEY_LOGO_KIND: string = 'logoKind';
   /** RSS 订阅源列表（JSON 数组字符串）。 */
   static readonly KEY_RSS_FEEDS: string = 'rssFeeds';
+  /** 保留策略：'forever' | 'days' | 'unread'（是否删除本地文章）。 */
+  static readonly KEY_RETENTION_MODE: string = 'retentionMode';
+  /** 保留天数档位：'30' | '90' | '365'（仅 days 模式生效）。 */
+  static readonly KEY_RETENTION_DAYS: string = 'retentionDays';
+  /** 最近一次自动保留清理的时间戳（6 小时节流用）。 */
+  static readonly KEY_LAST_RETENTION_RUN: string = 'lastRetentionRun';
+  /** 搜索历史（JSON 字符串数组，最多 20 条，最新在前）。 */
+  static readonly KEY_SEARCH_HISTORY: string = 'searchHistory';
 }

@@ -68,8 +68,15 @@ export struct HighlightsView {
       return;
     }
     feedViewModel.pendingHighlightId = entry.highlight.id;
-    feedViewModel.openArticleById(articleId);
-    this.navPathStack.pushPath(new NavPathInfo(RouterConstants.PAGE_ARTICLE, ''));
+    feedViewModel.openArticleById(articleId).then((ok: boolean) => {
+      if (!ok) {
+        ToastUtil.show(this.getUIContext(), $r('app.string.hl_article_gone'));
+        return;
+      }
+      this.navPathStack.pushPath(new NavPathInfo(RouterConstants.PAGE_ARTICLE, ''));
+    }).catch(() => {
+      ToastUtil.show(this.getUIContext(), $r('app.string.hl_article_gone'));
+    });
   }
 
   @Builder

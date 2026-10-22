@@ -8,9 +8,15 @@
 
 import { common } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
-import { Article, FeedGroup, FeedListItem, FeedSource } from '../model/Feed';
+import { Article, EffectiveFeedSettings, FeedGroup, FeedListItem, FeedSettingsPatch, FeedSource } from '../model/Feed';
 import { BatchResult, FeedPreview, PreviewItem } from '../model/FeedPreview';
-import { feedStore } from '../service/FeedStore';
+import {
+  feedStore,
+  normalizeFeedFullTextMode,
+  normalizeFeedInterval,
+  normalizeFeedRetention,
+  normalizeFeedTriState
+} from '../service/FeedStore';
 import { feedService, FeedFetchResult, ResolvedFeed } from '../service/FeedService';
 import { feedDiscovery } from '../service/FeedDiscovery';
 import { articleStore, CacheStats } from '../service/ArticleStore';
@@ -23,9 +29,10 @@ import { buildOpml, OpmlEntry } from '../service/OpmlCodec';
 import { toArticles } from '../service/ArticleMapper';
 import { GroupMode, ArticleFilter, FeedError, FeedFetchError, ReaderState } from '../common/constants/RssConstants';
 import { appSettings } from '../model/AppSettings';
-import { ArchiveDays, AutoRefreshMinutes } from '../common/constants/SettingsConstants';
+import { ArchiveDays, AutoRefreshMinutes, FullTextMode, TriState } from '../common/constants/SettingsConstants';
 import { settingsStore } from '../service/SettingsStore';
 import { settingsViewModel } from './SettingsViewModel';
+import { retentionService } from '../service/RetentionService';
 
 const MINUTE_MS: number = 60 * 1000;
 
@@ -48,47 +55,49 @@ const BACKFILL_PLAIN_TEXT_LIMIT: number = 200;
 const PREVIEW_ITEM_LIMIT: number = 3;
 
 /**
- * 关键词匹配：标题 / 摘要 / feed 正文 / 提取后的正文纯文本（关键词已转小写）。
- * plainText 来自 Reader 提取结果，这样摘要型 feed 也能被正文里的词搜到。
- */
-function matchesKeyword(article: Article, keyword: string): boolean {
-  if (article.title.toLowerCase().indexOf(keyword) >= 0) {
-    return true;
-  }
-  if (article.summary.toLowerCase().indexOf(keyword) >= 0) {
-    return true;
-  }
-  if (article.content.toLowerCase().indexOf(keyword) >= 0) {
-    return true;
-  }
-  return article.plainText.length > 0 && article.plainText.toLowerCase().indexOf(keyword) >= 0;
-}
-
-/**
  * 把本地库读回的一行并回内存里的旧实例（只改字段，不换对象）。
  *
  * 必须保留对象身份：List 里的 ForEach 键值不变时会复用旧节点，子组件仍然绑定旧对象；
  * 若这里直接换成新对象，之后所有「改属性」的操作（已读 / 收藏 / 进度）都改在新对象上，
  * 界面绑定的旧对象纹丝不动 —— 表现为「收藏、未读、已读状态都不对」。
+ *
+ * 列表读取是**轻量列**（不含正文），所以空值不能覆盖旧实例里已加载的正文。
  */
 function mergeArticle(target: Article, source: Article): void {
   target.feedTitle = source.feedTitle;
   target.title = source.title;
   target.link = source.link;
   target.summary = source.summary;
-  target.content = source.content;
-  // contentHtml 未落库（loadRecent 读回来恒为空），旧实例里可能还留着 feed 正文，不能覆盖掉。
+  if (source.content.length > 0) {
+    target.content = source.content;
+  }
+  // contentHtml / readerHtml / plainText 来自按需加载，空串不能覆盖已加载的正文。
   if (source.contentHtml.length > 0) {
     target.contentHtml = source.contentHtml;
+  }
+  if (source.readerHtml.length > 0) {
+    target.readerHtml = source.readerHtml;
+    target.readerState = source.readerState;
+  } else if (target.readerHtml.length === 0) {
+    target.readerState = ReaderState.NONE;
+  }
+  if (source.plainText.length > 0) {
+    target.plainText = source.plainText;
+  }
+  if (source.pageEtag.length > 0) {
+    target.pageEtag = source.pageEtag;
+  }
+  if (source.pageLastModified.length > 0) {
+    target.pageLastModified = source.pageLastModified;
   }
   target.publishedAt = source.publishedAt;
   target.imageUrl = source.imageUrl;
   target.author = source.author;
   target.read = source.read;
   target.starred = source.starred;
+  target.saved = source.saved;
   target.progress = source.progress;
-  target.readerHtml = source.readerHtml;
-  target.readerState = source.readerState;
+  target.progressRatio = source.progressRatio;
 }
 
 @ObservedV2
@@ -133,8 +142,6 @@ export class FeedViewModel {
   @Trace anchorId: string = '';
   /** 已加载条数（分页游标）。 */
   @Trace visibleCount: number = CommonConstants.LIST_PAGE_SIZE;
-  /** 搜索关键词（标题 / 摘要 / 正文，大小写不敏感）。 */
-  @Trace keyword: string = '';
   /** 单源视图：非空时只看该订阅源的文章。 */
   @Trace scopeFeedId: string = '';
   @Trace scopeTitle: string = '';
@@ -147,6 +154,10 @@ export class FeedViewModel {
   @Trace currentArticleId: string = '';
   /** 打开详情页后要定位到的标注 id（标注聚合页点进来时用；详情页消费后清空）。 */
   @Trace pendingHighlightId: string = '';
+  /** 详情页要定位的检索词（搜索结果点进来时写入；详情页消费后清空）。 */
+  @Trace pendingSearchTerm: string = '';
+  /** 单源设置页当前查看的订阅源 id。 */
+  @Trace settingsFeedId: string = '';
 
   /** 一天的毫秒数（日期分组用）。 */
   private static readonly DAY_MS: number = 24 * 60 * 60 * 1000;
@@ -164,6 +175,10 @@ export class FeedViewModel {
   private initialized: boolean = false;
   /** 最近一次批量抓取中，最后一个失败源的错误码（用于全量失败时上报）。 */
   private lastFailureCode: FeedError = FeedError.FETCH_FAILED;
+  /** 宿主上下文（打开库 / 触发后台清理用）。 */
+  private context: common.Context | undefined = undefined;
+  /** 正文已按需加载的文章 id（列表只读轻量列，正文单独 loadBody）。 */
+  private bodyLoaded: Set<string> = new Set<string>();
 
   /**
    * 轻量装配：订阅源 → 本地缓存（离线可读），**不触发联网抓取**。
@@ -176,6 +191,7 @@ export class FeedViewModel {
       return;
     }
     this.started = true;
+    this.context = context;
     // 列表展示偏好（排序 / 分组）是异步从偏好库恢复的，先等它就绪再对齐，
     // 否则首屏会先按默认值渲染一次（换偏好后重启看到顺序被重置）。
     await settingsViewModel.whenReady();
@@ -184,7 +200,8 @@ export class FeedViewModel {
     this.filter = appSettings.homeFilter;
     this.feeds = await feedStore.load(context);
     await articleStore.open(context);
-    this.all = await articleStore.loadRecent();
+    this.all = await articleStore.loadForList();
+    retentionService.configure(context, this.feeds);
     this.publish();
   }
 
@@ -195,29 +212,68 @@ export class FeedViewModel {
     }
     this.initialized = true;
     await this.ensureReady(context);
-    // 老数据补一次正文纯文本（有上限）：让搜索能命中「之前已提取过正文」的那些文章。
+    // 老数据补一次正文纯文本（有上限）：让检索能命中「之前已提取过正文」的那些文章。
     await articleStore.backfillPlainText(BACKFILL_PLAIN_TEXT_LIMIT);
-    this.all = await articleStore.loadRecent();
+    this.all = await articleStore.loadForList();
     this.publish();
-    await this.refreshAll();
+    // 启动时清理超期回收站 + 按节流执行一次保留清理（异步，不阻塞首屏与抓取）。
+    this.applyRetentionIfDue();
+    // 冷启动是用户动作：force=true 保证首屏能拿到内容（仍不抓停用源）。
+    await this.refreshAll(true);
   }
 
-  /** 抓取全部订阅源，写入本地缓存后重新读库。 */
-  async refreshAll(): Promise<void> {
+  /**
+   * 抓取全部订阅源，写入本地缓存后重新读库。
+   * @param force 手动刷新传 true：绕过「源级间隔未到期」，但不绕过「源已停用」。
+   */
+  async refreshAll(force: boolean = false): Promise<void> {
     if (this.feeds.length === 0) {
       this.all = [];
       this.publish();
+      return;
+    }
+    const targets: FeedSource[] = this.gateFeeds(this.feeds, force);
+    if (targets.length === 0) {
+      this.loading = false;
       return;
     }
     this.loading = true;
     this.errorCode = FeedError.NONE;
     this.lastFailureCode = FeedError.FETCH_FAILED;
     const fresh: Article[] = [];
-    const failed: number = await this.fetchFeeds(this.feeds, fresh);
+    const failed: number = await this.fetchFeeds(targets, fresh);
     await this.commitFresh(fresh);
-    if (failed > 0 && failed === this.feeds.length) {
+    if (failed > 0 && failed === targets.length) {
       this.errorCode = this.lastFailureCode;
     }
+  }
+
+  /**
+   * 抓取门控：只保留「已启用」且「已到抓取间隔」的源。
+   * force = true 时绕过到期判断（用户手动下拉 / 点刷新），但停用源仍然跳过。
+   */
+  private gateFeeds(feeds: FeedSource[], force: boolean): FeedSource[] {
+    const result: FeedSource[] = [];
+    const now: number = Date.now();
+    for (let i = 0; i < feeds.length; i += 1) {
+      const feed: FeedSource = feeds[i];
+      if (!feed.enabled) {
+        continue;
+      }
+      if (force) {
+        result.push(feed);
+        continue;
+      }
+      const minutes: number = this.effectiveSettings(feed.id).intervalMinutes;
+      if (minutes <= 0) {
+        continue;
+      }
+      // lastUpdated 是「最近成功时间」；从未成功过（0）视为到期。
+      if (feed.lastUpdated <= 0 || now - feed.lastUpdated >= minutes * MINUTE_MS) {
+        result.push(feed);
+      }
+    }
+    return result;
   }
 
   /** 导出当前订阅源为 OPML 文本。 */
@@ -266,27 +322,39 @@ export class FeedViewModel {
           await feedService.fetchFeed(feed.url, feed.etag, feed.lastModified);
         this.rememberValidators(feed, result.etag, result.lastModified);
         if (result.notModified) {
-          // 304：内容没变，连解析都省了。
+          // 304：内容没变，连解析都省了（仍算一次成功抓取）。
           console.info('feed not modified (304): ' + feed.url);
-          feed.lastError = '';
+          this.markFeedSuccess(feed);
           continue;
         }
         if (result.parsed === undefined) {
           failed += 1;
-          feed.lastError = 'document is not a feed';
-          this.lastFailureCode = FeedError.PARSE_ERROR;
+          this.markFeedFailure(feed, 'document is not a feed', FeedError.PARSE_ERROR);
           continue;
         }
         toArticles(feed, result.parsed, fresh);
-        feed.lastError = '';
+        this.markFeedSuccess(feed);
       } catch (err) {
         const error: BusinessError = err as BusinessError;
         failed += 1;
-        feed.lastError = describeError(error);
-        this.lastFailureCode = errorCodeOf(err);
+        this.markFeedFailure(feed, describeError(error), errorCodeOf(err));
       }
     }
     return failed;
+  }
+
+  /** 抓取成功：清空连续失败计数，刷新「最近成功时间」。 */
+  private markFeedSuccess(feed: FeedSource): void {
+    feed.lastError = '';
+    feed.failureCount = 0;
+    feed.lastUpdated = Date.now();
+  }
+
+  /** 抓取失败：累加连续失败计数，保留错误描述供订阅页 / 源设置页展示。 */
+  private markFeedFailure(feed: FeedSource, message: string, code: FeedError): void {
+    feed.failureCount = feed.failureCount + 1;
+    feed.lastError = message;
+    this.lastFailureCode = code;
   }
 
   /** 记下本次响应的校验值，供下次条件请求（If-None-Match / If-Modified-Since）使用。 */
@@ -300,7 +368,7 @@ export class FeedViewModel {
    * 这样界面上已建立的列表项绑定不会被换掉的实例切断（见 mergeArticle 的说明）。
    */
   private async reloadFromStore(): Promise<void> {
-    const loaded: Article[] = await articleStore.loadRecent();
+    const loaded: Article[] = await articleStore.loadForList();
     const previous: Map<string, Article> = new Map<string, Article>();
     for (let i = 0; i < this.all.length; i += 1) {
       previous.set(this.all[i].id, this.all[i]);
@@ -311,6 +379,7 @@ export class FeedViewModel {
       const kept: Article | undefined = previous.get(item.id);
       if (kept === undefined) {
         merged.push(item);
+        // 新行只带了元数据：正文等详情页按需 loadBody。
       } else {
         mergeArticle(kept, item);
         merged.push(kept);
@@ -324,12 +393,35 @@ export class FeedViewModel {
     // 新内容入库后回到第一页（否则分页游标停在旧位置、看不到最新）
     this.resetPaging();
     articleStore.insertNew(fresh);
-    articleStore.prune();
     await this.reloadFromStore();
     this.publish();
     this.lastUpdated = Date.now();
     this.loading = false;
     feedStore.save(this.feeds);
+    retentionService.setFeeds(this.feeds);
+    // 抓取提交后异步执行保留清理（6 小时节流）：绝不 await，不阻塞界面刷新。
+    this.applyRetentionIfDue();
+  }
+
+  /**
+   * 异步触发保留清理：清理完成后把列表与统计刷新一次（清理走了回收站，索引同步已由 ArticleStore 处理）。
+   * 任何失败都只记日志 —— 清理是低优先级后台动作。
+   */
+  applyRetentionIfDue(): void {
+    retentionService.setFeeds(this.feeds);
+    retentionService.runIfDue().then((cleaned: number) => {
+      if (cleaned > 0) {
+        this.reloadAfterRetention();
+      }
+    }).catch((err: BusinessError) => {
+      console.warn('retention run failed: ' + err.message);
+    });
+  }
+
+  /** 清理 / 恢复 / 重建索引后刷新列表（存储页也会调用）。 */
+  async reloadAfterRetention(): Promise<void> {
+    await this.reloadFromStore();
+    this.publish();
   }
 
   /**
@@ -376,17 +468,6 @@ export class FeedViewModel {
     this.publish();
   }
 
-  /** 本地搜索：按标题 / 摘要 / 正文匹配（大小写不敏感）。 */
-  setKeyword(text: string): void {
-    const next: string = text.trim();
-    if (this.keyword === next) {
-      return;
-    }
-    this.keyword = next;
-    this.resetPaging();
-    this.publish();
-  }
-
   /** 进入单源视图。 */
   scopeToFeed(feed: FeedSource): void {
     this.scopeFeedId = feed.id;
@@ -428,11 +509,11 @@ export class FeedViewModel {
 
   /**
    * 只刷新当前打开的单源列表页（下拉刷新用）。
-   * 与 refreshAll 的区别：只抓这一个源，不动其它源，也不清全局错误码之外的语义。
+   * force = true 时绕过源级间隔（手动刷新），但源已停用时仍然跳过。
    */
-  async refreshCurrentFeed(): Promise<void> {
+  async refreshCurrentFeed(force: boolean = false): Promise<void> {
     const feed: FeedSource | undefined = this.findFeed(this.detailFeedId);
-    if (feed === undefined) {
+    if (feed === undefined || !feed.enabled) {
       return;
     }
     this.loading = true;
@@ -460,17 +541,150 @@ export class FeedViewModel {
   }
 
   /**
-   * 按 id 打开文章（卡片 / 通知深链用）：找到就标记已读并设为当前文章，返回是否找到。
+   * 按 id 打开文章（卡片 / 通知深链 / 搜索结果用）：内存里没有时先从库兜底加载。
    * 找不到（例如文章已被清理）时不做任何改变，由调用方决定是否提示。
    */
-  openArticleById(articleId: string): boolean {
+  async openArticleById(articleId: string): Promise<boolean> {
+    const ok: boolean = await this.ensureArticleLoaded(articleId);
+    if (!ok) {
+      return false;
+    }
+    this.openArticle(articleId);
+    return true;
+  }
+
+  /** 确保文章在内存里：不在则按 id 从库加载并并入列表（搜索命中 / 深链兜底）。 */
+  async ensureArticleLoaded(articleId: string): Promise<boolean> {
+    if (this.findArticle(articleId) !== undefined) {
+      return true;
+    }
+    const loaded: Article | undefined = await articleStore.loadById(articleId);
+    if (loaded === undefined) {
+      return false;
+    }
+    this.all.push(loaded);
+    this.bodyLoaded.add(articleId);
+    this.publish();
+    return true;
+  }
+
+  /** 按 id 找内存里的文章。 */
+  private findArticle(articleId: string): Article | undefined {
     for (let i = 0; i < this.all.length; i += 1) {
       if (this.all[i].id === articleId) {
-        this.openArticle(articleId);
-        return true;
+        return this.all[i];
       }
     }
-    return false;
+    return undefined;
+  }
+
+  /** 按 id 找订阅源（供源设置页 / 视图使用）。 */
+  feedById(feedId: string): FeedSource | undefined {
+    return this.findFeed(feedId);
+  }
+
+  /**
+   * 某订阅源的「生效设置」：源级覆盖优先，否则取全局。
+   * 视图 / 编排只读这里，避免各处重复写「global 就取全局」。
+   */
+  effectiveSettings(feedId: string): EffectiveFeedSettings {
+    const feed: FeedSource | undefined = this.findFeed(feedId);
+    const enabled: boolean = feed === undefined ? true : feed.enabled;
+    let interval: number = 0;
+    if (feed !== undefined && feed.fetchIntervalMinutes > 0) {
+      interval = feed.fetchIntervalMinutes;
+    } else {
+      const global: number = AutoRefreshMinutes.of(appSettings.autoRefresh);
+      interval = global > 0 ? global : 0;
+    }
+    const fullText: string = feed === undefined || feed.fullTextMode === FullTextMode.GLOBAL
+      ? FullTextMode.AUTO
+      : feed.fullTextMode;
+    const retention: number = retentionService.effectiveRetentionDays(feed);
+    let notify: boolean = appSettings.notifyNewArticles;
+    if (feed !== undefined) {
+      if (feed.notify === TriState.ON) {
+        notify = true;
+      } else if (feed.notify === TriState.OFF) {
+        notify = false;
+      }
+    }
+    let scrollRead: boolean = false;
+    if (feed !== undefined) {
+      if (feed.markReadOnScroll === TriState.ON) {
+        scrollRead = true;
+      } else if (feed.markReadOnScroll === TriState.OFF) {
+        scrollRead = false;
+      }
+    }
+    return new EffectiveFeedSettings(enabled, interval, fullText, retention, notify, scrollRead);
+  }
+
+  /** 「滚动即已读」是否生效（默认关 = 保持「打开即已读」的旧行为）。 */
+  markReadOnScrollEffective(feedId: string): boolean {
+    return this.effectiveSettings(feedId).markReadOnScroll;
+  }
+
+  /** 更新单源设置：归一 → 内存 → 落盘（并同步给保留服务）。 */
+  updateFeedSettings(feedId: string, patch: FeedSettingsPatch): void {
+    for (let i = 0; i < this.feeds.length; i += 1) {
+      const feed: FeedSource = this.feeds[i];
+      if (feed.id !== feedId) {
+        continue;
+      }
+      if (patch.enabled !== undefined) {
+        feed.enabled = patch.enabled;
+      }
+      if (patch.fetchIntervalMinutes !== undefined) {
+        feed.fetchIntervalMinutes = normalizeFeedInterval(patch.fetchIntervalMinutes);
+      }
+      if (patch.fullTextMode !== undefined) {
+        feed.fullTextMode = normalizeFeedFullTextMode(patch.fullTextMode);
+      }
+      if (patch.retentionDays !== undefined) {
+        feed.retentionDays = normalizeFeedRetention(patch.retentionDays);
+      }
+      if (patch.notify !== undefined) {
+        feed.notify = normalizeFeedTriState(patch.notify);
+      }
+      if (patch.markReadOnScroll !== undefined) {
+        feed.markReadOnScroll = normalizeFeedTriState(patch.markReadOnScroll);
+      }
+      break;
+    }
+    feedStore.save(this.feeds);
+    retentionService.setFeeds(this.feeds);
+    this.publish();
+  }
+
+  /** 打开单源设置页（记录目标源 id）。 */
+  openFeedSettings(feed: FeedSource): void {
+    this.settingsFeedId = feed.id;
+  }
+
+  /** 单源设置页标题：源标题（找不到时退回通用标题）。 */
+  settingsFeedTitle(): ResourceStr {
+    const feed: FeedSource | undefined = this.findFeed(this.settingsFeedId);
+    if (feed === undefined || feed.title.length === 0) {
+      return $r('app.string.feed_settings_title');
+    }
+    return feed.title;
+  }
+
+  /** 手动重试单个源（源设置页 / 订阅页）：绕过间隔，但停用源不抓。 */
+  async retryFeed(feedId: string): Promise<void> {
+    const feed: FeedSource | undefined = this.findFeed(feedId);
+    if (feed === undefined || !feed.enabled) {
+      return;
+    }
+    this.loading = true;
+    this.errorCode = FeedError.NONE;
+    const fresh: Article[] = [];
+    const failed: number = await this.fetchFeeds([feed], fresh);
+    await this.commitFresh(fresh);
+    if (failed > 0) {
+      this.errorCode = this.lastFailureCode;
+    }
   }
 
   /** 打开单个订阅源的文章列表页：记录目标源并刷新单源列表。 */
@@ -1069,9 +1283,21 @@ export class FeedViewModel {
     }
   }
 
-  /** 打开文章：记录当前 id 并标记已读。 */
+  /**
+   * 打开文章：记录当前 id 并保护它不被保留清理。
+   *
+   * 已读时机按源设置分流：
+   *   滚动已读生效（on）→ 打开不标已读，等详情页滚到 ≥80% / 触底时 markFinished；
+   *   否则保持旧行为（打开即已读）。
+   */
   openArticle(articleId: string): void {
     this.currentArticleId = articleId;
+    retentionService.setProtectedArticle(articleId);
+    const article: Article | undefined = this.findArticle(articleId);
+    if (article !== undefined && this.markReadOnScrollEffective(article.feedId)) {
+      this.publish();
+      return;
+    }
     this.markRead(articleId);
   }
 
@@ -1298,25 +1524,66 @@ export class FeedViewModel {
 
   /** 按 id 取当前文章；找不到返回 undefined。 */
   currentArticle(): Article | undefined {
-    for (let i = 0; i < this.all.length; i += 1) {
-      if (this.all[i].id === this.currentArticleId) {
-        return this.all[i];
-      }
-    }
-    return undefined;
+    return this.findArticle(this.currentArticleId);
   }
 
   /**
-   * 取当前文章的 Reader 正文（缓存优先 / feed 全文 / 联网提取）。
+   * 打开检索命中：补全正文 → 记录待定位检索词 → 打开详情。
+   * 详情页在正文加载完成后消费 pendingSearchTerm（复用页内查找定位首个命中）。
+   */
+  async openSearchHit(articleId: string, term: string): Promise<boolean> {
+    const ok: boolean = await this.ensureArticleLoaded(articleId);
+    if (!ok) {
+      return false;
+    }
+    await this.ensureBodyLoaded(articleId);
+    this.pendingSearchTerm = term;
+    this.openArticle(articleId);
+    return true;
+  }
+
+  /**
+   * 确保文章正文已从库加载（列表只读轻量列）。
+   * 返回是否成功（文章不存在 / 库不可用时 false，调用方按「无正文」降级）。
+   */
+  async ensureBodyLoaded(articleId: string): Promise<boolean> {
+    const article: Article | undefined = this.findArticle(articleId);
+    if (article === undefined) {
+      return false;
+    }
+    if (this.bodyLoaded.has(articleId)) {
+      return true;
+    }
+    const body = await articleStore.loadBody(articleId);
+    if (body === undefined) {
+      return false;
+    }
+    article.content = body.content;
+    article.contentHtml = body.contentHtml;
+    article.readerHtml = body.readerHtml;
+    article.plainText = body.plainText;
+    article.pageEtag = body.pageEtag;
+    article.pageLastModified = body.pageLastModified;
+    if (body.readerHtml.length > 0) {
+      article.readerState = ReaderState.READY;
+    }
+    this.bodyLoaded.add(articleId);
+    return true;
+  }
+
+  /**
+   * 取当前文章的 Reader 正文（缓存优先 / feed 全文 / 联网提取），按源全文策略执行。
    * 详情页只调用这里，不直接依赖 service。失败时抛出错误供界面退网页原文。
    */
   async loadReaderHtml(articleId: string): Promise<string> {
-    for (let i = 0; i < this.all.length; i += 1) {
-      if (this.all[i].id === articleId) {
-        return articleContentService.ensureReaderHtml(this.all[i]);
-      }
+    const article: Article | undefined = this.findArticle(articleId);
+    if (article === undefined) {
+      return '';
     }
-    return '';
+    // 正文是按需加载的：先补齐缓存，否则「离线可读」会退化成重新联网提取。
+    await this.ensureBodyLoaded(articleId);
+    const mode: string = this.effectiveSettings(article.feedId).fullTextMode;
+    return articleContentService.ensureReaderHtml(article, mode);
   }
 
   /** 清空某篇的 Reader 缓存，迫使下次重新提取（详情页「重新提取」用）。 */
@@ -1536,9 +1803,6 @@ export class FeedViewModel {
   /** 单条是否落在当前范围（订阅源 + 筛选 + 关键词）内。 */
   private passesFilter(item: Article): boolean {
     if (this.scopeFeedId.length > 0 && item.feedId !== this.scopeFeedId) {
-      return false;
-    }
-    if (this.keyword.length > 0 && !matchesKeyword(item, this.keyword.toLowerCase())) {
       return false;
     }
     if (this.filter === ArticleFilter.ARCHIVED) {

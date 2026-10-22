@@ -101,8 +101,61 @@ export class ArticleDbConstants {
   static readonly TABLE_ARTICLES: string = 'articles';
   /** 正文标注表（本地，无后端）。 */
   static readonly TABLE_HIGHLIGHTS: string = 'highlights';
-  /** 缓存上限：超过后清理最旧的未收藏文章（收藏的永不清理）。 */
-  static readonly MAX_CACHED_ARTICLES: number = 1000;
+  /** 全文检索虚表（FTS5：article_id / title / summary / plain_text / author）。 */
+  static readonly TABLE_ARTICLES_FTS: string = 'articles_fts';
+  /**
+   * 中文检索虚表（FTS5：article_id UNINDEXED + grams）。
+   * grams 是「CJK 单字 + 相邻二元组」的空格分隔 token 流，建表时显式 unicode61，
+   * 保证预切分出来的 token 不会被二次切碎 —— 中文检索不再依赖设备的 ICU 分词能力。
+   */
+  static readonly TABLE_ARTICLES_FTS_CJK: string = 'articles_fts_cjk';
+  /** 回收站（与 articles 同构 + deleted_at）：清理可撤销 7 天。 */
+  static readonly TABLE_ARTICLES_TRASH: string = 'articles_trash';
+  /** 当前数据库结构版本（v1 = 初始表；v2 = 索引 + FTS + 回收站；v3 = 中文检索索引）。 */
+  static readonly SCHEMA_VERSION: number = 3;
+}
+
+/** 全文检索相关常量。 */
+export class SearchConstants {
+  /** 搜索结果单页条数。 */
+  static readonly PAGE_SIZE: number = 30;
+  /** 索引重建每批条数（分批写入，避免一次性长事务卡住读写）。 */
+  static readonly REBUILD_BATCH: number = 200;
+  /** 命中片段长度（字符）。 */
+  static readonly SNIPPET_MAX_CHARS: number = 120;
+  /** 搜索历史最多保留条数。 */
+  static readonly HISTORY_MAX: number = 20;
+  /** 搜索结果里 `from:` 允许的来源数量上限（防止签发过长 SQL）。 */
+  static readonly MAX_FROM_VALUES: number = 8;
+  /**
+   * 单篇文档写入中文索引的 grams 字符上限（默认 20000）。
+   * 超过后只索引前 N 个字符的 token，避免超长正文把索引体积放大到不可控。
+   */
+  static readonly CJK_GRAMS_MAX_CHARS: number = 20000;
+  /** 检索路径（诊断用）：主 FTS 索引。 */
+  static readonly PATH_FTS: string = 'fts';
+  /** 检索路径（诊断用）：中文二元组索引。 */
+  static readonly PATH_CJK: string = 'cjk';
+  /** 检索路径（诊断用）：全表 LIKE 降级。 */
+  static readonly PATH_LIKE: string = 'like';
+  /** 诊断日志统一前缀。 */
+  static readonly LOG_PREFIX: string = 'CJKIDX';
+  /** 中文分词能力探针：临时表名。 */
+  static readonly PROBE_TABLE: string = 'cjk_probe_fts';
+  /** 中文分词能力探针：样本正文。 */
+  static readonly PROBE_SAMPLE: string = '鸿蒙系统开发';
+  /** 中文分词能力探针：样本查询词。 */
+  static readonly PROBE_TERM: string = '鸿蒙';
+}
+
+/** 保留清理相关常量。 */
+export class RetentionConstants {
+  /** 两次自动清理之间的最小间隔（6 小时）。 */
+  static readonly MIN_INTERVAL_MS: number = 6 * 60 * 60 * 1000;
+  /** 回收站保留时长（7 天）。 */
+  static readonly TRASH_TTL_MS: number = 7 * 24 * 60 * 60 * 1000;
+  /** 一天的毫秒数。 */
+  static readonly DAY_MS: number = 24 * 60 * 60 * 1000;
 }
 
 /** Reader 正文提取状态（Article.readerState）。 */
@@ -121,6 +174,13 @@ export class ReaderConstants {
   static readonly MAX_SOURCE_HTML_CHARS: number = 2 * 1024 * 1024;
   /** Readability 主容器打分阈值：低于此值退回「保留块结构」的兜底提取。 */
   static readonly MIN_CONTENT_SCORE: number = 20;
+  /**
+   * feed 自带正文直接可用的最小纯文本量（字符）。
+   * 低于此值多半是「Article URL / Comments URL」这类摘要或链接堆，应联网抓原文。
+   */
+  static readonly MIN_FEED_BODY_CHARS: number = 160;
+  /** feed 自带正文里链接文本的占比上限：超过说明是链接列表，不是正文。 */
+  static readonly MAX_FEED_BODY_LINK_RATIO: number = 0.5;
   /** 单篇内联图片的 base64 字符上限（约 450KB 原图），超过则保留远程链接不缓存。 */
   static readonly MAX_INLINE_IMAGE_CHARS: number = 600 * 1024;
   /** 单篇内联图片总量上限（所有 data URI 合计）。 */

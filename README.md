@@ -5,7 +5,17 @@ HarmonyOS（ArkTS）RSS 阅读器。基于 **UI Design Kit（HDS）** 组件与 
 
 ## 功能
 
-- **订阅与阅读**：RSS 2.0 / Atom 1.0 / JSON Feed；分组管理、OPML 导入导出、搜索、未读/收藏筛选。
+- **订阅与阅读**：RSS 2.0 / Atom 1.0 / JSON Feed；分组管理、OPML 导入导出、未读/收藏筛选。
+- **长期历史 + 可撤销清理**：默认永久保留全部历史（不再有 1000 篇上限）；可选 30 / 90 / 365 天或
+  「仅保留未读与收藏」。清理前预览影响条数，收藏 / 稍后读 / 有高亮 / 当前打开的文章永不删除，
+  被清理文章进入回收站 7 天内可恢复。设置页「存储与保留」展示总占用、按源占用，支持重建检索索引。
+- **全局全文检索**：RDB FTS5 索引（标题 / 摘要 / 正文 / 作者），支持 `from:` / `is:` / `after:` /
+  `before:` / 引号短语，分页与搜索历史；结果高亮命中片段，点击可定位到正文首个命中。
+  中文查询走独立的中文索引（`articles_fts_cjk`：单字 + 相邻二元组，覆盖标题/摘要/正文），
+  不依赖设备的 ICU 分词能力；纯英文查询走主索引；两者都不可用才降级为全表 `LIKE`。
+  检索路径与耗时、索引条数、中文分词能力可在「存储与保留 → 索引诊断」查看（日志前缀 `CJKIDX`）。
+- **单源设置**：每个源可覆盖启用抓取、抓取间隔、全文策略、保留天数、通知、滚动即已读；
+  停用源不抓取不通知但保留历史；订阅页与源设置页展示最后成功时间、连续失败次数并可手动重试。
 - **结构化正文提取**：抓原文 → Readability 式选主容器 → 白名单净化，保留段落 / 标题 / 图片 /
   列表 / 代码 / 引用，而不是把标签抹平成纯文本。
 - **Reader 阅读视图**：受控 HTML 文档渲染，排版（字号 / 行距 / 字体 / 栏宽 / 对齐）与
@@ -22,12 +32,16 @@ HarmonyOS（ArkTS）RSS 阅读器。基于 **UI Design Kit（HDS）** 组件与 
 entry/src/main/ets/
   common/      常量、通用组件与工具
   model/       领域模型（@ObservedV2）与设置项
-  service/     平台能力与纯逻辑（网络 / 存储 / 解析 / 提取 / 渲染）
-  viewmodel/   FeedViewModel / SettingsViewModel
+  service/     平台能力与纯逻辑（网络 / 存储 / 解析 / 提取 / 渲染 / 检索 / 保留策略）
+  viewmodel/   FeedViewModel / SettingsViewModel / SearchViewModel / StorageViewModel
   views/       页面与组件（纯展示）
   form/        桌面卡片
 entry/src/ohosTest/   仪器化单元测试（hypium）
 ```
+
+检索与保留：`SearchQueryParser`（语法 → SearchQuery）→ `SearchStore` / `ArticleStore`
+（纯英文走主 FTS、含中文走中文二元组索引、异常降级 LIKE）；`CjkTokenizer`（grams / 查询 token 纯函数）、
+`SearchPlan`（查询编译 + 子串复核）、`RetentionService`（候选计算 → 移入回收站 → 7 天后清除）。
 
 正文提取管线：`ArticleContentService`（缓存优先 → feed 全文 → 联网抓取）→ `Readability`（选主容器）
 → `HtmlSanitizer`（净化 + URL 绝对化）→ `ImageCache`（图片内联）→ `ReaderDocument`（拼阅读文档）。

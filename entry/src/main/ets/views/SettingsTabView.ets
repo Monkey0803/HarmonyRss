@@ -350,7 +350,7 @@ export struct SettingsTabView {
       ToastUtil.show(this.getUIContext(), $r('app.string.toast_refreshing'));
       return;
     }
-    feedViewModel.refreshAll().then(() => {
+    feedViewModel.refreshAll(true).then(() => {
       const bar: HdsSnackBar = new HdsSnackBar(this.getUIContext());
       const icon: SnackBarIconOptions = { icon: $r('sys.symbol.checkmark_circle') };
       const message: SnackBarMessageOptions = { title: $r('app.string.snack_refreshed') };
@@ -808,6 +808,9 @@ export struct SettingsTabView {
 
         this.SectionTitle($r('app.string.section_storage'))
         Column() {
+          // 保留策略 / 存储占用 / 回收站 / 索引重建都收在独立页面。
+          this.NavRow($r('sys.symbol.externaldrive'), $r('app.string.storage_title'), RouterConstants.PAGE_STORAGE)
+          Divider().color($r('app.color.hm_divider'))
           Row() {
             SettingLeading($r('sys.symbol.externaldrive'), $r('app.string.row_reader_cache'))
             Blank()

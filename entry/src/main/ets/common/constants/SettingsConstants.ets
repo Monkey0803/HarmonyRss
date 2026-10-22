@@ -315,3 +315,113 @@ export enum LogoKind {
   SUNSET = 'sunset',
   MONO = 'mono'
 }
+
+/**
+ * 保留策略（是否删除本地文章）：
+ * FOREVER 永久保留（默认）；DAYS 按天数清理；UNREAD 仅保留未读与收藏。
+ *
+ * 注意与「归档规则」（ArchiveRule，只影响列表展示、不删数据）是两套独立机制。
+ */
+export enum RetentionMode {
+  FOREVER = 'forever',
+  DAYS = 'days',
+  UNREAD = 'unread'
+}
+
+/** 保留天数档位（仅在 RetentionMode.DAYS 下生效）。 */
+export enum RetentionDays {
+  D30 = '30',
+  D90 = '90',
+  D365 = '365'
+}
+
+/**
+ * 单源对某个布尔/策略的覆盖：跟随全局 / 强制开 / 强制关。
+ * 用于通知（notify）、滚动已读（markReadOnScroll）。
+ */
+export enum TriState {
+  GLOBAL = 'global',
+  ON = 'on',
+  OFF = 'off'
+}
+
+/** 全文策略：跟随全局 / 自动（有 feed 全文就用）/ 总是联网抓原文 / 从不联网。 */
+export enum FullTextMode {
+  GLOBAL = 'global',
+  AUTO = 'auto',
+  ALWAYS = 'always',
+  NEVER = 'never'
+}
+
+/** 保留天数的数值映射（认不出的取值一律当作 90 天）。 */
+export class RetentionDaysValue {
+  static readonly DEFAULT: number = 90;
+  /** 源级「永久保留」哨兵值（与 0 = 跟随全局区分）。 */
+  static readonly FOREVER: number = -1;
+
+  static of(id: string): number {
+    if (id === RetentionDays.D30) {
+      return 30;
+    }
+    if (id === RetentionDays.D365) {
+      return 365;
+    }
+    if (id === RetentionDays.D90) {
+      return 90;
+    }
+    return RetentionDaysValue.DEFAULT;
+  }
+
+  /** 数值 → 最接近的档位 id（设置页展示 / 老数据迁移）。 */
+  static idOf(days: number): string {
+    if (days === RetentionDaysValue.FOREVER) {
+      return 'forever';
+    }
+    if (days === 30) {
+      return RetentionDays.D30;
+    }
+    if (days === 365) {
+      return RetentionDays.D365;
+    }
+    return RetentionDays.D90;
+  }
+}
+
+/** 单源抓取间隔档位：'0' = 跟随全局；其余为分钟数。 */
+export class FeedIntervalMinutes {
+  /** 跟随全局的哨兵值（源级设置里用 0 表示）。 */
+  static readonly FOLLOW_GLOBAL: number = 0;
+
+  static of(id: string): number {
+    if (id === '15') {
+      return 15;
+    }
+    if (id === '30') {
+      return 30;
+    }
+    if (id === '60') {
+      return 60;
+    }
+    if (id === '180') {
+      return 180;
+    }
+    return FeedIntervalMinutes.FOLLOW_GLOBAL;
+  }
+
+  /** 分钟数 → 档位 id（非法 / 负值一律回到「跟随全局」）。 */
+  static idOf(minutes: number): string {
+    if (minutes === 15) {
+      return '15';
+    }
+    if (minutes === 30) {
+      return '30';
+    }
+    if (minutes === 60) {
+      return '60';
+    }
+    if (minutes === 180) {
+      return '180';
+    }
+    return '0';
+  }
+}

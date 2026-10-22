@@ -193,6 +193,18 @@
       "value": "正在朗读…"
     },
     {
+      "name": "speech_paused",
+      "value": "已暂停"
+    },
+    {
+      "name": "action_pause_speech",
+      "value": "暂停"
+    },
+    {
+      "name": "action_resume_speech",
+      "value": "继续"
+    },
+    {
       "name": "toast_speech_unsupported",
       "value": "本机不支持朗读"
     },
@@ -1199,6 +1211,370 @@
     {
       "name": "widget_empty",
       "value": "暂无文章"
+    },
+    {
+      "name": "retention_mode_forever",
+      "value": "全部保留"
+    },
+    {
+      "name": "retention_mode_days",
+      "value": "按天数保留"
+    },
+    {
+      "name": "retention_mode_unread",
+      "value": "仅保留未读与收藏"
+    },
+    {
+      "name": "retention_days_30",
+      "value": "30 天"
+    },
+    {
+      "name": "retention_days_90",
+      "value": "90 天"
+    },
+    {
+      "name": "retention_days_365",
+      "value": "365 天"
+    },
+    {
+      "name": "retention_forever",
+      "value": "永久"
+    },
+    {
+      "name": "search_title",
+      "value": "搜索"
+    },
+    {
+      "name": "search_hint",
+      "value": "搜索全部文章"
+    },
+    {
+      "name": "search_history",
+      "value": "最近搜索"
+    },
+    {
+      "name": "search_clear_history",
+      "value": "清空历史"
+    },
+    {
+      "name": "search_syntax_hint",
+      "value": "试试 from:来源 is:unread after:2026-01-01 \"完整短语\""
+    },
+    {
+      "name": "search_empty",
+      "value": "输入关键词即可检索全部历史文章"
+    },
+    {
+      "name": "search_no_result",
+      "value": "没有匹配的文章"
+    },
+    {
+      "name": "search_result_count",
+      "value": "%d 条结果"
+    },
+    {
+      "name": "search_filter_all",
+      "value": "全部"
+    },
+    {
+      "name": "search_filter_unread",
+      "value": "未读"
+    },
+    {
+      "name": "search_filter_starred",
+      "value": "收藏"
+    },
+    {
+      "name": "search_filter_saved",
+      "value": "稍后读"
+    },
+    {
+      "name": "search_searching",
+      "value": "搜索中…"
+    },
+    {
+      "name": "search_error",
+      "value": "搜索失败，请重试"
+    },
+    {
+      "name": "search_index_building",
+      "value": "正在重建索引…"
+    },
+    {
+      "name": "search_diag_section",
+      "value": "索引诊断"
+    },
+    {
+      "name": "search_diag_main_index",
+      "value": "主索引"
+    },
+    {
+      "name": "search_diag_cjk_index",
+      "value": "中文索引"
+    },
+    {
+      "name": "search_diag_tokenizer",
+      "value": "中文分词"
+    },
+    {
+      "name": "search_diag_state_ready",
+      "value": "就绪"
+    },
+    {
+      "name": "search_diag_state_degraded",
+      "value": "已降级"
+    },
+    {
+      "name": "search_diag_state_available",
+      "value": "可用"
+    },
+    {
+      "name": "search_diag_state_unavailable",
+      "value": "不可用"
+    },
+    {
+      "name": "search_diag_indexed",
+      "value": "%d 条"
+    },
+    {
+      "name": "search_diag_last_search",
+      "value": "最近检索"
+    },
+    {
+      "name": "search_diag_path_none",
+      "value": "尚未检索"
+    },
+    {
+      "name": "search_diag_path_fts",
+      "value": "主索引"
+    },
+    {
+      "name": "search_diag_path_cjk",
+      "value": "中文索引"
+    },
+    {
+      "name": "search_diag_path_like",
+      "value": "全表扫描"
+    },
+    {
+      "name": "storage_title",
+      "value": "存储与保留"
+    },
+    {
+      "name": "storage_section_retention",
+      "value": "保留策略"
+    },
+    {
+      "name": "storage_section_usage",
+      "value": "存储占用"
+    },
+    {
+      "name": "storage_section_per_feed",
+      "value": "按订阅源占用"
+    },
+    {
+      "name": "storage_section_trash",
+      "value": "最近删除"
+    },
+    {
+      "name": "storage_section_index",
+      "value": "搜索索引"
+    },
+    {
+      "name": "storage_total",
+      "value": "共 %d 篇文章"
+    },
+    {
+      "name": "storage_text_size",
+      "value": "文本占用：%s"
+    },
+    {
+      "name": "storage_cleanable",
+      "value": "可清理 %d 篇"
+    },
+    {
+      "name": "storage_clean_now",
+      "value": "立即清理"
+    },
+    {
+      "name": "storage_clean_confirm_title",
+      "value": "清理旧文章？"
+    },
+    {
+      "name": "storage_clean_confirm_message",
+      "value": "%d 篇文章将移入「最近删除」，7 天内可恢复。"
+    },
+    {
+      "name": "storage_clean_done",
+      "value": "已清理 %d 篇"
+    },
+    {
+      "name": "storage_trash_count",
+      "value": "%d 篇可恢复"
+    },
+    {
+      "name": "storage_restore",
+      "value": "全部恢复"
+    },
+    {
+      "name": "storage_restore_done",
+      "value": "已恢复 %d 篇"
+    },
+    {
+      "name": "storage_rebuild",
+      "value": "重建索引"
+    },
+    {
+      "name": "storage_rebuilding",
+      "value": "正在重建 %d/%d"
+    },
+    {
+      "name": "storage_rebuild_done",
+      "value": "索引已重建"
+    },
+    {
+      "name": "storage_empty",
+      "value": "本地还没有文章"
+    },
+    {
+      "name": "storage_retention_hint",
+      "value": "收藏、稍后读、含高亮以及当前打开的文章永不删除。"
+    },
+    {
+      "name": "feed_settings_title",
+      "value": "源设置"
+    },
+    {
+      "name": "feed_settings_entry",
+      "value": "源设置"
+    },
+    {
+      "name": "feed_settings_enabled",
+      "value": "启用抓取"
+    },
+    {
+      "name": "feed_settings_enabled_hint",
+      "value": "停用后不抓取、不通知，历史文章仍可阅读。"
+    },
+    {
+      "name": "feed_settings_interval",
+      "value": "抓取间隔"
+    },
+    {
+      "name": "feed_settings_fulltext",
+      "value": "全文策略"
+    },
+    {
+      "name": "feed_settings_retention",
+      "value": "保留文章"
+    },
+    {
+      "name": "feed_settings_notify",
+      "value": "新文章通知"
+    },
+    {
+      "name": "feed_settings_scroll_read",
+      "value": "滚动即已读"
+    },
+    {
+      "name": "feed_settings_scroll_read_hint",
+      "value": "开启后，滚到文末才标记为已读。"
+    },
+    {
+      "name": "feed_settings_section_health",
+      "value": "源健康"
+    },
+    {
+      "name": "feed_settings_follow_global",
+      "value": "跟随全局"
+    },
+    {
+      "name": "feed_settings_on",
+      "value": "开"
+    },
+    {
+      "name": "feed_settings_off",
+      "value": "关"
+    },
+    {
+      "name": "feed_settings_interval_15",
+      "value": "每 15 分钟"
+    },
+    {
+      "name": "feed_settings_interval_30",
+      "value": "每 30 分钟"
+    },
+    {
+      "name": "feed_settings_interval_60",
+      "value": "每 1 小时"
+    },
+    {
+      "name": "feed_settings_interval_180",
+      "value": "每 3 小时"
+    },
+    {
+      "name": "feed_settings_fulltext_auto",
+      "value": "自动"
+    },
+    {
+      "name": "feed_settings_fulltext_always",
+      "value": "总是抓原文"
+    },
+    {
+      "name": "feed_settings_fulltext_never",
+      "value": "从不抓原文"
+    },
+    {
+      "name": "health_last_success",
+      "value": "最后成功：%s"
+    },
+    {
+      "name": "health_failure_count",
+      "value": "连续失败 %d 次"
+    },
+    {
+      "name": "health_never",
+      "value": "尚未成功同步"
+    },
+    {
+      "name": "health_retry",
+      "value": "立即重试"
+    },
+    {
+      "name": "health_retrying",
+      "value": "重试中…"
+    },
+    {
+      "name": "health_ok",
+      "value": "状态正常"
+    },
+    {
+      "name": "retention_days_label",
+      "value": "保留天数"
+    },
+    {
+      "name": "storage_show_all",
+      "value": "展开全部订阅源"
+    },
+    {
+      "name": "storage_show_less",
+      "value": "收起"
+    },
+    {
+      "name": "feed_settings_section_policy",
+      "value": "抓取与保留"
+    },
+    {
+      "name": "feed_settings_disabled",
+      "value": "已停止抓取"
+    },
+    {
+      "name": "storage_retention_mode",
+      "value": "保留方式"
+    },
+    {
+      "name": "search_index_fallback",
+      "value": "已使用基础匹配（索引不可用）"
     }
   ]
 }

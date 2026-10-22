@@ -6,7 +6,7 @@
 
 import { common } from '@kit.AbilityKit';
 import { ReaderTypography } from '../common/constants/SettingsConstants';
-import { ARCHIVE_OPTIONS, LIST_DENSITY_OPTIONS, ROW_LAYOUT_OPTIONS, SUMMARY_LINES_OPTIONS } from '../model/SettingsOptions';
+import { ARCHIVE_OPTIONS, LIST_DENSITY_OPTIONS, ROW_LAYOUT_OPTIONS, SUMMARY_LINES_OPTIONS, RETENTION_MODE_OPTIONS, RETENTION_DAYS_OPTIONS } from '../model/SettingsOptions';
 import { feedViewModel } from './FeedViewModel';
 import { appSettings } from '../model/AppSettings';
 import { settingsStore } from '../service/SettingsStore';
@@ -133,6 +133,21 @@ export class SettingsViewModel {
     appSettings.archiveRule = ARCHIVE_OPTIONS.normalize(id);
     settingsStore.save();
     // 规则变了，首页列表要立刻重算（原来主列表里的条目可能该进归档，反之亦然）。
+    feedViewModel.republish();
+  }
+
+  /** 保留策略：永久 / 按天数 / 仅保留未读与收藏（决定清理任务是否删数据）。 */
+  setRetentionMode(id: string): void {
+    appSettings.retentionMode = RETENTION_MODE_OPTIONS.normalize(id);
+    settingsStore.save();
+    // 策略变了，列表的「可清理」口径随之变化，立刻重算一次。
+    feedViewModel.republish();
+  }
+
+  /** 保留天数档位：30 / 90 / 365（仅 days 模式生效）。 */
+  setRetentionDays(id: string): void {
+    appSettings.retentionDays = RETENTION_DAYS_OPTIONS.normalize(id);
+    settingsStore.save();
     feedViewModel.republish();
   }
 

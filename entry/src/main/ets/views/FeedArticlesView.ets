@@ -45,7 +45,7 @@ export struct FeedArticlesView {
   /** 下拉刷新：只抓当前这个源。 */
   private reload(): void {
     this.refreshing = true;
-    feedViewModel.refreshCurrentFeed().then(() => {
+    feedViewModel.refreshCurrentFeed(true).then(() => {
       this.refreshing = false;
     });
   }

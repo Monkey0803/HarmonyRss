@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from '@ohos/hypium';
-import { extractReadable } from '../../../main/ets/service/Readability';
+import { extractReadable, hasBodyContent } from '../../../main/ets/service/Readability';
 
 const LONG: string =
   'The quick brown fox jumps over the lazy dog, and then it runs away, quietly, into the forest.';
@@ -66,6 +66,23 @@ export default function readabilityTest() {
 
     it('empty_input_is_safe', 0, () => {
       expect(extractReadable('', '')).assertEqual('');
+    });
+
+    it('rejects_hn_link_only_description', 0, () => {
+      const html: string = '<p>Article URL: <a href="https://example.com/a">https://example.com/a</a></p>' +
+        '<p>Comments URL: <a href="https://news.ycombinator.com/item?id=1">' +
+        'https://news.ycombinator.com/item?id=1</a></p>' +
+        '<p>Points: 21</p><p># Comments: 15</p>';
+      expect(hasBodyContent(html)).assertFalse();
+    });
+
+    it('accepts_real_feed_body', 0, () => {
+      const html: string = '<p>' + LONG + '</p><p>' + LONG2 + '</p>';
+      expect(hasBodyContent(html)).assertTrue();
+    });
+
+    it('rejects_plain_text_description', 0, () => {
+      expect(hasBodyContent(LONG + LONG2)).assertFalse();
     });
   });
 }
