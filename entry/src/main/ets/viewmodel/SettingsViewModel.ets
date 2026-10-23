@@ -272,6 +272,15 @@ export class SettingsViewModel {
     settingsStore.save();
   }
 
+  /**
+   * 跨源去重总开关（默认开）。
+   * 只影响「入库时是否合并」（键照常写入），已有合并组保持现状；因此无需重算列表。
+   */
+  setDedupeEnabled(value: boolean): void {
+    appSettings.dedupeEnabled = value;
+    settingsStore.save();
+  }
+
   setAntiPeepEnabled(value: boolean, context: common.UIAbilityContext): void {
     appSettings.antiPeepEnabled = value;
     this.applyAntiPeep(value, context);

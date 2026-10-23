@@ -2219,6 +2219,62 @@
     {
       "name": "hidden_unhide_done",
       "value": "Article restored to the main list"
+    },
+    {
+      "name": "dedupe_sources_count",
+      "value": "%d sources"
+    },
+    {
+      "name": "dedupe_sources_title",
+      "value": "All sources"
+    },
+    {
+      "name": "dedupe_source_label",
+      "value": "Source"
+    },
+    {
+      "name": "dedupe_merged_hint",
+      "value": "This article is also collected by %d other sources"
+    },
+    {
+      "name": "dedupe_group_empty",
+      "value": "No source information"
+    },
+    {
+      "name": "dedupe_settings_title",
+      "value": "Cross-source dedupe"
+    },
+    {
+      "name": "dedupe_settings_desc",
+      "value": "When several feeds carry the same article, show it once and keep every source."
+    },
+    {
+      "name": "dedupe_toggle_on",
+      "value": "Cross-source dedupe on"
+    },
+    {
+      "name": "dedupe_toggle_off",
+      "value": "Cross-source dedupe off"
+    },
+    {
+      "name": "dedupe_match_failed",
+      "value": "Dedupe check failed; the article was saved as a standalone item"
+    },
+    {
+      "name": "dedupe_open_failed",
+      "value": "Unable to open this source link"
+    },
+    {
+      "name": "dedupe_source_count",
+      "value": "%d sources"
+    },
+    {
+      "name": "dedupe_switch_desc",
+      "value": "When several feeds carry the same article, show it once and keep every source."
+    },
+    {
+      "name": "dedupe_source_current",
+      "value": "Current"
     }
   ]
 }

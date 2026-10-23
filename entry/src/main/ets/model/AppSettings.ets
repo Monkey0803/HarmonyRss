@@ -86,6 +86,11 @@ export class AppSettings {
   @Trace retentionDays: string = RetentionDays.D90;
   /** 远端服务自动同步间隔：'off' | '15' | '30' | '60'（分钟，回前台时判断是否过期）。 */
   @Trace remoteAutoSync: string = 'off';
+  /**
+   * 跨源去重总开关（默认开启）：关闭后只影响**新入库**文章（不再合并），
+   * 已有合并组保持现状；归一化键仍然写入，重新开启后新文章可并入已有主条。
+   */
+  @Trace dedupeEnabled: boolean = true;
 }
 
 /** 全局唯一设置实例。 */

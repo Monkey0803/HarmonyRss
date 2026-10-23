@@ -29,6 +29,7 @@ import { RemoteSyncConstants } from '../../common/constants/RssConstants';
 import { buildArticleId } from '../ArticleMapper';
 import { ParsedArticle } from '../RssParser';
 import { articleStore } from '../ArticleStore';
+import { dedupeService } from '../DedupeService';
 import { ruleService } from '../RuleService';
 import { RuleApplyResult } from '../../model/Rule';
 import { remoteAccountStore } from '../RemoteAccountStore';
@@ -148,6 +149,27 @@ export class RemoteSyncService {
       remoteAccountStore.enqueueState(articleId, read, starred);
     }).catch((err: Error) => {
       hilog.warn(DOMAIN, TAG, 'enqueue failed: %{public}s', err.message);
+    });
+  }
+
+  /**
+   * 组内状态入队：把「一篇」的状态变化扩散到整组（主条 + 全部重复项）后逐个入队。
+   * 组内每篇若各有远端映射，都会各自回写一次，保证远端与本地口径一致（FR-006）。
+   * 与 enqueueState 一样 fire-and-forget，不阻塞用户操作。
+   */
+  enqueueGroupState(articleId: string, read?: boolean, starred?: boolean): void {
+    if (articleId.length === 0 || (read === undefined && starred === undefined)) {
+      return;
+    }
+    if (this.accountLoaded && this.account === undefined) {
+      return;
+    }
+    dedupeService.groupIds(articleId).then((ids: string[]) => {
+      for (let i = 0; i < ids.length; i += 1) {
+        this.enqueueState(ids[i], read, starred);
+      }
+    }).catch((err: Error) => {
+      hilog.warn(DOMAIN, TAG, 'group enqueue failed: %{public}s', err.message);
     });
   }
 
@@ -554,6 +576,12 @@ export class RemoteSyncService {
       stateById.set(states[i].articleId, states[i]);
     }
     let pulled: number = 0;
+    // 决策先全部算完再统一落库：回写是「整组」语义，逐条写会互相覆盖组内状态，
+    // 也避免一次同步里做 O(映射数) 次 UPDATE。
+    const readTargets: string[] = [];
+    const unreadTargets: string[] = [];
+    const starredTargets: string[] = [];
+    const unstarredTargets: string[] = [];
     for (let i = 0; i < mappings.length; i += 1) {
       const mapping: RemoteMapping = mappings[i];
       const local: ArticleState | undefined = stateById.get(mapping.articleId);
@@ -565,13 +593,34 @@ export class RemoteSyncService {
       const decision = decideState(local.read, local.starred, remoteRead, remoteStarred,
         pendingIds.has(mapping.articleId));
       if (decision.read !== local.read) {
-        articleStore.setReadByRemote(mapping.articleId, decision.read);
+        if (decision.read) {
+          readTargets.push(mapping.articleId);
+        } else {
+          unreadTargets.push(mapping.articleId);
+        }
         pulled += 1;
       }
       if (decision.starred !== local.starred) {
-        articleStore.setStarredByRemote(mapping.articleId, decision.starred);
+        if (decision.starred) {
+          starredTargets.push(mapping.articleId);
+        } else {
+          unstarredTargets.push(mapping.articleId);
+        }
         pulled += 1;
       }
+    }
+    // 回写作用到整组：先解析主条 / 重复项再批量落库，保证组内状态一致（FR-006）。
+    if (readTargets.length > 0) {
+      await dedupeService.applyRead(readTargets, true);
+    }
+    if (unreadTargets.length > 0) {
+      await dedupeService.applyRead(unreadTargets, false);
+    }
+    if (starredTargets.length > 0) {
+      await dedupeService.applyStarred(starredTargets, true);
+    }
+    if (unstarredTargets.length > 0) {
+      await dedupeService.applyStarred(unstarredTargets, false);
     }
     result.statesPulled = pulled;
   }
@@ -673,10 +722,10 @@ export class RemoteSyncService {
     try {
       const applied: RuleApplyResult = await ruleService.applyToNew(articles);
       for (let i = 0; i < applied.readIds.length; i += 1) {
-        this.enqueueState(applied.readIds[i], true, undefined);
+        this.enqueueGroupState(applied.readIds[i], true, undefined);
       }
       for (let i = 0; i < applied.starredIds.length; i += 1) {
-        this.enqueueState(applied.starredIds[i], undefined, true);
+        this.enqueueGroupState(applied.starredIds[i], undefined, true);
       }
     } catch (err) {
       const error: Error = err as Error;

@@ -62,7 +62,8 @@ enum SettingField {
   READER_ALIGN = 'readerAlign',
   READER_THEME = 'readerTheme',
   READER_KEEP_ON = 'readerKeepScreenOn',
-  NOTIFY_NEW = 'notifyNew'
+  NOTIFY_NEW = 'notifyNew',
+  DEDUPE = 'dedupe'
 }
 
 /** 行首图标 + 标题。纯静态内容，不随状态变化，因此可以用多参全局 @Builder。 */
@@ -235,6 +236,8 @@ struct SwitchSettingRow {
         return appSettings.notifyNewArticles;
       case SettingField.READER_KEEP_ON:
         return appSettings.readerKeepScreenOn;
+      case SettingField.DEDUPE:
+        return appSettings.dedupeEnabled;
       default:
         return appSettings.immersiveOn;
     }
@@ -715,6 +718,16 @@ export struct SettingsTabView {
 
         this.SectionTitle($r('app.string.section_feed'))
         Column() {
+          // 跨源去重总开关：只影响新入库文章是否合并，已有合并组保持现状。
+          SwitchSettingRow({
+            icon: $r('sys.symbol.doc_text'),
+            title: $r('app.string.dedupe_settings_title'),
+            field: SettingField.DEDUPE,
+            onToggle: (value: boolean) => {
+              settingsViewModel.setDedupeEnabled(value);
+            }
+          })
+          Divider().color($r('app.color.hm_divider'))
           OptionSelectRow({
             icon: $r('sys.symbol.arrow_clockwise'),
             title: $r('app.string.row_auto_refresh'),
@@ -781,6 +794,11 @@ export struct SettingsTabView {
         .width('100%')
         .backgroundColor($r('app.color.hm_card_background'))
         .borderRadius($r('app.float.radius_card'))
+
+        Text($r('app.string.dedupe_switch_desc'))
+          .fontSize($r('app.float.font_size_caption'))
+          .fontColor($r('app.color.hm_text_secondary'))
+          .margin({ top: $r('app.float.space_s'), left: $r('app.float.space_xs') })
 
         this.SectionTitle($r('app.string.section_system'))
         Column() {

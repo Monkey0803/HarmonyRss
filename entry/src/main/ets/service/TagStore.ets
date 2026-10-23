@@ -64,6 +64,15 @@ export function multiTagAndClause(tagCount: number): string {
     ' GROUP BY a.id HAVING COUNT(DISTINCT at.tag_id) = ' + Math.max(0, Math.round(tagCount));
 }
 
+/**
+ * 多标签 AND + 跨源去重：只取主条（重复项在组内，不进标签文章列表 / 计数）。
+ * 与 multiTagAndClause 语义一致，只是多一个 canonical_id 条件；单独保留旧函数不影响既有单测。
+ */
+function multiTagAndClauseMainOnly(tagCount: number): string {
+  return ' WHERE at.tag_id IN (' + placeholders(tagCount) + ') AND a.canonical_id = \'\'' +
+    ' GROUP BY a.id HAVING COUNT(DISTINCT at.tag_id) = ' + Math.max(0, Math.round(tagCount));
+}
+
 /** 生成 n 个占位符（IN (?,?,…) 用）。 */
 function placeholders(count: number): string {
   const parts: string[] = [];
@@ -293,7 +302,7 @@ export class TagStore {
     args.push(Math.max(0, Math.round(offset)));
     const sql: string = 'SELECT ' + LIST_COLUMNS + ' FROM ' + ArticleDbConstants.TABLE_ARTICLES + ' a' +
       ' JOIN ' + ArticleDbConstants.TABLE_ARTICLE_TAGS + ' at ON at.article_id = a.id' +
-      multiTagAndClause(tagIds.length) +
+      multiTagAndClauseMainOnly(tagIds.length) +
       ' ORDER BY a.published_at DESC LIMIT ? OFFSET ?';
     try {
       const rs: relationalStore.ResultSet = await store.querySql(sql, args);
@@ -323,7 +332,7 @@ export class TagStore {
     }
     const sql: string = 'SELECT COUNT(*) AS c FROM (SELECT a.id FROM ' +
       ArticleDbConstants.TABLE_ARTICLES + ' a JOIN ' + ArticleDbConstants.TABLE_ARTICLE_TAGS +
-      ' at ON at.article_id = a.id' + multiTagAndClause(tagIds.length) + ')';
+      ' at ON at.article_id = a.id' + multiTagAndClauseMainOnly(tagIds.length) + ')';
     try {
       const rs: relationalStore.ResultSet = await store.querySql(sql, args);
       try {

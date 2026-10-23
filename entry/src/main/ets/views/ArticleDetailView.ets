@@ -28,6 +28,7 @@ import {
 } from '@kit.UIDesignKit';
 import { display, SymbolGlyphModifier } from '@kit.ArkUI';
 import { Article } from '../model/Feed';
+import { GroupSource } from '../model/Dedupe';
 import { feedViewModel } from '../viewmodel/FeedViewModel';
 import { safeArea } from '../service/SafeAreaController';
 import { MaterialController } from '../service/MaterialController';
@@ -129,6 +130,8 @@ export struct ArticleDetailView {
   @Local highlights: Highlight[] = [];
   /** 当前文章的标签（标题下方的 chips；由 TagViewModel 读出）。 */
   @Local articleTags: TagWithCount[] = [];
+  /** 当前文章所属合并组的全部来源（跨源去重；只有 >1 时才展示）。 */
+  @Local groupSources: GroupSource[] = [];
   /** 正在编辑的标注（弹面板改备注 / 改色 / 删除）。 */
   @Local editingHighlightId: string = '';
   /** 备注输入草稿。 */
@@ -570,6 +573,50 @@ export struct ArticleDetailView {
     this.openSheet('tags');
   }
 
+  // ---- 来源（跨源去重：标题下方来源 chip + 来源面板） ----
+
+  /**
+   * 读出当前文章所属合并组的全部来源（切换文章后都要调一次）。
+   * 单来源文章只返回自己一条，界面据此保持现状、不显示任何来源标识。
+   */
+  private async loadSources(): Promise<void> {
+    const article: Article | undefined = feedViewModel.currentArticle();
+    if (article === undefined) {
+      this.groupSources = [];
+      return;
+    }
+    try {
+      this.groupSources = await articleStore.loadGroupSources(article.id);
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.warn(DOMAIN, TAG, 'load group sources failed: %{public}d', error.code);
+      this.groupSources = [];
+    }
+  }
+
+  /** 是否是多来源合并出的文章（只在 >1 时展示来源入口）。 */
+  private merged(): boolean {
+    return this.groupSources.length > 1;
+  }
+
+  /** 打开来源面板（复用底部面板，见 sheetMode = 'sources'）。 */
+  private openSourceSheet(): void {
+    this.openSheet('sources');
+  }
+
+  /** 打开某个来源的原文链接（失败给即时提示）。 */
+  private openSource(source: GroupSource): void {
+    if (source.link.length === 0) {
+      this.toast($r('app.string.dedupe_open_failed'));
+      return;
+    }
+    articleActions.openInBrowser(this.hostContext(), source.link).then((ok: boolean) => {
+      if (!ok) {
+        this.toast($r('app.string.dedupe_open_failed'));
+      }
+    });
+  }
+
   private hasTagId(id: string): boolean {
     for (let i = 0; i < this.articleTags.length; i += 1) {
       if (this.articleTags[i].id === id) {
@@ -814,6 +861,7 @@ export struct ArticleDetailView {
     this.playSwitchAnimation(slideFrom);
     this.loadHighlights();
     this.loadTags();
+    this.loadSources();
   }
 
   /**
@@ -996,6 +1044,7 @@ export struct ArticleDetailView {
     }
     this.loadHighlights();
     this.loadTags();
+    this.loadSources();
     if (appSettings.readerKeepScreenOn) {
       screenAwake.set(true, this.getUIContext().getHostContext());
     }
@@ -1239,9 +1288,86 @@ export struct ArticleDetailView {
       this.HighlightEditor()
     } else if (this.sheetMode === 'tags') {
       this.TagSheet()
+    } else if (this.sheetMode === 'sources') {
+      this.SourcesPanel()
     } else {
       this.ReadSheet()
     }
+  }
+
+  /** 来源面板：列出合并组里的全部来源，点一条用系统浏览器打开对应链接。 */
+  @Builder
+  SourcesPanel() {
+    Column({ space: $r('app.float.space_m') }) {
+      Text($r('app.string.dedupe_sources_title'))
+        .fontSize($r('app.float.font_size_section'))
+        .fontWeight(FontWeight.Medium)
+        .fontColor($r('app.color.hm_text_primary'))
+        .width('100%')
+
+      if (this.groupSources.length === 0) {
+        Text($r('app.string.dedupe_group_empty'))
+          .fontSize($r('app.float.font_size_caption'))
+          .fontColor($r('app.color.hm_text_secondary'))
+          .width('100%')
+      } else {
+        // List 的 space 只收 string|number，间距放在条目 margin 上。
+        List() {
+          ForEach(this.groupSources, (source: GroupSource) => {
+            ListItem() {
+              Column({ space: $r('app.float.space_xs') }) {
+                Row({ space: $r('app.float.space_s') }) {
+                  Text(source.feedTitle.length > 0
+                    ? source.feedTitle
+                    : $r('app.string.dedupe_source_label'))
+                    .fontSize($r('app.float.font_size_body'))
+                    .fontColor($r('app.color.hm_text_primary'))
+                    .maxLines(1)
+                    .textOverflow({ overflow: TextOverflow.Ellipsis })
+                    .layoutWeight(1)
+
+                  if (source.articleId === this.cur().id) {
+                    Text($r('app.string.dedupe_source_current'))
+                      .fontSize($r('app.float.font_size_caption'))
+                      .fontColor($r('app.color.hm_brand'))
+                      .height($r('app.float.value_chip_height'))
+                      .padding({ left: $r('app.float.space_s'), right: $r('app.float.space_s') })
+                      .backgroundColor($r('app.color.hm_value_chip_background'))
+                      .borderRadius($r('app.float.radius_chip'))
+                  }
+                }
+                .width('100%')
+
+                if (source.link.length > 0) {
+                  Text(source.link)
+                    .fontSize($r('app.float.font_size_caption'))
+                    .fontColor($r('app.color.hm_brand'))
+                    .maxLines(1)
+                    .textOverflow({ overflow: TextOverflow.Ellipsis })
+                    .width('100%')
+                }
+              }
+              .width('100%')
+              .padding($r('app.float.space_m'))
+              .backgroundColor($r('app.color.hm_card_background'))
+              .borderRadius($r('app.float.radius_card'))
+              .alignItems(HorizontalAlign.Start)
+              .onClick(() => {
+                this.openSource(source);
+              })
+            }
+            .margin({ bottom: $r('app.float.space_s') })
+          }, (source: GroupSource) => source.articleId)
+        }
+        .width('100%')
+        .layoutWeight(1)
+        .scrollBar(BarState.Off)
+      }
+    }
+    .width('100%')
+    .height('100%')
+    .padding($r('app.float.space_l'))
+    .alignItems(HorizontalAlign.Start)
   }
 
   /** 标签选择器面板：复用 TagPickerSheet（详情页 / 批量打标同一套）。 */
@@ -2136,6 +2262,23 @@ export struct ArticleDetailView {
           .align(Alignment.Start)
         } else {
           Blank()
+        }
+
+        // 跨源合并文章：来源数 chip（点击展开全部来源）。单来源时不出现，界面保持现状。
+        if (this.merged()) {
+          Text($r('app.string.dedupe_source_count', this.groupSources.length))
+            .fontSize($r('app.float.font_size_caption'))
+            .fontColor($r('app.color.hm_brand'))
+            .maxLines(1)
+            .height($r('app.float.value_chip_height'))
+            .padding({ left: $r('app.float.space_m'), right: $r('app.float.space_m') })
+            .margin({ right: $r('app.float.space_xs') })
+            .backgroundColor($r('app.color.hm_value_chip_background'))
+            .borderRadius($r('app.float.radius_chip'))
+            .accessibilityText($r('app.string.dedupe_sources_title'))
+            .onClick(() => {
+              this.openSourceSheet();
+            })
         }
 
         SymbolGlyph($r('sys.symbol.plus'))

@@ -2,7 +2,8 @@
  * List.test.ets — 单元测试套件入口（聚合各测试文件）。
  *
  * 覆盖 Reader 正文提取管线的纯函数（HTML 解析 / 净化 / 主容器提取 / feed 解析 / 图片 mime 嗅探），
- * 阅读排版档位与 Reader CSS 生成，以及规则引擎的匹配 / 执行顺序（RuleEngine / RuleOrder）。
+ * 阅读排版档位与 Reader CSS 生成，规则引擎的匹配 / 执行顺序（RuleEngine / RuleOrder），
+ * 以及跨源去重的归一化键与匹配决策（DedupeKeys / DedupePlan）。
  */
 
 import htmlDomTest from './HtmlDom.test';
@@ -28,6 +29,9 @@ import gReaderModelsTest from './GReaderModels.test';
 import remoteSyncPlanTest from './RemoteSyncPlan.test';
 import ruleEngineTest from './RuleEngine.test';
 import ruleOrderTest from './RuleOrder.test';
+import dedupeKeysTest from './DedupeKeys.test';
+import dedupePlanTest from './DedupePlan.test';
+import dedupeIntegrationTest from './DedupeIntegration.test';
 
 export default function testsuite() {
   htmlDomTest();
@@ -53,4 +57,7 @@ export default function testsuite() {
   remoteSyncPlanTest();
   ruleEngineTest();
   ruleOrderTest();
+  dedupeKeysTest();
+  dedupePlanTest();
+  dedupeIntegrationTest();
 }

@@ -207,6 +207,20 @@ export class Article {
    * 换字号 / 栏宽 / 主题后排版会重排，px 会漂，恢复位置以比例为准（px 仅作老数据兜底）。
    */
   @Trace progressRatio: number = 0;
+  /**
+   * 跨源去重：所属主条 id；空串表示本条就是主条（或未参与去重）。
+   * 重复项仍留在库里（保留来源与远端映射），只是不进主列表 / 计数 / 检索。
+   */
+  canonicalId: string = '';
+  /**
+   * 组内来源数（主条展示用）：1 = 只有自己；> 1 时列表行显示「N 个来源」。
+   * 由查询层按 canonical_id 子查询回填，不参与去重写入。
+   */
+  @Trace duplicateCount: number = 0;
+  /** 跨源去重：URL 归一化键（入库时写入，不参与 UI）。 */
+  linkKey: string = '';
+  /** 跨源去重：标题归一化键（入库时写入，不参与 UI）。 */
+  titleKey: string = '';
 
   constructor(id: string, feedId: string, feedTitle: string, title: string, link: string,
     summary: string, content: string, publishedAt: number, imageUrl: string = '', author: string = '',

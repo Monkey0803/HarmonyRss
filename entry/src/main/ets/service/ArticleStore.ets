@@ -17,6 +17,8 @@ import { common } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { Article } from '../model/Feed';
+import { DedupeCandidate, GroupSource } from '../model/Dedupe';
+import { appSettings } from '../model/AppSettings';
 import { Highlight, HighlightLibraryItem } from '../model/Highlight';
 import { ArticleState, RemoteMapping } from '../model/Remote';
 import {
@@ -31,12 +33,14 @@ import {
   SearchState,
   StorageStats
 } from '../model/Search';
-import { ArticleDbConstants, ReaderState, SearchConstants } from '../common/constants/RssConstants';
+import { ArticleDbConstants, ReaderState, RssConstants, SearchConstants } from '../common/constants/RssConstants';
 import { RetentionMode } from '../common/constants/SettingsConstants';
 import { toPlainText } from '../common/utils/HtmlText';
 import { escapeFtsToken } from './SearchQueryParser';
 import { compile, hasCjk, isBlankQuery, postFilterSql } from './SearchPlan';
 import { grams } from './CjkTokenizer';
+import { DedupeKeys } from './DedupeKeys';
+import { DedupeService } from './DedupeService';
 
 const DOMAIN: number = 0x0000;
 const TAG: string = 'ArticleStore';
@@ -45,11 +49,15 @@ const TAG: string = 'ArticleStore';
 const BODY_COLUMNS: string =
   'content, content_html, reader_html, plain_text, page_etag, page_last_modified';
 
-/** 轻量列表列：不含任何正文 HTML / 纯文本。 */
+/** 轻量列表列：不含任何正文 HTML / 纯文本。列名带 `a.` 前缀，调用方一律 `FROM articles a`。 */
 const LIST_COLUMNS: string =
-  'id, feed_id, feed_title, title, link, summary, published_at, is_read, is_starred, is_saved,' +
-  ' is_hidden, image_url, author, progress, progress_ratio,' +
-  ' (CASE WHEN reader_html <> \'\' THEN 1 ELSE 0 END) AS has_reader';
+  'a.id, a.feed_id, a.feed_title, a.title, a.link, a.summary, a.published_at, a.is_read, a.is_starred, a.is_saved,' +
+  ' a.is_hidden, a.image_url, a.author, a.progress, a.progress_ratio,' +
+  ' (CASE WHEN a.reader_html <> \'\' THEN 1 ELSE 0 END) AS has_reader,' +
+  ' a.canonical_id,' +
+  // 组内来源数（含主条自己）：主条列表行据此显示「N 个来源」。
+  ' (SELECT COUNT(*) FROM ' + ArticleDbConstants.TABLE_ARTICLES +
+  ' d WHERE d.canonical_id = a.id) AS dup_count';
 
 const SQL_CREATE: string =
   'CREATE TABLE IF NOT EXISTS ' + ArticleDbConstants.TABLE_ARTICLES + ' (' +
@@ -74,7 +82,11 @@ const SQL_CREATE: string =
   'content_html TEXT NOT NULL DEFAULT \'\', ' +
   'plain_text TEXT NOT NULL DEFAULT \'\', ' +
   'page_etag TEXT NOT NULL DEFAULT \'\', ' +
-  'page_last_modified TEXT NOT NULL DEFAULT \'\')';
+  'page_last_modified TEXT NOT NULL DEFAULT \'\', ' +
+  // v7 跨源去重：归一化键 + 挂靠关系（空串 = 自己是主条）。
+  'link_key TEXT NOT NULL DEFAULT \'\', ' +
+  'title_key TEXT NOT NULL DEFAULT \'\', ' +
+  'canonical_id TEXT NOT NULL DEFAULT \'\')';
 
 /**
  * 标注表：一条 = 引文 + 可选备注 + 配色 + 定位信息。
@@ -123,19 +135,33 @@ const SQL_ADD_READER: string =
 const SQL_ADD_HIDDEN: string =
   'ALTER TABLE ' + ArticleDbConstants.TABLE_ARTICLES + ' ADD COLUMN is_hidden INTEGER NOT NULL DEFAULT 0';
 
+/** 跨源去重 URL 归一化键（v7）；老库补列，默认空串 = 还没算过。 */
+const SQL_ADD_LINK_KEY: string =
+  'ALTER TABLE ' + ArticleDbConstants.TABLE_ARTICLES + ' ADD COLUMN link_key TEXT NOT NULL DEFAULT \'\'';
+/** 跨源去重标题归一化键（v7）。 */
+const SQL_ADD_TITLE_KEY: string =
+  'ALTER TABLE ' + ArticleDbConstants.TABLE_ARTICLES + ' ADD COLUMN title_key TEXT NOT NULL DEFAULT \'\'';
+/** 所属主条 id（v7）；空串 = 本条就是主条。 */
+const SQL_ADD_CANONICAL: string =
+  'ALTER TABLE ' + ArticleDbConstants.TABLE_ARTICLES + ' ADD COLUMN canonical_id TEXT NOT NULL DEFAULT \'\'';
+
+/** 入库去重：单批最多处理 / 查询的键数（避免 IN 列表过长）。 */
+const DEDUPE_KEY_BATCH: number = 200;
+
 const SQL_INSERT: string =
   'INSERT OR IGNORE INTO ' + ArticleDbConstants.TABLE_ARTICLES +
   ' (id, feed_id, feed_title, title, link, summary, content, published_at, is_read, is_starred, fetched_at,' +
-  ' image_url, author, content_html) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+  ' image_url, author, content_html, link_key, title_key, canonical_id)' +
+  ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
 
-/** 列表：轻量列，按发布时间倒序。 */
+/** 列表：轻量列，按发布时间倒序；只取主条（重复项不进主表列表）。 */
 const SQL_SELECT_LIST: string =
-  'SELECT ' + LIST_COLUMNS + ' FROM ' + ArticleDbConstants.TABLE_ARTICLES +
-  ' ORDER BY published_at DESC';
+  'SELECT ' + LIST_COLUMNS + ' FROM ' + ArticleDbConstants.TABLE_ARTICLES + ' a' +
+  ' WHERE a.canonical_id = \'\' ORDER BY a.published_at DESC';
 
 /** 正文：按 id 取。 */
 const SQL_SELECT_BODY: string =
-  'SELECT ' + BODY_COLUMNS + ' FROM ' + ArticleDbConstants.TABLE_ARTICLES + ' WHERE id = ?';
+  'SELECT ' + BODY_COLUMNS + ' FROM ' + ArticleDbConstants.TABLE_ARTICLES + ' a WHERE a.id = ?';
 
 /** 回收站表与主表同构 + deleted_at。 */
 const SQL_CREATE_TRASH: string =
@@ -290,6 +316,19 @@ const SQL_INDEXES_V6: string[] = [
     ArticleDbConstants.TABLE_RULES + '(priority, created_at)'
 ];
 
+/**
+ * v7 索引：按归一化键找已有文章（入库去重）、按主条取组内成员（列表来源数 / 组操作）。
+ * link_key / title_key 上的空串行不参与匹配（查询只给非空键，索引里空串只会被跳过）。
+ */
+const SQL_INDEXES_V7: string[] = [
+  'CREATE INDEX IF NOT EXISTS idx_articles_link_key ON ' +
+    ArticleDbConstants.TABLE_ARTICLES + '(link_key)',
+  'CREATE INDEX IF NOT EXISTS idx_articles_title_key ON ' +
+    ArticleDbConstants.TABLE_ARTICLES + '(title_key, published_at)',
+  'CREATE INDEX IF NOT EXISTS idx_articles_canonical ON ' +
+    ArticleDbConstants.TABLE_ARTICLES + '(canonical_id)'
+];
+
 /** 远端映射写入（重复调用覆盖更新时间）。 */
 const SQL_UPSERT_REMOTE_MAP: string =
   'INSERT OR REPLACE INTO ' + ArticleDbConstants.TABLE_REMOTE_ARTICLE_MAP +
@@ -423,6 +462,10 @@ export class ArticleStore {
       this.addColumnIfNeeded(SQL_ADD_PAGE_LAST_MODIFIED);
       this.addColumnIfNeeded(SQL_ADD_SAVED);
       this.addColumnIfNeeded(SQL_ADD_HIDDEN);
+      // v7 跨源去重三列：即使库已是最新版本也补一次（自愈：上次 ALTER 被打断）。
+      this.addColumnIfNeeded(SQL_ADD_LINK_KEY);
+      this.addColumnIfNeeded(SQL_ADD_TITLE_KEY);
+      this.addColumnIfNeeded(SQL_ADD_CANONICAL);
       this.store.executeSync(SQL_CREATE_HIGHLIGHTS);
       // 标签 / 智能文件夹：即使库已是最新版本也执行一遍（自愈：上次建表失败 / 被打断）。
       this.createTagTables();
@@ -430,6 +473,8 @@ export class ArticleStore {
       this.createRemoteTables();
       // 规则表同理：最新版本也自愈（建表失败只让规则功能降级为空态）。
       this.createRuleTables();
+      // v7 去重索引同理：最新版本也自愈（缺索引只是慢，功能不受影响）。
+      this.createDedupeIndexes();
       // 结构迁移失败不删库：仅降级（无检索 / 无回收站），下次启动会重试。
       try {
         await this.migrate();
@@ -475,7 +520,8 @@ export class ArticleStore {
   }
 
   /** 版本化迁移：v1 = 初始表；v2 = 索引 + 回收站 + FTS；v3 = 中文检索索引；v4 = 标签 + 智能文件夹；
-   *  v5 = 远端同步表；v6 = 规则表 + articles.is_hidden。 */
+   *  v5 = 远端同步表；v6 = 规则表 + articles.is_hidden；
+   *  v7 = 跨源去重：articles.link_key / title_key / canonical_id + 3 个索引。 */
   private async migrate(): Promise<void> {
     const store: relationalStore.RdbStore | undefined = this.store;
     if (store === undefined) {
@@ -492,6 +538,7 @@ export class ArticleStore {
       // v4 / v5 / v6 的表已在 open() 里用 CREATE TABLE IF NOT EXISTS 自愈过，这里再补一次（幂等）。
       this.createRemoteTables();
       this.createRuleTables();
+      this.createDedupeIndexes();
       const mainStale: boolean = await this.ensureMainIndex();
       const cjkStale: boolean = await this.ensureCjkIndex();
       if (mainStale) {
@@ -515,6 +562,7 @@ export class ArticleStore {
     this.createTagTables();
     this.createRemoteTables();
     this.createRuleTables();
+    this.createDedupeIndexes();
     const mainStale: boolean = await this.ensureMainIndex();
     const cjkStale: boolean = await this.ensureCjkIndex();
     try {
@@ -615,8 +663,24 @@ export class ArticleStore {
     }
   }
 
+  /**
+   * 建 v7 的去重索引（可重复执行）。
+   * 每条单独 try/catch：失败只让入库去重退化为全表扫描（变慢但结果一致），不影响入库本身。
+   */
+  private createDedupeIndexes(): void {
+    for (let i = 0; i < SQL_INDEXES_V7.length; i += 1) {
+      try {
+        this.store?.executeSync(SQL_INDEXES_V7[i]);
+      } catch (err) {
+        const error: BusinessError = err as BusinessError;
+        hilog.warn(DOMAIN, TAG, 'create dedupe index failed: %{public}d', error.code);
+      }
+    }
+  }
+
   /** 后台重建主索引（升级 / 补建后回填，不阻塞启动）。 */
-  private backgroundRebuildMain(): void {    this.rebuildSearchIndex((): void => {
+  private backgroundRebuildMain(): void {
+    this.rebuildSearchIndex((): void => {
     }).catch((err: BusinessError) => {
       hilog.warn(DOMAIN, TAG, 'fts backfill failed: %{public}d', err.code);
     });
@@ -631,8 +695,8 @@ export class ArticleStore {
   }
 
   /**
-   * 确保主索引可用。返回 true 表示需要重建：索引条数与文章总数不一致
-   * （建表晚于入库导致部分行缺失 / 重建被打断 / 有未同步的新数据）。
+   * 确保主索引可用。返回 true 表示需要重建：索引条数与「需要索引的文章数」不一致
+   * （跨源重复项不建索引，所以比的是主条数；建表晚于入库导致部分行缺失 / 重建被打断也会命中）。
    * 空库（文章 0 且索引 0）不需要重建。
    */
   private async ensureMainIndex(): Promise<boolean> {
@@ -644,7 +708,7 @@ export class ArticleStore {
       return false;
     }
     const indexed: number = await this.ftsCount();
-    const total: number = await this.countAll();
+    const total: number = await this.countIndexable();
     if (indexed === 0 && total === 0) {
       return false;
     }
@@ -657,7 +721,7 @@ export class ArticleStore {
   }
 
   /**
-   * 确保中文索引可用。返回 true 表示需要重建（表刚建好，或条数与主表不一致 —— 重建被打断 / 有未同步的新数据）。
+   * 确保中文索引可用。返回 true 表示需要重建（表刚建好，或条数与主条数不一致 —— 重建被打断 / 有未同步的新数据）。
    * 建表失败时置 cjkReady = false 并返回 false：中文检索降级为 LIKE，功能仍可用。
    */
   private async ensureCjkIndex(): Promise<boolean> {
@@ -671,7 +735,7 @@ export class ArticleStore {
       return false;
     }
     this.cjkIndexedCount = await this.cjkCount();
-    const total: number = await this.countAll();
+    const total: number = await this.countIndexable();
     if (this.cjkIndexedCount === 0 && total === 0) {
       return false;
     }
@@ -925,6 +989,31 @@ export class ArticleStore {
     }
   }
 
+  /**
+   * 需要进入检索索引的条数（= 主条数）：
+   * 跨源重复项入库时不写索引，若仍拿全表条数比较，每次启动都会误判「索引缺行」并全量重建。
+   */
+  private async countIndexable(): Promise<number> {
+    const store: relationalStore.RdbStore | undefined = this.store;
+    if (store === undefined) {
+      return 0;
+    }
+    try {
+      const rs: relationalStore.ResultSet = await store.querySql(
+        'SELECT COUNT(*) AS c FROM ' + ArticleDbConstants.TABLE_ARTICLES +
+        ' WHERE canonical_id = \'\'');
+      try {
+        return rs.goToNextRow() ? rs.getLong(rs.getColumnIndex('c')) : 0;
+      } finally {
+        rs.close();
+      }
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.warn(DOMAIN, TAG, 'countIndexable failed: %{public}d', error.code);
+      return 0;
+    }
+  }
+
   /** 本地缓存条数（后台任务用它做插入前后的差值，得到真正的新增数）。 */
   async countAll(): Promise<number> {
     const store: relationalStore.RdbStore | undefined = this.store;
@@ -959,7 +1048,7 @@ export class ArticleStore {
     try {
       const countRs: relationalStore.ResultSet = await store.querySql(
         'SELECT COUNT(*) AS c FROM ' + ArticleDbConstants.TABLE_ARTICLES +
-        ' WHERE is_read = 0 AND is_hidden = 0');
+        ' WHERE is_read = 0 AND is_hidden = 0 AND canonical_id = \'\'');
       try {
         unread = countRs.goToNextRow() ? countRs.getLong(countRs.getColumnIndex('c')) : 0;
       } finally {
@@ -967,7 +1056,7 @@ export class ArticleStore {
       }
       const titleRs: relationalStore.ResultSet = await store.querySql(
         'SELECT id, title FROM ' + ArticleDbConstants.TABLE_ARTICLES +
-        ' WHERE is_hidden = 0 ORDER BY published_at DESC LIMIT ?', [limit]);
+        ' WHERE is_hidden = 0 AND canonical_id = \'\' ORDER BY published_at DESC LIMIT ?', [limit]);
       try {
         while (titleRs.goToNextRow() && titles.length < limit) {
           titles.push(titleRs.getString(titleRs.getColumnIndex('title')));
@@ -1044,6 +1133,9 @@ export class ArticleStore {
     article.readerState = rs.getLong(rs.getColumnIndex('has_reader')) === 1
       ? ReaderState.READY
       : ReaderState.NONE;
+    // 跨源去重：canonical_id 空串 = 主条；duplicateCount 是「含自己的组内来源数」。
+    article.canonicalId = rs.getString(rs.getColumnIndex('canonical_id'));
+    article.duplicateCount = 1 + rs.getLong(rs.getColumnIndex('dup_count'));
     return article;
   }
 
@@ -1090,7 +1182,7 @@ export class ArticleStore {
     try {
       const rs: relationalStore.ResultSet = await store.querySql(
         'SELECT ' + LIST_COLUMNS + ', ' + BODY_COLUMNS + ' FROM ' +
-        ArticleDbConstants.TABLE_ARTICLES + ' WHERE id = ?', [id]);
+        ArticleDbConstants.TABLE_ARTICLES + ' a WHERE a.id = ?', [id]);
       try {
         if (!rs.goToNextRow()) {
           return undefined;
@@ -1119,6 +1211,8 @@ export class ArticleStore {
         article.pageEtag = rs.getString(rs.getColumnIndex('page_etag'));
         article.pageLastModified = rs.getString(rs.getColumnIndex('page_last_modified'));
         article.readerState = article.readerHtml.length > 0 ? ReaderState.READY : ReaderState.NONE;
+        article.canonicalId = rs.getString(rs.getColumnIndex('canonical_id'));
+        article.duplicateCount = 1 + rs.getLong(rs.getColumnIndex('dup_count'));
         return article;
       } finally {
         rs.close();
@@ -1130,35 +1224,44 @@ export class ArticleStore {
     }
   }
 
-  /** 入库新抓到的文章：只插入不存在的行，已有行的已读 / 收藏状态保持不变；同步 FTS。 */
+  /**
+   * 入库新抓到的文章：只插入不存在的行，已有行的已读 / 收藏状态保持不变；同步 FTS。
+   *
+   * 跨源去重：
+   *   1. 先给每篇算好 link_key / title_key（与去重开关无关，始终写入）；
+   *   2. 开关打开时按批查已有候选（URL 键一次、标题键 + ±24h 一次），在内存里定出主条；
+   *   3. 重复项照常入库（保留来源与远端映射），但不写 FTS / 中文索引（列表与检索都排除它们）；
+   *   4. 匹配或查询异常一律降级为独立文章（FR-011），只记日志。
+   */
   insertNew(articles: Article[]): Article[] {
     const store: relationalStore.RdbStore | undefined = this.store;
     const created: Article[] = [];
     if (store === undefined || articles.length === 0) {
       return created;
     }
+    const canonicalOf: Map<string, string> = this.resolveCanonicals(articles);
     const now: number = Date.now();
     try {
       store.beginTransaction();
       try {
         for (let i = 0; i < articles.length; i += 1) {
           const item: Article = articles[i];
+          const canonical: string = canonicalOf.get(item.id) ?? '';
+          item.canonicalId = canonical;
           store.executeSync(SQL_INSERT, [
             item.id, item.feedId, item.feedTitle, item.title, item.link,
             item.summary, item.content, item.publishedAt,
-            item.read ? 1 : 0, item.starred ? 1 : 0, now, item.imageUrl, item.author, item.contentHtml
+            item.read ? 1 : 0, item.starred ? 1 : 0, now, item.imageUrl, item.author, item.contentHtml,
+            item.linkKey, item.titleKey, canonical
           ]);
           // INSERT OR IGNORE：只有真正插入了新行（changes()=1）才建索引，避免覆盖已有正文索引。
           const inserted: boolean = this.lastChanges() > 0;
           if (inserted) {
             // 只有真正新增的行才算「新文章」：规则只对它们执行，历史文章不回溯。
             created.push(item);
-            const plain: string = this.plainOf(item.plainText, item.content);
-            if (this.ftsReady) {
-              this.ftsInsert(item.id, item.title, item.summary, plain, item.author);
+            if (canonical.length === 0) {
+              this.indexInserted(item);
             }
-            // 新装用户首次插入即双写：中文索引与主索引同步维护。
-            this.cjkInsert(item.id, item.title, item.summary, plain);
           }
         }
         store.commit();
@@ -1174,11 +1277,178 @@ export class ArticleStore {
     return created;
   }
 
+  /** 新插入的主条写两张索引（重复项不写：列表与检索都不看它们）。 */
+  private indexInserted(item: Article): void {
+    const plain: string = this.plainOf(item.plainText, item.content);
+    if (this.ftsReady) {
+      this.ftsInsert(item.id, item.title, item.summary, plain, item.author);
+    }
+    // 新装用户首次插入即双写：中文索引与主索引同步维护。
+    this.cjkInsert(item.id, item.title, item.summary, plain);
+  }
+
+  /**
+   * 入库前解析跨源重复：先补齐归一化键，再按批查候选并用 DedupeService 定出主条。
+   * 返回 incoming.id → 主条 id；开关关闭 / 查询异常时返回空表（全部按独立文章入库）。
+   */
+  private resolveCanonicals(articles: Article[]): Map<string, string> {
+    const matches: Map<string, string> = new Map<string, string>();
+    this.fillDedupeKeys(articles);
+    const store: relationalStore.RdbStore | undefined = this.store;
+    if (store === undefined || articles.length === 0 || !appSettings.dedupeEnabled) {
+      return matches;
+    }
+    try {
+      const now: number = Date.now();
+      const linkKeys: string[] = [];
+      const titleKeys: string[] = [];
+      const seenLink: Set<string> = new Set<string>();
+      const seenTitle: Set<string> = new Set<string>();
+      let minAt: number = 0;
+      let maxAt: number = 0;
+      for (let i = 0; i < articles.length; i += 1) {
+        const item: Article = articles[i];
+        if (item.linkKey.length > 0 && !seenLink.has(item.linkKey)) {
+          seenLink.add(item.linkKey);
+          linkKeys.push(item.linkKey);
+        }
+        if (item.titleKey.length > 0 && !seenTitle.has(item.titleKey)) {
+          seenTitle.add(item.titleKey);
+          titleKeys.push(item.titleKey);
+          const at: number = item.publishedAt > 0 ? item.publishedAt : now;
+          if (minAt === 0 || at < minAt) {
+            minAt = at;
+          }
+          if (at > maxAt) {
+            maxAt = at;
+          }
+        }
+      }
+      const existing: DedupeCandidate[] = [];
+      const seenId: Set<string> = new Set<string>();
+      this.collectCandidates(store, linkKeys, false, 0, 0, existing, seenId);
+      if (titleKeys.length > 0) {
+        this.collectCandidates(store, titleKeys, true, minAt - RssConstants.DEDUPE_WINDOW_MS,
+          maxAt + RssConstants.DEDUPE_WINDOW_MS, existing, seenId);
+      }
+      const incoming: DedupeCandidate[] = [];
+      for (let i = 0; i < articles.length; i += 1) {
+        const item: Article = articles[i];
+        // 发布时间缺失（0）时以入库时间为准参与 ±24h 判定。
+        const at: number = item.publishedAt > 0 ? item.publishedAt : now;
+        incoming.push(new DedupeCandidate(item.id, item.feedId, '', item.linkKey, item.titleKey, at));
+      }
+      return DedupeService.findMatches(existing, incoming);
+    } catch (err) {
+      const error: Error = err as Error;
+      hilog.warn(DOMAIN, TAG, 'dedupe match failed, degraded to standalone: %{public}s', error.message);
+      return new Map<string, string>();
+    }
+  }
+
+  /** 归一化键始终写入（与开关无关）：关闭后再开启，旧文章仍能并入已有主条。 */
+  private fillDedupeKeys(articles: Article[]): void {
+    for (let i = 0; i < articles.length; i += 1) {
+      const item: Article = articles[i];
+      if (item.linkKey.length === 0) {
+        item.linkKey = DedupeKeys.urlKey(item.link);
+      }
+      if (item.titleKey.length === 0) {
+        item.titleKey = DedupeKeys.titleKey(item.title);
+      }
+    }
+  }
+
+  /**
+   * 批量取已有候选（≤ DEDUPE_KEY_BATCH 个键一批）。
+   * byTitle = false 按 link_key 精确匹配；true 按 title_key + 发布时间窗（缺失时间按 0 也纳入，交给内存复核）。
+   */
+  private collectCandidates(store: relationalStore.RdbStore, keys: string[], byTitle: boolean,
+    from: number, to: number, out: DedupeCandidate[], seenId: Set<string>): void {
+    for (let start = 0; start < keys.length; start += DEDUPE_KEY_BATCH) {
+      const slice: string[] = keys.slice(start, start + DEDUPE_KEY_BATCH);
+      const args: Array<relationalStore.ValueType> = [];
+      for (let i = 0; i < slice.length; i += 1) {
+        args.push(slice[i]);
+      }
+      let sql: string = 'SELECT id, feed_id, canonical_id, link_key, title_key, published_at FROM ' +
+        ArticleDbConstants.TABLE_ARTICLES + ' WHERE ';
+      if (byTitle) {
+        sql += 'title_key IN (' + placeholders(slice.length) + ')' +
+          ' AND (published_at BETWEEN ? AND ? OR published_at = 0)';
+        args.push(from);
+        args.push(to);
+      } else {
+        sql += 'link_key IN (' + placeholders(slice.length) + ')';
+      }
+      const rs: relationalStore.ResultSet = store.querySqlSync(sql, args);
+      try {
+        while (rs.goToNextRow()) {
+          const id: string = rs.getString(rs.getColumnIndex('id'));
+          if (id.length === 0 || seenId.has(id)) {
+            continue;
+          }
+          seenId.add(id);
+          out.push(new DedupeCandidate(id,
+            rs.getString(rs.getColumnIndex('feed_id')),
+            rs.getString(rs.getColumnIndex('canonical_id')),
+            rs.getString(rs.getColumnIndex('link_key')),
+            rs.getString(rs.getColumnIndex('title_key')),
+            rs.getLong(rs.getColumnIndex('published_at'))));
+        }
+      } finally {
+        rs.close();
+      }
+    }
+  }
+
+  /**
+   * 为已有文章分批补归一化键（升级后旧文章也能作为新文章的合并候选）。
+   * 只挑「能算出键」的行（链接 / 标题非空），避免空链接老数据永远被重复选中。
+   *
+   * @returns 本批处理的条数（调用方按「返回等于 limit 就继续下一批」循环）。
+   */
+  async backfillDedupeKeys(limit: number): Promise<number> {
+    const store: relationalStore.RdbStore | undefined = this.store;
+    if (store === undefined || limit <= 0) {
+      return 0;
+    }
+    try {
+      const rs: relationalStore.ResultSet = await store.querySql(
+        'SELECT id, link, title FROM ' + ArticleDbConstants.TABLE_ARTICLES +
+        ' WHERE (link_key = \'\' AND link <> \'\') OR (title_key = \'\' AND title <> \'\')' +
+        ' LIMIT ?', [Math.max(1, Math.round(limit))]);
+      const rows: Array<Array<string>> = [];
+      try {
+        while (rs.goToNextRow()) {
+          rows.push([
+            rs.getString(rs.getColumnIndex('id')),
+            rs.getString(rs.getColumnIndex('link')),
+            rs.getString(rs.getColumnIndex('title'))
+          ]);
+        }
+      } finally {
+        rs.close();
+      }
+      for (let i = 0; i < rows.length; i += 1) {
+        store.executeSync('UPDATE ' + ArticleDbConstants.TABLE_ARTICLES +
+          ' SET link_key = ?, title_key = ? WHERE id = ?',
+          [DedupeKeys.urlKey(rows[i][1]), DedupeKeys.titleKey(rows[i][2]), rows[i][0]]);
+      }
+      return rows.length;
+    } catch (err) {
+      const error: Error = err as Error;
+      hilog.warn(DOMAIN, TAG, 'backfill dedupe keys failed: %{public}s', error.message);
+      return 0;
+    }
+  }
+
   /**
    * 写入远端拉取到的文章与映射（单事务）。
    *
    * - 文章走 INSERT OR IGNORE：本地已存在同 id（同 link）时只补映射，不改正文 / 已读 / 进度；
-   * - 只有真正插入的新行才写主 FTS 与中文索引；
+   * - 只有真正插入的新行才写主 FTS 与中文索引（跨源重复项不写）；
+   * - 跨源去重与本地抓取同一套判定（重复项的远端映射照常写入）；
    * - 映射表按 remote_id 覆盖写（重复同步同一篇不会产生多条）。
    *
    * @returns 真正新增的文章条数。
@@ -1193,6 +1463,8 @@ export class ArticleStore {
     for (let i = 0; i < articles.length; i += 1) {
       byId.set(articles[i].id, articles[i]);
     }
+    // 与本地抓取同样做跨源去重（远端映射照常写入，重复项也写）。
+    const canonicalOf: Map<string, string> = this.resolveCanonicals(articles);
     const now: number = Date.now();
     try {
       store.beginTransaction();
@@ -1201,20 +1473,21 @@ export class ArticleStore {
           const mapping: RemoteMapping = mappings[i];
           const item: Article | undefined = byId.get(mapping.articleId);
           if (item !== undefined) {
+            const canonical: string = canonicalOf.get(item.id) ?? '';
+            item.canonicalId = canonical;
             store.executeSync(SQL_INSERT, [
               item.id, item.feedId, item.feedTitle, item.title, item.link,
               item.summary, item.content, item.publishedAt,
-              item.read ? 1 : 0, item.starred ? 1 : 0, now, item.imageUrl, item.author, item.contentHtml
+              item.read ? 1 : 0, item.starred ? 1 : 0, now, item.imageUrl, item.author, item.contentHtml,
+              item.linkKey, item.titleKey, canonical
             ]);
             const inserted: boolean = this.lastChanges() > 0;
             if (inserted) {
               // 只有真正新增的行才算「新文章」：规则只对它们执行，重复同步不回溯。
               created.push(item);
-              const plain: string = this.plainOf(item.plainText, item.content);
-              if (this.ftsReady) {
-                this.ftsInsert(item.id, item.title, item.summary, plain, item.author);
+              if (canonical.length === 0) {
+                this.indexInserted(item);
               }
-              this.cjkInsert(item.id, item.title, item.summary, plain);
             }
             byId.delete(mapping.articleId);
           }
@@ -1337,7 +1610,7 @@ export class ArticleStore {
     }
   }
 
-  /** 被隐藏文章总数（规则页「已隐藏（N）」入口计数）。 */
+  /** 被隐藏文章总数（规则页「已隐藏（N）」入口计数；重复项由主条代表，不单独计数）。 */
   async countHidden(): Promise<number> {
     const store: relationalStore.RdbStore | undefined = this.store;
     if (store === undefined) {
@@ -1345,7 +1618,8 @@ export class ArticleStore {
     }
     try {
       const rs: relationalStore.ResultSet = await store.querySql(
-        'SELECT COUNT(*) AS c FROM ' + ArticleDbConstants.TABLE_ARTICLES + ' WHERE is_hidden = 1');
+        'SELECT COUNT(*) AS c FROM ' + ArticleDbConstants.TABLE_ARTICLES +
+        ' WHERE is_hidden = 1 AND canonical_id = \'\'');
       try {
         return rs.goToNextRow() ? rs.getLong(rs.getColumnIndex('c')) : 0;
       } finally {
@@ -1367,8 +1641,8 @@ export class ArticleStore {
     }
     try {
       const rs: relationalStore.ResultSet = await store.querySql(
-        'SELECT ' + LIST_COLUMNS + ' FROM ' + ArticleDbConstants.TABLE_ARTICLES +
-        ' WHERE is_hidden = 1 ORDER BY published_at DESC');
+        'SELECT ' + LIST_COLUMNS + ' FROM ' + ArticleDbConstants.TABLE_ARTICLES + ' a' +
+        ' WHERE a.is_hidden = 1 AND a.canonical_id = \'\' ORDER BY a.published_at DESC');
       try {
         while (rs.goToNextRow()) {
           result.push(this.articleFromListRow(rs));
@@ -1386,14 +1660,23 @@ export class ArticleStore {
   /**
    * 批量删除（用户主动删除）：只删列表条目与已缓存正文，**不进回收站**。
    * 同步删除 FTS 行与标签关联，避免检索命中已删除文章 / 残留孤儿关联。
+   *
+   * 跨源去重：删到主条时先把组内「不在删除列表」的最早成员提为新主条并重指向，
+   * 否则整组会跟着主条一起从列表里消失（FR-007 / SC-004）。
    */
   deleteMany(ids: string[]): void {
+    if (ids.length === 0) {
+      return;
+    }
+    const promoted: string[] = this.promoteBeforeRemoval(ids);
     this.deleteFtsRows(ids);
     this.cjkDeleteRows(ids);
     this.deleteTagLinks(ids);
     for (let i = 0; i < ids.length; i += 1) {
       this.exec('DELETE FROM ' + ArticleDbConstants.TABLE_ARTICLES + ' WHERE id = ?', [ids[i]]);
     }
+    // 新主条原先作为重复项没有索引，这里补齐（否则它会既在列表里、又搜不到）。
+    this.indexManySync(promoted);
   }
 
   /** 删除一批文章的标签关联（文章真正消失时调用；移入 / 移出回收站不调用）。 */
@@ -1541,9 +1824,12 @@ export class ArticleStore {
     return parts.join(' AND ');
   }
 
-  /** 状态 / 来源 / 时间过滤的 SQL 片段（不含关键词）。 */
+  /**
+   * 状态 / 来源 / 时间过滤的 SQL 片段（不含关键词）。
+   * 开头的 canonical_id 条件让检索（计数与取页）只命中主条：重复项不进搜索结果。
+   */
   private filterClause(query: SearchQuery, args: Array<relationalStore.ValueType>): string {
-    let clause: string = '';
+    let clause: string = ' AND a.canonical_id = \'\'';
     if (query.state === SearchState.UNREAD) {
       clause += ' AND a.is_read = 0';
     } else if (query.state === SearchState.READ) {
@@ -1751,14 +2037,15 @@ export class ArticleStore {
     }
     try {
       store.executeSync('DELETE FROM ' + ArticleDbConstants.TABLE_ARTICLES_FTS);
-      const total: number = await this.countAll();
+      const total: number = await this.countIndexable();
       let done: number = 0;
       onProgress(0, total);
       let offset: number = 0;
       while (offset < total) {
         const rs: relationalStore.ResultSet = await store.querySql(
           'SELECT id, title, summary, plain_text, author FROM ' + ArticleDbConstants.TABLE_ARTICLES +
-          ' ORDER BY published_at DESC LIMIT ? OFFSET ?', [SearchConstants.REBUILD_BATCH, offset]);
+          ' WHERE canonical_id = \'\' ORDER BY published_at DESC LIMIT ? OFFSET ?',
+          [SearchConstants.REBUILD_BATCH, offset]);
         const rows: Array<Array<string>> = [];
         try {
           while (rs.goToNextRow()) {
@@ -1819,14 +2106,15 @@ export class ArticleStore {
       if (existing > 0) {
         store.executeSync('DELETE FROM ' + ArticleDbConstants.TABLE_ARTICLES_FTS_CJK);
       }
-      const total: number = await this.countAll();
+      const total: number = await this.countIndexable();
       let done: number = 0;
       onProgress(0, total);
       let offset: number = 0;
       while (offset < total) {
         const rs: relationalStore.ResultSet = await store.querySql(
           'SELECT id, title, summary, plain_text, content FROM ' + ArticleDbConstants.TABLE_ARTICLES +
-          ' ORDER BY published_at DESC LIMIT ? OFFSET ?', [SearchConstants.REBUILD_BATCH, offset]);
+          ' WHERE canonical_id = \'\' ORDER BY published_at DESC LIMIT ? OFFSET ?',
+          [SearchConstants.REBUILD_BATCH, offset]);
         const rows: Array<Array<string>> = [];
         try {
           while (rs.goToNextRow()) {
@@ -2011,9 +2299,13 @@ export class ArticleStore {
       ' reader_html, content_html, plain_text, page_etag, page_last_modified';
     const now: number = Date.now();
     let moved: number = 0;
+    let promoted: string[] = [];
     try {
       store.beginTransaction();
       try {
+        // 跨源去重：整组进回收站没问题；只搬主条时先在「不在本批」的成员里提升新主条，
+        // 否则留下的重复项会变成指向已消失主条的孤儿（列表里再也看不到）。
+        promoted = this.promoteBeforeRemoval(ids);
         for (let i = 0; i < ids.length; i += 1) {
           store.executeSync('INSERT OR REPLACE INTO ' + ArticleDbConstants.TABLE_ARTICLES_TRASH +
             ' (' + columns + ', deleted_at) SELECT ' + columns + ', ? FROM ' +
@@ -2035,10 +2327,11 @@ export class ArticleStore {
     }
     this.deleteFtsRows(ids);
     this.cjkDeleteRows(ids);
+    this.indexManySync(promoted);
     return moved;
   }
 
-  /** 从回收站恢复：事务内搬回主表并重建索引。返回恢复条数。 */
+  /** 从回收站恢复：事务内搬回主表；恢复后再修正悬挂挂靠并重建索引。返回恢复条数。 */
   async restoreTrash(ids: string[]): Promise<number> {
     const store: relationalStore.RdbStore | undefined = this.store;
     if (store === undefined || ids.length === 0) {
@@ -2070,22 +2363,57 @@ export class ArticleStore {
       hilog.error(DOMAIN, TAG, 'restoreTrash failed: %{public}d', error.code);
       return 0;
     }
-    if (this.ftsReady || this.cjkReady) {
-      for (let i = 0; i < ids.length; i += 1) {
+    for (let i = 0; i < ids.length; i += 1) {
+      // 主条可能已被删除：挂靠失效时清空 canonical_id 自己当主条，并补索引；仍是重复项则不建索引。
+      const needsIndex: boolean = this.repairAfterRestore(ids[i]);
+      if (needsIndex && (this.ftsReady || this.cjkReady)) {
         await this.indexOne(ids[i]);
       }
     }
     return restored;
   }
 
+  /**
+   * 恢复后修正挂靠关系：canonical_id 指向的主条不存在时清空（自己成为主条）。
+   * @returns 是否需要为这条重建索引（= 它是主条）。
+   */
+  private repairAfterRestore(id: string): boolean {
+    const store: relationalStore.RdbStore | undefined = this.store;
+    if (store === undefined) {
+      return false;
+    }
+    try {
+      const canonical: string = this.canonicalOfSync(store, id);
+      if (canonical.length === 0) {
+        return true;
+      }
+      if (this.rowExistsSync(store, canonical)) {
+        return false;
+      }
+      store.executeSync('UPDATE ' + ArticleDbConstants.TABLE_ARTICLES +
+        ' SET canonical_id = \'\' WHERE id = ?', [id]);
+      hilog.info(DOMAIN, TAG, 'restored article detached from missing canonical');
+      return true;
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.warn(DOMAIN, TAG, 'repair after restore failed: %{public}d', error.code);
+      return false;
+    }
+  }
+
   /** 恢复后按主表内容重建单条索引。 */
   private async indexOne(id: string): Promise<void> {
+    this.indexOneSync(id);
+  }
+
+  /** indexOne 的同步实现（删除 / 回收站等同步路径里补索引用）。 */
+  private indexOneSync(id: string): void {
     const store: relationalStore.RdbStore | undefined = this.store;
     if (store === undefined || (!this.ftsReady && !this.cjkReady)) {
       return;
     }
     try {
-      const rs: relationalStore.ResultSet = await store.querySql(
+      const rs: relationalStore.ResultSet = store.querySqlSync(
         'SELECT title, summary, plain_text, author FROM ' + ArticleDbConstants.TABLE_ARTICLES + ' WHERE id = ?',
         [id]);
       try {
@@ -2105,6 +2433,241 @@ export class ArticleStore {
       const error: BusinessError = err as BusinessError;
       hilog.warn(DOMAIN, TAG, 'index restored article failed: %{public}d', error.code);
     }
+  }
+
+  /** 批量补索引（主条提升后调用；索引不可用时整体跳过）。 */
+  private indexManySync(ids: string[]): void {
+    if (ids.length === 0 || (!this.ftsReady && !this.cjkReady)) {
+      return;
+    }
+    for (let i = 0; i < ids.length; i += 1) {
+      this.indexOneSync(ids[i]);
+    }
+  }
+
+  // ---- 跨源去重：主条提升 / 组查询 ----
+
+  /**
+   * 删除 / 清理前的组内主条提升。
+   *
+   * 对每个即将离开主表的**主条**：在「不在本次离开列表」的成员里选最早入库者提升为主条
+   * （canonical_id 置空 + 稍后补索引），其余成员改指向新主条；没有剩余成员时不动
+   * （成员都在离开列表里，本来就随主条一起消失，组自然解散）。
+   *
+   * @returns 被提升为主条的 id（调用方负责补 FTS / 中文索引）。
+   */
+  private promoteBeforeRemoval(ids: string[]): string[] {
+    const store: relationalStore.RdbStore | undefined = this.store;
+    if (store === undefined || ids.length === 0) {
+      return [];
+    }
+    const removing: Set<string> = new Set<string>();
+    const roots: string[] = [];
+    try {
+      // 一次查出本批的挂靠状态：只有 canonical_id 为空的主条才需要提升。
+      for (let start = 0; start < ids.length; start += DEDUPE_KEY_BATCH) {
+        const slice: string[] = ids.slice(start, start + DEDUPE_KEY_BATCH);
+        for (let i = 0; i < slice.length; i += 1) {
+          removing.add(slice[i]);
+        }
+        const rs: relationalStore.ResultSet = store.querySqlSync(
+          'SELECT id, canonical_id FROM ' + ArticleDbConstants.TABLE_ARTICLES +
+          ' WHERE id IN (' + placeholders(slice.length) + ')', slice);
+        try {
+          while (rs.goToNextRow()) {
+            if (rs.getString(rs.getColumnIndex('canonical_id')).length === 0) {
+              roots.push(rs.getString(rs.getColumnIndex('id')));
+            }
+          }
+        } finally {
+          rs.close();
+        }
+      }
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.warn(DOMAIN, TAG, 'promote prepare failed: %{public}d', error.code);
+      return [];
+    }
+    return this.promoteRoots(store, roots, removing);
+  }
+
+  /** 给定「即将离开的主条」与「一起离开的 id 集合」，逐组提升 + 重指向。 */
+  private promoteRoots(store: relationalStore.RdbStore, roots: string[],
+    removing: Set<string>): string[] {
+    const promoted: string[] = [];
+    if (roots.length === 0) {
+      return promoted;
+    }
+    try {
+      // 按批取出这些主条的成员：几千条清理也只需要十几次查询。
+      const membersByRoot: Map<string, DedupeCandidate[]> = new Map<string, DedupeCandidate[]>();
+      for (let start = 0; start < roots.length; start += DEDUPE_KEY_BATCH) {
+        const slice: string[] = roots.slice(start, start + DEDUPE_KEY_BATCH);
+        const rs: relationalStore.ResultSet = store.querySqlSync(
+          'SELECT id, feed_id, canonical_id, link_key, title_key, published_at FROM ' +
+          ArticleDbConstants.TABLE_ARTICLES +
+          ' WHERE canonical_id IN (' + placeholders(slice.length) + ')', slice);
+        try {
+          while (rs.goToNextRow()) {
+            const root: string = rs.getString(rs.getColumnIndex('canonical_id'));
+            const candidate: DedupeCandidate = new DedupeCandidate(
+              rs.getString(rs.getColumnIndex('id')),
+              rs.getString(rs.getColumnIndex('feed_id')),
+              root,
+              rs.getString(rs.getColumnIndex('link_key')),
+              rs.getString(rs.getColumnIndex('title_key')),
+              rs.getLong(rs.getColumnIndex('published_at')));
+            const bucket: DedupeCandidate[] | undefined = membersByRoot.get(root);
+            if (bucket === undefined) {
+              membersByRoot.set(root, [candidate]);
+            } else {
+              bucket.push(candidate);
+            }
+          }
+        } finally {
+          rs.close();
+        }
+      }
+      for (let i = 0; i < roots.length; i += 1) {
+        const root: string = roots[i];
+        const members: DedupeCandidate[] | undefined = membersByRoot.get(root);
+        const remaining: DedupeCandidate[] = [];
+        if (members !== undefined) {
+          for (let j = 0; j < members.length; j += 1) {
+            if (!removing.has(members[j].id)) {
+              remaining.push(members[j]);
+            }
+          }
+        }
+        const nextRoot: string = DedupeService.pickPromotion(remaining);
+        if (nextRoot.length === 0) {
+          continue;
+        }
+        store.executeSync('UPDATE ' + ArticleDbConstants.TABLE_ARTICLES +
+          ' SET canonical_id = \'\' WHERE id = ?', [nextRoot]);
+        store.executeSync('UPDATE ' + ArticleDbConstants.TABLE_ARTICLES +
+          ' SET canonical_id = ? WHERE canonical_id = ? AND id <> ?', [nextRoot, root, nextRoot]);
+        promoted.push(nextRoot);
+        hilog.info(DOMAIN, TAG, 'canonical promoted, group size=%{public}d',
+          remaining.length + 1);
+      }
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.warn(DOMAIN, TAG, 'promote canonical failed: %{public}d', error.code);
+    }
+    return promoted;
+  }
+
+  /** 读一条文章的 canonical_id（不存在返回空串）。 */
+  private canonicalOfSync(store: relationalStore.RdbStore, id: string): string {
+    const rs: relationalStore.ResultSet = store.querySqlSync(
+      'SELECT canonical_id FROM ' + ArticleDbConstants.TABLE_ARTICLES + ' WHERE id = ?', [id]);
+    try {
+      return rs.goToNextRow() ? rs.getString(rs.getColumnIndex('canonical_id')) : '';
+    } finally {
+      rs.close();
+    }
+  }
+
+  /** 某篇文章是否还在主表里。 */
+  private rowExistsSync(store: relationalStore.RdbStore, id: string): boolean {
+    const rs: relationalStore.ResultSet = store.querySqlSync(
+      'SELECT 1 AS ok FROM ' + ArticleDbConstants.TABLE_ARTICLES + ' WHERE id = ?', [id]);
+    try {
+      return rs.goToNextRow();
+    } finally {
+      rs.close();
+    }
+  }
+
+  /**
+   * 组内全部 id：主条 + 全部重复项，按发布时间升序（最早入库的在前）。
+   * 传入的若是重复项，先解析到根主条；查不到时退回 [id]（幂等，不抛错）。
+   */
+  async groupIdsOf(id: string): Promise<string[]> {
+    const store: relationalStore.RdbStore | undefined = this.store;
+    const result: string[] = [];
+    if (store === undefined || id.length === 0) {
+      return result;
+    }
+    try {
+      const root: string = await this.rootOf(store, id);
+      const args: Array<relationalStore.ValueType> = [root, root];
+      const rs: relationalStore.ResultSet = await store.querySql(
+        'SELECT id FROM ' + ArticleDbConstants.TABLE_ARTICLES +
+        ' WHERE id = ? OR canonical_id = ? ORDER BY published_at ASC, id ASC', args);
+      try {
+        while (rs.goToNextRow()) {
+          result.push(rs.getString(rs.getColumnIndex('id')));
+        }
+      } finally {
+        rs.close();
+      }
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.warn(DOMAIN, TAG, 'groupIdsOf failed: %{public}d', error.code);
+      return [id];
+    }
+    if (result.length === 0) {
+      result.push(id);
+    }
+    return result;
+  }
+
+  /** 组内来源清单（详情页来源区用）：按发布时间升序，主条在前面的概率更高。 */
+  async loadGroupSources(articleId: string): Promise<GroupSource[]> {
+    const store: relationalStore.RdbStore | undefined = this.store;
+    const result: GroupSource[] = [];
+    if (store === undefined || articleId.length === 0) {
+      return result;
+    }
+    try {
+      const root: string = await this.rootOf(store, articleId);
+      const args: Array<relationalStore.ValueType> = [root, root];
+      const rs: relationalStore.ResultSet = await store.querySql(
+        'SELECT id, feed_title, link, published_at FROM ' + ArticleDbConstants.TABLE_ARTICLES +
+        ' WHERE id = ? OR canonical_id = ? ORDER BY published_at ASC, id ASC', args);
+      try {
+        while (rs.goToNextRow()) {
+          result.push(new GroupSource(
+            rs.getString(rs.getColumnIndex('id')),
+            rs.getString(rs.getColumnIndex('feed_title')),
+            rs.getString(rs.getColumnIndex('link')),
+            rs.getLong(rs.getColumnIndex('published_at'))));
+        }
+      } finally {
+        rs.close();
+      }
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.warn(DOMAIN, TAG, 'loadGroupSources failed: %{public}d', error.code);
+    }
+    return result;
+  }
+
+  /** 解析根主条：沿 canonical_id 逐跳上溯，最多 8 跳（防御脏数据造成的环）。 */
+  private async rootOf(store: relationalStore.RdbStore, id: string): Promise<string> {
+    let current: string = id;
+    for (let depth = 0; depth < 8; depth += 1) {
+      const args: Array<relationalStore.ValueType> = [current];
+      const rs: relationalStore.ResultSet = await store.querySql(
+        'SELECT canonical_id FROM ' + ArticleDbConstants.TABLE_ARTICLES + ' WHERE id = ?', args);
+      let next: string = '';
+      let found: boolean = false;
+      try {
+        found = rs.goToNextRow();
+        if (found) {
+          next = rs.getString(rs.getColumnIndex('canonical_id'));
+        }
+      } finally {
+        rs.close();
+      }
+      if (!found || next.length === 0 || next === current) {
+        break;
+      }
+      current = next;
+    }
+    return current;
   }
 
   /** 清理过期回收站条目（deleted_at < beforeTs）；这些文章真正消失，标签关联一并清理。 */
@@ -2198,10 +2761,11 @@ export class ArticleStore {
     }
     try {
       // SQL 先粗筛（收藏 / 稍后读 / 有高亮的直接排除），再在内存里按策略复核。
+      // 重复项不直接清理：它们随主条一起被清，或等主条提升后再变成可清理的主条。
       const rs: relationalStore.ResultSet = await store.querySql(
         'SELECT a.id, a.feed_id, a.published_at, a.is_read, a.is_starred, a.is_saved FROM ' +
         ArticleDbConstants.TABLE_ARTICLES + ' a' +
-        ' WHERE a.is_starred = 0 AND a.is_saved = 0' +
+        ' WHERE a.is_starred = 0 AND a.is_saved = 0 AND a.canonical_id = \'\'' +
         ' AND NOT EXISTS (SELECT 1 FROM ' + ArticleDbConstants.TABLE_HIGHLIGHTS +
         ' h WHERE h.article_id = a.id)');
       const now: number = Date.now();
@@ -2530,6 +3094,31 @@ export class ArticleStore {
 
   /** 删除订阅源及其文章（含索引与标签关联）。 */
   deleteByFeed(feedId: string): void {
+    // 跨源去重：本源的「主条」可能在别的源还有成员，删源前先提升，否则那些成员会变成孤儿重复项。
+    const roots: string[] = [];
+    const removing: Set<string> = new Set<string>();
+    const store: relationalStore.RdbStore | undefined = this.store;
+    if (store !== undefined) {
+      try {
+        const rs: relationalStore.ResultSet = store.querySqlSync(
+          'SELECT id, canonical_id FROM ' + ArticleDbConstants.TABLE_ARTICLES + ' WHERE feed_id = ?', [feedId]);
+        try {
+          while (rs.goToNextRow()) {
+            const id: string = rs.getString(rs.getColumnIndex('id'));
+            removing.add(id);
+            if (rs.getString(rs.getColumnIndex('canonical_id')).length === 0) {
+              roots.push(id);
+            }
+          }
+        } finally {
+          rs.close();
+        }
+      } catch (err) {
+        const error: BusinessError = err as BusinessError;
+        hilog.warn(DOMAIN, TAG, 'deleteByFeed prepare failed: %{public}d', error.code);
+      }
+    }
+    const promoted: string[] = store === undefined ? [] : this.promoteRoots(store, roots, removing);
     if (this.ftsReady) {
       this.exec('DELETE FROM ' + ArticleDbConstants.TABLE_ARTICLES_FTS +
         ' WHERE article_id IN (SELECT id FROM ' + ArticleDbConstants.TABLE_ARTICLES + ' WHERE feed_id = ?)',
@@ -2544,6 +3133,7 @@ export class ArticleStore {
       ' WHERE article_id IN (SELECT id FROM ' + ArticleDbConstants.TABLE_ARTICLES + ' WHERE feed_id = ?)',
       [feedId]);
     this.exec('DELETE FROM ' + ArticleDbConstants.TABLE_ARTICLES + ' WHERE feed_id = ?', [feedId]);
+    this.indexManySync(promoted);
   }
 
   /**

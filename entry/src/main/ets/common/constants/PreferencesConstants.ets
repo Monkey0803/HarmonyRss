@@ -73,4 +73,6 @@ export class PreferencesConstants {
   static readonly KEY_SEARCH_HISTORY: string = 'searchHistory';
   /** 远端服务自动同步间隔（'off' | '15' | '30' | '60'；默认关）。 */
   static readonly KEY_REMOTE_AUTO_SYNC: string = 'remoteAutoSync';
+  /** 跨源去重总开关（默认开；关闭后只影响新入库文章，已有合并组保持现状）。 */
+  static readonly KEY_DEDUPE_ENABLED: string = 'dedupeEnabled';
 }

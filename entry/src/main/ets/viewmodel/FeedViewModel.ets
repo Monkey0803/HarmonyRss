@@ -20,6 +20,7 @@ import {
 import { feedService, FeedFetchResult, ResolvedFeed } from '../service/FeedService';
 import { feedDiscovery } from '../service/FeedDiscovery';
 import { articleStore, CacheStats } from '../service/ArticleStore';
+import { dedupeService } from '../service/DedupeService';
 import { CommonConstants } from '../common/constants/CommonConstants';
 import { UrlText } from '../common/utils/UrlText';
 import { ArticleDataSource, ArticleGroup } from './ArticleDataSource';
@@ -53,6 +54,10 @@ function errorCodeOf(err: Object): FeedError {
 
 /** 启动时回填正文纯文本的最大条数（一次性迁移用）。 */
 const BACKFILL_PLAIN_TEXT_LIMIT: number = 200;
+
+/** 启动时补去重键的每批条数与最多批数（后台执行，不阻塞首屏）。 */
+const DEDUPE_BACKFILL_BATCH: number = 500;
+const DEDUPE_BACKFILL_MAX_BATCHES: number = 10;
 
 /** 「添加订阅源」预览里展示的最新条数。 */
 const PREVIEW_ITEM_LIMIT: number = 3;
@@ -100,6 +105,9 @@ function mergeArticle(target: Article, source: Article): void {
   target.starred = source.starred;
   target.saved = source.saved;
   target.hidden = source.hidden;
+  // 跨源去重：挂靠关系与组内来源数随库刷新（删除主条 / 组变化后靠这里更新列表标识）。
+  target.canonicalId = source.canonicalId;
+  target.duplicateCount = source.duplicateCount;
   target.progress = source.progress;
   target.progressRatio = source.progressRatio;
 }
@@ -233,10 +241,32 @@ export class FeedViewModel {
     await articleStore.backfillPlainText(BACKFILL_PLAIN_TEXT_LIMIT);
     this.all = await articleStore.loadForList();
     this.publish();
+    // 老数据补一次去重键（分批、上限 10 批）：让升级前入库的文章也能参与后续合并判定。
+    // 异步启动，绝不 await —— 补键只是让「以后的新文章」能匹配上旧文章，不阻塞首屏与抓取。
+    this.backfillDedupeKeys();
     // 启动时清理超期回收站 + 按节流执行一次保留清理（异步，不阻塞首屏与抓取）。
     this.applyRetentionIfDue();
     // 冷启动是用户动作：force=true 保证首屏能拿到内容（仍不抓停用源）。
     await this.refreshAll(true);
+  }
+
+  /**
+   * 后台分批补去重键：每批 500 条，最多 10 批或直到某批不足 500 条（说明补完了）。
+   * 失败只记日志：补键是增量优化，不能影响启动与抓取主链路。
+   */
+  private backfillDedupeKeys(): void {
+    this.runDedupeBackfill().catch((err: Error) => {
+      console.warn('dedupe key backfill failed: ' + err.message);
+    });
+  }
+
+  private async runDedupeBackfill(): Promise<void> {
+    for (let i = 0; i < DEDUPE_BACKFILL_MAX_BATCHES; i += 1) {
+      const done: number = await articleStore.backfillDedupeKeys(DEDUPE_BACKFILL_BATCH);
+      if (done < DEDUPE_BACKFILL_BATCH) {
+        return;
+      }
+    }
   }
 
   /**
@@ -435,10 +465,10 @@ export class FeedViewModel {
     try {
       const applied: RuleApplyResult = await ruleService.applyToNew(fresh);
       for (let i = 0; i < applied.readIds.length; i += 1) {
-        remoteSyncService.enqueueState(applied.readIds[i], true, undefined);
+        remoteSyncService.enqueueGroupState(applied.readIds[i], true, undefined);
       }
       for (let i = 0; i < applied.starredIds.length; i += 1) {
-        remoteSyncService.enqueueState(applied.starredIds[i], undefined, true);
+        remoteSyncService.enqueueGroupState(applied.starredIds[i], undefined, true);
       }
     } catch (err) {
       const error: BusinessError = err as BusinessError;
@@ -1347,6 +1377,40 @@ export class FeedViewModel {
     this.markRead(articleId);
   }
 
+  /**
+   * 组同步：把已读状态扩散到整组。
+   * 重复项不在内存列表里（列表只读主条），因此只需改库；失败由 DedupeService 内部吞掉并记日志，
+   * 这里再兜一层，保证任何异常都不会打断用户的列表操作。
+   */
+  private syncGroupRead(ids: string[], value: boolean): void {
+    if (ids.length === 0) {
+      return;
+    }
+    dedupeService.applyRead(ids, value).catch((err: Error) => {
+      console.warn('dedupe applyRead failed: ' + err.message);
+    });
+  }
+
+  /** 组同步：把收藏状态扩散到整组。 */
+  private syncGroupStarred(ids: string[], value: boolean): void {
+    if (ids.length === 0) {
+      return;
+    }
+    dedupeService.applyStarred(ids, value).catch((err: Error) => {
+      console.warn('dedupe applyStarred failed: ' + err.message);
+    });
+  }
+
+  /** 组同步：把隐藏状态扩散到整组（主条隐藏 → 整组不进主列表）。 */
+  private syncGroupHidden(ids: string[], value: boolean): void {
+    if (ids.length === 0) {
+      return;
+    }
+    dedupeService.applyHidden(ids, value).catch((err: Error) => {
+      console.warn('dedupe applyHidden failed: ' + err.message);
+    });
+  }
+
   /** 收藏 / 取消收藏。 */
   toggleStar(articleId: string): void {
     for (let i = 0; i < this.all.length; i += 1) {
@@ -1354,7 +1418,9 @@ export class FeedViewModel {
         const next: boolean = !this.all[i].starred;
         this.all[i].starred = next;
         articleStore.setStarred(articleId, next);
-        remoteSyncService.enqueueState(articleId, undefined, next);
+        remoteSyncService.enqueueGroupState(articleId, undefined, next);
+        // 组内其它来源同步收藏（主条变化即整组变化）。
+        this.syncGroupStarred([articleId], next);
         break;
       }
     }
@@ -1386,8 +1452,10 @@ export class FeedViewModel {
       }
     }
     articleStore.setReadMany(ids, read);
+    // 组内同步：一次多选可能跨多个合并组，交给 DedupeService 逐个展开。
+    this.syncGroupRead(ids, read);
     for (let i = 0; i < ids.length; i += 1) {
-      remoteSyncService.enqueueState(ids[i], read, undefined);
+      remoteSyncService.enqueueGroupState(ids[i], read, undefined);
     }
     this.exitSelect();
     this.publish();
@@ -1405,8 +1473,10 @@ export class FeedViewModel {
       }
     }
     articleStore.setStarredMany(ids, starred);
+    // 组内同步收藏。
+    this.syncGroupStarred(ids, starred);
     for (let i = 0; i < ids.length; i += 1) {
-      remoteSyncService.enqueueState(ids[i], undefined, starred);
+      remoteSyncService.enqueueGroupState(ids[i], undefined, starred);
     }
     this.exitSelect();
     this.publish();
@@ -1428,7 +1498,11 @@ export class FeedViewModel {
     this.publish();
   }
 
-  /** 批量：删除（同时从内存列表移除）。 */
+  /**
+   * 批量：删除（同时从内存列表移除）。
+   * 删除主条时存储层会提升组内最早入库的重复项为新主条 —— 那篇文章原本不在内存列表里
+   * （列表只读主条），因此删完重读一次库，把新主条补进列表（否则「文章被删没了」的错觉）。
+   */
   deleteMany(ids: string[]): void {
     const wanted: Map<string, boolean> = new Map<string, boolean>();
     for (let i = 0; i < ids.length; i += 1) {
@@ -1444,6 +1518,20 @@ export class FeedViewModel {
     articleStore.deleteMany(ids);
     this.exitSelect();
     this.publish();
+    this.reloadAfterGroupChange();
+  }
+
+  /**
+   * 组变化（删除主条导致提升 / 取消隐藏 / 规则停用）后重读库并重算：
+   * 新主条与被改写的来源计数（duplicateCount）只有重新查库才拿得到。
+   * 失败只记日志，界面保留删除后的即时结果。
+   */
+  private reloadAfterGroupChange(): void {
+    this.reloadFromStore().then(() => {
+      this.publish();
+    }).catch((err: BusinessError) => {
+      console.warn('reload after group change failed: ' + err.message);
+    });
   }
 
   /**
@@ -1471,8 +1559,10 @@ export class FeedViewModel {
     }
     if (ids.length > 0) {
       articleStore.setReadMany(ids, true);
+      // 组内同步：一次标记可能跨多个合并组，交给 DedupeService 逐个展开。
+      this.syncGroupRead(ids, true);
       for (let i = 0; i < ids.length; i += 1) {
-        remoteSyncService.enqueueState(ids[i], true, undefined);
+        remoteSyncService.enqueueGroupState(ids[i], true, undefined);
       }
     }
     this.publish();
@@ -1523,8 +1613,11 @@ export class FeedViewModel {
       }
     }
     articleStore.markAllRead();
+    // 存储层是整表更新（含不在内存里的重复项），组内状态天然一致；这里再按组展开一次，
+    // 兜住「重复项已被独立改写」的脏数据，保证主条与成员口径始终一致。
+    this.syncGroupRead(changed, true);
     for (let i = 0; i < changed.length; i += 1) {
-      remoteSyncService.enqueueState(changed[i], true, undefined);
+      remoteSyncService.enqueueGroupState(changed[i], true, undefined);
     }
     this.publish();
   }
@@ -1536,7 +1629,9 @@ export class FeedViewModel {
         const next: boolean = !this.all[i].read;
         this.all[i].read = next;
         articleStore.setRead(articleId, next);
-        remoteSyncService.enqueueState(articleId, next, undefined);
+        remoteSyncService.enqueueGroupState(articleId, next, undefined);
+        // 组内其它来源同步已读（未读计数只按主条算，因此计数只变 1）。
+        this.syncGroupRead([articleId], next);
         break;
       }
     }
@@ -1666,6 +1761,7 @@ export class FeedViewModel {
   /**
    * 标记「已读完」（滚动到底）：确保已读，并把阅读进度归零 ——
    * 已读完的文章下次打开从头开始，而不是停在文末。
+   * 已读的组同步由 markRead 负责（其中包含整组置已读）。
    */
   markFinished(articleId: string): void {
     this.markRead(articleId);
@@ -1674,10 +1770,14 @@ export class FeedViewModel {
 
   private markRead(articleId: string): void {
     for (let i = 0; i < this.all.length; i += 1) {
-      if (this.all[i].id === articleId && !this.all[i].read) {
-        this.all[i].read = true;
-        articleStore.setRead(articleId, true);
-        remoteSyncService.enqueueState(articleId, true, undefined);
+      if (this.all[i].id === articleId) {
+        if (!this.all[i].read) {
+          this.all[i].read = true;
+          articleStore.setRead(articleId, true);
+          remoteSyncService.enqueueGroupState(articleId, true, undefined);
+        }
+        // 无论内存里是否已读，都把整组置已读（幂等）；覆盖「主条已读但成员未读」的历史脏数据。
+        this.syncGroupRead([articleId], true);
         break;
       }
     }
@@ -1950,6 +2050,8 @@ export class FeedViewModel {
       }
     }
     articleStore.setHiddenMany(ids, hidden);
+    // 组内同步隐藏 / 取消隐藏：只改展示口径，绝不删除文章内容。
+    this.syncGroupHidden(ids, hidden);
     this.publish();
   }
 

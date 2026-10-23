@@ -106,6 +106,9 @@ export class SettingsStore {
         store.getSync(PreferencesConstants.KEY_RETENTION_DAYS, appSettings.retentionDays) as string);
       appSettings.remoteAutoSync = normalizeRemoteAutoSync(
         store.getSync(PreferencesConstants.KEY_REMOTE_AUTO_SYNC, appSettings.remoteAutoSync) as string);
+      // 跨源去重：默认开启；老库没有这个 key 时读出来就是默认值。
+      appSettings.dedupeEnabled =
+        store.getSync(PreferencesConstants.KEY_DEDUPE_ENABLED, appSettings.dedupeEnabled) as boolean;
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       console.error('SettingsStore.load failed: ' + error.code.toString());
@@ -157,6 +160,7 @@ export class SettingsStore {
       store.putSync(PreferencesConstants.KEY_RETENTION_MODE, appSettings.retentionMode);
       store.putSync(PreferencesConstants.KEY_RETENTION_DAYS, appSettings.retentionDays);
       store.putSync(PreferencesConstants.KEY_REMOTE_AUTO_SYNC, appSettings.remoteAutoSync);
+      store.putSync(PreferencesConstants.KEY_DEDUPE_ENABLED, appSettings.dedupeEnabled);
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       console.error('SettingsStore.putSync failed: ' + error.code.toString());

@@ -11,6 +11,7 @@ import { RuleConstants } from '../common/constants/RssConstants';
 import { ruleStore } from '../service/RuleStore';
 import { ruleService } from '../service/RuleService';
 import { articleStore } from '../service/ArticleStore';
+import { dedupeService } from '../service/DedupeService';
 import { validateDraft } from '../service/RuleEngine';
 
 @ObservedV2
@@ -205,12 +206,13 @@ export class RuleViewModel {
     }
   }
 
-  /** 取消隐藏 / 批量隐藏：写库后同步内存列表与计数。 */
+  /** 取消隐藏 / 批量隐藏：写库后同步内存列表与计数（与 FeedViewModel.setHidden 同一口径：整组生效）。 */
   async setHidden(ids: string[], hidden: boolean): Promise<void> {
     if (ids.length === 0) {
       return;
     }
-    articleStore.setHiddenMany(ids, hidden);
+    // 跨源去重：隐藏 / 取消隐藏都作用到整组（主条 + 重复项），避免只恢复一半。
+    await dedupeService.applyHidden(ids, hidden);
     const wanted: Set<string> = new Set<string>();
     for (let i = 0; i < ids.length; i += 1) {
       wanted.add(ids[i]);

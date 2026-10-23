@@ -2219,6 +2219,62 @@
     {
       "name": "hidden_unhide_done",
       "value": "文章已恢复到主列表"
+    },
+    {
+      "name": "dedupe_sources_count",
+      "value": "%d 个来源"
+    },
+    {
+      "name": "dedupe_sources_title",
+      "value": "全部来源"
+    },
+    {
+      "name": "dedupe_source_label",
+      "value": "来源"
+    },
+    {
+      "name": "dedupe_merged_hint",
+      "value": "这篇文章还被另外 %d 个来源收录"
+    },
+    {
+      "name": "dedupe_group_empty",
+      "value": "暂无来源信息"
+    },
+    {
+      "name": "dedupe_settings_title",
+      "value": "跨源去重"
+    },
+    {
+      "name": "dedupe_settings_desc",
+      "value": "多个订阅源收录同一篇文章时只显示一次，并保留全部来源。"
+    },
+    {
+      "name": "dedupe_toggle_on",
+      "value": "已开启跨源去重"
+    },
+    {
+      "name": "dedupe_toggle_off",
+      "value": "已关闭跨源去重"
+    },
+    {
+      "name": "dedupe_match_failed",
+      "value": "去重判定失败，文章已按普通条目保存"
+    },
+    {
+      "name": "dedupe_open_failed",
+      "value": "无法打开该来源链接"
+    },
+    {
+      "name": "dedupe_source_count",
+      "value": "%d 个来源"
+    },
+    {
+      "name": "dedupe_switch_desc",
+      "value": "多个订阅源收录同一篇文章时只显示一次，并保留全部来源。"
+    },
+    {
+      "name": "dedupe_source_current",
+      "value": "当前"
     }
   ]
 }

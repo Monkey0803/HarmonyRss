@@ -18,6 +18,13 @@ export class RssConstants {
   static readonly SUMMARY_MAX_CHARS: number = 160;
   /** 请求 Accept 头：优先索取 feed 文档。 */
   static readonly ACCEPT_HEADER: string = 'application/rss+xml, application/atom+xml, application/feed+json, application/json, application/xml, text/xml, */*';
+  /**
+   * 跨源去重：标题判定的时间窗（±24 小时）。
+   * 转载标题常有标点/空格差异，24h 能覆盖跨时区发布；再宽会误合并旧文。
+   */
+  static readonly DEDUPE_WINDOW_MS: number = 24 * 60 * 60 * 1000;
+  /** 跨源去重：单组最多展示的来源数（超出仍挂靠到主条，只是不再展示）。 */
+  static readonly MAX_GROUP_SOURCES: number = 5;
 }
 
 /** 订阅源操作的结果码（视图据此映射到文案）。 */
@@ -133,9 +140,10 @@ export class ArticleDbConstants {
   /**
    * 当前数据库结构版本
    * （v1 = 初始表；v2 = 索引 + FTS + 回收站；v3 = 中文检索索引；v4 = 标签 + 智能文件夹；
-   *   v5 = 远端账号 / 游标 / 映射 / 待同步队列；v6 = 规则表 + articles.is_hidden）。
+   *   v5 = 远端账号 / 游标 / 映射 / 待同步队列；v6 = 规则表 + articles.is_hidden；
+   *   v7 = 跨源去重：articles.link_key / title_key / canonical_id + 3 个索引）。
    */
-  static readonly SCHEMA_VERSION: number = 6;
+  static readonly SCHEMA_VERSION: number = 7;
 }
 
 /**

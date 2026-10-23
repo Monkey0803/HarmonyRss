@@ -15,12 +15,25 @@ import { Article } from '../model/Feed';
 import { Rule, RuleApplyResult, RulePlan, RuleTestResult } from '../model/Rule';
 import { RuleConstants } from '../common/constants/RssConstants';
 import { articleStore } from './ArticleStore';
+import { dedupeService } from './DedupeService';
 import { ruleStore } from './RuleStore';
-import { tagStore } from './TagStore';
 import { matches, plan } from './RuleEngine';
 
 const DOMAIN: number = 0x0000;
 const TAG: string = 'RuleService';
+
+/** 按主条去重后的命中统计（同一合并组只累计一次）。 */
+class RuleHitTally {
+  /** 规则 id → 去重后的命中篇数（按主条计）。 */
+  readonly hits: Map<string, number>;
+  /** 命中任意规则的合并组数。 */
+  readonly matched: number;
+
+  constructor(hits: Map<string, number>, matched: number) {
+    this.hits = hits;
+    this.matched = matched;
+  }
+}
 
 export class RuleService {
   /**
@@ -42,29 +55,37 @@ export class RuleService {
       if (result.isEmpty() && result.matched === 0) {
         return RuleApplyResult.empty();
       }
+      // 0) 动作前把计划 id 展开成「组 id」：命中主条即作用于整组（FR-013），
+      //    命中重复项也先解析到根主条，保证组内状态与标签一致。
+      const readIds: string[] = await dedupeService.expandIds(result.readIds);
+      const starredIds: string[] = await dedupeService.expandIds(result.starredIds);
+      const hiddenIds: string[] = await dedupeService.expandIds(result.hiddenIds);
       // 1) 批量状态动作（逐条 UPDATE，与用户手动批量操作的语义一致）。
-      if (result.readIds.length > 0) {
-        articleStore.setReadMany(result.readIds, true);
+      if (readIds.length > 0) {
+        articleStore.setReadMany(readIds, true);
       }
-      if (result.starredIds.length > 0) {
-        articleStore.setStarredMany(result.starredIds, true);
+      if (starredIds.length > 0) {
+        articleStore.setStarredMany(starredIds, true);
       }
-      if (result.hiddenIds.length > 0) {
-        articleStore.setHiddenMany(result.hiddenIds, true);
+      if (hiddenIds.length > 0) {
+        articleStore.setHiddenMany(hiddenIds, true);
       }
-      // 2) 标签动作（每个标签一次事务，重复添加不产生重复关联）。
+      // 2) 标签动作（每个标签一次事务，重复添加不产生重复关联；applyTag 内部再展开一次，幂等）。
       for (let i = 0; i < result.tagIds.length; i += 1) {
         const tagId: string = result.tagIds[i];
         const ids: string[] | undefined = result.tagHits.get(tagId);
         if (ids !== undefined && ids.length > 0) {
-          await tagStore.addToArticles(tagId, ids);
+          await dedupeService.applyTag(tagId, ids);
         }
       }
-      // 3) 命中统计（只累加真正命中的规则）。
-      await ruleStore.recordHits(result.ruleHits, Date.now());
+      // 3) 命中统计：同一合并组只累计一次（按主条计），避免重复项让命中数虚增。
+      const tally: RuleHitTally = RuleService.tallyHits(rules, articles);
+      if (tally.hits.size > 0) {
+        await ruleStore.recordHits(tally.hits, Date.now());
+      }
       // 4) 回写内存实例：列表 / 未读数立即正确，不必等下一次读库。
       this.applyInMemory(articles, result);
-      return new RuleApplyResult(result.readIds, result.starredIds, result.hiddenIds, result.matched);
+      return new RuleApplyResult(readIds, starredIds, hiddenIds, tally.matched);
     } catch (err) {
       const error: Error = err as Error;
       hilog.error(DOMAIN, TAG, 'applyToNew failed: %{public}s', error.message);
@@ -106,6 +127,42 @@ export class RuleService {
       hilog.error(DOMAIN, TAG, 'testRun failed: %{public}s', error.message);
       return new RuleTestResult(0, 0);
     }
+  }
+
+  /**
+   * 命中统计（按主条去重）：同一条规则命中同一合并组的多篇（主条 + 重复项）时只计一次。
+   * 组 id 取文章的 canonicalId（空串表示自己是主条），因此不需要额外查库。
+   */
+  private static tallyHits(rules: Rule[], articles: Article[]): RuleHitTally {
+    const rootById: Map<string, string> = new Map<string, string>();
+    for (let i = 0; i < articles.length; i += 1) {
+      const article: Article = articles[i];
+      const root: string = article.canonicalId.length > 0 ? article.canonicalId : article.id;
+      rootById.set(article.id, root);
+    }
+    const hits: Map<string, number> = new Map<string, number>();
+    const matchedRoots: Set<string> = new Set<string>();
+    for (let r = 0; r < rules.length; r += 1) {
+      const rule: Rule = rules[r];
+      if (!rule.enabled) {
+        continue;
+      }
+      const seen: Set<string> = new Set<string>();
+      for (let a = 0; a < articles.length; a += 1) {
+        const article: Article = articles[a];
+        if (!matches(rule, article)) {
+          continue;
+        }
+        const found: string | undefined = rootById.get(article.id);
+        const root: string = found === undefined ? article.id : found;
+        seen.add(root);
+        matchedRoots.add(root);
+      }
+      if (seen.size > 0) {
+        hits.set(rule.id, seen.size);
+      }
+    }
+    return new RuleHitTally(hits, matchedRoots.size);
   }
 
   /** 把计划里的状态回写到内存 Article（去重集合，避免 O(n²) 查找）。 */

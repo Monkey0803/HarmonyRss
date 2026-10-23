@@ -55,6 +55,11 @@ export struct ArticleListItem {
     return this.article.progressRatio > 0.02 && this.article.progressRatio < 0.98;
   }
 
+  /** 是否是多来源合并出的主条（duplicateCount 含自己，>1 表示还有别的源收录）。 */
+  private merged(): boolean {
+    return this.article.duplicateCount > 1;
+  }
+
   build() {
     Column({ space: $r('app.float.space_s') }) {
       // 大图卡片样式：图在上、文在下（feed 没配图时自动退回文字/缩略图，不留空白）
@@ -107,6 +112,18 @@ export struct ArticleListItem {
             .maxLines(1)
             .textOverflow({ overflow: TextOverflow.Ellipsis })
             .layoutWeight(1)
+          // 跨源合并出来的主条：补一枚来源数 chip（纯展示，点击仍然打开文章）。
+          if (this.merged()) {
+            Text($r('app.string.dedupe_source_count', this.article.duplicateCount))
+              .fontSize($r('app.float.font_size_caption'))
+              .fontColor($r('app.color.hm_brand'))
+              .maxLines(1)
+              .constraintSize({ maxWidth: 96 })
+              .height($r('app.float.value_chip_height'))
+              .padding({ left: $r('app.float.space_s'), right: $r('app.float.space_s') })
+              .backgroundColor($r('app.color.hm_value_chip_background'))
+              .borderRadius($r('app.float.radius_chip'))
+          }
           if (this.article.author.length > 0) {
             Text(this.article.author)
               .fontSize($r('app.float.font_size_caption'))
