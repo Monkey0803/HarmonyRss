@@ -30,7 +30,6 @@ struct SharePage {
       Column({ space: $r('app.float.space_m') }) {
         AddFeedPanel({
           panelTitle: $r('app.string.share_page_title'),
-          prefillFromClipboard: false,
           initialText: this.sharedText,
           onSubmitResult: () => {
           }

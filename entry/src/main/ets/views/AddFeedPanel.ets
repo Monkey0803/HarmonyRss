@@ -23,8 +23,6 @@ import { appSettings } from '../model/AppSettings';
 export struct AddFeedPanel {
   /** 面板标题（默认「添加订阅源」；分享入口可传「添加到 RSS」）。 */
   @Param panelTitle: ResourceStr = $r('app.string.home_add_feed_title');
-  /** 是否在打开时尝试从剪贴板预填（分享页通常已带入地址，可关掉）。 */
-  @Param prefillFromClipboard: boolean = true;
   /** 初始输入（分享入口把解析出的地址传进来）；非空时优先于剪贴板预填。 */
   @Param initialText: string = '';
   /** 成功添加一项 / 一批后回调，宿主据此关闭面板或刷新。 */
@@ -52,23 +50,16 @@ export struct AddFeedPanel {
   aboutToAppear(): void {
     if (this.initialText.length > 0) {
       this.inputText = this.initialText;
-      return;
-    }
-    if (this.prefillFromClipboard) {
-      this.fillFromClipboard(false);
     }
   }
 
-  /** 读剪贴板：always = true 时无条件覆盖输入（「粘贴」按钮），否则仅在输入为空时预填。 */
-  private async fillFromClipboard(always: boolean): Promise<void> {
-    if (!always && this.inputText.length > 0) {
-      return;
-    }
+  /** 读剪贴板：仅在用户点击粘贴控件（已获得临时授权）后调用。 */
+  private async fillFromClipboard(): Promise<void> {
     const text: string = await clipboardService.readText();
     const urls: string[] = UrlText.extractUrls(text);
     if (urls.length > 0) {
       this.inputText = urls.join('\n');
-    } else if (always) {
+    } else {
       ToastUtil.show(this.getUIContext(), $r('app.string.err_empty_url'));
     }
   }
@@ -230,13 +221,19 @@ export struct AddFeedPanel {
           this.inputText = value;
         })
       Row({ space: $r('app.float.space_s') }) {
-        Button($r('app.string.subs_paste'))
-          .buttonStyle(ButtonStyleMode.TEXTUAL)
-          .fontSize($r('app.float.font_size_body'))
-          .fontColor($r('app.color.hm_brand'))
-          .enabled(!this.submitting)
-          .onClick(() => {
-            this.fillFromClipboard(true);
+        // 安全控件：用户点击后临时获得剪贴板读取授权（无需 READ_PASTEBOARD 权限）。
+        // 注意：安全控件样式受系统校验约束，不要设置透明度 / 负 padding / 遮挡。
+        PasteButton({ icon: PasteIconStyle.LINES, text: PasteDescription.PASTE,
+          buttonType: ButtonType.Capsule })
+          .onClick((event: ClickEvent, result: PasteButtonOnClickResult) => {
+            if (this.submitting) {
+              return;
+            }
+            if (result !== PasteButtonOnClickResult.SUCCESS) {
+              ToastUtil.show(this.getUIContext(), $r('app.string.subs_paste_denied'));
+              return;
+            }
+            this.fillFromClipboard();
           })
         Blank()
         Button(this.submitting ? $r('app.string.subs_adding') : $r('app.string.subs_add'))
