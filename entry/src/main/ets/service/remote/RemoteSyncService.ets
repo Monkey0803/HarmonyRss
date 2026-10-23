@@ -29,6 +29,8 @@ import { RemoteSyncConstants } from '../../common/constants/RssConstants';
 import { buildArticleId } from '../ArticleMapper';
 import { ParsedArticle } from '../RssParser';
 import { articleStore } from '../ArticleStore';
+import { ruleService } from '../RuleService';
+import { RuleApplyResult } from '../../model/Rule';
 import { remoteAccountStore } from '../RemoteAccountStore';
 import { remoteCredentials } from './RemoteCredentials';
 import {
@@ -360,8 +362,13 @@ export class RemoteSyncService {
         continuation = page.continuation;
       }
       if (articles.length > 0) {
-        const inserted: number = await articleStore.insertRemote(articles, mappings);
-        result.articlesAdded += inserted;
+        const inserted: Article[] = await articleStore.insertRemote(articles, mappings);
+        result.articlesAdded += inserted.length;
+        // 新入库的远端文章同样执行本地规则；规则失败不影响入库与同步（applyToNew 内部兜底）。
+        // 只对真正新增的文章执行：重复同步同一篇不重复计数、不回溯历史文章。
+        if (inserted.length > 0) {
+          await this.applyRules(inserted);
+        }
       }
       if (maxPublished > safeCursor) {
         await remoteAccountStore.setState('cursor_' + feed.id, maxPublished.toString());
@@ -653,6 +660,28 @@ export class RemoteSyncService {
     }).catch((err: Error) => {
       hilog.info(DOMAIN, TAG, 'auto sync skipped: %{public}s', err.message);
     });
+  }
+
+  /**
+   * 对刚入库的远端文章执行本地规则，并把规则造成的已读 / 收藏用本类的 enqueueState 入队回写。
+   * 刻意不依赖 FeedViewModel（避免循环依赖）；失败只记日志，不影响同步结果。
+   */
+  private async applyRules(articles: Article[]): Promise<void> {
+    if (articles.length === 0) {
+      return;
+    }
+    try {
+      const applied: RuleApplyResult = await ruleService.applyToNew(articles);
+      for (let i = 0; i < applied.readIds.length; i += 1) {
+        this.enqueueState(applied.readIds[i], true, undefined);
+      }
+      for (let i = 0; i < applied.starredIds.length; i += 1) {
+        this.enqueueState(applied.starredIds[i], undefined, true);
+      }
+    } catch (err) {
+      const error: Error = err as Error;
+      hilog.warn(DOMAIN, TAG, 'rule apply failed: %{public}s', error.message);
+    }
   }
 
   private notifyArticlesChanged(): void {

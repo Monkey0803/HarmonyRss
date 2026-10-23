@@ -34,6 +34,8 @@ import { settingsStore } from '../service/SettingsStore';
 import { settingsViewModel } from './SettingsViewModel';
 import { retentionService } from '../service/RetentionService';
 import { remoteSyncService } from '../service/remote/RemoteSyncService';
+import { ruleService } from '../service/RuleService';
+import { RuleApplyResult } from '../model/Rule';
 
 const MINUTE_MS: number = 60 * 1000;
 
@@ -97,6 +99,7 @@ function mergeArticle(target: Article, source: Article): void {
   target.read = source.read;
   target.starred = source.starred;
   target.saved = source.saved;
+  target.hidden = source.hidden;
   target.progress = source.progress;
   target.progressRatio = source.progressRatio;
 }
@@ -402,11 +405,15 @@ export class FeedViewModel {
     this.all = merged;
   }
 
-  /** 抓取收尾：新条目入库 → 重新读库 → 重新出列表与未读数。 */
+  /** 抓取收尾：新条目入库 → 执行规则 → 重新读库 → 重新出列表与未读数。 */
   private async commitFresh(fresh: Article[]): Promise<void> {
     // 新内容入库后回到第一页（否则分页游标停在旧位置、看不到最新）
     this.resetPaging();
-    articleStore.insertNew(fresh);
+    // 只有真正新插入的文章才执行规则：重复抓取到的历史文章不回溯（否则命中数虚增、
+    // 用户手动取消隐藏的文章会被下一次刷新重新隐藏）。
+    const inserted: Article[] = articleStore.insertNew(fresh);
+    // 规则只处理新入库文章；失败只记日志，绝不影响入库与列表刷新（见 runRules）。
+    await this.runRules(inserted);
     await this.reloadFromStore();
     this.publish();
     this.lastUpdated = Date.now();
@@ -415,6 +422,28 @@ export class FeedViewModel {
     retentionService.setFeeds(this.feeds);
     // 抓取提交后异步执行保留清理（6 小时节流）：绝不 await，不阻塞界面刷新。
     this.applyRetentionIfDue();
+  }
+
+  /**
+   * 对新入库文章执行规则，并把规则造成的已读 / 收藏入队远端同步。
+   * 任何异常都只记日志：规则是增值功能，不能阻断入库主链路。
+   */
+  private async runRules(fresh: Article[]): Promise<void> {
+    if (fresh.length === 0) {
+      return;
+    }
+    try {
+      const applied: RuleApplyResult = await ruleService.applyToNew(fresh);
+      for (let i = 0; i < applied.readIds.length; i += 1) {
+        remoteSyncService.enqueueState(applied.readIds[i], true, undefined);
+      }
+      for (let i = 0; i < applied.starredIds.length; i += 1) {
+        remoteSyncService.enqueueState(applied.starredIds[i], undefined, true);
+      }
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      console.warn('rule apply failed: ' + error.message);
+    }
   }
 
   /**
@@ -715,7 +744,8 @@ export class FeedViewModel {
       return result;
     }
     for (let i = 0; i < this.all.length; i += 1) {
-      if (this.all[i].feedId === this.detailFeedId) {
+      // 单源列表与主列表口径一致：被规则隐藏的文章不出现。
+      if (this.all[i].feedId === this.detailFeedId && !this.all[i].hidden) {
         result.push(this.all[i]);
       }
     }
@@ -1157,12 +1187,14 @@ export class FeedViewModel {
     this.normalizeOrder();
     const fresh: Article[] = [];
     toArticles(feed, resolved.parsed, fresh);
-    articleStore.insertNew(fresh);
+    const inserted: Article[] = articleStore.insertNew(fresh);
     // toArticles 可能把 feed 标题改成了 feed 自身标题；用户自定义标题要盖回去（源 + 文章行）。
     if (customTitle.length > 0 && feed.title !== customTitle) {
       feed.title = customTitle;
       articleStore.updateFeedTitle(feed.id, customTitle);
     }
+    // 新增订阅源时导入的首批文章同样视为「新文章」：执行规则（失败不影响入库）。
+    await this.runRules(inserted);
     await this.reloadFromStore();
     this.publish();
     this.errorCode = FeedError.NONE;
@@ -1838,6 +1870,13 @@ export class FeedViewModel {
     if (this.scopeFeedId.length > 0 && item.feedId !== this.scopeFeedId) {
       return false;
     }
+    // 隐藏口径优先：HIDDEN 筛选只保留被规则隐藏的文章；其余筛选一律排除隐藏文章。
+    if (this.filter === ArticleFilter.HIDDEN) {
+      return item.hidden;
+    }
+    if (item.hidden) {
+      return false;
+    }
     if (this.filter === ArticleFilter.ARCHIVED) {
       return this.isArchived(item);
     }
@@ -1874,11 +1913,44 @@ export class FeedViewModel {
   archivedCount(): number {
     let count: number = 0;
     for (let i = 0; i < this.all.length; i += 1) {
-      if (this.isArchived(this.all[i])) {
+      // 隐藏文章不参与归档统计（它们不在主列表里出现）。
+      if (!this.all[i].hidden && this.isArchived(this.all[i])) {
         count += 1;
       }
     }
     return count;
+  }
+
+  /** 被规则隐藏的文章数（规则页「已隐藏（N）」入口用）。 */
+  hiddenCount(): number {
+    let count: number = 0;
+    for (let i = 0; i < this.all.length; i += 1) {
+      if (this.all[i].hidden) {
+        count += 1;
+      }
+    }
+    return count;
+  }
+
+  /**
+   * 批量隐藏 / 取消隐藏（已隐藏列表「取消隐藏」用）：
+   * 写库后同步内存实例并重算列表与未读数。
+   */
+  setHidden(ids: string[], hidden: boolean): void {
+    if (ids.length === 0) {
+      return;
+    }
+    const wanted: Set<string> = new Set<string>();
+    for (let i = 0; i < ids.length; i += 1) {
+      wanted.add(ids[i]);
+    }
+    for (let i = 0; i < this.all.length; i += 1) {
+      if (wanted.has(this.all[i].id)) {
+        this.all[i].hidden = hidden;
+      }
+    }
+    articleStore.setHiddenMany(ids, hidden);
+    this.publish();
   }
 
   /**
@@ -1942,7 +2014,8 @@ export class FeedViewModel {
     let shown: number = 0;
     for (let i = 0; i < this.all.length; i += 1) {
       const item: Article = this.all[i];
-      if (item.read) {
+      // 隐藏文章不参与未读统计（主列表 / 分组 / 订阅源角标口径一致）。
+      if (item.hidden || item.read) {
         continue;
       }
       total += 1;

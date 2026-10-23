@@ -1971,6 +1971,254 @@
     {
       "name": "remote_auto_sync",
       "value": "自动同步"
+    },
+    {
+      "name": "rule_title",
+      "value": "规则"
+    },
+    {
+      "name": "rule_entry",
+      "value": "规则（%d）"
+    },
+    {
+      "name": "rule_empty",
+      "value": "还没有规则。新建规则后，命中的新文章会自动处理。"
+    },
+    {
+      "name": "rule_new",
+      "value": "新建规则"
+    },
+    {
+      "name": "rule_edit_title",
+      "value": "规则"
+    },
+    {
+      "name": "rule_manage_hint",
+      "value": "规则按优先级对本地抓取与远端同步的新文章执行；动作只增不减（已读 / 收藏 / 标签 / 隐藏），不会撤销已有状态。"
+    },
+    {
+      "name": "rule_enabled",
+      "value": "启用"
+    },
+    {
+      "name": "rule_name_hint",
+      "value": "规则名称"
+    },
+    {
+      "name": "rule_keywords_label",
+      "value": "关键词"
+    },
+    {
+      "name": "rule_keywords_hint",
+      "value": "关键词用逗号分隔，需全部命中"
+    },
+    {
+      "name": "rule_fields_label",
+      "value": "匹配字段"
+    },
+    {
+      "name": "rule_field_title",
+      "value": "标题"
+    },
+    {
+      "name": "rule_field_summary",
+      "value": "摘要"
+    },
+    {
+      "name": "rule_field_content",
+      "value": "正文"
+    },
+    {
+      "name": "rule_field_author",
+      "value": "作者"
+    },
+    {
+      "name": "rule_source_label",
+      "value": "来源范围"
+    },
+    {
+      "name": "rule_source_all",
+      "value": "全部来源"
+    },
+    {
+      "name": "rule_source_custom",
+      "value": "指定来源"
+    },
+    {
+      "name": "rule_source_invalid",
+      "value": "部分所选来源已失效，请重新选择。"
+    },
+    {
+      "name": "rule_actions_label",
+      "value": "动作"
+    },
+    {
+      "name": "rule_action_read",
+      "value": "标记已读"
+    },
+    {
+      "name": "rule_action_star",
+      "value": "收藏"
+    },
+    {
+      "name": "rule_action_tag",
+      "value": "添加标签"
+    },
+    {
+      "name": "rule_action_hide",
+      "value": "隐藏"
+    },
+    {
+      "name": "rule_tags_label",
+      "value": "标签"
+    },
+    {
+      "name": "rule_tags_empty",
+      "value": "还没有标签，请先在标签页创建。"
+    },
+    {
+      "name": "rule_save",
+      "value": "保存规则"
+    },
+    {
+      "name": "rule_match_count",
+      "value": "累计命中 %d 篇"
+    },
+    {
+      "name": "rule_last_hit",
+      "value": "最后命中 %s"
+    },
+    {
+      "name": "rule_never_hit",
+      "value": "从未命中"
+    },
+    {
+      "name": "rule_test",
+      "value": "试运行"
+    },
+    {
+      "name": "rule_testing",
+      "value": "试运行中…"
+    },
+    {
+      "name": "rule_test_result",
+      "value": "最近 %d 篇中命中 %d 篇"
+    },
+    {
+      "name": "rule_edit",
+      "value": "编辑"
+    },
+    {
+      "name": "rule_move_up",
+      "value": "上移"
+    },
+    {
+      "name": "rule_move_down",
+      "value": "下移"
+    },
+    {
+      "name": "rule_remove",
+      "value": "删除"
+    },
+    {
+      "name": "rule_remove_confirm_title",
+      "value": "删除规则"
+    },
+    {
+      "name": "rule_remove_confirm_message",
+      "value": "删除后该规则不再处理新文章；已产生的已读 / 收藏 / 标签 / 隐藏状态会保留。"
+    },
+    {
+      "name": "rule_name_invalid",
+      "value": "请填写规则名称"
+    },
+    {
+      "name": "rule_keywords_invalid",
+      "value": "请至少填写一个关键词"
+    },
+    {
+      "name": "rule_keywords_too_many",
+      "value": "关键词过多（最多 %d 个）"
+    },
+    {
+      "name": "rule_fields_empty",
+      "value": "请至少选择一个匹配字段"
+    },
+    {
+      "name": "rule_actions_empty",
+      "value": "请至少选择一个动作"
+    },
+    {
+      "name": "rule_tags_required",
+      "value": "「添加标签」动作至少需要一个标签"
+    },
+    {
+      "name": "rule_limit_reached",
+      "value": "规则数量已达上限"
+    },
+    {
+      "name": "rule_action_failed",
+      "value": "操作失败"
+    },
+    {
+      "name": "rule_error_name_empty",
+      "value": "请填写规则名称"
+    },
+    {
+      "name": "rule_error_name_too_long",
+      "value": "规则名称过长（最多 %d 个字符）"
+    },
+    {
+      "name": "rule_error_keywords_empty",
+      "value": "请至少填写一个关键词"
+    },
+    {
+      "name": "rule_error_keywords_too_many",
+      "value": "关键词过多（最多 %d 个）"
+    },
+    {
+      "name": "rule_error_fields_empty",
+      "value": "请至少选择一个匹配字段"
+    },
+    {
+      "name": "rule_error_actions_empty",
+      "value": "请至少选择一个动作"
+    },
+    {
+      "name": "rule_error_tags_empty",
+      "value": "「添加标签」动作至少需要一个标签"
+    },
+    {
+      "name": "rule_error_limit_reached",
+      "value": "规则数量已达上限"
+    },
+    {
+      "name": "rule_keywords_limit_hint",
+      "value": "最多 %d 个关键词，用逗号分隔；需全部命中"
+    },
+    {
+      "name": "rule_hidden_entry",
+      "value": "已隐藏（%d）"
+    },
+    {
+      "name": "hidden_title",
+      "value": "已隐藏文章"
+    },
+    {
+      "name": "hidden_empty",
+      "value": "没有被隐藏的文章"
+    },
+    {
+      "name": "hidden_hint",
+      "value": "被隐藏的文章不会出现在主列表与未读数里，但仍可检索、打开阅读。"
+    },
+    {
+      "name": "hidden_unhide",
+      "value": "取消隐藏"
+    },
+    {
+      "name": "hidden_unhide_done",
+      "value": "文章已恢复到主列表"
     }
   ]
 }

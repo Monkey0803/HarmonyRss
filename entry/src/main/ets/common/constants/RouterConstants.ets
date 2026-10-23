@@ -27,4 +27,10 @@ export class RouterConstants {
   static readonly PAGE_SMART_FOLDERS: string = 'smartFolders';
   /** 远端账号与服务页（FrashRSS / GReader API）。 */
   static readonly PAGE_REMOTE: string = 'remoteService';
+  /** 规则管理页（本地规则引擎）。 */
+  static readonly PAGE_RULES: string = 'rules';
+  /** 规则编辑页（新建 / 编辑规则）。 */
+  static readonly PAGE_RULE_EDIT: string = 'ruleEdit';
+  /** 已隐藏文章列表（规则隐藏后可找回）。 */
+  static readonly PAGE_HIDDEN: string = 'hiddenArticles';
 }

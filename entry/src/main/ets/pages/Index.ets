@@ -65,6 +65,9 @@ import { FeedSettingsView } from '../views/FeedSettingsView';
 import { TagsView } from '../views/TagsView';
 import { TagArticlesView } from '../views/TagArticlesView';
 import { SmartFoldersView } from '../views/SmartFoldersView';
+import { RulesView } from '../views/RulesView';
+import { RuleEditView } from '../views/RuleEditView';
+import { HiddenArticlesView } from '../views/HiddenArticlesView';
 import { RemoteServiceView } from '../views/RemoteServiceView';
 import { remoteSyncService } from '../service/remote/RemoteSyncService';
 import { deepLink, DEEP_LINK_EVENT, DeepLinkParams } from '../service/DeepLink';
@@ -97,6 +100,9 @@ struct Index {
   private tagsScroller: Scroller = new Scroller();
   private tagArticlesScroller: Scroller = new Scroller();
   private smartFoldersScroller: Scroller = new Scroller();
+  private rulesScroller: Scroller = new Scroller();
+  private ruleEditScroller: Scroller = new Scroller();
+  private hiddenScroller: Scroller = new Scroller();
   private remoteScroller: Scroller = new Scroller();
 
   /** 收到 Ability 的深链事件后消费（应用已在前台时点卡片的路径）。 */
@@ -719,6 +725,30 @@ struct Index {
       .titleMode(HdsNavDestinationTitleMode.MINI)
       .backgroundColor($r('app.color.hm_web_surface'))
       .bindToScrollable([this.smartFoldersScroller])
+    } else if (name === RouterConstants.PAGE_RULES) {
+      HdsNavDestination() {
+        RulesView({ navPathStack: this.navPathStack, scroller: this.rulesScroller })
+      }
+      .titleBar(this.titleOptions($r('app.string.rule_title')))
+      .titleMode(HdsNavDestinationTitleMode.MINI)
+      .backgroundColor($r('app.color.hm_web_surface'))
+      .bindToScrollable([this.rulesScroller])
+    } else if (name === RouterConstants.PAGE_RULE_EDIT) {
+      HdsNavDestination() {
+        RuleEditView({ navPathStack: this.navPathStack, scroller: this.ruleEditScroller })
+      }
+      .titleBar(this.titleOptions($r('app.string.rule_edit_title')))
+      .titleMode(HdsNavDestinationTitleMode.MINI)
+      .backgroundColor($r('app.color.hm_web_surface'))
+      .bindToScrollable([this.ruleEditScroller])
+    } else if (name === RouterConstants.PAGE_HIDDEN) {
+      HdsNavDestination() {
+        HiddenArticlesView({ navPathStack: this.navPathStack, scroller: this.hiddenScroller })
+      }
+      .titleBar(this.titleOptions($r('app.string.hidden_title')))
+      .titleMode(HdsNavDestinationTitleMode.MINI)
+      .backgroundColor($r('app.color.hm_web_surface'))
+      .bindToScrollable([this.hiddenScroller])
     } else if (name === RouterConstants.PAGE_REMOTE) {
       HdsNavDestination() {
         RemoteServiceView({ navPathStack: this.navPathStack, scroller: this.remoteScroller })

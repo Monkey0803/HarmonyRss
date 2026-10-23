@@ -2,7 +2,7 @@
  * List.test.ets — 单元测试套件入口（聚合各测试文件）。
  *
  * 覆盖 Reader 正文提取管线的纯函数（HTML 解析 / 净化 / 主容器提取 / feed 解析 / 图片 mime 嗅探），
- * 以及阅读排版档位与 Reader CSS 生成。
+ * 阅读排版档位与 Reader CSS 生成，以及规则引擎的匹配 / 执行顺序（RuleEngine / RuleOrder）。
  */
 
 import htmlDomTest from './HtmlDom.test';
@@ -26,6 +26,8 @@ import smartFolderTest from './SmartFolder.test';
 import searchPerfTest from './SearchPerf.test';
 import gReaderModelsTest from './GReaderModels.test';
 import remoteSyncPlanTest from './RemoteSyncPlan.test';
+import ruleEngineTest from './RuleEngine.test';
+import ruleOrderTest from './RuleOrder.test';
 
 export default function testsuite() {
   htmlDomTest();
@@ -49,4 +51,6 @@ export default function testsuite() {
   searchPerfTest();
   gReaderModelsTest();
   remoteSyncPlanTest();
+  ruleEngineTest();
+  ruleOrderTest();
 }

@@ -48,7 +48,7 @@ const BODY_COLUMNS: string =
 /** 轻量列表列：不含任何正文 HTML / 纯文本。 */
 const LIST_COLUMNS: string =
   'id, feed_id, feed_title, title, link, summary, published_at, is_read, is_starred, is_saved,' +
-  ' image_url, author, progress, progress_ratio,' +
+  ' is_hidden, image_url, author, progress, progress_ratio,' +
   ' (CASE WHEN reader_html <> \'\' THEN 1 ELSE 0 END) AS has_reader';
 
 const SQL_CREATE: string =
@@ -64,6 +64,7 @@ const SQL_CREATE: string =
   'is_read INTEGER NOT NULL DEFAULT 0, ' +
   'is_starred INTEGER NOT NULL DEFAULT 0, ' +
   'is_saved INTEGER NOT NULL DEFAULT 0, ' +
+  'is_hidden INTEGER NOT NULL DEFAULT 0, ' +
   'fetched_at INTEGER NOT NULL DEFAULT 0, ' +
   'image_url TEXT NOT NULL DEFAULT \'\', ' +
   'author TEXT NOT NULL DEFAULT \'\', ' +
@@ -118,6 +119,9 @@ const SQL_ADD_SAVED: string =
 /** Reader 视图的结构化正文 HTML（提取 + 净化后）。 */
 const SQL_ADD_READER: string =
   'ALTER TABLE ' + ArticleDbConstants.TABLE_ARTICLES + ' ADD COLUMN reader_html TEXT NOT NULL DEFAULT \'\'';
+/** 规则隐藏标记（v6）；老库补列，默认 0 = 未隐藏。 */
+const SQL_ADD_HIDDEN: string =
+  'ALTER TABLE ' + ArticleDbConstants.TABLE_ARTICLES + ' ADD COLUMN is_hidden INTEGER NOT NULL DEFAULT 0';
 
 const SQL_INSERT: string =
   'INSERT OR IGNORE INTO ' + ArticleDbConstants.TABLE_ARTICLES +
@@ -147,6 +151,7 @@ const SQL_CREATE_TRASH: string =
   'is_read INTEGER NOT NULL DEFAULT 0, ' +
   'is_starred INTEGER NOT NULL DEFAULT 0, ' +
   'is_saved INTEGER NOT NULL DEFAULT 0, ' +
+  'is_hidden INTEGER NOT NULL DEFAULT 0, ' +
   'fetched_at INTEGER NOT NULL DEFAULT 0, ' +
   'image_url TEXT NOT NULL DEFAULT \'\', ' +
   'author TEXT NOT NULL DEFAULT \'\', ' +
@@ -257,6 +262,32 @@ const SQL_CREATE_SYNC_OUTBOX: string =
 const SQL_INDEXES_V5: string[] = [
   'CREATE INDEX IF NOT EXISTS idx_remote_map_article ON ' +
     ArticleDbConstants.TABLE_REMOTE_ARTICLE_MAP + '(article_id)'
+];
+
+/**
+ * v6 规则表：关键词 / 来源 / 标签用 JSON 字符串数组存（脏数据读取端容错），
+ * 字段 / 动作用逗号串（值域固定）。
+ */
+const SQL_CREATE_RULES: string =
+  'CREATE TABLE IF NOT EXISTS ' + ArticleDbConstants.TABLE_RULES + ' (' +
+  'id TEXT PRIMARY KEY, ' +
+  'name TEXT NOT NULL DEFAULT \'\', ' +
+  'enabled INTEGER NOT NULL DEFAULT 1, ' +
+  'priority INTEGER NOT NULL DEFAULT 0, ' +
+  'keywords TEXT NOT NULL DEFAULT \'[]\', ' +
+  'fields TEXT NOT NULL DEFAULT \'\', ' +
+  'feed_ids TEXT NOT NULL DEFAULT \'[]\', ' +
+  'actions TEXT NOT NULL DEFAULT \'\', ' +
+  'tag_ids TEXT NOT NULL DEFAULT \'[]\', ' +
+  'match_count INTEGER NOT NULL DEFAULT 0, ' +
+  'last_hit_at INTEGER NOT NULL DEFAULT 0, ' +
+  'created_at INTEGER NOT NULL DEFAULT 0, ' +
+  'updated_at INTEGER NOT NULL DEFAULT 0)';
+
+/** v6 索引：规则列表按优先级升序（同优先级按创建时间）。 */
+const SQL_INDEXES_V6: string[] = [
+  'CREATE INDEX IF NOT EXISTS idx_rules_priority ON ' +
+    ArticleDbConstants.TABLE_RULES + '(priority, created_at)'
 ];
 
 /** 远端映射写入（重复调用覆盖更新时间）。 */
@@ -391,11 +422,14 @@ export class ArticleStore {
       this.addColumnIfNeeded(SQL_ADD_PAGE_ETAG);
       this.addColumnIfNeeded(SQL_ADD_PAGE_LAST_MODIFIED);
       this.addColumnIfNeeded(SQL_ADD_SAVED);
+      this.addColumnIfNeeded(SQL_ADD_HIDDEN);
       this.store.executeSync(SQL_CREATE_HIGHLIGHTS);
       // 标签 / 智能文件夹：即使库已是最新版本也执行一遍（自愈：上次建表失败 / 被打断）。
       this.createTagTables();
       // 远端账号 / 游标 / 映射 / 待同步队列同理：最新版本也自愈。
       this.createRemoteTables();
+      // 规则表同理：最新版本也自愈（建表失败只让规则功能降级为空态）。
+      this.createRuleTables();
       // 结构迁移失败不删库：仅降级（无检索 / 无回收站），下次启动会重试。
       try {
         await this.migrate();
@@ -440,7 +474,8 @@ export class ArticleStore {
     }
   }
 
-  /** 版本化迁移：v1 = 初始表；v2 = 索引 + 回收站 + FTS；v3 = 中文检索索引；v4 = 标签 + 智能文件夹。 */
+  /** 版本化迁移：v1 = 初始表；v2 = 索引 + 回收站 + FTS；v3 = 中文检索索引；v4 = 标签 + 智能文件夹；
+   *  v5 = 远端同步表；v6 = 规则表 + articles.is_hidden。 */
   private async migrate(): Promise<void> {
     const store: relationalStore.RdbStore | undefined = this.store;
     if (store === undefined) {
@@ -454,8 +489,9 @@ export class ArticleStore {
     }
     if (version >= ArticleDbConstants.SCHEMA_VERSION) {
       // 已是最新版本：仍确认两张索引真的可用（上次可能建表失败 / 重建被打断），必要时补建并在后台重建。
-      // v4 / v5 的表已在 open() 里用 CREATE TABLE IF NOT EXISTS 自愈过，这里不重复。
+      // v4 / v5 / v6 的表已在 open() 里用 CREATE TABLE IF NOT EXISTS 自愈过，这里再补一次（幂等）。
       this.createRemoteTables();
+      this.createRuleTables();
       const mainStale: boolean = await this.ensureMainIndex();
       const cjkStale: boolean = await this.ensureCjkIndex();
       if (mainStale) {
@@ -478,6 +514,7 @@ export class ArticleStore {
     store.executeSync(SQL_CREATE_TRASH);
     this.createTagTables();
     this.createRemoteTables();
+    this.createRuleTables();
     const mainStale: boolean = await this.ensureMainIndex();
     const cjkStale: boolean = await this.ensureCjkIndex();
     try {
@@ -557,9 +594,29 @@ export class ArticleStore {
     }
   }
 
+  /**
+   * 建 v6 的规则表与索引（可重复执行）。
+   * 每条单独 try/catch：失败只让规则功能降级为空态，不影响文章入库 / 阅读 / 检索。
+   */
+  private createRuleTables(): void {
+    try {
+      this.store?.executeSync(SQL_CREATE_RULES);
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.error(DOMAIN, TAG, 'create rules table failed: %{public}d', error.code);
+    }
+    for (let i = 0; i < SQL_INDEXES_V6.length; i += 1) {
+      try {
+        this.store?.executeSync(SQL_INDEXES_V6[i]);
+      } catch (err) {
+        const error: BusinessError = err as BusinessError;
+        hilog.warn(DOMAIN, TAG, 'create rules index failed: %{public}d', error.code);
+      }
+    }
+  }
+
   /** 后台重建主索引（升级 / 补建后回填，不阻塞启动）。 */
-  private backgroundRebuildMain(): void {
-    this.rebuildSearchIndex((): void => {
+  private backgroundRebuildMain(): void {    this.rebuildSearchIndex((): void => {
     }).catch((err: BusinessError) => {
       hilog.warn(DOMAIN, TAG, 'fts backfill failed: %{public}d', err.code);
     });
@@ -901,7 +958,8 @@ export class ArticleStore {
     const ids: string[] = [];
     try {
       const countRs: relationalStore.ResultSet = await store.querySql(
-        'SELECT COUNT(*) AS c FROM ' + ArticleDbConstants.TABLE_ARTICLES + ' WHERE is_read = 0');
+        'SELECT COUNT(*) AS c FROM ' + ArticleDbConstants.TABLE_ARTICLES +
+        ' WHERE is_read = 0 AND is_hidden = 0');
       try {
         unread = countRs.goToNextRow() ? countRs.getLong(countRs.getColumnIndex('c')) : 0;
       } finally {
@@ -909,7 +967,7 @@ export class ArticleStore {
       }
       const titleRs: relationalStore.ResultSet = await store.querySql(
         'SELECT id, title FROM ' + ArticleDbConstants.TABLE_ARTICLES +
-        ' ORDER BY published_at DESC LIMIT ?', [limit]);
+        ' WHERE is_hidden = 0 ORDER BY published_at DESC LIMIT ?', [limit]);
       try {
         while (titleRs.goToNextRow() && titles.length < limit) {
           titles.push(titleRs.getString(titleRs.getColumnIndex('title')));
@@ -947,28 +1005,7 @@ export class ArticleStore {
       const rs: relationalStore.ResultSet = await store.querySql(SQL_SELECT_LIST);
       try {
         while (rs.goToNextRow()) {
-          const article: Article = new Article(
-            rs.getString(rs.getColumnIndex('id')),
-            rs.getString(rs.getColumnIndex('feed_id')),
-            rs.getString(rs.getColumnIndex('feed_title')),
-            rs.getString(rs.getColumnIndex('title')),
-            rs.getString(rs.getColumnIndex('link')),
-            rs.getString(rs.getColumnIndex('summary')),
-            '',
-            rs.getLong(rs.getColumnIndex('published_at'))
-          );
-          article.imageUrl = rs.getString(rs.getColumnIndex('image_url'));
-          article.author = rs.getString(rs.getColumnIndex('author'));
-          article.read = rs.getLong(rs.getColumnIndex('is_read')) === 1;
-          article.starred = rs.getLong(rs.getColumnIndex('is_starred')) === 1;
-          article.saved = rs.getLong(rs.getColumnIndex('is_saved')) === 1;
-          // 用 getDouble 读：老数据里可能残留小数（列是 INTEGER，但 SQLite 动态类型允许 REAL）。
-          article.progress = rs.getDouble(rs.getColumnIndex('progress'));
-          article.progressRatio = rs.getDouble(rs.getColumnIndex('progress_ratio'));
-          article.readerState = rs.getLong(rs.getColumnIndex('has_reader')) === 1
-            ? ReaderState.READY
-            : ReaderState.NONE;
-          result.push(article);
+          result.push(this.articleFromListRow(rs));
         }
       } finally {
         rs.close();
@@ -978,6 +1015,36 @@ export class ArticleStore {
       hilog.error(DOMAIN, TAG, 'loadForList failed: %{public}d', error.code);
     }
     return result;
+  }
+
+  /**
+   * 轻量列表行 → Article（loadForList / loadHidden 共用，字段映射保持一致）。
+   * 正文列不在列表查询里，正文由 loadBody 按需加载。
+   */
+  private articleFromListRow(rs: relationalStore.ResultSet): Article {
+    const article: Article = new Article(
+      rs.getString(rs.getColumnIndex('id')),
+      rs.getString(rs.getColumnIndex('feed_id')),
+      rs.getString(rs.getColumnIndex('feed_title')),
+      rs.getString(rs.getColumnIndex('title')),
+      rs.getString(rs.getColumnIndex('link')),
+      rs.getString(rs.getColumnIndex('summary')),
+      '',
+      rs.getLong(rs.getColumnIndex('published_at'))
+    );
+    article.imageUrl = rs.getString(rs.getColumnIndex('image_url'));
+    article.author = rs.getString(rs.getColumnIndex('author'));
+    article.read = rs.getLong(rs.getColumnIndex('is_read')) === 1;
+    article.starred = rs.getLong(rs.getColumnIndex('is_starred')) === 1;
+    article.saved = rs.getLong(rs.getColumnIndex('is_saved')) === 1;
+    article.hidden = rs.getLong(rs.getColumnIndex('is_hidden')) === 1;
+    // 用 getDouble 读：老数据里可能残留小数（列是 INTEGER，但 SQLite 动态类型允许 REAL）。
+    article.progress = rs.getDouble(rs.getColumnIndex('progress'));
+    article.progressRatio = rs.getDouble(rs.getColumnIndex('progress_ratio'));
+    article.readerState = rs.getLong(rs.getColumnIndex('has_reader')) === 1
+      ? ReaderState.READY
+      : ReaderState.NONE;
+    return article;
   }
 
   /** 兼容旧调用：列表读取（轻量列）。 */
@@ -1043,6 +1110,7 @@ export class ArticleStore {
         article.read = rs.getLong(rs.getColumnIndex('is_read')) === 1;
         article.starred = rs.getLong(rs.getColumnIndex('is_starred')) === 1;
         article.saved = rs.getLong(rs.getColumnIndex('is_saved')) === 1;
+        article.hidden = rs.getLong(rs.getColumnIndex('is_hidden')) === 1;
         article.progress = rs.getDouble(rs.getColumnIndex('progress'));
         article.progressRatio = rs.getDouble(rs.getColumnIndex('progress_ratio'));
         article.contentHtml = rs.getString(rs.getColumnIndex('content_html'));
@@ -1063,10 +1131,11 @@ export class ArticleStore {
   }
 
   /** 入库新抓到的文章：只插入不存在的行，已有行的已读 / 收藏状态保持不变；同步 FTS。 */
-  insertNew(articles: Article[]): void {
+  insertNew(articles: Article[]): Article[] {
     const store: relationalStore.RdbStore | undefined = this.store;
+    const created: Article[] = [];
     if (store === undefined || articles.length === 0) {
-      return;
+      return created;
     }
     const now: number = Date.now();
     try {
@@ -1082,6 +1151,8 @@ export class ArticleStore {
           // INSERT OR IGNORE：只有真正插入了新行（changes()=1）才建索引，避免覆盖已有正文索引。
           const inserted: boolean = this.lastChanges() > 0;
           if (inserted) {
+            // 只有真正新增的行才算「新文章」：规则只对它们执行，历史文章不回溯。
+            created.push(item);
             const plain: string = this.plainOf(item.plainText, item.content);
             if (this.ftsReady) {
               this.ftsInsert(item.id, item.title, item.summary, plain, item.author);
@@ -1098,7 +1169,9 @@ export class ArticleStore {
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       hilog.error(DOMAIN, TAG, 'insertNew failed: %{public}d', error.code);
+      return [];
     }
+    return created;
   }
 
   /**
@@ -1110,17 +1183,17 @@ export class ArticleStore {
    *
    * @returns 真正新增的文章条数。
    */
-  async insertRemote(articles: Article[], mappings: RemoteMapping[]): Promise<number> {
+  async insertRemote(articles: Article[], mappings: RemoteMapping[]): Promise<Article[]> {
     const store: relationalStore.RdbStore | undefined = this.store;
+    const created: Article[] = [];
     if (store === undefined || articles.length === 0) {
-      return 0;
+      return created;
     }
     const byId: Map<string, Article> = new Map<string, Article>();
     for (let i = 0; i < articles.length; i += 1) {
       byId.set(articles[i].id, articles[i]);
     }
     const now: number = Date.now();
-    let inserted: number = 0;
     try {
       store.beginTransaction();
       try {
@@ -1133,9 +1206,10 @@ export class ArticleStore {
               item.summary, item.content, item.publishedAt,
               item.read ? 1 : 0, item.starred ? 1 : 0, now, item.imageUrl, item.author, item.contentHtml
             ]);
-            const created: boolean = this.lastChanges() > 0;
-            if (created) {
-              inserted += 1;
+            const inserted: boolean = this.lastChanges() > 0;
+            if (inserted) {
+              // 只有真正新增的行才算「新文章」：规则只对它们执行，重复同步不回溯。
+              created.push(item);
               const plain: string = this.plainOf(item.plainText, item.content);
               if (this.ftsReady) {
                 this.ftsInsert(item.id, item.title, item.summary, plain, item.author);
@@ -1156,9 +1230,9 @@ export class ArticleStore {
       const error: BusinessError = err as BusinessError;
       hilog.error(DOMAIN, TAG, 'insertRemote failed: %{public}d %{public}s',
         error.code, error.message);
-      return 0;
+      return [];
     }
-    return inserted;
+    return created;
   }
 
   /** 拉回远端已读状态：只改状态列，不触碰正文 / 进度 / 标签。 */
@@ -1246,6 +1320,67 @@ export class ArticleStore {
     for (let i = 0; i < ids.length; i += 1) {
       this.setSaved(ids[i], saved);
     }
+  }
+
+  /**
+   * 规则隐藏标记：只改展示口径，不删除文章（检索 / 已隐藏列表 / 保留清理都照常）。
+   * 与已读 / 收藏一样逐条 UPDATE（批量条数是一次入库的量级，走 IN 拼接收益不大）。
+   */
+  setHidden(id: string, hidden: boolean): void {
+    this.exec('UPDATE ' + ArticleDbConstants.TABLE_ARTICLES + ' SET is_hidden = ? WHERE id = ?',
+      [hidden ? 1 : 0, id]);
+  }
+
+  setHiddenMany(ids: string[], hidden: boolean): void {
+    for (let i = 0; i < ids.length; i += 1) {
+      this.setHidden(ids[i], hidden);
+    }
+  }
+
+  /** 被隐藏文章总数（规则页「已隐藏（N）」入口计数）。 */
+  async countHidden(): Promise<number> {
+    const store: relationalStore.RdbStore | undefined = this.store;
+    if (store === undefined) {
+      return 0;
+    }
+    try {
+      const rs: relationalStore.ResultSet = await store.querySql(
+        'SELECT COUNT(*) AS c FROM ' + ArticleDbConstants.TABLE_ARTICLES + ' WHERE is_hidden = 1');
+      try {
+        return rs.goToNextRow() ? rs.getLong(rs.getColumnIndex('c')) : 0;
+      } finally {
+        rs.close();
+      }
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.warn(DOMAIN, TAG, 'countHidden failed: %{public}d', error.code);
+      return 0;
+    }
+  }
+
+  /** 已隐藏文章（轻量列，按发布时间倒序）：已隐藏列表用，打开时再按需加载正文。 */
+  async loadHidden(): Promise<Article[]> {
+    const store: relationalStore.RdbStore | undefined = this.store;
+    const result: Article[] = [];
+    if (store === undefined) {
+      return result;
+    }
+    try {
+      const rs: relationalStore.ResultSet = await store.querySql(
+        'SELECT ' + LIST_COLUMNS + ' FROM ' + ArticleDbConstants.TABLE_ARTICLES +
+        ' WHERE is_hidden = 1 ORDER BY published_at DESC');
+      try {
+        while (rs.goToNextRow()) {
+          result.push(this.articleFromListRow(rs));
+        }
+      } finally {
+        rs.close();
+      }
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.warn(DOMAIN, TAG, 'loadHidden failed: %{public}d', error.code);
+    }
+    return result;
   }
 
   /**
@@ -1872,7 +2007,7 @@ export class ArticleStore {
       return 0;
     }
     const columns: string = 'id, feed_id, feed_title, title, link, summary, content, published_at,' +
-      ' is_read, is_starred, is_saved, fetched_at, image_url, author, progress, progress_ratio,' +
+      ' is_read, is_starred, is_saved, is_hidden, fetched_at, image_url, author, progress, progress_ratio,' +
       ' reader_html, content_html, plain_text, page_etag, page_last_modified';
     const now: number = Date.now();
     let moved: number = 0;
@@ -1910,7 +2045,7 @@ export class ArticleStore {
       return 0;
     }
     const columns: string = 'id, feed_id, feed_title, title, link, summary, content, published_at,' +
-      ' is_read, is_starred, is_saved, fetched_at, image_url, author, progress, progress_ratio,' +
+      ' is_read, is_starred, is_saved, is_hidden, fetched_at, image_url, author, progress, progress_ratio,' +
       ' reader_html, content_html, plain_text, page_etag, page_last_modified';
     let restored: number = 0;
     try {

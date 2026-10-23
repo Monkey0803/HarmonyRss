@@ -24,6 +24,7 @@ import { settingsStore } from '../service/SettingsStore';
 import { appSettings } from '../model/AppSettings';
 import { notifyService } from '../service/NotifyService';
 import { retentionService } from '../service/RetentionService';
+import { ruleService } from '../service/RuleService';
 import { AutoRefreshMinutes, TriState } from '../common/constants/SettingsConstants';
 
 const DOMAIN: number = 0x0000;
@@ -107,7 +108,12 @@ export default class RssWorkScheduler extends WorkSchedulerExtensionAbility {
         feed.lastError = error.message;
       }
     }
-    articleStore.insertNew(fresh);
+    // 只有真正新插入的文章才执行规则（重复抓取到的历史文章不回溯）。
+    const inserted: Article[] = articleStore.insertNew(fresh);
+    if (inserted.length > 0) {
+      // 后台抓取同样要跑本地规则；失败只记日志，不影响入库与通知。
+      await ruleService.applyToNew(inserted);
+    }
     // 校验值 / 健康状态变了要落盘，否则下次条件请求拿不到。
     feedStore.save(feeds);
     hilog.info(DOMAIN, TAG, 'background refresh done, fetched: %{public}d', fresh.length);

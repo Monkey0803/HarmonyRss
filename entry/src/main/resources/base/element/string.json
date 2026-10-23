@@ -1971,6 +1971,254 @@
     {
       "name": "remote_auto_sync",
       "value": "Auto sync"
+    },
+    {
+      "name": "rule_title",
+      "value": "Rules"
+    },
+    {
+      "name": "rule_entry",
+      "value": "Rules (%d)"
+    },
+    {
+      "name": "rule_empty",
+      "value": "No rules yet. New articles are processed automatically once a rule matches."
+    },
+    {
+      "name": "rule_new",
+      "value": "New rule"
+    },
+    {
+      "name": "rule_edit_title",
+      "value": "Rule"
+    },
+    {
+      "name": "rule_manage_hint",
+      "value": "Rules run on newly fetched and newly synced articles, in priority order. Actions only add state (read / starred / tags / hidden) and never undo it."
+    },
+    {
+      "name": "rule_enabled",
+      "value": "Enabled"
+    },
+    {
+      "name": "rule_name_hint",
+      "value": "Rule name"
+    },
+    {
+      "name": "rule_keywords_label",
+      "value": "Keywords"
+    },
+    {
+      "name": "rule_keywords_hint",
+      "value": "Keywords, separated by commas; all must match"
+    },
+    {
+      "name": "rule_fields_label",
+      "value": "Match in"
+    },
+    {
+      "name": "rule_field_title",
+      "value": "Title"
+    },
+    {
+      "name": "rule_field_summary",
+      "value": "Summary"
+    },
+    {
+      "name": "rule_field_content",
+      "value": "Content"
+    },
+    {
+      "name": "rule_field_author",
+      "value": "Author"
+    },
+    {
+      "name": "rule_source_label",
+      "value": "Sources"
+    },
+    {
+      "name": "rule_source_all",
+      "value": "All sources"
+    },
+    {
+      "name": "rule_source_custom",
+      "value": "Selected sources"
+    },
+    {
+      "name": "rule_source_invalid",
+      "value": "Some selected sources no longer exist. Please reselect them."
+    },
+    {
+      "name": "rule_actions_label",
+      "value": "Actions"
+    },
+    {
+      "name": "rule_action_read",
+      "value": "Mark read"
+    },
+    {
+      "name": "rule_action_star",
+      "value": "Star"
+    },
+    {
+      "name": "rule_action_tag",
+      "value": "Add tags"
+    },
+    {
+      "name": "rule_action_hide",
+      "value": "Hide"
+    },
+    {
+      "name": "rule_tags_label",
+      "value": "Tags"
+    },
+    {
+      "name": "rule_tags_empty",
+      "value": "No tags yet. Create them on the Tags page."
+    },
+    {
+      "name": "rule_save",
+      "value": "Save rule"
+    },
+    {
+      "name": "rule_match_count",
+      "value": "Matched %d"
+    },
+    {
+      "name": "rule_last_hit",
+      "value": "Last hit %s"
+    },
+    {
+      "name": "rule_never_hit",
+      "value": "Never hit"
+    },
+    {
+      "name": "rule_test",
+      "value": "Test"
+    },
+    {
+      "name": "rule_testing",
+      "value": "Testing…"
+    },
+    {
+      "name": "rule_test_result",
+      "value": "Recent %d articles · %d matched"
+    },
+    {
+      "name": "rule_edit",
+      "value": "Edit"
+    },
+    {
+      "name": "rule_move_up",
+      "value": "Move up"
+    },
+    {
+      "name": "rule_move_down",
+      "value": "Move down"
+    },
+    {
+      "name": "rule_remove",
+      "value": "Delete"
+    },
+    {
+      "name": "rule_remove_confirm_title",
+      "value": "Delete rule"
+    },
+    {
+      "name": "rule_remove_confirm_message",
+      "value": "Deleted rules no longer process new articles. Existing read / starred / tag / hidden state stays."
+    },
+    {
+      "name": "rule_name_invalid",
+      "value": "Rule name is required"
+    },
+    {
+      "name": "rule_keywords_invalid",
+      "value": "Add at least one keyword"
+    },
+    {
+      "name": "rule_keywords_too_many",
+      "value": "Too many keywords (max %d)"
+    },
+    {
+      "name": "rule_fields_empty",
+      "value": "Select at least one field to match"
+    },
+    {
+      "name": "rule_actions_empty",
+      "value": "Select at least one action"
+    },
+    {
+      "name": "rule_tags_required",
+      "value": "Select at least one tag for the tag action"
+    },
+    {
+      "name": "rule_limit_reached",
+      "value": "Rule limit reached"
+    },
+    {
+      "name": "rule_action_failed",
+      "value": "Operation failed"
+    },
+    {
+      "name": "rule_error_name_empty",
+      "value": "Rule name is required"
+    },
+    {
+      "name": "rule_error_name_too_long",
+      "value": "Rule name is too long (max %d characters)"
+    },
+    {
+      "name": "rule_error_keywords_empty",
+      "value": "Add at least one keyword"
+    },
+    {
+      "name": "rule_error_keywords_too_many",
+      "value": "Too many keywords (max %d)"
+    },
+    {
+      "name": "rule_error_fields_empty",
+      "value": "Select at least one field to match"
+    },
+    {
+      "name": "rule_error_actions_empty",
+      "value": "Select at least one action"
+    },
+    {
+      "name": "rule_error_tags_empty",
+      "value": "Select at least one tag for the tag action"
+    },
+    {
+      "name": "rule_error_limit_reached",
+      "value": "Rule limit reached"
+    },
+    {
+      "name": "rule_keywords_limit_hint",
+      "value": "Up to %d keywords, separated by commas; all must match"
+    },
+    {
+      "name": "rule_hidden_entry",
+      "value": "Hidden (%d)"
+    },
+    {
+      "name": "hidden_title",
+      "value": "Hidden articles"
+    },
+    {
+      "name": "hidden_empty",
+      "value": "No hidden articles"
+    },
+    {
+      "name": "hidden_hint",
+      "value": "Hidden articles do not appear in the main list or unread counts, but can still be searched and read."
+    },
+    {
+      "name": "hidden_unhide",
+      "value": "Unhide"
+    },
+    {
+      "name": "hidden_unhide_done",
+      "value": "Article restored to the main list"
     }
   ]
 }

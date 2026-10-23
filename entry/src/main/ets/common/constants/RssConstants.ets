@@ -62,7 +62,9 @@ export enum ArticleFilter {
   /** 稍后读（手动标记，永不自动归档）。 */
   SAVED = 'saved',
   /** 归档：已读且超过「归档规则」天数。 */
-  ARCHIVED = 'archived'
+  ARCHIVED = 'archived',
+  /** 被规则隐藏的文章（仅「已隐藏」列表使用；主列表一律排除隐藏文章）。 */
+  HIDDEN = 'hidden'
 }
 
 /**
@@ -84,7 +86,8 @@ export enum ReaderViewMode {
 /** 首页筛选值归一：脏值一律退回「全部」。 */
 export function normalizeArticleFilter(value: string): string {
   if (value === ArticleFilter.UNREAD || value === ArticleFilter.STARRED ||
-    value === ArticleFilter.SAVED || value === ArticleFilter.ARCHIVED) {
+    value === ArticleFilter.SAVED || value === ArticleFilter.ARCHIVED ||
+    value === ArticleFilter.HIDDEN) {
     return value;
   }
   return ArticleFilter.ALL;
@@ -125,12 +128,31 @@ export class ArticleDbConstants {
   static readonly TABLE_REMOTE_ARTICLE_MAP: string = 'remote_article_map';
   /** 本地已读 / 收藏变更的待同步队列（同篇聚合）。 */
   static readonly TABLE_SYNC_OUTBOX: string = 'sync_outbox';
+  /** 规则表（本地规则引擎：名称 / 关键词 / 字段 / 动作 / 命中统计）。 */
+  static readonly TABLE_RULES: string = 'rules';
   /**
    * 当前数据库结构版本
    * （v1 = 初始表；v2 = 索引 + FTS + 回收站；v3 = 中文检索索引；v4 = 标签 + 智能文件夹；
-   *   v5 = 远端账号 / 游标 / 映射 / 待同步队列）。
+   *   v5 = 远端账号 / 游标 / 映射 / 待同步队列；v6 = 规则表 + articles.is_hidden）。
    */
-  static readonly SCHEMA_VERSION: number = 5;
+  static readonly SCHEMA_VERSION: number = 6;
+}
+
+/**
+ * 规则引擎的数量与长度上限（软上限：超限时界面给提示，不静默丢数据）。
+ * 纯逻辑常量，与设备环境无关。
+ */
+export class RuleConstants {
+  /** 规则数量上限。 */
+  static readonly MAX_RULES: number = 100;
+  /** 单条规则的关键词上限（同一规则内多关键词为 AND）。 */
+  static readonly MAX_RULE_KEYWORDS: number = 10;
+  /** 规则名最大字符数。 */
+  static readonly MAX_RULE_NAME: number = 32;
+  /** 正文参与匹配的字符上限（超长正文只匹配前 N 个字符，避免拖慢入库）。 */
+  static readonly RULE_BODY_LIMIT: number = 20000;
+  /** 试运行默认统计的最近文章条数。 */
+  static readonly RULE_TEST_SAMPLE: number = 500;
 }
 
 /** 远端同步（Google Reader API）的条数与超时常量。 */

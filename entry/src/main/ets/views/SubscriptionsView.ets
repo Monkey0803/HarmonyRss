@@ -22,6 +22,7 @@ import { AddFeedPanel } from './AddFeedPanel';
 import { DateUtil } from '../common/utils/DateUtil';
 import { tagViewModel } from '../viewmodel/TagViewModel';
 import { smartFolderViewModel } from '../viewmodel/SmartFolderViewModel';
+import { ruleViewModel } from '../viewmodel/RuleViewModel';
 
 @ComponentV2
 export struct SubscriptionsView {
@@ -55,10 +56,11 @@ export struct SubscriptionsView {
     this.refreshCounts();
   }
 
-  /** 刷新标签 / 智能文件夹计数（入口行可见时调用）。 */
+  /** 刷新标签 / 智能文件夹 / 规则计数（入口行可见时调用）。 */
   refreshCounts(): void {
     tagViewModel.load();
     smartFolderViewModel.load();
+    ruleViewModel.load();
   }
 
   /**
@@ -74,7 +76,9 @@ export struct SubscriptionsView {
         .fontColor([$r('app.color.hm_brand')])
       Text(kind === 0
         ? $r('app.string.tag_entry', tagViewModel.tags.length)
-        : $r('app.string.smart_folder_entry', smartFolderViewModel.folders.length))
+        : (kind === 1
+          ? $r('app.string.smart_folder_entry', smartFolderViewModel.folders.length)
+          : $r('app.string.rule_entry', ruleViewModel.rules.length)))
         .fontSize($r('app.float.font_size_body'))
         .fontColor($r('app.color.hm_text_primary'))
         .maxLines(1)
@@ -109,12 +113,21 @@ export struct SubscriptionsView {
     }, 1)
   }
 
-  /** 两个入口：标签 / 智能文件夹（放在添加区下方、订阅列表上方）。 */
+  /** 规则入口。 */
+  @Builder
+  RuleEntry() {
+    this.EntryRowFrame($r('sys.symbol.gearshape'), () => {
+      this.navPathStack.pushPath(new NavPathInfo(RouterConstants.PAGE_RULES, ''));
+    }, 2)
+  }
+
+  /** 三个入口：标签 / 智能文件夹 / 规则（放在添加区下方、订阅列表上方）。 */
   @Builder
   LibraryEntries() {
     Column({ space: $r('app.float.space_s') }) {
       this.TagEntry()
       this.SmartFolderEntry()
+      this.RuleEntry()
     }
     .width('100%')
   }

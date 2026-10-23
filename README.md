@@ -26,6 +26,11 @@ HarmonyOS（ArkTS）RSS 阅读器。基于 **UI Design Kit（HDS）** 组件与 
 - **智能文件夹**：把常用检索条件（关键词 / `from:` / `is:` / `after:` / `before:` / 引号短语）
   存成「名称 + 查询串」，点一下即用同一条检索链路（含中文索引）执行；搜索页可直接「保存为智能文件夹」。
   支持新建 / 编辑 / 删除 / 上移下移（顺序持久化），空查询与超长查询会被拒绝，上限 50 个。
+- **规则引擎**：本地规则按关键词匹配**新入库**的文章（标题 / 摘要 / 正文 / 作者多选，同一规则内多关键词为
+  **AND**，大小写不敏感，正文参与匹配前截断到 2 万字符），可限定来源范围（空 = 全部来源）；
+  命中后执行已读 / 收藏 / 打标签 / 隐藏，动作只增不减 —— 多条规则命中同一篇时累加，标签与文章去重。
+  规则支持启停、优先级上下移（按优先级全量执行）、试运行（预览命中条数，零写入）与累计命中 / 最后命中时间；
+  被规则隐藏的文章从主列表与未读数里移除，可在「已隐藏」页找回并取消隐藏。
 - **结构化正文提取**：抓原文 → Readability 式选主容器 → 白名单净化，保留段落 / 标题 / 图片 /
   列表 / 代码 / 引用，而不是把标签抹平成纯文本。
 - **Reader 阅读视图**：受控 HTML 文档渲染，排版（字号 / 行距 / 字体 / 栏宽 / 对齐）与
@@ -44,7 +49,7 @@ entry/src/main/ets/
   model/       领域模型（@ObservedV2）与设置项
   service/     平台能力与纯逻辑（网络 / 存储 / 解析 / 提取 / 渲染 / 检索 / 保留策略）
   service/remote/  远端服务（GReader 协议 / HTTP / 凭据 / 同步编排）
-  viewmodel/   FeedViewModel / SettingsViewModel / SearchViewModel / StorageViewModel
+  viewmodel/   FeedViewModel / RuleViewModel / SettingsViewModel / SearchViewModel / StorageViewModel
   views/       页面与组件（纯展示）
   form/        桌面卡片
 entry/src/ohosTest/   仪器化单元测试（hypium）
