@@ -1001,6 +1001,10 @@
       "value": "粘贴"
     },
     {
+      "name": "subs_paste_denied",
+      "value": "未获得剪贴板读取授权"
+    },
+    {
       "name": "subs_preview_title",
       "value": "确认订阅"
     },
@@ -2275,6 +2279,250 @@
     {
       "name": "dedupe_source_current",
       "value": "当前"
+    },
+    {
+      "name": "share_panel_title",
+      "value": "分享"
+    },
+    {
+      "name": "share_group_actions",
+      "value": "动作"
+    },
+    {
+      "name": "share_group_targets",
+      "value": "发送到"
+    },
+    {
+      "name": "share_group_templates",
+      "value": "模板"
+    },
+    {
+      "name": "share_group_export",
+      "value": "导出高亮"
+    },
+    {
+      "name": "share_action_system",
+      "value": "系统分享"
+    },
+    {
+      "name": "share_action_copy_link",
+      "value": "复制链接"
+    },
+    {
+      "name": "share_action_copy_body",
+      "value": "复制正文"
+    },
+    {
+      "name": "share_action_browser",
+      "value": "浏览器打开"
+    },
+    {
+      "name": "share_action_saved",
+      "value": "加入稍后读"
+    },
+    {
+      "name": "share_target_pocket",
+      "value": "Pocket"
+    },
+    {
+      "name": "share_target_instapaper",
+      "value": "Instapaper"
+    },
+    {
+      "name": "share_target_flomo",
+      "value": "Flomo"
+    },
+    {
+      "name": "share_target_email",
+      "value": "邮件"
+    },
+    {
+      "name": "share_toast_shared",
+      "value": "已打开系统分享面板"
+    },
+    {
+      "name": "share_toast_copied",
+      "value": "已复制"
+    },
+    {
+      "name": "share_toast_copy_failed",
+      "value": "复制失败"
+    },
+    {
+      "name": "share_toast_open_failed",
+      "value": "无法打开该应用"
+    },
+    {
+      "name": "share_toast_fallback_copied",
+      "value": "应用不可用，已复制链接"
+    },
+    {
+      "name": "share_toast_share_failed",
+      "value": "当前无法分享"
+    },
+    {
+      "name": "share_toast_nothing_to_share",
+      "value": "没有可分享的内容"
+    },
+    {
+      "name": "share_toast_busy",
+      "value": "请稍候…"
+    },
+    {
+      "name": "share_toast_saved",
+      "value": "已加入稍后读"
+    },
+    {
+      "name": "share_disabled_no_url",
+      "value": "该内容没有链接"
+    },
+    {
+      "name": "share_disabled_no_highlights",
+      "value": "这篇文章还没有高亮"
+    },
+    {
+      "name": "share_export_article",
+      "value": "导出本篇高亮"
+    },
+    {
+      "name": "share_export_all",
+      "value": "导出全部高亮"
+    },
+    {
+      "name": "share_export_empty",
+      "value": "没有可导出的高亮"
+    },
+    {
+      "name": "share_settings_title",
+      "value": "分享与导出"
+    },
+    {
+      "name": "tpl_section_title",
+      "value": "分享模板"
+    },
+    {
+      "name": "tpl_default_name",
+      "value": "默认"
+    },
+    {
+      "name": "tpl_new",
+      "value": "新建模板"
+    },
+    {
+      "name": "tpl_edit",
+      "value": "编辑模板"
+    },
+    {
+      "name": "tpl_name_label",
+      "value": "名称"
+    },
+    {
+      "name": "tpl_content_label",
+      "value": "内容"
+    },
+    {
+      "name": "tpl_placeholder_help",
+      "value": "占位符：{title} {url} {summary} {author} {tags}"
+    },
+    {
+      "name": "tpl_save",
+      "value": "保存"
+    },
+    {
+      "name": "tpl_cancel",
+      "value": "取消"
+    },
+    {
+      "name": "tpl_delete",
+      "value": "删除"
+    },
+    {
+      "name": "tpl_delete_confirm",
+      "value": "删除这个模板？"
+    },
+    {
+      "name": "tpl_move_up",
+      "value": "上移"
+    },
+    {
+      "name": "tpl_move_down",
+      "value": "下移"
+    },
+    {
+      "name": "tpl_copy",
+      "value": "复制"
+    },
+    {
+      "name": "tpl_share",
+      "value": "分享"
+    },
+    {
+      "name": "tpl_empty",
+      "value": "还没有模板"
+    },
+    {
+      "name": "tpl_err_name_empty",
+      "value": "请输入模板名称"
+    },
+    {
+      "name": "tpl_err_name_long",
+      "value": "模板名称过长"
+    },
+    {
+      "name": "tpl_err_content_empty",
+      "value": "模板内容不能为空"
+    },
+    {
+      "name": "tpl_err_content_long",
+      "value": "模板内容过长"
+    },
+    {
+      "name": "tpl_err_max",
+      "value": "最多保存 20 个模板"
+    },
+    {
+      "name": "tpl_limit_hint",
+      "value": "最多 20 个模板；这里的顺序就是分享面板中的顺序。"
+    },
+    {
+      "name": "share_action_unsave",
+      "value": "取消稍后读"
+    },
+    {
+      "name": "share_toast_unsaved",
+      "value": "已取消稍后读"
+    },
+    {
+      "name": "tpl_name_hint",
+      "value": "例如：短分享"
+    },
+    {
+      "name": "tpl_content_hint",
+      "value": "{title} — {url}"
+    },
+    {
+      "name": "tpl_toast_saved",
+      "value": "模板已保存"
+    },
+    {
+      "name": "tpl_toast_deleted",
+      "value": "模板已删除"
+    },
+    {
+      "name": "tpl_err_save_failed",
+      "value": "模板保存失败"
+    },
+    {
+      "name": "tpl_default_hint",
+      "value": "内置模板，新建模板后可自定义。"
+    },
+    {
+      "name": "tpl_delete_confirm_named",
+      "value": "删除「%s」？"
+    },
+    {
+      "name": "section_share",
+      "value": "分享与导出"
     }
   ]
 }

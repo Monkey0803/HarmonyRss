@@ -43,6 +43,12 @@ HarmonyOS（ArkTS）RSS 阅读器。基于 **UI Design Kit（HDS）** 组件与 
 - **离线阅读**：提取后的全文 HTML 落本地库；正文图片内联为 `data:` URI（按魔数嗅探 mime），
   断网也能读；懒加载图（`data-src` / `srcset`）自动恢复。
 - **阅读导航**：上一篇 / 下一篇 / 下一条未读；断点续读（记录滚动进度）。
+- **分享与导出**：统一分享面板（详情页溢出菜单 / 列表左滑 / 高亮页三处复用），内含系统分享、
+  复制链接、复制正文、浏览器打开、稍后读切换；外部目标走免 Key 的 URL Scheme（Pocket / Instapaper /
+  Flomo）与 `mailto:` 邮件，未安装或拉起失败时提示并自动复制链接兜底。支持自定义分享模板
+  （`{title}` `{url}` `{summary}` `{author}` `{tags}`，可排序 / 编辑，存偏好库），
+  以及单篇 / 全部高亮导出 Markdown（复用 `HighlightExport`，保留原有 JSON 导出）。
+  所有投递只在用户点击时发生，不发起网络请求。
 - **桌面服务卡片**：`entry/src/main/ets/form`。
 - **外观**：主题、全局背景图、沉浸光感材质、App logo、防窥保护、智感握姿。
 

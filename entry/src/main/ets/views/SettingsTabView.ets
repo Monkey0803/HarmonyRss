@@ -826,6 +826,16 @@ export struct SettingsTabView {
         .backgroundColor($r('app.color.hm_card_background'))
         .borderRadius($r('app.float.radius_card'))
 
+        this.SectionTitle($r('app.string.section_share'))
+        Column() {
+          // 分享面板用到的模板管理集中在独立页面：面板本身只负责「用」，不负责「改」。
+          this.NavRow($r('sys.symbol.doc_text'), $r('app.string.share_settings_title'),
+            RouterConstants.PAGE_SHARE_SETTINGS)
+        }
+        .width('100%')
+        .backgroundColor($r('app.color.hm_card_background'))
+        .borderRadius($r('app.float.radius_card'))
+
         this.SectionTitle($r('app.string.section_storage'))
         Column() {
           // 保留策略 / 存储占用 / 回收站 / 索引重建都收在独立页面。

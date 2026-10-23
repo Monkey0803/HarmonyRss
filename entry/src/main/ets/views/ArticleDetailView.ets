@@ -75,6 +75,10 @@ import { ReaderTypography } from '../common/constants/SettingsConstants';
 import { TagWithCount } from '../model/Tag';
 import { tagViewModel } from '../viewmodel/TagViewModel';
 import { TagPickerSheet } from './TagPickerSheet';
+import { ShareSheet } from './ShareSheet';
+import { ShareContext } from '../model/Share';
+import { shareService } from '../service/ShareService';
+import { shareViewModel } from '../viewmodel/ShareViewModel';
 
 const DOMAIN: number = 0x0000;
 const TAG: string = 'ArticleDetailView';
@@ -116,7 +120,8 @@ export struct ArticleDetailView {
   private bottomCheckPending: boolean = false;
   /** 「阅读排版」半模态面板显隐。 */
   /**
-   * 半模态面板当前显示哪一种内容：'' 关闭 / 'read' 阅读排版 / 'hlList' 标注列表 / 'hlEdit' 标注编辑。
+   * 半模态面板当前显示哪一种内容：'' 关闭 / 'read' 阅读排版 / 'hlList' 标注列表 / 'hlEdit' 标注编辑 /
+   * 'tags' 标签选择 / 'sources' 来源列表 / 'share' 统一分享面板。
    * 一个组件上只能挂一个 bindSheet（挂多个只会生效最后一个），所以用一个状态切换内容。
    */
   @Local sheetMode: string = '';
@@ -479,11 +484,19 @@ export struct ArticleDetailView {
     }
   }
 
-  private async shareArticle(article: Article): Promise<void> {
-    const ok: boolean = await articleActions.share(this.hostContext(), article.title, article.link);
-    if (!ok) {
+  /**
+   * 打开统一分享面板（三处入口复用同一个 ShareSheet）。
+   * 顺序：先把当前文章转成 ShareContext 写入 ShareViewModel，再翻起半模态 —— 面板首帧就能拿到正确上下文。
+   */
+  private async openSharePanel(): Promise<void> {
+    const article: Article = this.cur();
+    if (article.id.length === 0) {
       this.toast($r('app.string.toast_action_failed'));
+      return;
     }
+    const ctx: ShareContext = await shareService.articleContext(article);
+    await shareViewModel.open(this.hostContext(), ctx);
+    this.openSheet('share');
   }
 
   /** 开始（或重试）提取正文。失败时退到网页原文。 */
@@ -1025,7 +1038,7 @@ export struct ArticleDetailView {
         symbolStartIcon: this.menuIcon($r('sys.symbol.share'))
       })
         .onClick(() => {
-          this.shareArticle(article);
+          this.openSharePanel();
         })
     }
     .radius($r('app.float.radius_card'))
@@ -1290,9 +1303,23 @@ export struct ArticleDetailView {
       this.TagSheet()
     } else if (this.sheetMode === 'sources') {
       this.SourcesPanel()
+    } else if (this.sheetMode === 'share') {
+      this.SharePanel()
     } else {
       this.ReadSheet()
     }
+  }
+
+  /** 统一分享面板（上下文已在 openSharePanel 里写入 ShareViewModel）。 */
+  @Builder
+  SharePanel() {
+    ShareSheet({
+      ability: this.hostContext(),
+      onClose: () => {
+        this.closeSheet();
+        shareViewModel.close();
+      }
+    })
   }
 
   /** 来源面板：列出合并组里的全部来源，点一条用系统浏览器打开对应链接。 */
@@ -2399,11 +2426,19 @@ export struct ArticleDetailView {
     .height('100%')
     .backgroundColor($r('app.color.hm_page_transparent'))
     .bindSheet(this.showSheet, this.SheetContent(), MaterialController.sheetOptions({
-      height: this.sheetMode === 'read' || this.sheetMode === 'tags' ? SheetSize.LARGE : SheetSize.MEDIUM,
+      // 分享面板内容较长（动作 / 目标 / 模板 / 导出四组），用大面板避免挤在中段要一直滚。
+      height: this.sheetMode === 'read' || this.sheetMode === 'tags' || this.sheetMode === 'share'
+        ? SheetSize.LARGE
+        : SheetSize.MEDIUM,
       dragBar: true,
       onDisappear: () => {
+        const mode: string = this.sheetMode;
         this.showSheet = false;
         this.sheetMode = '';
+        // 面板被下滑关闭时也要清空分享上下文，避免下次打开闪出上一次的内容。
+        if (mode === 'share') {
+          shareViewModel.close();
+        }
       }
     }, appSettings.immersiveOn))
   }

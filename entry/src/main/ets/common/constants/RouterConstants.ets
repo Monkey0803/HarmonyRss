@@ -33,4 +33,6 @@ export class RouterConstants {
   static readonly PAGE_RULE_EDIT: string = 'ruleEdit';
   /** 已隐藏文章列表（规则隐藏后可找回）。 */
   static readonly PAGE_HIDDEN: string = 'hiddenArticles';
+  /** 分享与模板管理页。 */
+  static readonly PAGE_SHARE_SETTINGS: string = 'shareSettings';
 }

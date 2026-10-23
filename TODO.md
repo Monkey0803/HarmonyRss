@@ -204,14 +204,16 @@ P0-2 第一批（Google Reader API：FreshRSS / TTRSS / Miniflux）已完成：�
 
 ### P1-6 分享目标扩展
 
-**现状**：`service/ArticleActions.ets` 仅系统分享 / 复制 / 浏览器。
+**现状**：已实现统一分享面板 `views/ShareSheet.ets` + `service/ShareService.ets`，
+详情页 / 列表左滑 / 高亮页三处入口复用同一套动作与目标。
 
 **任务**
 
-- [ ] 分享面板统一入口：系统分享、复制链接、复制正文、浏览器打开、稍后读服务。
-- [ ] 内置模板：Pocket / Instapaper / Readwise / Notion / Flomo / Kindle / 邮件（URL Scheme 或 API）。
-- [ ] 自定义分享模板（标题 / 链接 / 摘要 / 标签占位符，用户可编辑）。
-- [ ] 高亮 / 笔记分享（复用 `HighlightExport`），支持导出 Markdown。
+- [x] 分享面板统一入口：系统分享、复制链接、复制正文、浏览器打开、稍后读服务。
+- [x] 内置模板：Pocket / Flomo / 邮件（URL Scheme / mailto，免 Key）；Instapaper 同步接入。
+      Readwise / Notion 需 Token，留后续。
+- [x] 自定义分享模板（标题 / 链接 / 摘要 / 标签占位符，用户可编辑）。
+- [x] 高亮 / 笔记分享（复用 `HighlightExport`），支持导出 Markdown（单篇 + 全部）。
 
 **验收**
 

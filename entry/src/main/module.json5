@@ -11,6 +11,13 @@
     "deliveryWithInstall": true,
     "installationFree": false,
     "pages": "$profile:main_pages",
+    // 分享目标用 canOpenLink 预判是否已安装：scheme 必须在此声明，否则接口会抛错。
+    "querySchemes": [
+      "pocket",
+      "instapaper",
+      "flomo",
+      "mailto"
+    ],
     "metadata": [
       {
         "name": "ohos.arkui.UIMaterial.state",

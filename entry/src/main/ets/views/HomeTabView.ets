@@ -23,14 +23,24 @@ import { safeArea } from '../service/SafeAreaController';
 import { TagPickerSheet } from './TagPickerSheet';
 import { tagViewModel } from '../viewmodel/TagViewModel';
 import { ToastUtil } from '../common/utils/ToastUtil';
+import { common } from '@kit.AbilityKit';
+import { ShareSheet } from './ShareSheet';
+import { ShareContext } from '../model/Share';
+import { shareService } from '../service/ShareService';
+import { shareViewModel } from '../viewmodel/ShareViewModel';
 
 @ComponentV2
 export struct HomeTabView {
   @Param navPathStack: NavPathStack = new NavPathStack();
   @Param scroller: Scroller = new Scroller();
   @Local refreshing: boolean = false;
-  /** 批量打标面板显隐（多选工具条「标签」入口）。 */
-  @Local showTagSheet: boolean = false;
+  /**
+   * 半模态内容类型：'' 关闭 / 'tags' 批量打标 / 'share' 统一分享面板。
+   * 一个组件只能挂一个 bindSheet，两种面板必须共用同一份显隐状态。
+   */
+  @Local sheetMode: string = '';
+  /** 半模态显隐（bindSheet 首参必须是纯状态变量）。 */
+  @Local showSheet: boolean = false;
   /** 「添加订阅源」入口在悬浮页签栏的 miniBar 上（Index 持有面板），这里只发请求。 */
   @Event onAddFeedRequest: () => void = () => {};
   /** 列表数据源（LazyForEach 虚拟化用）。 */
@@ -66,6 +76,32 @@ export struct HomeTabView {
   private openArticle(article: Article): void {
     feedViewModel.openArticle(article.id);
     this.navPathStack.pushPath(new NavPathInfo(RouterConstants.PAGE_ARTICLE, ''));
+  }
+
+  private hostContext(): common.UIAbilityContext {
+    const context: common.Context | undefined = this.getUIContext().getHostContext();
+    return context as common.UIAbilityContext;
+  }
+
+  /** 打开半模态并指定内容类型（'' 之外都走这里，保证显隐与内容同步）。 */
+  private openSheet(mode: string): void {
+    this.sheetMode = mode;
+    this.showSheet = true;
+  }
+
+  private closeSheet(): void {
+    this.showSheet = false;
+    this.sheetMode = '';
+  }
+
+  /**
+   * 列表左滑「分享」：上下文是该行文章（不是当前打开的详情文章）。
+   * 先把 Article 转成 ShareContext 写入 ShareViewModel，再翻起面板。
+   */
+  private async openShare(article: Article): Promise<void> {
+    const ctx: ShareContext = await shareService.articleContext(article);
+    await shareViewModel.open(this.hostContext(), ctx);
+    this.openSheet('share');
   }
 
   private emptyTitle(): ResourceStr {
@@ -369,7 +405,7 @@ export struct HomeTabView {
           feedViewModel.markAboveRead(feedViewModel.anchorId);
         })
         this.SelectionAction($r('app.string.tag_title'), () => {
-          this.showTagSheet = true;
+          this.openSheet('tags');
         })
         this.SelectionAction($r('app.string.action_delete'), () => {
           this.confirmDeleteSelected();
@@ -403,10 +439,32 @@ export struct HomeTabView {
     TagPickerSheet({
       selectedTagIds: [],
       onConfirm: (ids: string[]) => {
-        this.showTagSheet = false;
+        this.closeSheet();
         this.applyTags(ids);
       }
     })
+  }
+
+  /** 统一分享面板（三处入口复用同一个 ShareSheet）。 */
+  @Builder
+  ShareSheetContent() {
+    ShareSheet({
+      ability: this.hostContext(),
+      onClose: () => {
+        this.closeSheet();
+        shareViewModel.close();
+      }
+    })
+  }
+
+  /** 半模态内容分派：同一时刻只有一种（一个组件只能挂一个 bindSheet）。 */
+  @Builder
+  SheetContent() {
+    if (this.sheetMode === 'tags') {
+      this.TagSheet()
+    } else {
+      this.ShareSheetContent()
+    }
   }
 
   /**
@@ -449,10 +507,20 @@ export struct HomeTabView {
     this.getUIContext().showAlertDialog(MaterialController.dialogParams(params, appSettings.immersiveOn));
   }
 
-  /** 列表左滑操作：收藏 / 已读切换（ArkUI 原生 swipeAction，V2 组件可用）。 */
+  /** 列表左滑操作：分享 / 收藏 / 已读切换（ArkUI 原生 swipeAction，V2 组件可用）。 */
   @Builder
   SwipeActions(article: Article) {
     Row({ space: $r('app.float.space_s') }) {
+      // 分享：打开统一分享面板，上下文是该行文章
+      Button($r('app.string.action_share'))
+        .buttonStyle(ButtonStyleMode.NORMAL)
+        .fontSize($r('app.float.font_size_caption'))
+        .fontColor($r('app.color.hm_on_brand'))
+        .backgroundColor($r('app.color.hm_brand'))
+        .height('100%')
+        .onClick(() => {
+          this.openShare(article);
+        })
       Button(article.starred ? $r('app.string.action_unstar') : $r('app.string.action_star'))
         .buttonStyle(ButtonStyleMode.NORMAL)
         .fontSize($r('app.float.font_size_caption'))
@@ -574,12 +642,17 @@ export struct HomeTabView {
     .width('100%')
     .height('100%')
     .backgroundColor($r('app.color.hm_page_transparent'))
-    // 批量打标面板：多选工具条「标签」打开（与详情页共用同一个选择器）。
-    .bindSheet(this.showTagSheet, this.TagSheet(), MaterialController.sheetOptions({
-      height: SheetSize.MEDIUM,
+    // 批量打标 / 分享面板共用同一个 bindSheet（标签选择在「标签」按钮、分享在左滑动作里打开）。
+    .bindSheet(this.showSheet, this.SheetContent(), MaterialController.sheetOptions({
+      height: this.sheetMode === 'share' ? SheetSize.LARGE : SheetSize.MEDIUM,
       dragBar: true,
       onDisappear: () => {
-        this.showTagSheet = false;
+        const mode: string = this.sheetMode;
+        this.showSheet = false;
+        this.sheetMode = '';
+        if (mode === 'share') {
+          shareViewModel.close();
+        }
       }
     }, appSettings.immersiveOn))
   }

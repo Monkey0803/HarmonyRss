@@ -69,6 +69,7 @@ import { RulesView } from '../views/RulesView';
 import { RuleEditView } from '../views/RuleEditView';
 import { HiddenArticlesView } from '../views/HiddenArticlesView';
 import { RemoteServiceView } from '../views/RemoteServiceView';
+import { ShareSettingsView } from '../views/ShareSettingsView';
 import { remoteSyncService } from '../service/remote/RemoteSyncService';
 import { deepLink, DEEP_LINK_EVENT, DeepLinkParams } from '../service/DeepLink';
 import { shareHandoff } from '../service/ShareHandoff';
@@ -104,6 +105,7 @@ struct Index {
   private ruleEditScroller: Scroller = new Scroller();
   private hiddenScroller: Scroller = new Scroller();
   private remoteScroller: Scroller = new Scroller();
+  private shareSettingsScroller: Scroller = new Scroller();
 
   /** 收到 Ability 的深链事件后消费（应用已在前台时点卡片的路径）。 */
   private onDeepLinkEvent: () => void = () => {
@@ -757,6 +759,14 @@ struct Index {
       .titleMode(HdsNavDestinationTitleMode.MINI)
       .backgroundColor($r('app.color.hm_web_surface'))
       .bindToScrollable([this.remoteScroller])
+    } else if (name === RouterConstants.PAGE_SHARE_SETTINGS) {
+      HdsNavDestination() {
+        ShareSettingsView({ navPathStack: this.navPathStack, scroller: this.shareSettingsScroller })
+      }
+      .titleBar(this.titleOptions($r('app.string.share_settings_title')))
+      .titleMode(HdsNavDestinationTitleMode.MINI)
+      .backgroundColor($r('app.color.hm_web_surface'))
+      .bindToScrollable([this.shareSettingsScroller])
     }
   }
 

@@ -3,7 +3,8 @@
  *
  * 覆盖 Reader 正文提取管线的纯函数（HTML 解析 / 净化 / 主容器提取 / feed 解析 / 图片 mime 嗅探），
  * 阅读排版档位与 Reader CSS 生成，规则引擎的匹配 / 执行顺序（RuleEngine / RuleOrder），
- * 以及跨源去重的归一化键与匹配决策（DedupeKeys / DedupePlan）。
+ * 跨源去重的归一化键与匹配决策（DedupeKeys / DedupePlan），
+ * 以及分享目标 URI 构造与分享模板渲染（ShareTargets / ShareTemplates）。
  */
 
 import htmlDomTest from './HtmlDom.test';
@@ -32,6 +33,8 @@ import ruleOrderTest from './RuleOrder.test';
 import dedupeKeysTest from './DedupeKeys.test';
 import dedupePlanTest from './DedupePlan.test';
 import dedupeIntegrationTest from './DedupeIntegration.test';
+import shareTargetsTest from './ShareTargets.test';
+import shareTemplatesTest from './ShareTemplates.test';
 
 export default function testsuite() {
   htmlDomTest();
@@ -60,4 +63,6 @@ export default function testsuite() {
   dedupeKeysTest();
   dedupePlanTest();
   dedupeIntegrationTest();
+  shareTargetsTest();
+  shareTemplatesTest();
 }

@@ -1427,6 +1427,16 @@ export class FeedViewModel {
     this.publish();
   }
 
+  /**
+   * 某篇文章是否已在稍后读（分享面板据此切换「加入 / 取消」文案）。
+   * 文章不在当前已加载列表里时返回 false —— 此时 toggleSaved 也不会生效，
+   * 与分享面板的既有行为保持一致。
+   */
+  isSaved(articleId: string): boolean {
+    const article: Article | undefined = this.findArticle(articleId);
+    return article !== undefined && article.saved;
+  }
+
   /** 稍后读切换（列表左滑 / 批量用）。 */
   toggleSaved(articleId: string): void {
     for (let i = 0; i < this.all.length; i += 1) {

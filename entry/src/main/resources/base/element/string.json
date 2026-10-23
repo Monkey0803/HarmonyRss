@@ -1001,6 +1001,10 @@
       "value": "Paste"
     },
     {
+      "name": "subs_paste_denied",
+      "value": "Paste permission was not granted"
+    },
+    {
       "name": "subs_preview_title",
       "value": "Confirm subscription"
     },
@@ -2275,6 +2279,250 @@
     {
       "name": "dedupe_source_current",
       "value": "Current"
+    },
+    {
+      "name": "share_panel_title",
+      "value": "Share"
+    },
+    {
+      "name": "share_group_actions",
+      "value": "Actions"
+    },
+    {
+      "name": "share_group_targets",
+      "value": "Send to"
+    },
+    {
+      "name": "share_group_templates",
+      "value": "Templates"
+    },
+    {
+      "name": "share_group_export",
+      "value": "Export highlights"
+    },
+    {
+      "name": "share_action_system",
+      "value": "System share"
+    },
+    {
+      "name": "share_action_copy_link",
+      "value": "Copy link"
+    },
+    {
+      "name": "share_action_copy_body",
+      "value": "Copy text"
+    },
+    {
+      "name": "share_action_browser",
+      "value": "Open in browser"
+    },
+    {
+      "name": "share_action_saved",
+      "value": "Save for later"
+    },
+    {
+      "name": "share_target_pocket",
+      "value": "Pocket"
+    },
+    {
+      "name": "share_target_instapaper",
+      "value": "Instapaper"
+    },
+    {
+      "name": "share_target_flomo",
+      "value": "Flomo"
+    },
+    {
+      "name": "share_target_email",
+      "value": "Email"
+    },
+    {
+      "name": "share_toast_shared",
+      "value": "Opened the system share sheet"
+    },
+    {
+      "name": "share_toast_copied",
+      "value": "Copied"
+    },
+    {
+      "name": "share_toast_copy_failed",
+      "value": "Could not copy"
+    },
+    {
+      "name": "share_toast_open_failed",
+      "value": "Unable to open the app"
+    },
+    {
+      "name": "share_toast_fallback_copied",
+      "value": "App unavailable; link copied instead"
+    },
+    {
+      "name": "share_toast_share_failed",
+      "value": "Sharing is unavailable"
+    },
+    {
+      "name": "share_toast_nothing_to_share",
+      "value": "There is nothing to share"
+    },
+    {
+      "name": "share_toast_busy",
+      "value": "Please wait…"
+    },
+    {
+      "name": "share_toast_saved",
+      "value": "Saved for later"
+    },
+    {
+      "name": "share_disabled_no_url",
+      "value": "This item has no link"
+    },
+    {
+      "name": "share_disabled_no_highlights",
+      "value": "This article has no highlights"
+    },
+    {
+      "name": "share_export_article",
+      "value": "Export this article's highlights"
+    },
+    {
+      "name": "share_export_all",
+      "value": "Export all highlights"
+    },
+    {
+      "name": "share_export_empty",
+      "value": "No highlights to export"
+    },
+    {
+      "name": "share_settings_title",
+      "value": "Sharing & templates"
+    },
+    {
+      "name": "tpl_section_title",
+      "value": "Templates"
+    },
+    {
+      "name": "tpl_default_name",
+      "value": "Default"
+    },
+    {
+      "name": "tpl_new",
+      "value": "New template"
+    },
+    {
+      "name": "tpl_edit",
+      "value": "Edit template"
+    },
+    {
+      "name": "tpl_name_label",
+      "value": "Name"
+    },
+    {
+      "name": "tpl_content_label",
+      "value": "Content"
+    },
+    {
+      "name": "tpl_placeholder_help",
+      "value": "Placeholders: {title} {url} {summary} {author} {tags}"
+    },
+    {
+      "name": "tpl_save",
+      "value": "Save"
+    },
+    {
+      "name": "tpl_cancel",
+      "value": "Cancel"
+    },
+    {
+      "name": "tpl_delete",
+      "value": "Delete"
+    },
+    {
+      "name": "tpl_delete_confirm",
+      "value": "Delete this template?"
+    },
+    {
+      "name": "tpl_move_up",
+      "value": "Move up"
+    },
+    {
+      "name": "tpl_move_down",
+      "value": "Move down"
+    },
+    {
+      "name": "tpl_copy",
+      "value": "Copy"
+    },
+    {
+      "name": "tpl_share",
+      "value": "Share"
+    },
+    {
+      "name": "tpl_empty",
+      "value": "No templates yet"
+    },
+    {
+      "name": "tpl_err_name_empty",
+      "value": "Enter a template name"
+    },
+    {
+      "name": "tpl_err_name_long",
+      "value": "Name is too long"
+    },
+    {
+      "name": "tpl_err_content_empty",
+      "value": "Template content cannot be empty"
+    },
+    {
+      "name": "tpl_err_content_long",
+      "value": "Template content is too long"
+    },
+    {
+      "name": "tpl_err_max",
+      "value": "You can keep up to 20 templates"
+    },
+    {
+      "name": "tpl_limit_hint",
+      "value": "Up to 20 templates; the order here is the order in the share panel."
+    },
+    {
+      "name": "share_action_unsave",
+      "value": "Remove from later"
+    },
+    {
+      "name": "share_toast_unsaved",
+      "value": "Removed from later"
+    },
+    {
+      "name": "tpl_name_hint",
+      "value": "e.g. Short post"
+    },
+    {
+      "name": "tpl_content_hint",
+      "value": "{title} — {url}"
+    },
+    {
+      "name": "tpl_toast_saved",
+      "value": "Template saved"
+    },
+    {
+      "name": "tpl_toast_deleted",
+      "value": "Template deleted"
+    },
+    {
+      "name": "tpl_err_save_failed",
+      "value": "Could not save the template"
+    },
+    {
+      "name": "tpl_default_hint",
+      "value": "Built-in template; create your own to customize it."
+    },
+    {
+      "name": "tpl_delete_confirm_named",
+      "value": "Delete \"%s\"?"
+    },
+    {
+      "name": "section_share",
+      "value": "Sharing"
     }
   ]
 }

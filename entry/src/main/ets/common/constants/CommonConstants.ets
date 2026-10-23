@@ -42,4 +42,12 @@ export class CommonConstants {
   static readonly LOGO_BRAND_SIZE: number = 26;
   /** App logo 在首页品牌行的圆角（vp）。 */
   static readonly LOGO_BRAND_RADIUS: number = 8;
+  /** 复制正文 / 分享纯文本的字符上限（与系统分享承载能力一致）。 */
+  static readonly SHARE_TEXT_MAX_CHARS: number = 20000;
+  /** 自定义分享模板数量上限。 */
+  static readonly SHARE_TEMPLATE_MAX: number = 20;
+  /** 模板名称最大字符数。 */
+  static readonly SHARE_TEMPLATE_NAME_MAX: number = 24;
+  /** 模板内容最大字符数。 */
+  static readonly SHARE_TEMPLATE_CONTENT_MAX: number = 2000;
 }

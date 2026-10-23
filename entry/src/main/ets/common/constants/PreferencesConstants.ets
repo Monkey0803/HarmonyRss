@@ -75,4 +75,6 @@ export class PreferencesConstants {
   static readonly KEY_REMOTE_AUTO_SYNC: string = 'remoteAutoSync';
   /** 跨源去重总开关（默认开；关闭后只影响新入库文章，已有合并组保持现状）。 */
   static readonly KEY_DEDUPE_ENABLED: string = 'dedupeEnabled';
+  /** 自定义分享模板（JSON 数组：id / name / content / sort）。 */
+  static readonly KEY_SHARE_TEMPLATES: string = 'shareTemplates';
 }

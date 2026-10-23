@@ -15,6 +15,12 @@ import { safeArea } from '../service/SafeAreaController';
 import { ToastUtil } from '../common/utils/ToastUtil';
 import { common } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
+import { appSettings } from '../model/AppSettings';
+import { MaterialController } from '../service/MaterialController';
+import { ShareContext } from '../model/Share';
+import { shareService } from '../service/ShareService';
+import { shareViewModel } from '../viewmodel/ShareViewModel';
+import { ShareSheet } from './ShareSheet';
 
 const DOMAIN: number = 0x0000;
 const TAG: string = 'HighlightsView';
@@ -25,6 +31,8 @@ export struct HighlightsView {
   @Param scroller: Scroller = new Scroller();
   @Local items: HighlightLibraryItem[] = [];
   @Local loading: boolean = true;
+  /** 统一分享面板显隐（本页只有一个 bindSheet，直接用它作首参）。 */
+  @Local showShare: boolean = false;
 
   aboutToAppear(): void {
     this.reload();
@@ -58,6 +66,16 @@ export struct HighlightsView {
       hilog.warn(DOMAIN, TAG, 'share export failed');
       ToastUtil.show(this.getUIContext(), $r('app.string.toast_action_failed'));
     }
+  }
+
+  /**
+   * 单条标注分享：上下文 = 引文 + 备注 + 所属文章链接（articleId 取自 highlight.articleId，
+   * 让面板里的「稍后读」在文章已被删时也能工作）。
+   */
+  private async openShare(entry: HighlightLibraryItem): Promise<void> {
+    const ctx: ShareContext = shareService.highlightContext(entry);
+    await shareViewModel.open(this.hostContext(), ctx);
+    this.showShare = true;
   }
 
   /** 打开该标注所属文章，并让详情页定位到这条标注。 */
@@ -168,6 +186,16 @@ export struct HighlightsView {
                   .maxLines(1)
                   .textOverflow({ overflow: TextOverflow.Ellipsis })
                   .layoutWeight(1)
+
+                // 单条分享：打开统一分享面板（子组件的点击优先于整行的「打开文章」）。
+                SymbolGlyph($r('sys.symbol.share'))
+                  .fontSize($r('app.float.icon_size_small'))
+                  .fontColor([$r('app.color.hm_text_secondary')])
+                  .padding($r('app.float.space_xs'))
+                  .accessibilityText($r('app.string.action_share'))
+                  .onClick(() => {
+                    this.openShare(entry);
+                  })
               }
               .width('100%')
 
@@ -220,5 +248,26 @@ export struct HighlightsView {
     .cachedCount(3, true)
     .padding({ left: $r('app.float.space_l'), right: $r('app.float.space_l') })
     .backgroundColor($r('app.color.hm_page_transparent'))
+    // 统一分享面板（上下文已在 openShare 里写入 ShareViewModel）。
+    .bindSheet(this.showShare, this.SharePanel(), MaterialController.sheetOptions({
+      height: SheetSize.LARGE,
+      dragBar: true,
+      onDisappear: () => {
+        this.showShare = false;
+        shareViewModel.close();
+      }
+    }, appSettings.immersiveOn))
+  }
+
+  /** 统一分享面板（三处入口复用同一个 ShareSheet）。 */
+  @Builder
+  SharePanel() {
+    ShareSheet({
+      ability: this.hostContext(),
+      onClose: () => {
+        this.showShare = false;
+        shareViewModel.close();
+      }
+    })
   }
 }
