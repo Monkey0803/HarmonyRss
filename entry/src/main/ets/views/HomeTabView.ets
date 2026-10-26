@@ -28,6 +28,7 @@ import { ShareSheet } from './ShareSheet';
 import { ShareContext } from '../model/Share';
 import { shareService } from '../service/ShareService';
 import { shareViewModel } from '../viewmodel/ShareViewModel';
+import { frameRateSampler } from '../service/FrameRateSampler';
 
 @ComponentV2
 export struct HomeTabView {
@@ -61,6 +62,7 @@ export struct HomeTabView {
 
   aboutToDisappear(): void {
     feedViewModel.unsubscribeArticles(this.syncArticles);
+    frameRateSampler.stop();
   }
 
   private async reload(): Promise<void> {
@@ -623,6 +625,10 @@ export struct HomeTabView {
       .width('100%')
       .height('100%')
       .scrollBar(BarState.Off)
+      // 列表帧率采样：用户开始滚动时开一个 2s 窗口（30s 内最多一次，诊断关闭时跳过）。
+      .onScrollStart(() => {
+        frameRateSampler.start();
+      })
       // 触底续页：多加载一屏
       .onReachEnd(() => {
         if (!feedViewModel.selecting) {

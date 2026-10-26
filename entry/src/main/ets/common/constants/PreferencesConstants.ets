@@ -103,4 +103,9 @@ export class PreferencesConstants {
   static readonly KEY_TRANSLATE_PROVIDER: string = 'translateProvider';
   /** 自定义服务端点（空串 = 服务默认端点）。 */
   static readonly KEY_TRANSLATE_ENDPOINT: string = 'translateEndpoint';
+  // ---- 发现与推荐 ----
+  /** RSSHub 实例根地址（发现页路由助手）。 */
+  static readonly KEY_RSSHUB_BASE: string = 'rsshubBase';
+  /** 本地诊断记录开关（启动 / 抓取耗时；默认开）。 */
+  static readonly KEY_DIAGNOSTICS_ENABLED: string = 'diagnosticsEnabled';
 }

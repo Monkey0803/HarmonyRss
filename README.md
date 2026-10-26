@@ -6,10 +6,17 @@ HarmonyOS（ArkTS）RSS 阅读器。基于 **UI Design Kit（HDS）** 组件与 
 ## 功能
 
 - **订阅与阅读**：RSS 2.0 / Atom 1.0 / JSON Feed；分组管理、OPML 导入导出、未读/收藏筛选。
-- **自建服务同步（Google Reader API）**：接入 FreshRSS / Tiny Tiny RSS / Miniflux，账密登录后按地址
-  合并订阅（保留本地独有源）、增量拉取文章并去重；已读 / 收藏双向同步（本地变更入队批量回写，
-  远端状态拉回只改状态列），冲突按 push-first 收敛。密码存入系统 Asset Store，不落明文；
-  支持 http 明文地址（需显式开启）与回前台按间隔自动同步（默认关）。设置 → 系统 → 账号与服务。
+- **发现与推荐**：内置 30 条精选订阅源（科技 / 设计 / 商业 / 科学 / 独立博客 / 中文），支持分类、
+  关键词筛选与一键订阅；「热门」为本地静态热度排序，「为你推荐」按已订阅源主题标签在本地打分，
+  不上传订阅列表。RSSHub 路由助手可把 GitHub / Bilibili / YouTube / X / 微博 / 知乎等地址推导为
+  候选路由（实例地址可换成自建），剪贴板 / 浏览器书签可经安全控件批量导入并逐条校验。
+  精选目录离线可用，**只有点击「订阅」时才发起一次抓取**。
+- **账号与服务同步（Google Reader API / Feedbin）**：统一 `RemoteBackend` 适配层接入
+  **FreshRSS / Tiny Tiny RSS / Miniflux**（Google Reader API）与 **Feedbin**（REST + Basic Auth）；
+  账密连接后按地址合并订阅、拉取文章增量并去重，已读 / 收藏双向同步（本地变更入队批量回写，
+  远端状态拉回只更新状态列），冲突按 push-first 处理。切换服务或地址会自动清理旧映射 / 游标，
+  避免跨协议误判增量。凭据存 Asset Store；GReader 支持显式允许明文 HTTP，Feedbin 仅 HTTPS；
+  自动同步默认关。入口：设置 → 系统 → 账号与服务。
 - **长期历史 + 可撤销清理**：默认永久保留全部历史（不再有 1000 篇上限）；可选 30 / 90 / 365 天或
   「仅保留未读与收藏」。清理前预览影响条数，收藏 / 稍后读 / 有高亮 / 当前打开的文章永不删除，
   被清理文章进入回收站 7 天内可恢复。设置页「存储与保留」展示总占用、按源占用，支持重建检索索引。
@@ -43,6 +50,10 @@ HarmonyOS（ArkTS）RSS 阅读器。基于 **UI Design Kit（HDS）** 组件与 
 - **离线阅读**：提取后的全文 HTML 落本地库；正文图片内联为 `data:` URI（按魔数嗅探 mime），
   断网也能读；懒加载图（`data-src` / `srcset`）自动恢复。
 - **阅读导航**：上一篇 / 下一篇 / 下一条未读；断点续读（记录滚动进度）。
+- **播客 / 视频**：自动识别 RSS `enclosure`、Atom `link rel="enclosure"`、Media RSS `media:content`
+  与 JSON Feed `attachments`；列表显示耳机 / 视频图标，播客带时长，详情标签条可直接播放。
+  播客支持后台播放、锁屏 / 媒体中心控制、0.75–2.0 倍速、±15 秒、按源 / 全部未听队列与进度记忆；
+  视频交给系统播放器（失败退浏览器）；与正文朗读（TTS）互斥，不会同时出声。
 - **正文翻译**：阅读页菜单「翻译全文」、选中正文后「翻译选中段」；逐段与原文对照，可切换「只看译文」。
   目标语言跟随应用语言，源语言自动检测；联网翻译**默认关闭**，开启后才把正文文本发给你选择的服务
   （DeepL 或自建 / 公共 LibreTranslate），API Key 存放在系统资产库。结果按文章 + 目标语言缓存到独立本地库，
@@ -67,6 +78,11 @@ HarmonyOS（ArkTS）RSS 阅读器。基于 **UI Design Kit（HDS）** 组件与 
   数据控制（翻译缓存、账号、备份入口）。联网翻译与远端自动同步默认关闭，API Key / 密码存入系统
   Asset Store；权限申请时机见 [`spec/privacy-compliance/permissions-audit.md`](spec/privacy-compliance/permissions-audit.md)，
   完整说明见 [`PRIVACY.md`](PRIVACY.md)。
+- **诊断与性能**：本地记录启动到首屏耗时、逐源抓取耗时 / 成功失败数 / 平均每源、失败五类归因
+  （超时 / 网络 / HTTP / 内容解析 / 其他）与最慢的三个源；首页滚动时用 2 秒窗口采样帧率
+  （30 秒内最多一次）。诊断页还展示源健康（连续失败 / 最后错误，可一键重试）、LazyForEach 分页 /
+  数据库索引 / 本地文章与正文缓存，以及系统给出的上次退出原因（JS / Native / 卡死 / 资源管控 / 正常…）。
+  不注册全局异常观测器，不改变系统默认崩溃行为；所有指标只写本机偏好库，未实现上报。
 - **桌面服务卡片**：`entry/src/main/ets/form`。
 - **外观**：主题、全局背景图、沉浸光感材质、App logo、防窥保护、智感握姿。
 
@@ -77,7 +93,7 @@ entry/src/main/ets/
   common/      常量、通用组件与工具
   model/       领域模型（@ObservedV2）与设置项
   service/     平台能力与纯逻辑（网络 / 存储 / 解析 / 提取 / 渲染 / 检索 / 保留策略）
-  service/remote/  远端服务（GReader 协议 / HTTP / 凭据 / 同步编排）
+  service/remote/  远端服务（RemoteBackend 抽象 / GReader / Feedbin / 凭据 / 同步编排）
   viewmodel/   FeedViewModel / RuleViewModel / SettingsViewModel / SearchViewModel / StorageViewModel
   views/       页面与组件（纯展示）
   form/        桌面卡片

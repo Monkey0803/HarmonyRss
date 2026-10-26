@@ -82,6 +82,14 @@ import { shareViewModel } from '../viewmodel/ShareViewModel';
 import { translationViewModel } from '../viewmodel/TranslationViewModel';
 import { TranslateSheet } from './TranslateSheet';
 import { RouterConstants } from '../common/constants/RouterConstants';
+import { Enclosure, firstAudio, firstVideo, formatDuration } from '../model/Enclosure';
+import {
+  MEDIA_ERROR,
+  MEDIA_IDLE,
+  MEDIA_LOADING,
+  MEDIA_PLAYING,
+  mediaPlayerService
+} from '../service/MediaPlayerService';
 
 const DOMAIN: number = 0x0000;
 const TAG: string = 'ArticleDetailView';
@@ -363,6 +371,11 @@ export struct ArticleDetailView {
       this.toast($r('app.string.article_no_content'));
       return;
     }
+    // 与播客播放互斥：开始朗读前先暂停音频，避免同时出声。
+    if (mediaPlayerService.status === MEDIA_PLAYING) {
+      mediaPlayerService.pause().catch(() => {
+      });
+    }
     const ok: boolean = await readerSpeech.start(text, (progress: SpeechProgress) => {
       this.speaking = progress.status !== SpeechStatus.IDLE;
       this.speechPaused = progress.status === SpeechStatus.PAUSED;
@@ -485,6 +498,81 @@ export struct ArticleDetailView {
     if (!ok) {
       this.toast($r('app.string.toast_action_failed'));
     }
+  }
+
+  /** 当前文章的音频 / 视频附件。 */
+  private audioOf(article: Article): Enclosure | undefined {
+    return firstAudio(article.enclosures);
+  }
+
+  private videoOf(article: Article): Enclosure | undefined {
+    return firstVideo(article.enclosures);
+  }
+
+  /** 标题下方媒体 chip 的文案（播客带时长，视频只标类型）。 */
+  private mediaChipText(article: Article): ResourceStr {
+    const audio: Enclosure | undefined = this.audioOf(article);
+    if (audio !== undefined) {
+      return audio.duration > 0
+        ? $r('app.string.media_audio_with_duration', formatDuration(audio.duration))
+        : $r('app.string.media_audio_label');
+    }
+    return $r('app.string.media_video_label');
+  }
+
+  /** 点媒体 chip：音频开始播放（本源队列），视频交给系统播放器。 */
+  private mediaChipAction(): void {
+    const article: Article = this.cur();
+    if (this.audioOf(article) !== undefined) {
+      this.playAudio(false);
+    } else {
+      this.openVideo();
+    }
+  }
+
+  /**
+   * 播放播客。
+   * @param allFeeds true = 全部未听；false = 当前来源的未听队列。
+   */
+  private async playAudio(allFeeds: boolean): Promise<void> {
+    const article: Article = this.cur();
+    if (this.audioOf(article) === undefined) {
+      this.toast($r('app.string.media_error'));
+      return;
+    }
+    const queue: Article[] = await feedViewModel.mediaQueue(article.feedId, allFeeds, true);
+    let hasCurrent: boolean = false;
+    for (let i = 0; i < queue.length; i += 1) {
+      if (queue[i].id === article.id) {
+        hasCurrent = true;
+        break;
+      }
+    }
+    if (!hasCurrent) {
+      queue.unshift(article);
+    }
+    const ok: boolean = await mediaPlayerService.playQueue(this.hostContext(), queue, article.id);
+    if (!ok) {
+      this.toast($r('app.string.media_error'));
+    }
+  }
+
+  /** 打开视频：系统播放器优先，失败退浏览器。 */
+  private openVideo(): void {
+    const article: Article = this.cur();
+    const video: Enclosure | undefined = this.videoOf(article);
+    if (video === undefined) {
+      return;
+    }
+    mediaPlayerService.openVideo(this.hostContext(), video).then((ok: boolean) => {
+      if (!ok) {
+        articleActions.openInBrowser(this.hostContext(), video.url).then((opened: boolean) => {
+          if (!opened) {
+            this.toast($r('app.string.toast_action_failed'));
+          }
+        });
+      }
+    });
   }
 
   /** 打开整篇翻译：有缓存立即展示，否则发起一次翻译（用户点菜单即视为显式同意联网）。 */
@@ -1009,6 +1097,31 @@ export struct ArticleDetailView {
         .onClick(() => {
           this.toggleSpeech();
         })
+      if (this.audioOf(article) !== undefined) {
+        MenuItem({
+          content: $r('app.string.media_play_audio_feed'),
+          symbolStartIcon: this.menuIcon($r('sys.symbol.headphones'))
+        })
+          .onClick(() => {
+            this.playAudio(false);
+          })
+        MenuItem({
+          content: $r('app.string.media_play_audio_all'),
+          symbolStartIcon: this.menuIcon($r('sys.symbol.headphones'))
+        })
+          .onClick(() => {
+            this.playAudio(true);
+          })
+      }
+      if (this.videoOf(article) !== undefined) {
+        MenuItem({
+          content: $r('app.string.media_open_video'),
+          symbolStartIcon: this.menuIcon($r('sys.symbol.play_video'))
+        })
+          .onClick(() => {
+            this.openVideo();
+          })
+      }
       MenuItem({
         content: $r('app.string.action_find_in_article'),
         symbolStartIcon: this.menuIcon($r('sys.symbol.magnifyingglass'))
@@ -2151,6 +2264,138 @@ export struct ArticleDetailView {
     }
   }
 
+  /** 播客迷你播放条：底部浮层，支持暂停 / 继续、±15s、倍速、上一首 / 下一首、停止。 */
+  @Builder
+  MediaBar() {
+    if (mediaPlayerService.status !== MEDIA_IDLE) {
+      Column({ space: $r('app.float.space_xxs') }) {
+        Row({ space: $r('app.float.space_xs') }) {
+          SymbolGlyph($r('sys.symbol.headphones'))
+            .fontSize($r('app.float.icon_size_small'))
+            .fontColor([$r('app.color.hm_brand')])
+          Column({ space: $r('app.float.space_xxs') }) {
+            Text(mediaPlayerService.title)
+              .fontSize($r('app.float.font_size_caption'))
+              .fontColor($r('app.color.hm_text_primary'))
+              .maxLines(1)
+              .textOverflow({ overflow: TextOverflow.Ellipsis })
+              .width('100%')
+            Text(mediaPlayerService.status === MEDIA_ERROR
+              ? $r('app.string.media_error')
+              : mediaPlayerService.feedTitle)
+              .fontSize($r('app.float.font_size_caption'))
+              .fontColor(mediaPlayerService.status === MEDIA_ERROR
+                ? $r('app.color.hm_danger') : $r('app.color.hm_text_secondary'))
+              .maxLines(1)
+              .textOverflow({ overflow: TextOverflow.Ellipsis })
+              .width('100%')
+          }
+          .layoutWeight(1)
+          .alignItems(HorizontalAlign.Start)
+
+          Button(mediaPlayerService.status === MEDIA_PLAYING
+            ? $r('app.string.media_pause') : $r('app.string.media_resume'))
+            .buttonStyle(ButtonStyleMode.TEXTUAL)
+            .fontSize($r('app.float.font_size_caption'))
+            .fontColor($r('app.color.hm_brand'))
+            .padding({ left: $r('app.float.space_xxs'), right: $r('app.float.space_xxs') })
+            .enabled(mediaPlayerService.status !== MEDIA_LOADING)
+            .onClick(() => {
+              mediaPlayerService.toggle();
+            })
+
+          Button($r('app.string.media_stop'))
+            .buttonStyle(ButtonStyleMode.TEXTUAL)
+            .fontSize($r('app.float.font_size_caption'))
+            .fontColor($r('app.color.hm_text_secondary'))
+            .padding({ left: $r('app.float.space_xxs'), right: $r('app.float.space_xxs') })
+            .onClick(() => {
+              mediaPlayerService.stop();
+            })
+        }
+        .width('100%')
+        .alignItems(VerticalAlign.Center)
+
+        Row({ space: $r('app.float.space_xxs') }) {
+          Button('-15')
+            .buttonStyle(ButtonStyleMode.TEXTUAL)
+            .fontSize($r('app.float.font_size_caption'))
+            .fontColor($r('app.color.hm_text_secondary'))
+            .padding({ left: $r('app.float.space_xxs'), right: $r('app.float.space_xxs') })
+            .accessibilityText($r('app.string.media_rewind'))
+            .onClick(() => {
+              mediaPlayerService.seekBy(-15);
+            })
+          Button('+15')
+            .buttonStyle(ButtonStyleMode.TEXTUAL)
+            .fontSize($r('app.float.font_size_caption'))
+            .fontColor($r('app.color.hm_text_secondary'))
+            .padding({ left: $r('app.float.space_xxs'), right: $r('app.float.space_xxs') })
+            .accessibilityText($r('app.string.media_forward'))
+            .onClick(() => {
+              mediaPlayerService.seekBy(15);
+            })
+          Button(`${mediaPlayerService.speed.toFixed(1)}×`)
+            .buttonStyle(ButtonStyleMode.TEXTUAL)
+            .fontSize($r('app.float.font_size_caption'))
+            .fontColor($r('app.color.hm_text_secondary'))
+            .padding({ left: $r('app.float.space_xxs'), right: $r('app.float.space_xxs') })
+            .accessibilityText($r('app.string.media_speed'))
+            .onClick(() => {
+              mediaPlayerService.cycleSpeed();
+            })
+          Button('‹')
+            .buttonStyle(ButtonStyleMode.TEXTUAL)
+            .fontSize($r('app.float.font_size_body'))
+            .fontColor($r('app.color.hm_brand'))
+            .padding({ left: $r('app.float.space_xxs'), right: $r('app.float.space_xxs') })
+            .accessibilityText($r('app.string.media_previous'))
+            .onClick(() => {
+              mediaPlayerService.prev();
+            })
+          Button('›')
+            .buttonStyle(ButtonStyleMode.TEXTUAL)
+            .fontSize($r('app.float.font_size_body'))
+            .fontColor($r('app.color.hm_brand'))
+            .padding({ left: $r('app.float.space_xxs'), right: $r('app.float.space_xxs') })
+            .accessibilityText($r('app.string.media_next'))
+            .onClick(() => {
+              mediaPlayerService.next();
+            })
+          Blank()
+          Text(formatDuration(mediaPlayerService.positionSeconds) + ' / ' +
+            formatDuration(mediaPlayerService.durationSeconds))
+            .fontSize($r('app.float.font_size_caption'))
+            .fontColor($r('app.color.hm_text_secondary'))
+          if (mediaPlayerService.queueSize > 1) {
+            Text((mediaPlayerService.queueIndex + 1).toString() + '/' +
+              mediaPlayerService.queueSize.toString())
+              .fontSize($r('app.float.font_size_caption'))
+              .fontColor($r('app.color.hm_text_secondary'))
+              .margin({ left: $r('app.float.space_xs') })
+          }
+        }
+        .width('100%')
+        .alignItems(VerticalAlign.Center)
+      }
+      .width('100%')
+      .padding({
+        left: $r('app.float.space_l'),
+        right: $r('app.float.space_m'),
+        top: $r('app.float.space_s'),
+        bottom: $r('app.float.space_s')
+      })
+      .margin({
+        left: $r('app.float.space_l'),
+        right: $r('app.float.space_l'),
+        bottom: $r('app.float.space_s')
+      })
+      .backgroundColor($r('app.color.hm_card_background'))
+      .borderRadius($r('app.float.radius_card'))
+      .alignItems(HorizontalAlign.Start)
+    }
+  }
+
   /** 朗读迷你条：朗读中出现在底栏上方，可暂停 / 继续、切换语速、停止。 */
   @Builder
   SpeechBar() {
@@ -2349,6 +2594,24 @@ export struct ArticleDetailView {
           Blank()
         }
 
+        // 媒体标识：播客带时长，视频标类型；点击可直接播放 / 打开。
+        if (this.cur().enclosures.length > 0) {
+          Text(this.mediaChipText(this.cur()))
+            .fontSize($r('app.float.font_size_caption'))
+            .fontColor($r('app.color.hm_brand'))
+            .maxLines(1)
+            .height($r('app.float.value_chip_height'))
+            .padding({ left: $r('app.float.space_m'), right: $r('app.float.space_m') })
+            .margin({ right: $r('app.float.space_xs') })
+            .backgroundColor($r('app.color.hm_value_chip_background'))
+            .borderRadius($r('app.float.radius_chip'))
+            .accessibilityText(this.audioOf(this.cur()) !== undefined
+              ? $r('app.string.media_audio_label') : $r('app.string.media_video_label'))
+            .onClick(() => {
+              this.mediaChipAction();
+            })
+        }
+
         // 跨源合并文章：来源数 chip（点击展开全部来源）。单来源时不出现，界面保持现状。
         if (this.merged()) {
           Text($r('app.string.dedupe_source_count', this.groupSources.length))
@@ -2431,6 +2694,7 @@ export struct ArticleDetailView {
       // 底部浮层：朗读条 + 选段条（都贴在底栏上方）
       Column() {
         Blank()
+        this.MediaBar()
         this.SpeechBar()
         this.SelectionBar()
       }

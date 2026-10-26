@@ -1918,7 +1918,7 @@
     },
     {
       "name": "remote_error_api",
-      "value": "服务未开启 Google Reader API。"
+      "value": "该地址没有可用的服务 API。"
     },
     {
       "name": "remote_error_rate",
@@ -1938,7 +1938,7 @@
     },
     {
       "name": "remote_error_empty",
-      "value": "请填写服务地址、用户名和密码。"
+      "value": "请填写必填项。"
     },
     {
       "name": "remote_error_busy",
@@ -3363,6 +3363,506 @@
     {
       "name": "privacy_out_cross_border_desc",
       "value": "你配置的第三方服务端点可能位于其他地区，数据由该服务按其隐私政策处理。"
+    },
+    {
+      "name": "media_audio_label",
+      "value": "播客"
+    },
+    {
+      "name": "media_video_label",
+      "value": "视频"
+    },
+    {
+      "name": "media_audio_with_duration",
+      "value": "播客 · %s"
+    },
+    {
+      "name": "media_play_audio_feed",
+      "value": "播放播客（本源）"
+    },
+    {
+      "name": "media_play_audio_all",
+      "value": "播放全部未听播客"
+    },
+    {
+      "name": "media_open_video",
+      "value": "打开视频"
+    },
+    {
+      "name": "media_error",
+      "value": "无法播放该音频"
+    },
+    {
+      "name": "media_pause",
+      "value": "暂停"
+    },
+    {
+      "name": "media_resume",
+      "value": "继续"
+    },
+    {
+      "name": "media_stop",
+      "value": "停止"
+    },
+    {
+      "name": "media_rewind",
+      "value": "快退 15 秒"
+    },
+    {
+      "name": "media_forward",
+      "value": "快进 15 秒"
+    },
+    {
+      "name": "media_previous",
+      "value": "上一首"
+    },
+    {
+      "name": "media_next",
+      "value": "下一首"
+    },
+    {
+      "name": "media_speed",
+      "value": "播放速度"
+    },
+    {
+      "name": "privacy_perm_media_title",
+      "value": "后台音频"
+    },
+    {
+      "name": "privacy_perm_media_desc",
+      "value": "播客播放使用 AUDIO_PLAYBACK 连续任务与 AVSession，停止播放后立即结束。"
+    },
+    {
+      "name": "discover_entry",
+      "value": "发现"
+    },
+    {
+      "name": "discover_title",
+      "value": "发现与推荐"
+    },
+    {
+      "name": "discover_desc",
+      "value": "内置精选订阅源、本地相似源推荐、RSSHub 路由助手与剪贴板导入；只有点击「订阅」时才会发起抓取。"
+    },
+    {
+      "name": "discover_search_hint",
+      "value": "搜索精选订阅源"
+    },
+    {
+      "name": "discover_category_all",
+      "value": "全部"
+    },
+    {
+      "name": "discover_cat_hot",
+      "value": "热门"
+    },
+    {
+      "name": "discover_cat_tech",
+      "value": "科技"
+    },
+    {
+      "name": "discover_cat_design",
+      "value": "设计"
+    },
+    {
+      "name": "discover_cat_business",
+      "value": "商业"
+    },
+    {
+      "name": "discover_cat_science",
+      "value": "科学"
+    },
+    {
+      "name": "discover_cat_indie",
+      "value": "独立博客"
+    },
+    {
+      "name": "discover_cat_cn",
+      "value": "中文"
+    },
+    {
+      "name": "discover_section_recommended",
+      "value": "为你推荐"
+    },
+    {
+      "name": "discover_recommend_hint",
+      "value": "根据你已订阅源的主题标签在本地计算，不上传订阅列表。"
+    },
+    {
+      "name": "discover_section_popular",
+      "value": "热门站点榜"
+    },
+    {
+      "name": "discover_section_catalog",
+      "value": "精选目录"
+    },
+    {
+      "name": "discover_subscribe",
+      "value": "订阅"
+    },
+    {
+      "name": "discover_subscribed",
+      "value": "已订阅"
+    },
+    {
+      "name": "discover_subscribing",
+      "value": "订阅中…"
+    },
+    {
+      "name": "discover_subscribe_ok",
+      "value": "已订阅：%s"
+    },
+    {
+      "name": "discover_subscribe_success",
+      "value": "订阅成功"
+    },
+    {
+      "name": "discover_subscribe_duplicate",
+      "value": "已经订阅过这个源"
+    },
+    {
+      "name": "discover_empty",
+      "value": "没有匹配的订阅源"
+    },
+    {
+      "name": "discover_section_import",
+      "value": "从剪贴板导入"
+    },
+    {
+      "name": "discover_import_desc",
+      "value": "粘贴浏览器书签或多条地址；每条都会按订阅源校验（支持从网页自动发现 RSS）。"
+    },
+    {
+      "name": "discover_importing",
+      "value": "导入中…"
+    },
+    {
+      "name": "discover_import_result",
+      "value": "成功 %d · 重复 %d · 失败 %d"
+    },
+    {
+      "name": "discover_import_empty",
+      "value": "剪贴板里没有可用地址"
+    },
+    {
+      "name": "discover_section_rsshub",
+      "value": "RSSHub 路由助手"
+    },
+    {
+      "name": "discover_rsshub_desc",
+      "value": "粘贴站点或个人主页地址，生成候选 RSSHub 路由；可换成自建实例，订阅前不会发起抓取。"
+    },
+    {
+      "name": "discover_rsshub_base",
+      "value": "RSSHub 实例"
+    },
+    {
+      "name": "discover_rsshub_input_hint",
+      "value": "https://github.com/user/repo"
+    },
+    {
+      "name": "discover_rsshub_generate",
+      "value": "生成路由"
+    },
+    {
+      "name": "discover_rsshub_empty",
+      "value": "没有匹配的路由。请换用支持的站点地址，或查阅 RSSHub 文档。"
+    },
+    {
+      "name": "discover_rsshub_kind_commits",
+      "value": "仓库提交"
+    },
+    {
+      "name": "discover_rsshub_kind_releases",
+      "value": "版本发布"
+    },
+    {
+      "name": "discover_rsshub_kind_issues",
+      "value": "Issue"
+    },
+    {
+      "name": "discover_rsshub_kind_video",
+      "value": "视频"
+    },
+    {
+      "name": "discover_rsshub_kind_user_video",
+      "value": "用户视频"
+    },
+    {
+      "name": "discover_rsshub_kind_channel",
+      "value": "频道"
+    },
+    {
+      "name": "discover_rsshub_kind_user",
+      "value": "用户"
+    },
+    {
+      "name": "discover_rsshub_kind_timeline",
+      "value": "用户时间线"
+    },
+    {
+      "name": "discover_rsshub_kind_activity",
+      "value": "用户动态"
+    },
+    {
+      "name": "discover_rsshub_kind_articles",
+      "value": "用户文章"
+    },
+    {
+      "name": "discover_rsshub_kind_posts",
+      "value": "用户帖子"
+    },
+    {
+      "name": "discover_rsshub_kind_route",
+      "value": "路由"
+    },
+    {
+      "name": "diagnostics_entry",
+      "value": "诊断与性能"
+    },
+    {
+      "name": "diagnostics_title",
+      "value": "诊断与性能"
+    },
+    {
+      "name": "diagnostics_desc",
+      "value": "仅保存在本机的启动 / 抓取耗时、失败归类、源健康与上次退出原因，不上报任何数据。"
+    },
+    {
+      "name": "diagnostics_section_startup",
+      "value": "启动与上次退出"
+    },
+    {
+      "name": "diagnostics_first_screen",
+      "value": "启动到首屏"
+    },
+    {
+      "name": "diagnostics_started_at",
+      "value": "本次启动时间"
+    },
+    {
+      "name": "diagnostics_last_exit",
+      "value": "上次退出原因"
+    },
+    {
+      "name": "diagnostics_last_exit_detail",
+      "value": "上次退出详情"
+    },
+    {
+      "name": "diagnostics_exit_unknown",
+      "value": "未知"
+    },
+    {
+      "name": "diagnostics_exit_normal",
+      "value": "正常退出"
+    },
+    {
+      "name": "diagnostics_exit_js",
+      "value": "JS 异常"
+    },
+    {
+      "name": "diagnostics_exit_cpp",
+      "value": "Native 崩溃"
+    },
+    {
+      "name": "diagnostics_exit_freeze",
+      "value": "应用卡死"
+    },
+    {
+      "name": "diagnostics_exit_resource",
+      "value": "资源管控"
+    },
+    {
+      "name": "diagnostics_exit_upgrade",
+      "value": "应用升级"
+    },
+    {
+      "name": "diagnostics_exit_user",
+      "value": "用户或系统请求"
+    },
+    {
+      "name": "diagnostics_exit_other",
+      "value": "其他"
+    },
+    {
+      "name": "diagnostics_no_data",
+      "value": "暂无记录"
+    },
+    {
+      "name": "diagnostics_section_fetch",
+      "value": "抓取性能"
+    },
+    {
+      "name": "diagnostics_fetch_last",
+      "value": "上次抓取"
+    },
+    {
+      "name": "diagnostics_fetch_duration",
+      "value": "总耗时"
+    },
+    {
+      "name": "diagnostics_fetch_sources",
+      "value": "订阅源"
+    },
+    {
+      "name": "diagnostics_fetch_ok",
+      "value": "成功"
+    },
+    {
+      "name": "diagnostics_fetch_failed",
+      "value": "失败"
+    },
+    {
+      "name": "diagnostics_fetch_avg",
+      "value": "平均每源"
+    },
+    {
+      "name": "diagnostics_session_runs",
+      "value": "本次进程抓取轮数"
+    },
+    {
+      "name": "diagnostics_section_failure",
+      "value": "失败归类"
+    },
+    {
+      "name": "diagnostics_fail_timeout",
+      "value": "超时"
+    },
+    {
+      "name": "diagnostics_fail_network",
+      "value": "网络"
+    },
+    {
+      "name": "diagnostics_fail_http",
+      "value": "HTTP 状态"
+    },
+    {
+      "name": "diagnostics_fail_content",
+      "value": "内容或解析"
+    },
+    {
+      "name": "diagnostics_fail_other",
+      "value": "其他"
+    },
+    {
+      "name": "diagnostics_section_slow",
+      "value": "最慢的源"
+    },
+    {
+      "name": "diagnostics_section_health",
+      "value": "源健康"
+    },
+    {
+      "name": "diagnostics_health_ok",
+      "value": "全部订阅源均正常。"
+    },
+    {
+      "name": "diagnostics_health_failures",
+      "value": "连续失败 %d 次"
+    },
+    {
+      "name": "diagnostics_retry",
+      "value": "重试全部源"
+    },
+    {
+      "name": "diagnostics_retrying",
+      "value": "重试中…"
+    },
+    {
+      "name": "diagnostics_retry_done",
+      "value": "已重试 %d 个源，失败 %d 个"
+    },
+    {
+      "name": "diagnostics_section_runtime",
+      "value": "运行时"
+    },
+    {
+      "name": "diagnostics_runtime_articles",
+      "value": "本地文章"
+    },
+    {
+      "name": "diagnostics_runtime_cached",
+      "value": "正文缓存"
+    },
+    {
+      "name": "diagnostics_runtime_cached_value",
+      "value": "%d 篇 · %d 字符"
+    },
+    {
+      "name": "diagnostics_runtime_virtualization",
+      "value": "列表虚拟化"
+    },
+    {
+      "name": "diagnostics_runtime_virtualization_value",
+      "value": "LazyForEach · 每页 %d 条"
+    },
+    {
+      "name": "diagnostics_runtime_fps",
+      "value": "滚动帧率"
+    },
+    {
+      "name": "diagnostics_runtime_fps_value",
+      "value": "%d fps · 最差 %d ms"
+    },
+    {
+      "name": "diagnostics_runtime_indexes",
+      "value": "数据库索引"
+    },
+    {
+      "name": "diagnostics_runtime_indexes_value",
+      "value": "feed_id + published_at、is_read、is_starred、highlights.article_id"
+    },
+    {
+      "name": "diagnostics_section_record",
+      "value": "诊断记录"
+    },
+    {
+      "name": "diagnostics_toggle",
+      "value": "记录本地诊断"
+    },
+    {
+      "name": "diagnostics_toggle_desc",
+      "value": "关闭后不再记录启动与抓取耗时；上次退出原因仍由系统提供。"
+    },
+    {
+      "name": "diagnostics_clear",
+      "value": "清除诊断记录"
+    },
+    {
+      "name": "diagnostics_cleared",
+      "value": "诊断记录已清除"
+    },
+    {
+      "name": "diagnostics_privacy",
+      "value": "所有指标只写入应用私有偏好库，未实现任何埋点上报。"
+    },
+    {
+      "name": "remote_field_service",
+      "value": "服务"
+    },
+    {
+      "name": "remote_service_greader",
+      "value": "FreshRSS / TTRSS / Miniflux"
+    },
+    {
+      "name": "remote_service_feedbin",
+      "value": "Feedbin"
+    },
+    {
+      "name": "remote_status_service_value_feedbin",
+      "value": "Feedbin"
+    },
+    {
+      "name": "remote_field_username_email",
+      "value": "邮箱"
+    },
+    {
+      "name": "remote_feedbin_base_hint",
+      "value": "https://api.feedbin.com"
+    },
+    {
+      "name": "remote_feedbin_hint",
+      "value": "Feedbin 使用 HTTPS + Basic Auth，请填写 Feedbin 账号邮箱和密码。"
     }
   ]
 }

@@ -117,6 +117,16 @@ export class AppSettings {
   @Trace translateProvider: string = TranslateDefaults.PROVIDER;
   /** 自定义服务端点；空串 = 使用该服务的默认端点。 */
   @Trace translateEndpoint: string = '';
+
+  // ---- 发现与推荐 ----
+
+  /** RSSHub 实例根地址（发现页「路由助手」拼装候选地址用；可在页面内修改）。 */
+  @Trace rsshubBase: string = 'https://rsshub.app';
+
+  // ---- 诊断与性能（只写本机偏好库，不上报） ----
+
+  /** 是否记录启动 / 抓取耗时等本地诊断；默认开启。 */
+  @Trace diagnosticsEnabled: boolean = true;
 }
 
 /** 全局唯一设置实例。 */

@@ -42,6 +42,10 @@ import notifyPolicyTest from './NotifyPolicy.test';
 import notifyQueueTest from './NotifyQueue.test';
 import httpClientTest from './HttpClient.test';
 import translationPolicyTest from './TranslationPolicy.test';
+import enclosureTest from './Enclosure.test';
+import discoverTest from './Discover.test';
+import diagnosticsTest from './Diagnostics.test';
+import feedbinModelsTest from './FeedbinModels.test';
 
 export default function testsuite() {
   htmlDomTest();
@@ -78,4 +82,8 @@ export default function testsuite() {
   notifyQueueTest();
   httpClientTest();
   translationPolicyTest();
+  enclosureTest();
+  discoverTest();
+  diagnosticsTest();
+  feedbinModelsTest();
 }

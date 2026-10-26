@@ -39,7 +39,8 @@ export function toArticles(feed: FeedSource, parsed: ParsedFeed, sink: Article[]
     seen.add(id);
     accepted += 1;
     sink.push(new Article(id, feed.id, feed.title, item.title, item.link,
-      item.summary, item.content, item.publishedAt, item.imageUrl, item.author, item.contentHtml));
+      item.summary, item.content, item.publishedAt, item.imageUrl, item.author, item.contentHtml,
+      item.enclosures));
   }
   feed.articleCount = accepted;
 }

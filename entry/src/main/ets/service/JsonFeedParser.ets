@@ -8,10 +8,18 @@
 
 import { ParsedArticle, ParsedFeed, stripTags } from './RssParser';
 import { RssConstants } from '../common/constants/RssConstants';
+import { Enclosure } from '../model/Enclosure';
 
 /** JSON Feed 原始结构（宽松，全部可选）。 */
 interface JsonFeedAuthorRaw {
   name?: string;
+}
+
+interface JsonFeedAttachmentRaw {
+  url?: string;
+  mime_type?: string;
+  size_in_bytes?: number;
+  duration_in_seconds?: number;
 }
 
 interface JsonFeedItemRaw {
@@ -25,6 +33,7 @@ interface JsonFeedItemRaw {
   date_published?: string;
   image?: string;
   author?: JsonFeedAuthorRaw;
+  attachments?: JsonFeedAttachmentRaw[];
 }
 
 interface JsonFeedRaw {
@@ -54,6 +63,29 @@ function summarize(source: string): string {
   return text.substring(0, RssConstants.SUMMARY_MAX_CHARS) + '...';
 }
 
+/** JSON Feed attachments → 媒体附件。 */
+function toEnclosures(item: JsonFeedItemRaw): Enclosure[] {
+  const result: Enclosure[] = [];
+  const attachments: JsonFeedAttachmentRaw[] | undefined = item.attachments;
+  if (attachments === undefined) {
+    return result;
+  }
+  for (let i = 0; i < attachments.length; i += 1) {
+    const raw: JsonFeedAttachmentRaw = attachments[i];
+    const url: string = asString(raw.url);
+    if (url.length === 0) {
+      continue;
+    }
+    const type: string = asString(raw.mime_type);
+    const length: number = typeof raw.size_in_bytes === 'number' && raw.size_in_bytes > 0
+      ? raw.size_in_bytes : 0;
+    const duration: number = typeof raw.duration_in_seconds === 'number' && raw.duration_in_seconds > 0
+      ? raw.duration_in_seconds : 0;
+    result.push(new Enclosure(url, type, length, duration));
+  }
+  return result;
+}
+
 function toArticle(item: JsonFeedItemRaw): ParsedArticle {
   let link: string = asString(item.url);
   if (link.length === 0) {
@@ -69,7 +101,7 @@ function toArticle(item: JsonFeedItemRaw): ParsedArticle {
   }
   const author: string = item.author === undefined ? '' : asString(item.author.name);
   return new ParsedArticle(asString(item.title), link, summarize(summarySource), content,
-    parseDate(asString(item.date_published)), asString(item.image), author, html);
+    parseDate(asString(item.date_published)), asString(item.image), author, html, toEnclosures(item));
 }
 
 /** 解析 JSON Feed 文档。 */

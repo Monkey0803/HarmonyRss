@@ -78,7 +78,9 @@ export struct SubscriptionsView {
         ? $r('app.string.tag_entry', tagViewModel.tags.length)
         : (kind === 1
           ? $r('app.string.smart_folder_entry', smartFolderViewModel.folders.length)
-          : $r('app.string.rule_entry', ruleViewModel.rules.length)))
+          : (kind === 2
+            ? $r('app.string.rule_entry', ruleViewModel.rules.length)
+            : $r('app.string.discover_entry'))))
         .fontSize($r('app.float.font_size_body'))
         .fontColor($r('app.color.hm_text_primary'))
         .maxLines(1)
@@ -121,10 +123,19 @@ export struct SubscriptionsView {
     }, 2)
   }
 
+  /** 发现与推荐入口：精选目录 / 相似源 / RSSHub 路由 / 剪贴板导入。 */
+  @Builder
+  DiscoverEntry() {
+    this.EntryRowFrame($r('sys.symbol.rays'), () => {
+      this.navPathStack.pushPath(new NavPathInfo(RouterConstants.PAGE_DISCOVER, ''));
+    }, 3)
+  }
+
   /** 三个入口：标签 / 智能文件夹 / 规则（放在添加区下方、订阅列表上方）。 */
   @Builder
   LibraryEntries() {
     Column({ space: $r('app.float.space_s') }) {
+      this.DiscoverEntry()
       this.TagEntry()
       this.SmartFolderEntry()
       this.RuleEntry()

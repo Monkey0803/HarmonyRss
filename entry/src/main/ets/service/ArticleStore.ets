@@ -48,6 +48,8 @@ import { compile, hasCjk, isBlankQuery, postFilterSql } from './SearchPlan';
 import { grams } from './CjkTokenizer';
 import { DedupeKeys } from './DedupeKeys';
 import { DedupeService } from './DedupeService';
+import { decodeEnclosures, encodeEnclosures } from './EnclosureCodec';
+import { Enclosure } from '../model/Enclosure';
 
 const DOMAIN: number = 0x0000;
 const TAG: string = 'ArticleStore';
@@ -62,6 +64,8 @@ const LIST_COLUMNS: string =
   ' a.is_hidden, a.image_url, a.author, a.progress, a.progress_ratio,' +
   ' (CASE WHEN a.reader_html <> \'\' THEN 1 ELSE 0 END) AS has_reader,' +
   ' a.canonical_id,' +
+  // 媒体附件与音频进度：列表显示播客 / 视频标识，详情页恢复播放位置。
+  ' a.enclosures, a.media_progress,' +
   // 组内来源数（含主条自己）：主条列表行据此显示「N 个来源」。
   ' (SELECT COUNT(*) FROM ' + ArticleDbConstants.TABLE_ARTICLES +
   ' d WHERE d.canonical_id = a.id) AS dup_count';
@@ -93,7 +97,10 @@ const SQL_CREATE: string =
   // v7 跨源去重：归一化键 + 挂靠关系（空串 = 自己是主条）。
   'link_key TEXT NOT NULL DEFAULT \'\', ' +
   'title_key TEXT NOT NULL DEFAULT \'\', ' +
-  'canonical_id TEXT NOT NULL DEFAULT \'\')';
+  'canonical_id TEXT NOT NULL DEFAULT \'\', ' +
+  // v8 媒体附件（JSON）与音频播放进度（秒）。
+  'enclosures TEXT NOT NULL DEFAULT \'[]\', ' +
+  'media_progress INTEGER NOT NULL DEFAULT 0)';
 
 /**
  * 标注表：一条 = 引文 + 可选备注 + 配色 + 定位信息。
@@ -151,6 +158,12 @@ const SQL_ADD_TITLE_KEY: string =
 /** 所属主条 id（v7）；空串 = 本条就是主条。 */
 const SQL_ADD_CANONICAL: string =
   'ALTER TABLE ' + ArticleDbConstants.TABLE_ARTICLES + ' ADD COLUMN canonical_id TEXT NOT NULL DEFAULT \'\'';
+/** v8 媒体附件（JSON 数组）。 */
+const SQL_ADD_ENCLOSURES: string =
+  'ALTER TABLE ' + ArticleDbConstants.TABLE_ARTICLES + ' ADD COLUMN enclosures TEXT NOT NULL DEFAULT \'[]\'';
+/** v8 音频播放进度（秒）。 */
+const SQL_ADD_MEDIA_PROGRESS: string =
+  'ALTER TABLE ' + ArticleDbConstants.TABLE_ARTICLES + ' ADD COLUMN media_progress INTEGER NOT NULL DEFAULT 0';
 
 /** 入库去重：单批最多处理 / 查询的键数（避免 IN 列表过长）。 */
 const DEDUPE_KEY_BATCH: number = 200;
@@ -158,8 +171,8 @@ const DEDUPE_KEY_BATCH: number = 200;
 const SQL_INSERT: string =
   'INSERT OR IGNORE INTO ' + ArticleDbConstants.TABLE_ARTICLES +
   ' (id, feed_id, feed_title, title, link, summary, content, published_at, is_read, is_starred, fetched_at,' +
-  ' image_url, author, content_html, link_key, title_key, canonical_id)' +
-  ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+  ' image_url, author, content_html, link_key, title_key, canonical_id, enclosures)' +
+  ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
 
 /** 备份导入：单事务最多处理的条数（2 万篇 ≈ 100 个短事务，避免长事务卡顿）。 */
 const BACKUP_BATCH_SIZE: number = 200;
@@ -543,6 +556,9 @@ export class ArticleStore {
       this.addColumnIfNeeded(SQL_ADD_LINK_KEY);
       this.addColumnIfNeeded(SQL_ADD_TITLE_KEY);
       this.addColumnIfNeeded(SQL_ADD_CANONICAL);
+      // v8 媒体附件 / 音频进度：同样自愈补列。
+      this.addColumnIfNeeded(SQL_ADD_ENCLOSURES);
+      this.addColumnIfNeeded(SQL_ADD_MEDIA_PROGRESS);
       this.store.executeSync(SQL_CREATE_HIGHLIGHTS);
       // 标签 / 智能文件夹：即使库已是最新版本也执行一遍（自愈：上次建表失败 / 被打断）。
       this.createTagTables();
@@ -598,7 +614,8 @@ export class ArticleStore {
 
   /** 版本化迁移：v1 = 初始表；v2 = 索引 + 回收站 + FTS；v3 = 中文检索索引；v4 = 标签 + 智能文件夹；
    *  v5 = 远端同步表；v6 = 规则表 + articles.is_hidden；
-   *  v7 = 跨源去重：articles.link_key / title_key / canonical_id + 3 个索引。 */
+   *  v7 = 跨源去重：articles.link_key / title_key / canonical_id + 3 个索引；
+   *  v8 = 媒体附件 articles.enclosures + 音频进度 articles.media_progress。 */
   private async migrate(): Promise<void> {
     const store: relationalStore.RdbStore | undefined = this.store;
     if (store === undefined) {
@@ -1210,6 +1227,71 @@ export class ArticleStore {
   }
 
   /**
+   * 媒体队列：主条、未隐藏、带 enclosure 的文章，按发布时间倒序。
+   * @param feedId 限定来源；allFeeds=true 时忽略。
+   * @param onlyUnplayed 只取 media_progress = 0 的（未开始过的）音频。
+   * 返回前在内存里过滤出音频（enclosure 可能全是视频）。
+   */
+  async loadMediaQueue(feedId: string, allFeeds: boolean, onlyUnplayed: boolean,
+    limit: number = 50): Promise<Article[]> {
+    await this.whenReady();
+    const store: relationalStore.RdbStore | undefined = this.store;
+    if (store === undefined) {
+      return [];
+    }
+    const params: relationalStore.ValueType[] = [];
+    let sql: string = 'SELECT ' + LIST_COLUMNS + ' FROM ' + ArticleDbConstants.TABLE_ARTICLES + ' a' +
+      ' WHERE a.canonical_id = \'\' AND a.is_hidden = 0 AND a.enclosures <> \'[]\'';
+    if (!allFeeds) {
+      sql += ' AND a.feed_id = ?';
+      params.push(feedId);
+    }
+    if (onlyUnplayed) {
+      sql += ' AND a.media_progress = 0';
+    }
+    sql += ' ORDER BY a.published_at DESC LIMIT ?';
+    params.push(limit > 0 ? Math.floor(limit) : 50);
+    const result: Article[] = [];
+    try {
+      const rs: relationalStore.ResultSet = await store.querySql(sql, params);
+      try {
+        while (rs.goToNextRow()) {
+          const article: Article = this.articleFromListRow(rs);
+          for (let i = 0; i < article.enclosures.length; i += 1) {
+            const enclosure: Enclosure = article.enclosures[i];
+            if (enclosure.isAudio()) {
+              result.push(article);
+              break;
+            }
+          }
+        }
+      } finally {
+        rs.close();
+      }
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.warn(DOMAIN, TAG, 'loadMediaQueue failed: %{public}d', error.code);
+    }
+    return result;
+  }
+
+  /** 写音频播放进度（秒）；0 表示未听。 */
+  async setMediaProgress(articleId: string, seconds: number): Promise<void> {
+    const store: relationalStore.RdbStore | undefined = this.store;
+    if (store === undefined || articleId.length === 0) {
+      return;
+    }
+    const value: number = Number.isFinite(seconds) && seconds > 0 ? Math.floor(seconds) : 0;
+    try {
+      store.executeSync('UPDATE ' + ArticleDbConstants.TABLE_ARTICLES +
+        ' SET media_progress = ? WHERE id = ?', [value, articleId]);
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.warn(DOMAIN, TAG, 'setMediaProgress failed: %{public}d', error.code);
+    }
+  }
+
+  /**
    * 轻量列表行 → Article（loadForList / loadHidden 共用，字段映射保持一致）。
    * 正文列不在列表查询里，正文由 loadBody 按需加载。
    */
@@ -1239,6 +1321,8 @@ export class ArticleStore {
     // 跨源去重：canonical_id 空串 = 主条；duplicateCount 是「含自己的组内来源数」。
     article.canonicalId = rs.getString(rs.getColumnIndex('canonical_id'));
     article.duplicateCount = 1 + rs.getLong(rs.getColumnIndex('dup_count'));
+    article.enclosures = decodeEnclosures(rs.getString(rs.getColumnIndex('enclosures')));
+    article.mediaProgress = rs.getLong(rs.getColumnIndex('media_progress'));
     return article;
   }
 
@@ -1316,6 +1400,8 @@ export class ArticleStore {
         article.readerState = article.readerHtml.length > 0 ? ReaderState.READY : ReaderState.NONE;
         article.canonicalId = rs.getString(rs.getColumnIndex('canonical_id'));
         article.duplicateCount = 1 + rs.getLong(rs.getColumnIndex('dup_count'));
+        article.enclosures = decodeEnclosures(rs.getString(rs.getColumnIndex('enclosures')));
+        article.mediaProgress = rs.getLong(rs.getColumnIndex('media_progress'));
         return article;
       } finally {
         rs.close();
@@ -1355,7 +1441,7 @@ export class ArticleStore {
             item.id, item.feedId, item.feedTitle, item.title, item.link,
             item.summary, item.content, item.publishedAt,
             item.read ? 1 : 0, item.starred ? 1 : 0, now, item.imageUrl, item.author, item.contentHtml,
-            item.linkKey, item.titleKey, canonical
+            item.linkKey, item.titleKey, canonical, encodeEnclosures(item.enclosures)
           ]);
           // INSERT OR IGNORE：只有真正插入了新行（changes()=1）才建索引，避免覆盖已有正文索引。
           const inserted: boolean = this.lastChanges() > 0;

@@ -6,6 +6,8 @@
  */
 
 import { RssConstants } from '../common/constants/RssConstants';
+import { Enclosure } from '../model/Enclosure';
+import { durationFromText, numberFromText } from './EnclosureCodec';
 
 /** 解析出的条目。 */
 export class ParsedArticle {
@@ -20,9 +22,12 @@ export class ParsedArticle {
   readonly author: string;
   /** feed 自带的 HTML 正文（保留块级结构，仅去 script/style），没有则为空串。 */
   readonly contentHtml: string;
+  /** 媒体附件（播客 / 视频）；没有则为空数组。 */
+  readonly enclosures: Enclosure[];
 
   constructor(title: string, link: string, summary: string, content: string, publishedAt: number,
-    imageUrl: string, author: string = '', contentHtml: string = '') {
+    imageUrl: string, author: string = '', contentHtml: string = '',
+    enclosures: Enclosure[] = []) {
     this.title = title;
     this.link = link;
     this.summary = summary;
@@ -31,6 +36,7 @@ export class ParsedArticle {
     this.imageUrl = imageUrl;
     this.author = author;
     this.contentHtml = contentHtml;
+    this.enclosures = enclosures;
   }
 }
 
@@ -261,6 +267,31 @@ function readTagAttr(xml: string, tag: string, attr: string): string {
   return rest.substring(0, endQuote);
 }
 
+/** 切出所有开标签文本（`<tag ...>`，含自闭合），用于 enclosure / link / media:content。 */
+function findOpenTags(xml: string, tag: string): string[] {
+  const tags: string[] = [];
+  const openToken: string = '<' + tag;
+  let searchFrom: number = 0;
+  while (searchFrom < xml.length) {
+    const start: number = xml.indexOf(openToken, searchFrom);
+    if (start < 0) {
+      break;
+    }
+    const openEnd: number = xml.indexOf('>', start);
+    if (openEnd < 0) {
+      break;
+    }
+    const nextChar: string = xml.charAt(start + openToken.length);
+    // 避免 <link> 命中 <linkage> 之类：要求标签名后是空白 / '>' / '/'。
+    if (nextChar === '' || nextChar === '>' || nextChar === '/' || nextChar === ' ' ||
+      nextChar === '\n' || nextChar === '\r' || nextChar === '\t') {
+      tags.push(xml.substring(start, openEnd + 1));
+    }
+    searchFrom = openEnd + 1;
+  }
+  return tags;
+}
+
 /** 切出所有 <tag>...</tag> 块（支持带属性的开标签）。 */
 function findBlocks(xml: string, tag: string): string[] {
   const blocks: string[] = [];
@@ -301,6 +332,62 @@ function parseDate(value: string): number {
     return iso;
   }
   return 0;
+}
+
+/** 追加附件（同 URL 只保留第一条）。 */
+function appendEnclosure(list: Enclosure[], url: string, type: string, length: number, duration: number): void {
+  const trimmed: string = url.trim();
+  if (trimmed.length === 0) {
+    return;
+  }
+  for (let i = 0; i < list.length; i += 1) {
+    if (list[i].url === trimmed) {
+      return;
+    }
+  }
+  list.push(new Enclosure(trimmed, type.trim(), length, duration));
+}
+
+/**
+ * 解析媒体附件：
+ *   - RSS <enclosure url type length>；
+ *   - Atom <link rel="enclosure" href type length>；
+ *   - Media RSS <media:content url type|medium duration>；
+ *   - <itunes:duration> 作为时长兜底。
+ */
+function parseEnclosures(block: string, isAtom: boolean): Enclosure[] {
+  const list: Enclosure[] = [];
+  const itunesDuration: number = durationFromText(readTagText(block, 'itunes:duration'));
+
+  const enclosures: string[] = findOpenTags(block, 'enclosure');
+  for (let i = 0; i < enclosures.length; i += 1) {
+    const tag: string = enclosures[i];
+    appendEnclosure(list, attrOf(tag, 'url'), attrOf(tag, 'type'),
+      numberFromText(attrOf(tag, 'length')), itunesDuration);
+  }
+
+  if (isAtom) {
+    const links: string[] = findOpenTags(block, 'link');
+    for (let i = 0; i < links.length; i += 1) {
+      const tag: string = links[i];
+      if (attrOf(tag, 'rel') !== 'enclosure') {
+        continue;
+      }
+      appendEnclosure(list, attrOf(tag, 'href'), attrOf(tag, 'type'),
+        numberFromText(attrOf(tag, 'length')), itunesDuration);
+    }
+  }
+
+  const mediaContents: string[] = findOpenTags(block, 'media:content');
+  for (let i = 0; i < mediaContents.length; i += 1) {
+    const tag: string = mediaContents[i];
+    const type: string = attrOf(tag, 'type');
+    const medium: string = attrOf(tag, 'medium');
+    const mediaDuration: number = numberFromText(attrOf(tag, 'duration'));
+    appendEnclosure(list, attrOf(tag, 'url'), type.length > 0 ? type : medium,
+      numberFromText(attrOf(tag, 'fileSize')), mediaDuration > 0 ? mediaDuration : itunesDuration);
+  }
+  return list;
 }
 
 /** 配图：media:content → enclosure（图片类型）→ 正文里第一个 <img src>。 */
@@ -365,7 +452,9 @@ function parseArticle(block: string, isAtom: boolean): ParsedArticle {
   const contentHtml: string = basicCleanHtml(htmlSource(bodySource));
   const imageUrl: string = firstImageUrl(block, bodySource);
   const author: string = firstAuthor(block, isAtom);
-  return new ParsedArticle(title, link.trim(), summary, content, parseDate(dateText), imageUrl, author, contentHtml);
+  const enclosures: Enclosure[] = parseEnclosures(block, isAtom);
+  return new ParsedArticle(title, link.trim(), summary, content, parseDate(dateText), imageUrl, author,
+    contentHtml, enclosures);
 }
 
 /**

@@ -7,12 +7,17 @@ import { safeArea } from '../service/SafeAreaController';
 import { deepLink, DEEP_LINK_EVENT } from '../service/DeepLink';
 import { shareIntent } from '../service/ShareIntent';
 import { shareHandoff } from '../service/ShareHandoff';
+import { diagnostics } from '../service/DiagnosticsService';
 
 const DOMAIN: number = 0x0000;
 const TAG: string = 'HdsEntry';
 
 export default class EntryAbility extends UIAbility {
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {
+    // 启动时刻 / 上次退出原因只读系统给的值：不注册全局异常观测器，不改变默认崩溃行为。
+    diagnostics.markLaunch(launchParam.launchUTCTime ?? 0,
+      launchParam.lastExitReason, launchParam.lastExitMessage ?? '');
+    diagnostics.init(this.context);
     // 卡片 / 通知带进来的深链参数先存起来，页面挂载后再取。
     deepLink.accept(want);
     // 主题由设置页控制；这里先跟随系统，恢复订阅后由 ThemeController 覆盖。

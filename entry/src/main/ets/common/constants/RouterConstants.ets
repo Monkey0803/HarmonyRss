@@ -43,4 +43,8 @@ export class RouterConstants {
   static readonly PAGE_TRANSLATE_SETTINGS: string = 'translateSettings';
   /** 隐私与数据页（外发数据说明 / 权限状态 / 数据控制）。 */
   static readonly PAGE_PRIVACY: string = 'privacy';
+  /** 发现与推荐页（精选目录 / 相似源 / RSSHub 路由 / 剪贴板导入）。 */
+  static readonly PAGE_DISCOVER: string = 'discover';
+  /** 诊断与性能页（启动 / 抓取耗时、失败归类、上次退出原因、源健康）。 */
+  static readonly PAGE_DIAGNOSTICS: string = 'diagnostics';
 }

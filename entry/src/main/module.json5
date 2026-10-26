@@ -49,6 +49,10 @@
       // 防窥保护（读取系统防窥状态）。
       {
         "name": "ohos.permission.DLP_GET_HIDE_STATUS"
+      },
+      // 播客后台播放（配合 backgroundModes: audioPlayback + AVSession）。
+      {
+        "name": "ohos.permission.KEEP_BACKGROUND_RUNNING"
       }
     ],
     "abilities": [
@@ -60,6 +64,10 @@
         "label": "$string:EntryAbility_label",
         "startWindowIcon": "$media:startIcon",
         "startWindowBackground": "$color:start_window_background",
+        // 播客音频后台播放：与 MediaPlayerService 的 AUDIO_PLAYBACK 长时任务配对。
+        "backgroundModes": [
+          "audioPlayback"
+        ],
         "exported": true,
         "skills": [
           {

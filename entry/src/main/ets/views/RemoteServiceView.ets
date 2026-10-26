@@ -13,6 +13,8 @@ import { ToastUtil } from '../common/utils/ToastUtil';
 import { appSettings } from '../model/AppSettings';
 import { settingsStore } from '../service/SettingsStore';
 import { AUTO_REFRESH_OPTIONS, ChoiceOption } from '../model/SettingsOptions';
+import { RemoteSyncConstants } from '../common/constants/RssConstants';
+import { MaterialController } from '../service/MaterialController';
 
 @ComponentV2
 export struct RemoteServiceView {
@@ -35,6 +37,23 @@ export struct RemoteServiceView {
       return $r('app.string.remote_status_never');
     }
     return remoteAccountViewModel.errorText(remoteAccountViewModel.status.lastError);
+  }
+
+  private isFeedbin(): boolean {
+    return remoteAccountViewModel.serviceType === RemoteSyncConstants.SERVICE_TYPE_FEEDBIN;
+  }
+
+  private serviceLabel(): ResourceStr {
+    return this.isFeedbin()
+      ? $r('app.string.remote_service_feedbin')
+      : $r('app.string.remote_service_greader');
+  }
+
+  /** 已连接账号的服务名（状态卡展示，跟随账号持久化的 serviceType）。 */
+  private accountServiceLabel(): ResourceStr {
+    return remoteAccountViewModel.account?.serviceType === RemoteSyncConstants.SERVICE_TYPE_FEEDBIN
+      ? $r('app.string.remote_status_service_value_feedbin')
+      : $r('app.string.remote_status_service_value');
   }
 
   private connect(): void {
@@ -100,18 +119,43 @@ export struct RemoteServiceView {
   @Builder
   ConnectCard() {
     Column({ space: $r('app.float.space_s') }) {
+      Text($r('app.string.remote_field_service'))
+        .fontSize($r('app.float.font_size_caption'))
+        .fontColor($r('app.color.hm_text_secondary'))
+        .width('100%')
+      Row() {
+        Text(this.serviceLabel())
+          .fontSize($r('app.float.font_size_body'))
+          .fontColor($r('app.color.hm_text_primary'))
+          .layoutWeight(1)
+        SymbolGlyph($r('sys.symbol.chevron_down'))
+          .fontSize($r('app.float.icon_size_small'))
+          .fontColor([$r('app.color.hm_text_secondary')])
+      }
+      .width('100%')
+      .height($r('app.float.row_height'))
+      .padding({ left: $r('app.float.space_s'), right: $r('app.float.space_s') })
+      .backgroundColor($r('app.color.hm_page_transparent'))
+      .borderRadius($r('app.float.radius_card'))
+      .bindMenu(this.ServiceTypeMenu(), MaterialController.menuOptions({}, appSettings.immersiveOn))
+
       Text($r('app.string.remote_field_base_url'))
         .fontSize($r('app.float.font_size_caption'))
         .fontColor($r('app.color.hm_text_secondary'))
         .width('100%')
-      TextInput({ text: remoteAccountViewModel.baseUrl, placeholder: $r('app.string.remote_field_base_url_hint') })
+      TextInput({ text: remoteAccountViewModel.baseUrl,
+        placeholder: this.isFeedbin()
+          ? $r('app.string.remote_feedbin_base_hint')
+          : $r('app.string.remote_field_base_url_hint') })
         .type(InputType.Normal)
         .fontSize($r('app.float.font_size_body'))
         .onChange((value: string) => {
           remoteAccountViewModel.baseUrl = value;
         })
 
-      Text($r('app.string.remote_field_username'))
+      Text(this.isFeedbin()
+        ? $r('app.string.remote_field_username_email')
+        : $r('app.string.remote_field_username'))
         .fontSize($r('app.float.font_size_caption'))
         .fontColor($r('app.color.hm_text_secondary'))
         .width('100%')
@@ -133,24 +177,26 @@ export struct RemoteServiceView {
           remoteAccountViewModel.password = value;
         })
 
-      Row() {
-        Text($r('app.string.remote_allow_http'))
-          .fontSize($r('app.float.font_size_body'))
-          .fontColor($r('app.color.hm_text_primary'))
-        Blank()
-        Toggle({ type: ToggleType.Switch, isOn: remoteAccountViewModel.allowHttp })
-          .selectedColor($r('app.color.hm_brand'))
-          .onChange((value: boolean) => {
-            remoteAccountViewModel.allowHttp = value;
-          })
-      }
-      .width('100%')
-      .height($r('app.float.row_height'))
-
-      Text($r('app.string.remote_allow_http_hint'))
-        .fontSize($r('app.float.font_size_caption'))
-        .fontColor($r('app.color.hm_text_secondary'))
+      if (!this.isFeedbin()) {
+        Row() {
+          Text($r('app.string.remote_allow_http'))
+            .fontSize($r('app.float.font_size_body'))
+            .fontColor($r('app.color.hm_text_primary'))
+          Blank()
+          Toggle({ type: ToggleType.Switch, isOn: remoteAccountViewModel.allowHttp })
+            .selectedColor($r('app.color.hm_brand'))
+            .onChange((value: boolean) => {
+              remoteAccountViewModel.allowHttp = value;
+            })
+        }
         .width('100%')
+        .height($r('app.float.row_height'))
+
+        Text($r('app.string.remote_allow_http_hint'))
+          .fontSize($r('app.float.font_size_caption'))
+          .fontColor($r('app.color.hm_text_secondary'))
+          .width('100%')
+      }
 
       Button(remoteAccountViewModel.connecting
         ? $r('app.string.remote_connecting')
@@ -173,7 +219,9 @@ export struct RemoteServiceView {
           .width('100%')
       }
 
-      Text($r('app.string.remote_form_hint'))
+      Text(this.isFeedbin()
+        ? $r('app.string.remote_feedbin_hint')
+        : $r('app.string.remote_form_hint'))
         .fontSize($r('app.float.font_size_caption'))
         .fontColor($r('app.color.hm_text_secondary'))
         .width('100%')
@@ -189,11 +237,28 @@ export struct RemoteServiceView {
     .alignItems(HorizontalAlign.Start)
   }
 
+  /** 服务类型菜单。 */
+  @Builder
+  ServiceTypeMenu() {
+    Menu() {
+      MenuItem({ content: $r('app.string.remote_service_greader') })
+        .onClick(() => {
+          remoteAccountViewModel.chooseService(RemoteSyncConstants.SERVICE_TYPE_GREADER);
+        })
+      MenuItem({ content: $r('app.string.remote_service_feedbin') })
+        .onClick(() => {
+          remoteAccountViewModel.chooseService(RemoteSyncConstants.SERVICE_TYPE_FEEDBIN);
+        })
+    }
+    .width($r('app.float.menu_width'))
+    .radius($r('app.float.radius_card'))
+  }
+
   /** 同步状态卡：账号信息 + 同步统计 + 操作。 */
   @Builder
   StatusCard() {
     Column() {
-      this.InfoRow($r('app.string.remote_status_service'), $r('app.string.remote_status_service_value'))
+      this.InfoRow($r('app.string.remote_status_service'), this.accountServiceLabel())
       Divider().color($r('app.color.hm_divider'))
       this.InfoRow($r('app.string.remote_status_base_url'),
         remoteAccountViewModel.account?.baseUrl ?? '')

@@ -1918,7 +1918,7 @@
     },
     {
       "name": "remote_error_api",
-      "value": "Google Reader API is not enabled on this server."
+      "value": "The service API is not available at this address."
     },
     {
       "name": "remote_error_rate",
@@ -1938,7 +1938,7 @@
     },
     {
       "name": "remote_error_empty",
-      "value": "Please fill in the address, username and password."
+      "value": "Please fill in the required fields."
     },
     {
       "name": "remote_error_busy",
@@ -3363,6 +3363,506 @@
     {
       "name": "privacy_out_cross_border_desc",
       "value": "Third-party endpoints you configure may process data outside your region, under that service's privacy policy."
+    },
+    {
+      "name": "media_audio_label",
+      "value": "Podcast"
+    },
+    {
+      "name": "media_video_label",
+      "value": "Video"
+    },
+    {
+      "name": "media_audio_with_duration",
+      "value": "Podcast · %s"
+    },
+    {
+      "name": "media_play_audio_feed",
+      "value": "Play podcast (this feed)"
+    },
+    {
+      "name": "media_play_audio_all",
+      "value": "Play all unplayed podcasts"
+    },
+    {
+      "name": "media_open_video",
+      "value": "Open video"
+    },
+    {
+      "name": "media_error",
+      "value": "Unable to play this audio"
+    },
+    {
+      "name": "media_pause",
+      "value": "Pause"
+    },
+    {
+      "name": "media_resume",
+      "value": "Resume"
+    },
+    {
+      "name": "media_stop",
+      "value": "Stop"
+    },
+    {
+      "name": "media_rewind",
+      "value": "Back 15 seconds"
+    },
+    {
+      "name": "media_forward",
+      "value": "Forward 15 seconds"
+    },
+    {
+      "name": "media_previous",
+      "value": "Previous"
+    },
+    {
+      "name": "media_next",
+      "value": "Next"
+    },
+    {
+      "name": "media_speed",
+      "value": "Playback speed"
+    },
+    {
+      "name": "privacy_perm_media_title",
+      "value": "Background audio"
+    },
+    {
+      "name": "privacy_perm_media_desc",
+      "value": "Podcast playback uses an AUDIO_PLAYBACK continuous task and AVSession; it ends when playback stops."
+    },
+    {
+      "name": "discover_entry",
+      "value": "Discover"
+    },
+    {
+      "name": "discover_title",
+      "value": "Discover"
+    },
+    {
+      "name": "discover_desc",
+      "value": "Hand-picked feeds, local recommendations, RSSHub routes and clipboard import. Nothing is fetched until you tap Subscribe."
+    },
+    {
+      "name": "discover_search_hint",
+      "value": "Search curated feeds"
+    },
+    {
+      "name": "discover_category_all",
+      "value": "All"
+    },
+    {
+      "name": "discover_cat_hot",
+      "value": "Popular"
+    },
+    {
+      "name": "discover_cat_tech",
+      "value": "Technology"
+    },
+    {
+      "name": "discover_cat_design",
+      "value": "Design"
+    },
+    {
+      "name": "discover_cat_business",
+      "value": "Business"
+    },
+    {
+      "name": "discover_cat_science",
+      "value": "Science"
+    },
+    {
+      "name": "discover_cat_indie",
+      "value": "Indie blogs"
+    },
+    {
+      "name": "discover_cat_cn",
+      "value": "Chinese"
+    },
+    {
+      "name": "discover_section_recommended",
+      "value": "Recommended for you"
+    },
+    {
+      "name": "discover_recommend_hint",
+      "value": "Based on topics of feeds you already follow (computed locally)."
+    },
+    {
+      "name": "discover_section_popular",
+      "value": "Popular feeds"
+    },
+    {
+      "name": "discover_section_catalog",
+      "value": "Curated catalog"
+    },
+    {
+      "name": "discover_subscribe",
+      "value": "Subscribe"
+    },
+    {
+      "name": "discover_subscribed",
+      "value": "Subscribed"
+    },
+    {
+      "name": "discover_subscribing",
+      "value": "Subscribing…"
+    },
+    {
+      "name": "discover_subscribe_ok",
+      "value": "Subscribed: %s"
+    },
+    {
+      "name": "discover_subscribe_success",
+      "value": "Subscribed"
+    },
+    {
+      "name": "discover_subscribe_duplicate",
+      "value": "Already subscribed"
+    },
+    {
+      "name": "discover_empty",
+      "value": "No matching feeds"
+    },
+    {
+      "name": "discover_section_import",
+      "value": "Import from clipboard"
+    },
+    {
+      "name": "discover_import_desc",
+      "value": "Paste bookmarks or a list of addresses. Each URL is validated as a feed, including HTML feed autodiscovery."
+    },
+    {
+      "name": "discover_importing",
+      "value": "Importing…"
+    },
+    {
+      "name": "discover_import_result",
+      "value": "%d added · %d duplicate · %d failed"
+    },
+    {
+      "name": "discover_import_empty",
+      "value": "No URL found in the clipboard"
+    },
+    {
+      "name": "discover_section_rsshub",
+      "value": "RSSHub route helper"
+    },
+    {
+      "name": "discover_rsshub_desc",
+      "value": "Paste a site or profile URL to generate candidate RSSHub routes. You can switch to a self-hosted instance; nothing is fetched until you subscribe."
+    },
+    {
+      "name": "discover_rsshub_base",
+      "value": "RSSHub instance"
+    },
+    {
+      "name": "discover_rsshub_input_hint",
+      "value": "https://github.com/user/repo"
+    },
+    {
+      "name": "discover_rsshub_generate",
+      "value": "Generate routes"
+    },
+    {
+      "name": "discover_rsshub_empty",
+      "value": "No route matched. Try a supported site URL or check the RSSHub docs."
+    },
+    {
+      "name": "discover_rsshub_kind_commits",
+      "value": "Repository commits"
+    },
+    {
+      "name": "discover_rsshub_kind_releases",
+      "value": "Releases"
+    },
+    {
+      "name": "discover_rsshub_kind_issues",
+      "value": "Issues"
+    },
+    {
+      "name": "discover_rsshub_kind_video",
+      "value": "Video"
+    },
+    {
+      "name": "discover_rsshub_kind_user_video",
+      "value": "User videos"
+    },
+    {
+      "name": "discover_rsshub_kind_channel",
+      "value": "Channel"
+    },
+    {
+      "name": "discover_rsshub_kind_user",
+      "value": "User"
+    },
+    {
+      "name": "discover_rsshub_kind_timeline",
+      "value": "User timeline"
+    },
+    {
+      "name": "discover_rsshub_kind_activity",
+      "value": "User activity"
+    },
+    {
+      "name": "discover_rsshub_kind_articles",
+      "value": "User articles"
+    },
+    {
+      "name": "discover_rsshub_kind_posts",
+      "value": "User posts"
+    },
+    {
+      "name": "discover_rsshub_kind_route",
+      "value": "Route"
+    },
+    {
+      "name": "diagnostics_entry",
+      "value": "Diagnostics"
+    },
+    {
+      "name": "diagnostics_title",
+      "value": "Diagnostics & performance"
+    },
+    {
+      "name": "diagnostics_desc",
+      "value": "Local-only startup and fetch metrics, failure classification, source health and last-exit reason. Nothing is uploaded."
+    },
+    {
+      "name": "diagnostics_section_startup",
+      "value": "Startup & last exit"
+    },
+    {
+      "name": "diagnostics_first_screen",
+      "value": "Time to first screen"
+    },
+    {
+      "name": "diagnostics_started_at",
+      "value": "Launch time"
+    },
+    {
+      "name": "diagnostics_last_exit",
+      "value": "Last exit reason"
+    },
+    {
+      "name": "diagnostics_last_exit_detail",
+      "value": "Last exit detail"
+    },
+    {
+      "name": "diagnostics_exit_unknown",
+      "value": "Unknown"
+    },
+    {
+      "name": "diagnostics_exit_normal",
+      "value": "Normal exit"
+    },
+    {
+      "name": "diagnostics_exit_js",
+      "value": "JS error"
+    },
+    {
+      "name": "diagnostics_exit_cpp",
+      "value": "Native crash"
+    },
+    {
+      "name": "diagnostics_exit_freeze",
+      "value": "App freeze"
+    },
+    {
+      "name": "diagnostics_exit_resource",
+      "value": "Resource control"
+    },
+    {
+      "name": "diagnostics_exit_upgrade",
+      "value": "App upgrade"
+    },
+    {
+      "name": "diagnostics_exit_user",
+      "value": "User or system request"
+    },
+    {
+      "name": "diagnostics_exit_other",
+      "value": "Other"
+    },
+    {
+      "name": "diagnostics_no_data",
+      "value": "No record"
+    },
+    {
+      "name": "diagnostics_section_fetch",
+      "value": "Fetch performance"
+    },
+    {
+      "name": "diagnostics_fetch_last",
+      "value": "Last fetch"
+    },
+    {
+      "name": "diagnostics_fetch_duration",
+      "value": "Total duration"
+    },
+    {
+      "name": "diagnostics_fetch_sources",
+      "value": "Sources"
+    },
+    {
+      "name": "diagnostics_fetch_ok",
+      "value": "Succeeded"
+    },
+    {
+      "name": "diagnostics_fetch_failed",
+      "value": "Failed"
+    },
+    {
+      "name": "diagnostics_fetch_avg",
+      "value": "Average per source"
+    },
+    {
+      "name": "diagnostics_session_runs",
+      "value": "Fetch runs this session"
+    },
+    {
+      "name": "diagnostics_section_failure",
+      "value": "Failure breakdown"
+    },
+    {
+      "name": "diagnostics_fail_timeout",
+      "value": "Timeout"
+    },
+    {
+      "name": "diagnostics_fail_network",
+      "value": "Network"
+    },
+    {
+      "name": "diagnostics_fail_http",
+      "value": "HTTP status"
+    },
+    {
+      "name": "diagnostics_fail_content",
+      "value": "Content or parse"
+    },
+    {
+      "name": "diagnostics_fail_other",
+      "value": "Other"
+    },
+    {
+      "name": "diagnostics_section_slow",
+      "value": "Slowest sources"
+    },
+    {
+      "name": "diagnostics_section_health",
+      "value": "Source health"
+    },
+    {
+      "name": "diagnostics_health_ok",
+      "value": "All sources are healthy."
+    },
+    {
+      "name": "diagnostics_health_failures",
+      "value": "%d consecutive failures"
+    },
+    {
+      "name": "diagnostics_retry",
+      "value": "Retry all sources"
+    },
+    {
+      "name": "diagnostics_retrying",
+      "value": "Retrying…"
+    },
+    {
+      "name": "diagnostics_retry_done",
+      "value": "Retried %d sources, %d failed"
+    },
+    {
+      "name": "diagnostics_section_runtime",
+      "value": "Runtime"
+    },
+    {
+      "name": "diagnostics_runtime_articles",
+      "value": "Local articles"
+    },
+    {
+      "name": "diagnostics_runtime_cached",
+      "value": "Cached content"
+    },
+    {
+      "name": "diagnostics_runtime_cached_value",
+      "value": "%d articles · %d chars"
+    },
+    {
+      "name": "diagnostics_runtime_virtualization",
+      "value": "List virtualization"
+    },
+    {
+      "name": "diagnostics_runtime_virtualization_value",
+      "value": "LazyForEach · %d per page"
+    },
+    {
+      "name": "diagnostics_runtime_fps",
+      "value": "Scroll frame rate"
+    },
+    {
+      "name": "diagnostics_runtime_fps_value",
+      "value": "%d fps · worst %d ms"
+    },
+    {
+      "name": "diagnostics_runtime_indexes",
+      "value": "Database indexes"
+    },
+    {
+      "name": "diagnostics_runtime_indexes_value",
+      "value": "feed_id + published_at, is_read, is_starred, highlights.article_id"
+    },
+    {
+      "name": "diagnostics_section_record",
+      "value": "Diagnostics recording"
+    },
+    {
+      "name": "diagnostics_toggle",
+      "value": "Record local diagnostics"
+    },
+    {
+      "name": "diagnostics_toggle_desc",
+      "value": "When off, startup and fetch timings are not recorded. The last-exit reason still comes from the system."
+    },
+    {
+      "name": "diagnostics_clear",
+      "value": "Clear diagnostics"
+    },
+    {
+      "name": "diagnostics_cleared",
+      "value": "Diagnostics cleared"
+    },
+    {
+      "name": "diagnostics_privacy",
+      "value": "Everything here stays in the app's private preferences. No analytics upload is implemented."
+    },
+    {
+      "name": "remote_field_service",
+      "value": "Service"
+    },
+    {
+      "name": "remote_service_greader",
+      "value": "FreshRSS / TTRSS / Miniflux"
+    },
+    {
+      "name": "remote_service_feedbin",
+      "value": "Feedbin"
+    },
+    {
+      "name": "remote_status_service_value_feedbin",
+      "value": "Feedbin"
+    },
+    {
+      "name": "remote_field_username_email",
+      "value": "Email"
+    },
+    {
+      "name": "remote_feedbin_base_hint",
+      "value": "https://api.feedbin.com"
+    },
+    {
+      "name": "remote_feedbin_hint",
+      "value": "Feedbin uses HTTP Basic auth over HTTPS. Use your Feedbin account email and password."
     }
   ]
 }

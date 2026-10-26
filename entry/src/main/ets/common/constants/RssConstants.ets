@@ -153,9 +153,10 @@ export class ArticleDbConstants {
    * 当前数据库结构版本
    * （v1 = 初始表；v2 = 索引 + FTS + 回收站；v3 = 中文检索索引；v4 = 标签 + 智能文件夹；
    *   v5 = 远端账号 / 游标 / 映射 / 待同步队列；v6 = 规则表 + articles.is_hidden；
-   *   v7 = 跨源去重：articles.link_key / title_key / canonical_id + 3 个索引）。
+   *   v7 = 跨源去重：articles.link_key / title_key / canonical_id + 3 个索引；
+   *   v8 = 媒体附件 articles.enclosures + 音频进度 articles.media_progress）。
    */
-  static readonly SCHEMA_VERSION: number = 7;
+  static readonly SCHEMA_VERSION: number = 8;
 }
 
 /**
@@ -193,8 +194,12 @@ export class RemoteSyncConstants {
   static readonly CONNECT_TIMEOUT_MS: number = 10000;
   /** 读取超时（毫秒）。 */
   static readonly READ_TIMEOUT_MS: number = 20000;
-  /** 远端服务类型（目前仅 Google Reader API）。 */
+  /** 远端服务类型（Google Reader API）。 */
   static readonly SERVICE_TYPE_GREADER: string = 'greader';
+  /** 远端服务类型（Feedbin REST）。 */
+  static readonly SERVICE_TYPE_FEEDBIN: string = 'feedbin';
+  /** Feedbin 默认 API 根地址（不含 /v2）。 */
+  static readonly FEEDBIN_DEFAULT_BASE: string = 'https://api.feedbin.com';
   /** 默认 API 路径（用户只填域名 / 根路径时自动补全）。 */
   static readonly GREADER_DEFAULT_PATH: string = '/api/greader.php';
   /** 账号 id 前缀。 */

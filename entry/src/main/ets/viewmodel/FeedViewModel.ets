@@ -38,6 +38,7 @@ import { remoteSyncService } from '../service/remote/RemoteSyncService';
 import { notifyService } from '../service/NotifyService';
 import { ruleService } from '../service/RuleService';
 import { RuleApplyResult } from '../model/Rule';
+import { diagnostics } from '../service/DiagnosticsService';
 
 const MINUTE_MS: number = 60 * 1000;
 
@@ -363,8 +364,10 @@ export class FeedViewModel {
   /** 逐源抓取；返回失败数量，错误记录在各自 feed.lastError 上，不影响其他源。 */
   private async fetchFeeds(targets: FeedSource[], fresh: Article[]): Promise<number> {
     let failed: number = 0;
+    diagnostics.beginFetch(targets.length);
     for (let i = 0; i < targets.length; i += 1) {
       const feed: FeedSource = targets[i];
+      const startedAt: number = Date.now();
       try {
         const result: FeedFetchResult =
           await feedService.fetchFeed(feed.url, feed.etag, feed.lastModified);
@@ -373,21 +376,27 @@ export class FeedViewModel {
           // 304：内容没变，连解析都省了（仍算一次成功抓取）。
           console.info('feed not modified (304): ' + feed.url);
           this.markFeedSuccess(feed);
+          diagnostics.recordFeed(feed.id, feed.title, Date.now() - startedAt, true, FeedError.NONE);
           continue;
         }
         if (result.parsed === undefined) {
           failed += 1;
           this.markFeedFailure(feed, 'document is not a feed', FeedError.PARSE_ERROR);
+          diagnostics.recordFeed(feed.id, feed.title, Date.now() - startedAt, false, FeedError.PARSE_ERROR);
           continue;
         }
         toArticles(feed, result.parsed, fresh);
         this.markFeedSuccess(feed);
+        diagnostics.recordFeed(feed.id, feed.title, Date.now() - startedAt, true, FeedError.NONE);
       } catch (err) {
         const error: BusinessError = err as BusinessError;
+        const code: FeedError = errorCodeOf(err);
         failed += 1;
-        this.markFeedFailure(feed, describeError(error), errorCodeOf(err));
+        this.markFeedFailure(feed, describeError(error), code);
+        diagnostics.recordFeed(feed.id, feed.title, Date.now() - startedAt, false, code);
       }
     }
+    diagnostics.endFetch();
     return failed;
   }
 
@@ -1720,6 +1729,11 @@ export class FeedViewModel {
   /** 按 id 取当前文章；找不到返回 undefined。 */
   currentArticle(): Article | undefined {
     return this.findArticle(this.currentArticleId);
+  }
+
+  /** 播客队列：主条、未隐藏、带音频附件的文章（按源 / 全部未听由调用方决定）。 */
+  async mediaQueue(feedId: string, allFeeds: boolean, onlyUnplayed: boolean): Promise<Article[]> {
+    return await articleStore.loadMediaQueue(feedId, allFeeds, onlyUnplayed, 50);
   }
 
   /**

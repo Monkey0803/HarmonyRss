@@ -833,6 +833,10 @@ export struct SettingsTabView {
           // 外发数据说明 / 权限状态 / 数据控制集中在一页。
           this.NavRow($r('sys.symbol.lock'), $r('app.string.privacy_settings_title'),
             RouterConstants.PAGE_PRIVACY)
+          Divider().color($r('app.color.hm_divider'))
+          // 启动 / 抓取耗时、失败归类、上次退出原因与源健康（只写本机）。
+          this.NavRow($r('sys.symbol.exclamationmark_circle'), $r('app.string.diagnostics_entry'),
+            RouterConstants.PAGE_DIAGNOSTICS)
         }
         .width('100%')
         .backgroundColor($r('app.color.hm_card_background'))

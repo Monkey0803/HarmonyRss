@@ -40,6 +40,7 @@ import { MaterialController } from '../service/MaterialController';
 import { antiPeep } from '../service/AntiPeep';
 import { gripSensor } from '../service/GripSensor';
 import { safeArea } from '../service/SafeAreaController';
+import { diagnostics } from '../service/DiagnosticsService';
 import { backgroundImageService } from '../service/BackgroundImageService';
 import { CommonConstants } from '../common/constants/CommonConstants';
 import { TabIndex } from '../common/constants/NavigationConstants';
@@ -74,6 +75,8 @@ import { ShareSettingsView } from '../views/ShareSettingsView';
 import { NotifySettingsView } from '../views/NotifySettingsView';
 import { TranslateSettingsView } from '../views/TranslateSettingsView';
 import { PrivacyView } from '../views/PrivacyView';
+import { DiscoverView } from '../views/DiscoverView';
+import { DiagnosticsView } from '../views/DiagnosticsView';
 import { remoteSyncService } from '../service/remote/RemoteSyncService';
 import { notifyService } from '../service/NotifyService';
 import { backupService } from '../service/BackupService';
@@ -116,6 +119,8 @@ struct Index {
   private notifySettingsScroller: Scroller = new Scroller();
   private translateSettingsScroller: Scroller = new Scroller();
   private privacyScroller: Scroller = new Scroller();
+  private discoverScroller: Scroller = new Scroller();
+  private diagnosticsScroller: Scroller = new Scroller();
 
   /** 收到 Ability 的深链事件后消费（应用已在前台时点卡片的路径）。 */
   private onDeepLinkEvent: () => void = () => {
@@ -139,6 +144,10 @@ struct Index {
       this.pendingAddText = urls.join('\n');
       this.showAddSheet = true;
     });
+    // 首屏耗时：aboutToAppear 仍在首帧之前，推到当前任务之后记录（近似首帧完成时刻）。
+    setTimeout(() => {
+      diagnostics.markFirstScreen();
+    }, 0);
   }
 
   /** 分栏模式：宽窗口用 Split，窄窗口用 Stack（单栏）。 */
@@ -824,6 +833,22 @@ struct Index {
       .titleMode(HdsNavDestinationTitleMode.MINI)
       .backgroundColor($r('app.color.hm_web_surface'))
       .bindToScrollable([this.privacyScroller])
+    } else if (name === RouterConstants.PAGE_DISCOVER) {
+      HdsNavDestination() {
+        DiscoverView({ scroller: this.discoverScroller })
+      }
+      .titleBar(this.titleOptions($r('app.string.discover_title')))
+      .titleMode(HdsNavDestinationTitleMode.MINI)
+      .backgroundColor($r('app.color.hm_web_surface'))
+      .bindToScrollable([this.discoverScroller])
+    } else if (name === RouterConstants.PAGE_DIAGNOSTICS) {
+      HdsNavDestination() {
+        DiagnosticsView({ navPathStack: this.navPathStack, scroller: this.diagnosticsScroller })
+      }
+      .titleBar(this.titleOptions($r('app.string.diagnostics_title')))
+      .titleMode(HdsNavDestinationTitleMode.MINI)
+      .backgroundColor($r('app.color.hm_web_surface'))
+      .bindToScrollable([this.diagnosticsScroller])
     }
   }
 

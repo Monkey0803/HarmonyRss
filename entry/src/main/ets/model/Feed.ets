@@ -6,6 +6,7 @@
  */
 
 import { FullTextMode, TriState } from '../common/constants/SettingsConstants';
+import { Enclosure } from './Enclosure';
 
 /** 一个订阅源。 */
 @ObservedV2
@@ -221,10 +222,14 @@ export class Article {
   linkKey: string = '';
   /** 跨源去重：标题归一化键（入库时写入，不参与 UI）。 */
   titleKey: string = '';
+  /** 媒体附件（播客音频 / 视频）；空数组表示普通图文。 */
+  @Trace enclosures: Enclosure[] = [];
+  /** 音频已播放到的秒数（0 = 未听；播完写时长）。 */
+  @Trace mediaProgress: number = 0;
 
   constructor(id: string, feedId: string, feedTitle: string, title: string, link: string,
     summary: string, content: string, publishedAt: number, imageUrl: string = '', author: string = '',
-    contentHtml: string = '') {
+    contentHtml: string = '', enclosures: Enclosure[] = []) {
     this.id = id;
     this.feedId = feedId;
     this.feedTitle = feedTitle;
@@ -240,5 +245,6 @@ export class Article {
     this.starred = false;
     this.readerHtml = '';
     this.readerState = 'none';
+    this.enclosures = enclosures;
   }
 }

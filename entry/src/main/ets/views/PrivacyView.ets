@@ -210,6 +210,9 @@ export struct PrivacyView {
             this.InfoRow($r('app.string.privacy_perm_background_title'),
               $r('app.string.privacy_perm_background_desc'))
             Divider().color($r('app.color.hm_divider'))
+            this.InfoRow($r('app.string.privacy_perm_media_title'),
+              $r('app.string.privacy_perm_media_desc'))
+            Divider().color($r('app.color.hm_divider'))
             PrivacyStatusRow({
               title: $r('app.string.privacy_perm_network_title'),
               desc: $r('app.string.privacy_perm_network_desc'),

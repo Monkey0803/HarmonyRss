@@ -11,6 +11,7 @@ import { Article } from '../model/Feed';
 import { DateUtil } from '../common/utils/DateUtil';
 import { appSettings } from '../model/AppSettings';
 import { ListDensityMetrics, ListRowLayout } from '../common/constants/SettingsConstants';
+import { Enclosure, firstAudio, firstVideo, formatDuration } from '../model/Enclosure';
 
 @ComponentV2
 export struct ArticleListItem {
@@ -58,6 +59,21 @@ export struct ArticleListItem {
   /** 是否是多来源合并出的主条（duplicateCount 含自己，>1 表示还有别的源收录）。 */
   private merged(): boolean {
     return this.article.duplicateCount > 1;
+  }
+
+  /** 列表行的媒体标识（音频优先，其次视频）。 */
+  private mediaAudio(): Enclosure | undefined {
+    return firstAudio(this.article.enclosures);
+  }
+
+  private mediaVideo(): Enclosure | undefined {
+    return firstVideo(this.article.enclosures);
+  }
+
+  private mediaDurationText(): string {
+    const audio: Enclosure | undefined = this.mediaAudio();
+    return audio !== undefined && audio.duration > 0
+      ? formatDuration(audio.duration) : '';
   }
 
   build() {
@@ -130,6 +146,23 @@ export struct ArticleListItem {
               .fontColor($r('app.color.hm_text_secondary'))
               .maxLines(1)
               .textOverflow({ overflow: TextOverflow.Ellipsis })
+          }
+          if (this.mediaAudio() !== undefined) {
+            SymbolGlyph($r('sys.symbol.headphones'))
+              .fontSize($r('app.float.font_size_caption'))
+              .fontColor([$r('app.color.hm_brand')])
+              .accessibilityText($r('app.string.media_audio_label'))
+            if (this.mediaDurationText().length > 0) {
+              Text(this.mediaDurationText())
+                .fontSize($r('app.float.font_size_caption'))
+                .fontColor($r('app.color.hm_brand'))
+                .maxLines(1)
+            }
+          } else if (this.mediaVideo() !== undefined) {
+            SymbolGlyph($r('sys.symbol.play_video'))
+              .fontSize($r('app.float.font_size_caption'))
+              .fontColor([$r('app.color.hm_brand')])
+              .accessibilityText($r('app.string.media_video_label'))
           }
           Text(DateUtil.format(this.article.publishedAt))
             .fontSize($r('app.float.font_size_caption'))

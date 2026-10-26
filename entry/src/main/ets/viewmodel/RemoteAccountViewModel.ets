@@ -14,9 +14,12 @@ import {
 } from '../model/Remote';
 import { remoteSyncService } from '../service/remote/RemoteSyncService';
 import { DateUtil } from '../common/utils/DateUtil';
+import { RemoteSyncConstants } from '../common/constants/RssConstants';
 
 @ObservedV2
 export class RemoteAccountViewModel {
+  /** 服务类型：'greader'（FreshRSS / TTRSS / Miniflux）| 'feedbin'。 */
+  @Trace serviceType: string = RemoteSyncConstants.SERVICE_TYPE_GREADER;
   @Trace baseUrl: string = '';
   @Trace username: string = '';
   @Trace password: string = '';
@@ -50,6 +53,7 @@ export class RemoteAccountViewModel {
   private applyAccount(account: RemoteAccount | undefined): void {
     this.account = account;
     if (account !== undefined) {
+      this.serviceType = account.serviceType;
       if (this.baseUrl.length === 0) {
         this.baseUrl = account.baseUrl;
       }
@@ -57,6 +61,22 @@ export class RemoteAccountViewModel {
         this.username = account.username;
       }
       this.allowHttp = account.baseUrl.toLowerCase().startsWith('http://');
+    }
+  }
+
+
+  /** 切换服务类型：Feedbin 预填默认地址；从 Feedbin 切回 GReader 时清掉它的默认地址。 */
+  chooseService(serviceType: string): void {
+    this.serviceType = serviceType;
+    if (serviceType === RemoteSyncConstants.SERVICE_TYPE_FEEDBIN) {
+      const lower: string = this.baseUrl.trim().toLowerCase();
+      if (lower.length === 0 || lower.indexOf('feedbin') < 0) {
+        this.baseUrl = RemoteSyncConstants.FEEDBIN_DEFAULT_BASE;
+      }
+      this.allowHttp = false;
+    } else if (serviceType === RemoteSyncConstants.SERVICE_TYPE_GREADER
+      && this.baseUrl.trim().toLowerCase() === RemoteSyncConstants.FEEDBIN_DEFAULT_BASE) {
+      this.baseUrl = '';
     }
   }
 
@@ -78,7 +98,7 @@ export class RemoteAccountViewModel {
     this.connecting = true;
     try {
       const result: RemoteConnectResult = await remoteSyncService.connect(
-        this.baseUrl, this.username, this.password, this.allowHttp);
+        this.baseUrl, this.username, this.password, this.allowHttp, this.serviceType);
       if (!result.ok) {
         this.errorCode = result.code;
         return false;

@@ -199,6 +199,12 @@ export class SettingsStore {
         store.getSync(PreferencesConstants.KEY_TRANSLATE_PROVIDER, appSettings.translateProvider) as string);
       appSettings.translateEndpoint =
         store.getSync(PreferencesConstants.KEY_TRANSLATE_ENDPOINT, appSettings.translateEndpoint) as string;
+      // 发现页 RSSHub 实例：老库没有该 key 时读出来就是默认公共实例。
+      appSettings.rsshubBase =
+        store.getSync(PreferencesConstants.KEY_RSSHUB_BASE, appSettings.rsshubBase) as string;
+      // 本地诊断开关：默认开启；老库没有该 key 时读出来就是默认值。
+      appSettings.diagnosticsEnabled =
+        store.getSync(PreferencesConstants.KEY_DIAGNOSTICS_ENABLED, appSettings.diagnosticsEnabled) as boolean;
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       console.error('SettingsStore.load failed: ' + error.code.toString());
@@ -493,6 +499,8 @@ export class SettingsStore {
       store.putSync(PreferencesConstants.KEY_TRANSLATE_ENABLED, appSettings.translateEnabled);
       store.putSync(PreferencesConstants.KEY_TRANSLATE_PROVIDER, normalizeProvider(appSettings.translateProvider));
       store.putSync(PreferencesConstants.KEY_TRANSLATE_ENDPOINT, appSettings.translateEndpoint.trim());
+      store.putSync(PreferencesConstants.KEY_RSSHUB_BASE, appSettings.rsshubBase.trim());
+      store.putSync(PreferencesConstants.KEY_DIAGNOSTICS_ENABLED, appSettings.diagnosticsEnabled);
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       console.error('SettingsStore.putSync failed: ' + error.code.toString());
