@@ -71,7 +71,10 @@ import { RuleEditView } from '../views/RuleEditView';
 import { HiddenArticlesView } from '../views/HiddenArticlesView';
 import { RemoteServiceView } from '../views/RemoteServiceView';
 import { ShareSettingsView } from '../views/ShareSettingsView';
+import { NotifySettingsView } from '../views/NotifySettingsView';
+import { TranslateSettingsView } from '../views/TranslateSettingsView';
 import { remoteSyncService } from '../service/remote/RemoteSyncService';
+import { notifyService } from '../service/NotifyService';
 import { backupService } from '../service/BackupService';
 import { deepLink, DEEP_LINK_EVENT, DeepLinkParams } from '../service/DeepLink';
 import { shareHandoff } from '../service/ShareHandoff';
@@ -109,6 +112,8 @@ struct Index {
   private hiddenScroller: Scroller = new Scroller();
   private remoteScroller: Scroller = new Scroller();
   private shareSettingsScroller: Scroller = new Scroller();
+  private notifySettingsScroller: Scroller = new Scroller();
+  private translateSettingsScroller: Scroller = new Scroller();
 
   /** 收到 Ability 的深链事件后消费（应用已在前台时点卡片的路径）。 */
   private onDeepLinkEvent: () => void = () => {
@@ -197,6 +202,11 @@ struct Index {
       feedViewModel.markReadMany([articleId], true);
       return true;
     }
+    if (action === DeepLinkParams.ACTION_STAR) {
+      // 通知上的「收藏」按钮：只改状态（并触发远端同步入队），不打开详情。
+      feedViewModel.markStarredMany([articleId], true);
+      return true;
+    }
     await feedViewModel.openArticleById(articleId);
     // 切回「阅读」页签，再压详情页（页面栈是全局的，不切页签会压在设置页上面）。
     this.currentTab = TabIndex.HOME;
@@ -232,6 +242,11 @@ struct Index {
     const context: common.Context | undefined = this.getUIContext().getHostContext();
     if (context !== undefined) {
       backupService.maybeAutoSnapshot(context);
+      // 免打扰期间入队的新文章在离开时段后补发；每日摘要只在这里/后台任务检查（不依赖精准定时器）。
+      notifyService.flushQueueIfDue(context).catch(() => {
+      });
+      notifyService.maybeSendDigest(context).catch(() => {
+      });
     }
   }
 
@@ -783,6 +798,22 @@ struct Index {
       .titleMode(HdsNavDestinationTitleMode.MINI)
       .backgroundColor($r('app.color.hm_web_surface'))
       .bindToScrollable([this.shareSettingsScroller])
+    } else if (name === RouterConstants.PAGE_NOTIFY_SETTINGS) {
+      HdsNavDestination() {
+        NotifySettingsView({ navPathStack: this.navPathStack, scroller: this.notifySettingsScroller })
+      }
+      .titleBar(this.titleOptions($r('app.string.notify_settings_title')))
+      .titleMode(HdsNavDestinationTitleMode.MINI)
+      .backgroundColor($r('app.color.hm_web_surface'))
+      .bindToScrollable([this.notifySettingsScroller])
+    } else if (name === RouterConstants.PAGE_TRANSLATE_SETTINGS) {
+      HdsNavDestination() {
+        TranslateSettingsView({ navPathStack: this.navPathStack, scroller: this.translateSettingsScroller })
+      }
+      .titleBar(this.titleOptions($r('app.string.translate_settings_title')))
+      .titleMode(HdsNavDestinationTitleMode.MINI)
+      .backgroundColor($r('app.color.hm_web_surface'))
+      .bindToScrollable([this.translateSettingsScroller])
     }
   }
 

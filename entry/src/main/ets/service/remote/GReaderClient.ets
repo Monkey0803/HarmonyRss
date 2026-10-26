@@ -5,8 +5,6 @@
  * 所有请求都有连接 / 读取超时；响应可能是字符串或 ArrayBuffer，统一转成文本。
  */
 
-import { http } from '@kit.NetworkKit';
-import { util } from '@kit.ArkTS';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import {
@@ -18,6 +16,13 @@ import {
   RemoteIdPage
 } from '../../model/Remote';
 import { RemoteSyncConstants } from '../../common/constants/RssConstants';
+import {
+  HttpError,
+  HttpMethod,
+  HttpOptions,
+  HttpResponse,
+  httpClient
+} from '../HttpClient';
 import {
   classifyNetworkFailure,
   errorCodeForStatus,
@@ -54,22 +59,6 @@ class TextResponse {
     this.status = status;
     this.body = body;
   }
-}
-
-/** 响应体统一转文本：string 直接用；ArrayBuffer 按 UTF-8 解码。 */
-function bodyToText(raw: string | Object | ArrayBuffer): string {
-  if (typeof raw === 'string') {
-    return raw.trim();
-  }
-  if (raw instanceof ArrayBuffer) {
-    try {
-      const decoder: util.TextDecoder = util.TextDecoder.create('utf-8');
-      return decoder.decodeToString(new Uint8Array(raw)).trim();
-    } catch (err) {
-      return '';
-    }
-  }
-  return '';
 }
 
 /** 去掉末尾斜杠。 */
@@ -128,32 +117,27 @@ function queryString(pairs: string[]): string {
 
 export class GReaderClient {
   /** 发一次请求；网络层异常转成分类 RemoteError。 */
-  private async send(method: http.RequestMethod, url: string, headers: Record<string, string>,
+  private async send(method: HttpMethod, url: string, headers: Record<string, string>,
     body: string = ''): Promise<TextResponse> {
-    const options: http.HttpRequestOptions = {
-      method: method,
-      connectTimeout: RemoteSyncConstants.CONNECT_TIMEOUT_MS,
-      readTimeout: RemoteSyncConstants.READ_TIMEOUT_MS,
-      expectDataType: http.HttpDataType.STRING,
-      header: headers
-    };
-    if (body.length > 0) {
-      options.extraData = body;
-    }
-    const request: http.HttpRequest = http.createHttp();
+    const options: HttpOptions = new HttpOptions();
+    options.headers = headers;
+    options.body = body;
+    options.connectTimeoutMs = RemoteSyncConstants.CONNECT_TIMEOUT_MS;
+    options.readTimeoutMs = RemoteSyncConstants.READ_TIMEOUT_MS;
+    // 远端写操作是幂等的（edit-tag / login），允许统一层重试 1 次。
+    options.maxRetries = 1;
+    let response: HttpResponse;
     try {
-      let response: http.HttpResponse;
-      try {
-        response = await request.request(url, options);
-      } catch (err) {
-        const error: BusinessError = err as BusinessError;
-        const message: string = error.message !== undefined ? error.message : 'network failed';
-        throw new RemoteError(classifyNetworkFailure(error.code, message), message);
+      response = await httpClient.request(method, url, options);
+    } catch (err) {
+      if (err instanceof HttpError) {
+        throw new RemoteError(classifyNetworkFailure(err.causeCode, err.message), err.message);
       }
-      return new TextResponse(response.responseCode, bodyToText(response.result));
-    } finally {
-      request.destroy();
+      const error: BusinessError = err as BusinessError;
+      const message: string = error.message !== undefined ? error.message : 'network failed';
+      throw new RemoteError(classifyNetworkFailure(error.code, message), message);
     }
+    return new TextResponse(response.status, response.text.trim());
   }
 
   /** 认证头。 */
@@ -178,7 +162,7 @@ export class GReaderClient {
   async probe(baseUrl: string): Promise<ProbeResult> {
     const url: string = baseUrl + '/reader/api/0/subscription/list' +
       queryString(['output=json']);
-    const response: TextResponse = await this.send(http.RequestMethod.GET, url, {});
+    const response: TextResponse = await this.send(HttpMethod.GET, url, {});
     if (response.status >= 200 && response.status < 300) {
       return new ProbeResult(true, true, response.status);
     }
@@ -202,7 +186,7 @@ export class GReaderClient {
       'Email=' + encodeURIComponent(username),
       'Passwd=' + encodeURIComponent(password)
     ]);
-    const response: TextResponse = await this.send(http.RequestMethod.POST,
+    const response: TextResponse = await this.send(HttpMethod.POST,
       baseUrl + '/accounts/ClientLogin', header, body);
     if (response.status === 401 || response.status === 403) {
       throw new RemoteError(RemoteErrorCode.AUTH, 'login rejected');
@@ -222,7 +206,7 @@ export class GReaderClient {
   /** 订阅列表。 */
   async fetchSubscriptions(baseUrl: string, auth: string): Promise<RemoteFeed[]> {
     const url: string = baseUrl + '/reader/api/0/subscription/list' + queryString(['output=json']);
-    const response: TextResponse = await this.send(http.RequestMethod.GET, url, this.authHeader(auth));
+    const response: TextResponse = await this.send(HttpMethod.GET, url, this.authHeader(auth));
     this.ensureOk(response, 'subscriptions');
     return parseSubscriptions(response.body);
   }
@@ -239,7 +223,7 @@ export class GReaderClient {
     }
     const url: string = baseUrl + '/reader/api/0/stream/contents/feed/' +
       encodeURIComponent(feedUrl) + queryString(params);
-    const response: TextResponse = await this.send(http.RequestMethod.GET, url, this.authHeader(auth));
+    const response: TextResponse = await this.send(HttpMethod.GET, url, this.authHeader(auth));
     this.ensureOk(response, 'contents');
     return parseContents(response.body);
   }
@@ -256,7 +240,7 @@ export class GReaderClient {
       params.push('c=' + encodeURIComponent(continuation));
     }
     const url: string = baseUrl + '/reader/api/0/stream/items/ids' + queryString(params);
-    const response: TextResponse = await this.send(http.RequestMethod.GET, url, this.authHeader(auth));
+    const response: TextResponse = await this.send(HttpMethod.GET, url, this.authHeader(auth));
     this.ensureOk(response, 'unread ids');
     return parseIdPage(response.body);
   }
@@ -272,7 +256,7 @@ export class GReaderClient {
       params.push('c=' + encodeURIComponent(continuation));
     }
     const url: string = baseUrl + '/reader/api/0/stream/items/ids' + queryString(params);
-    const response: TextResponse = await this.send(http.RequestMethod.GET, url, this.authHeader(auth));
+    const response: TextResponse = await this.send(HttpMethod.GET, url, this.authHeader(auth));
     this.ensureOk(response, 'starred ids');
     return parseIdPage(response.body);
   }
@@ -280,7 +264,7 @@ export class GReaderClient {
   /** 写操作 token。 */
   async fetchWriteToken(baseUrl: string, auth: string): Promise<string> {
     const url: string = baseUrl + '/reader/api/0/token';
-    const response: TextResponse = await this.send(http.RequestMethod.GET, url, this.authHeader(auth));
+    const response: TextResponse = await this.send(HttpMethod.GET, url, this.authHeader(auth));
     this.ensureOk(response, 'token');
     const token: string = parseWriteToken(response.body);
     if (token.length === 0) {
@@ -317,7 +301,7 @@ export class GReaderClient {
     for (let i = 0; i < removeTags.length; i += 1) {
       pairs.push('r=' + encodeURIComponent(removeTags[i]));
     }
-    const response: TextResponse = await this.send(http.RequestMethod.POST,
+    const response: TextResponse = await this.send(HttpMethod.POST,
       baseUrl + '/reader/api/0/edit-tag', header, formEncode(pairs));
     this.ensureOk(response, 'edit-tag');
   }

@@ -6,16 +6,18 @@
  * 代价是正文体积变大，因此有「单图 / 总量 / 张数」三重预算，超限的图片保留远程链接不缓存。
  */
 
-import { http } from '@kit.NetworkKit';
 import { util } from '@kit.ArkTS';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { ReaderConstants, RssConstants } from '../common/constants/RssConstants';
 import { decodeEntities } from './RssParser';
 import { sniffMime } from './MimeSniff';
+import { HttpOptions, HttpResponse, httpClient } from './HttpClient';
 
 const DOMAIN: number = 0x0000;
 const TAG: string = 'ImageCache';
+/** 同一主机两次图片请求的最小间隔（毫秒）。 */
+const IMAGE_HOST_INTERVAL_MS: number = 80;
 
 /** 从 <img ...> 标签文本里取出 src 的值（返回转义后的原样，未解码）。 */
 function extractSrc(tag: string): string {
@@ -35,33 +37,26 @@ function extractSrc(tag: string): string {
 export class ImageCache {
   /** 下载单张图片并编码为 data URI；失败返回空串。 */
   private async download(url: string): Promise<string> {
-    const request: http.HttpRequest = http.createHttp();
     const header: Record<string, string> = { 'Accept': 'image/*' };
+    const options: HttpOptions = new HttpOptions();
+    options.headers = header;
+    options.binary = true;
+    options.connectTimeoutMs = RssConstants.CONNECT_TIMEOUT_MS;
+    options.readTimeoutMs = RssConstants.READ_TIMEOUT_MS;
+    // 图片是次要资源：同一主机轻微限流，避免正文里几十张图同时打爆站点。
+    options.minIntervalMs = IMAGE_HOST_INTERVAL_MS;
     try {
-      const options: http.HttpRequestOptions = {
-        method: http.RequestMethod.GET,
-        connectTimeout: RssConstants.CONNECT_TIMEOUT_MS,
-        readTimeout: RssConstants.READ_TIMEOUT_MS,
-        expectDataType: http.HttpDataType.ARRAY_BUFFER,
-        header: header
-      };
-      const response: http.HttpResponse = await request.request(url, options);
-      if (response.responseCode !== http.ResponseCode.OK) {
+      const response: HttpResponse = await httpClient.getBytes(url, options);
+      if (response.status !== 200 || response.bytes === undefined || response.bytes.length === 0) {
         return '';
       }
-      const result: string | Object | ArrayBuffer = response.result;
-      if (!(result instanceof ArrayBuffer)) {
-        return '';
-      }
-      const bytes: Uint8Array = new Uint8Array(result);
+      const bytes: Uint8Array = response.bytes;
       const base64: string = new util.Base64Helper().encodeToStringSync(bytes);
       return 'data:' + sniffMime(bytes, url) + ';base64,' + base64;
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       hilog.warn(DOMAIN, TAG, 'download failed: %{public}d', error.code);
       return '';
-    } finally {
-      request.destroy();
     }
   }
 

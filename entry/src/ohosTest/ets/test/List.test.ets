@@ -38,6 +38,10 @@ import dedupePlanTest from './DedupePlan.test';
 import dedupeIntegrationTest from './DedupeIntegration.test';
 import shareTargetsTest from './ShareTargets.test';
 import shareTemplatesTest from './ShareTemplates.test';
+import notifyPolicyTest from './NotifyPolicy.test';
+import notifyQueueTest from './NotifyQueue.test';
+import httpClientTest from './HttpClient.test';
+import translationPolicyTest from './TranslationPolicy.test';
 
 export default function testsuite() {
   htmlDomTest();
@@ -70,4 +74,8 @@ export default function testsuite() {
   dedupeIntegrationTest();
   shareTargetsTest();
   shareTemplatesTest();
+  notifyPolicyTest();
+  notifyQueueTest();
+  httpClientTest();
+  translationPolicyTest();
 }

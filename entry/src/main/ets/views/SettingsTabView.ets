@@ -574,6 +574,10 @@ export struct SettingsTabView {
               settingsViewModel.setLanguage(id);
             }
           })
+          Divider().color($r('app.color.hm_divider'))
+          // 联网翻译：默认关闭；服务 / Key / 缓存都在独立页面。
+          this.NavRow($r('sys.symbol.translate'), $r('app.string.translate_settings_title'),
+            RouterConstants.PAGE_TRANSLATE_SETTINGS)
         }
         .width('100%')
         .backgroundColor($r('app.color.hm_card_background'))
@@ -790,6 +794,10 @@ export struct SettingsTabView {
               this.toggleNotify(value);
             }
           })
+          Divider().color($r('app.color.hm_divider'))
+          // 免打扰 / 每日摘要 / 关键词 / 授权状态都收在独立页面。
+          this.NavRow($r('sys.symbol.bell'), $r('app.string.notify_settings_title'),
+            RouterConstants.PAGE_NOTIFY_SETTINGS)
         }
         .width('100%')
         .backgroundColor($r('app.color.hm_card_background'))

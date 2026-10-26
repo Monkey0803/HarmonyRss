@@ -79,6 +79,9 @@ import { ShareSheet } from './ShareSheet';
 import { ShareContext } from '../model/Share';
 import { shareService } from '../service/ShareService';
 import { shareViewModel } from '../viewmodel/ShareViewModel';
+import { translationViewModel } from '../viewmodel/TranslationViewModel';
+import { TranslateSheet } from './TranslateSheet';
+import { RouterConstants } from '../common/constants/RouterConstants';
 
 const DOMAIN: number = 0x0000;
 const TAG: string = 'ArticleDetailView';
@@ -482,6 +485,28 @@ export struct ArticleDetailView {
     if (!ok) {
       this.toast($r('app.string.toast_action_failed'));
     }
+  }
+
+  /** 打开整篇翻译：有缓存立即展示，否则发起一次翻译（用户点菜单即视为显式同意联网）。 */
+  private openTranslation(): void {
+    const article: Article = this.cur();
+    if (article.id.length === 0) {
+      return;
+    }
+    translationViewModel.openArticle(this.hostContext(), article.id, this.plainText()).catch(() => {
+    });
+    this.openSheet('translate');
+  }
+
+  /** 翻译当前选中的文本：与整篇翻译共用面板，选段结果置顶。 */
+  private translateSelected(): void {
+    const text: string = this.selectedText.trim();
+    if (text.length === 0) {
+      return;
+    }
+    translationViewModel.translateSelection(this.hostContext(), text).catch(() => {
+    });
+    this.openSheet('translate');
   }
 
   /**
@@ -992,6 +1017,13 @@ export struct ArticleDetailView {
           this.openFind();
         })
       MenuItem({
+        content: $r('app.string.translate_action_full'),
+        symbolStartIcon: this.menuIcon($r('sys.symbol.translate'))
+      })
+        .onClick(() => {
+          this.openTranslation();
+        })
+      MenuItem({
         content: $r('app.string.action_copy_body'),
         symbolStartIcon: this.menuIcon($r('sys.symbol.text_clipboard'))
       })
@@ -1305,6 +1337,8 @@ export struct ArticleDetailView {
       this.SourcesPanel()
     } else if (this.sheetMode === 'share') {
       this.SharePanel()
+    } else if (this.sheetMode === 'translate') {
+      this.TranslatePanel()
     } else {
       this.ReadSheet()
     }
@@ -1318,6 +1352,22 @@ export struct ArticleDetailView {
       onClose: () => {
         this.closeSheet();
         shareViewModel.close();
+      }
+    })
+  }
+
+  /** 正文翻译面板：打开时即有（缓存或刚刚发起）的结果。 */
+  @Builder
+  TranslatePanel() {
+    TranslateSheet({
+      onClose: () => {
+        translationViewModel.close();
+        this.closeSheet();
+      },
+      onOpenSettings: () => {
+        translationViewModel.close();
+        this.closeSheet();
+        this.navPathStack.pushPath(new NavPathInfo(RouterConstants.PAGE_TRANSLATE_SETTINGS, ''));
       }
     })
   }
@@ -2188,6 +2238,14 @@ export struct ArticleDetailView {
             this.addHighlight();
           })
 
+        Button($r('app.string.translate_action_selection'))
+          .buttonStyle(ButtonStyleMode.TEXTUAL)
+          .fontSize($r('app.float.font_size_caption'))
+          .fontColor($r('app.color.hm_brand'))
+          .onClick(() => {
+            this.translateSelected();
+          })
+
         Button($r('app.string.action_copy'))
           .buttonStyle(ButtonStyleMode.TEXTUAL)
           .fontSize($r('app.float.font_size_caption'))
@@ -2427,7 +2485,8 @@ export struct ArticleDetailView {
     .backgroundColor($r('app.color.hm_page_transparent'))
     .bindSheet(this.showSheet, this.SheetContent(), MaterialController.sheetOptions({
       // 分享面板内容较长（动作 / 目标 / 模板 / 导出四组），用大面板避免挤在中段要一直滚。
-      height: this.sheetMode === 'read' || this.sheetMode === 'tags' || this.sheetMode === 'share'
+      height: this.sheetMode === 'read' || this.sheetMode === 'tags' || this.sheetMode === 'share' ||
+        this.sheetMode === 'translate'
         ? SheetSize.LARGE
         : SheetSize.MEDIUM,
       dragBar: true,
@@ -2438,6 +2497,9 @@ export struct ArticleDetailView {
         // 面板被下滑关闭时也要清空分享上下文，避免下次打开闪出上一次的内容。
         if (mode === 'share') {
           shareViewModel.close();
+        }
+        if (mode === 'translate') {
+          translationViewModel.close();
         }
       }
     }, appSettings.immersiveOn))

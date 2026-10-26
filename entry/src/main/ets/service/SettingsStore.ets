@@ -14,6 +14,9 @@ import { ReaderTypography } from '../common/constants/SettingsConstants';
 import { normalizeArticleFilter, normalizeReaderViewMode } from '../common/constants/RssConstants';
 import { BackupScalar, BackupSettings } from '../model/Backup';
 import { settingsWhitelist } from './BackupCodec';
+import { NotifyDefaults } from '../model/Notify';
+import { clampDigestHour, clampMinuteOfDay, decodeKeywords, encodeKeywords, normalizeKeywords } from './NotifyPolicy';
+import { normalizeProvider } from './TranslationPolicy';
 
 /** 远端自动同步间隔归一：脏值一律退回「关」。 */
 export function normalizeRemoteAutoSync(value: string): string {
@@ -57,6 +60,28 @@ function numberValue(value: BackupScalar | undefined, fallback: number): number 
     return Number.isFinite(parsed) ? parsed : fallback;
   }
   return fallback;
+}
+
+// ---- 通知策略取值辅助（脏值一律回退 fallback，再归一） ----
+
+/** 偏好库里的「当天第几分钟」：非数字退回 fallback，再夹到 0–1439。 */
+function readMinuteOfDay(raw: preferences.ValueType, fallback: number): number {
+  const value: number = typeof raw === 'number' ? raw : fallback;
+  return clampMinuteOfDay(value, fallback);
+}
+
+/** 偏好库里的摘要小时：非数字退回 fallback，再夹到 0–23。 */
+function readDigestHour(raw: preferences.ValueType, fallback: number): number {
+  const value: number = typeof raw === 'number' ? raw : fallback;
+  return clampDigestHour(value, fallback);
+}
+
+/** 偏好库里的关键词 JSON：空串 / 非字符串回退当前值；否则解码并归一。 */
+function readKeywords(raw: preferences.ValueType, fallback: string[]): string[] {
+  if (typeof raw !== 'string' || raw.length === 0) {
+    return normalizeKeywords(fallback);
+  }
+  return decodeKeywords(raw);
 }
 
 export class SettingsStore {
@@ -147,6 +172,33 @@ export class SettingsStore {
       // 跨源去重：默认开启；老库没有这个 key 时读出来就是默认值。
       appSettings.dedupeEnabled =
         store.getSync(PreferencesConstants.KEY_DEDUPE_ENABLED, appSettings.dedupeEnabled) as boolean;
+      // 通知策略：老库没有这些 key 时读出来就是默认值（免打扰 23:00–08:00 开、摘要关、无关键词）。
+      const dndEnabledRaw: preferences.ValueType =
+        store.getSync(PreferencesConstants.KEY_NOTIFY_DND_ENABLED, appSettings.notifyDndEnabled);
+      appSettings.notifyDndEnabled =
+        typeof dndEnabledRaw === 'boolean' ? dndEnabledRaw : NotifyDefaults.DND_ENABLED;
+      appSettings.notifyDndStart = readMinuteOfDay(
+        store.getSync(PreferencesConstants.KEY_NOTIFY_DND_START, appSettings.notifyDndStart),
+        NotifyDefaults.DND_START);
+      appSettings.notifyDndEnd = readMinuteOfDay(
+        store.getSync(PreferencesConstants.KEY_NOTIFY_DND_END, appSettings.notifyDndEnd),
+        NotifyDefaults.DND_END);
+      const digestEnabledRaw: preferences.ValueType =
+        store.getSync(PreferencesConstants.KEY_NOTIFY_DIGEST_ENABLED, appSettings.notifyDigestEnabled);
+      appSettings.notifyDigestEnabled =
+        typeof digestEnabledRaw === 'boolean' ? digestEnabledRaw : NotifyDefaults.DIGEST_ENABLED;
+      appSettings.notifyDigestHour = readDigestHour(
+        store.getSync(PreferencesConstants.KEY_NOTIFY_DIGEST_HOUR, appSettings.notifyDigestHour),
+        NotifyDefaults.DIGEST_HOUR);
+      appSettings.notifyKeywords = readKeywords(
+        store.getSync(PreferencesConstants.KEY_NOTIFY_KEYWORDS, ''), appSettings.notifyKeywords);
+      // 正文翻译：老库没有这些 key 时读出来就是默认值（关闭 / DeepL / 默认端点）。
+      appSettings.translateEnabled =
+        store.getSync(PreferencesConstants.KEY_TRANSLATE_ENABLED, appSettings.translateEnabled) as boolean;
+      appSettings.translateProvider = normalizeProvider(
+        store.getSync(PreferencesConstants.KEY_TRANSLATE_PROVIDER, appSettings.translateProvider) as string);
+      appSettings.translateEndpoint =
+        store.getSync(PreferencesConstants.KEY_TRANSLATE_ENDPOINT, appSettings.translateEndpoint) as string;
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       console.error('SettingsStore.load failed: ' + error.code.toString());
@@ -383,6 +435,11 @@ export class SettingsStore {
 
   /** 把当前 appSettings 全量写回。任何一次用户改动后调用。 */
   save(): void {
+    // 通知策略先归一：越界分钟数 / 重复关键词不写回偏好库。
+    appSettings.notifyDndStart = clampMinuteOfDay(appSettings.notifyDndStart, NotifyDefaults.DND_START);
+    appSettings.notifyDndEnd = clampMinuteOfDay(appSettings.notifyDndEnd, NotifyDefaults.DND_END);
+    appSettings.notifyDigestHour = clampDigestHour(appSettings.notifyDigestHour, NotifyDefaults.DIGEST_HOUR);
+    appSettings.notifyKeywords = normalizeKeywords(appSettings.notifyKeywords);
     const store: preferences.Preferences | undefined = this.store;
     if (store === undefined) {
       return;
@@ -427,6 +484,15 @@ export class SettingsStore {
       store.putSync(PreferencesConstants.KEY_RETENTION_DAYS, appSettings.retentionDays);
       store.putSync(PreferencesConstants.KEY_REMOTE_AUTO_SYNC, appSettings.remoteAutoSync);
       store.putSync(PreferencesConstants.KEY_DEDUPE_ENABLED, appSettings.dedupeEnabled);
+      store.putSync(PreferencesConstants.KEY_NOTIFY_DND_ENABLED, appSettings.notifyDndEnabled);
+      store.putSync(PreferencesConstants.KEY_NOTIFY_DND_START, appSettings.notifyDndStart);
+      store.putSync(PreferencesConstants.KEY_NOTIFY_DND_END, appSettings.notifyDndEnd);
+      store.putSync(PreferencesConstants.KEY_NOTIFY_DIGEST_ENABLED, appSettings.notifyDigestEnabled);
+      store.putSync(PreferencesConstants.KEY_NOTIFY_DIGEST_HOUR, appSettings.notifyDigestHour);
+      store.putSync(PreferencesConstants.KEY_NOTIFY_KEYWORDS, encodeKeywords(appSettings.notifyKeywords));
+      store.putSync(PreferencesConstants.KEY_TRANSLATE_ENABLED, appSettings.translateEnabled);
+      store.putSync(PreferencesConstants.KEY_TRANSLATE_PROVIDER, normalizeProvider(appSettings.translateProvider));
+      store.putSync(PreferencesConstants.KEY_TRANSLATE_ENDPOINT, appSettings.translateEndpoint.trim());
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       console.error('SettingsStore.putSync failed: ' + error.code.toString());

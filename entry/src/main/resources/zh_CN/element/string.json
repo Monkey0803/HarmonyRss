@@ -2743,6 +2743,422 @@
     {
       "name": "backup_content_list",
       "value": "订阅 · 阅读状态 · 高亮 · 标签 · 智能文件夹 · 规则 · 模板 · 设置"
+    },
+    {
+      "name": "row_notify_settings",
+      "value": "通知设置"
+    },
+    {
+      "name": "notify_settings_title",
+      "value": "通知设置"
+    },
+    {
+      "name": "notify_settings_desc",
+      "value": "决定哪些新文章需要提醒，以及什么时候提醒。"
+    },
+    {
+      "name": "notify_settings_saved",
+      "value": "通知设置已保存"
+    },
+    {
+      "name": "notify_section_permission",
+      "value": "通知授权"
+    },
+    {
+      "name": "notify_permission_on",
+      "value": "已允许通知"
+    },
+    {
+      "name": "notify_permission_off",
+      "value": "未允许通知"
+    },
+    {
+      "name": "notify_permission_grant",
+      "value": "允许通知"
+    },
+    {
+      "name": "notify_permission_hint",
+      "value": "若没有弹出授权窗口，请在系统设置里为本应用开启通知。"
+    },
+    {
+      "name": "notify_status_off",
+      "value": "通知已关闭，新文章不会提醒。"
+    },
+    {
+      "name": "notify_section_policy",
+      "value": "通知范围"
+    },
+    {
+      "name": "notify_global_switch",
+      "value": "新文章通知"
+    },
+    {
+      "name": "notify_global_switch_desc",
+      "value": "单源设置仍然生效，关闭某个源即可不再提醒该源。"
+    },
+    {
+      "name": "notify_keywords_title",
+      "value": "关键词"
+    },
+    {
+      "name": "notify_keywords_desc",
+      "value": "仅当标题或摘要包含关键词时提醒；留空表示全部提醒。"
+    },
+    {
+      "name": "notify_keywords_empty",
+      "value": "还没有关键词"
+    },
+    {
+      "name": "notify_keywords_placeholder",
+      "value": "添加关键词"
+    },
+    {
+      "name": "notify_keywords_add",
+      "value": "添加"
+    },
+    {
+      "name": "notify_keywords_full",
+      "value": "最多 %d 个关键词"
+    },
+    {
+      "name": "notify_section_dnd",
+      "value": "免打扰"
+    },
+    {
+      "name": "notify_dnd_title",
+      "value": "免打扰"
+    },
+    {
+      "name": "notify_dnd_desc",
+      "value": "时段内不弹即时通知，结束后合并补发一次。"
+    },
+    {
+      "name": "notify_dnd_start",
+      "value": "开始"
+    },
+    {
+      "name": "notify_dnd_end",
+      "value": "结束"
+    },
+    {
+      "name": "notify_dnd_same",
+      "value": "起止时间相同，免打扰不生效。"
+    },
+    {
+      "name": "notify_section_digest",
+      "value": "每日摘要"
+    },
+    {
+      "name": "notify_digest_title",
+      "value": "每日摘要"
+    },
+    {
+      "name": "notify_digest_desc",
+      "value": "每天到达设定时间后发送一条摘要，每天最多一次。"
+    },
+    {
+      "name": "notify_digest_hour",
+      "value": "时间"
+    },
+    {
+      "name": "notify_section_test",
+      "value": "测试"
+    },
+    {
+      "name": "notify_test_action",
+      "value": "发送测试通知"
+    },
+    {
+      "name": "notify_test_title",
+      "value": "测试通知"
+    },
+    {
+      "name": "notify_test_text",
+      "value": "通知功能正常。"
+    },
+    {
+      "name": "notify_test_failed",
+      "value": "测试通知发送失败"
+    },
+    {
+      "name": "notify_aggregate_title",
+      "value": "更多更新"
+    },
+    {
+      "name": "notify_aggregate_text",
+      "value": "%s：还有 %d 篇"
+    },
+    {
+      "name": "notify_aggregate_more",
+      "value": "还有 %d 篇"
+    },
+    {
+      "name": "notify_dnd_flush_title",
+      "value": "免打扰期间 %d 篇新文章"
+    },
+    {
+      "name": "notify_dnd_flush_text",
+      "value": "%s"
+    },
+    {
+      "name": "notify_digest_notify_title",
+      "value": "今日摘要：%d 篇新文章"
+    },
+    {
+      "name": "notify_digest_notify_text",
+      "value": "%s"
+    },
+    {
+      "name": "notify_action_star",
+      "value": "收藏"
+    },
+    {
+      "name": "notify_permission_check",
+      "value": "重新检查"
+    },
+    {
+      "name": "notify_keyword_exists",
+      "value": "关键词已存在"
+    },
+    {
+      "name": "notify_keyword_remove",
+      "value": "移除 %s"
+    },
+    {
+      "name": "notify_test_sent",
+      "value": "测试通知已发送"
+    },
+    {
+      "name": "translate_settings_title",
+      "value": "正文翻译"
+    },
+    {
+      "name": "translate_settings_desc",
+      "value": "使用你选择的翻译服务翻译文章。默认关闭；结果缓存在本机。"
+    },
+    {
+      "name": "translate_section_service",
+      "value": "翻译服务"
+    },
+    {
+      "name": "translate_enable",
+      "value": "允许联网翻译"
+    },
+    {
+      "name": "translate_enable_desc",
+      "value": "关闭时阅读页不会把正文发送到任何服务。"
+    },
+    {
+      "name": "translate_privacy",
+      "value": "隐私说明：只发送正文文本，不包含链接、图片与阅读状态。API Key 存放在系统资产库。"
+    },
+    {
+      "name": "translate_provider",
+      "value": "服务"
+    },
+    {
+      "name": "translate_provider_deepl",
+      "value": "DeepL（需要 API Key）"
+    },
+    {
+      "name": "translate_provider_libre",
+      "value": "LibreTranslate（支持自建实例）"
+    },
+    {
+      "name": "translate_endpoint",
+      "value": "服务地址"
+    },
+    {
+      "name": "translate_endpoint_hint",
+      "value": "留空使用默认地址"
+    },
+    {
+      "name": "translate_api_key",
+      "value": "API Key"
+    },
+    {
+      "name": "translate_api_key_hint",
+      "value": "粘贴 Key，仅保存在本机"
+    },
+    {
+      "name": "translate_api_key_set",
+      "value": "已配置 Key"
+    },
+    {
+      "name": "translate_api_key_unset",
+      "value": "未配置 API Key"
+    },
+    {
+      "name": "translate_api_key_save",
+      "value": "保存 Key"
+    },
+    {
+      "name": "translate_api_key_clear",
+      "value": "清除"
+    },
+    {
+      "name": "translate_target_lang",
+      "value": "目标语言"
+    },
+    {
+      "name": "translate_target_auto",
+      "value": "跟随应用语言"
+    },
+    {
+      "name": "translate_test",
+      "value": "测试翻译"
+    },
+    {
+      "name": "translate_test_ok",
+      "value": "测试成功：%s"
+    },
+    {
+      "name": "translate_test_failed",
+      "value": "测试失败：%s"
+    },
+    {
+      "name": "translate_section_cache",
+      "value": "缓存"
+    },
+    {
+      "name": "translate_cache_count",
+      "value": "已缓存 %d 篇译文"
+    },
+    {
+      "name": "translate_cache_clear",
+      "value": "清空翻译缓存"
+    },
+    {
+      "name": "translate_cache_cleared",
+      "value": "已清理 %d 条翻译缓存"
+    },
+    {
+      "name": "translate_action",
+      "value": "翻译"
+    },
+    {
+      "name": "translate_action_full",
+      "value": "翻译全文"
+    },
+    {
+      "name": "translate_action_selection",
+      "value": "翻译选中段"
+    },
+    {
+      "name": "translate_sheet_title",
+      "value": "对照翻译"
+    },
+    {
+      "name": "translate_only_translation",
+      "value": "只看译文"
+    },
+    {
+      "name": "translate_start",
+      "value": "开始翻译"
+    },
+    {
+      "name": "translate_retry",
+      "value": "重新翻译"
+    },
+    {
+      "name": "translate_loading",
+      "value": "正在翻译…"
+    },
+    {
+      "name": "translate_cached",
+      "value": "来自缓存"
+    },
+    {
+      "name": "translate_truncated",
+      "value": "正文较长，仅翻译了前 20000 个字符。"
+    },
+    {
+      "name": "translate_source_to_target",
+      "value": "%s → %s"
+    },
+    {
+      "name": "translate_selection_title",
+      "value": "选中文本"
+    },
+    {
+      "name": "translate_error_disabled_title",
+      "value": "联网翻译未开启"
+    },
+    {
+      "name": "translate_error_disabled_desc",
+      "value": "请先在「设置 → 正文翻译」打开开关并配置服务。"
+    },
+    {
+      "name": "translate_error_not_configured",
+      "value": "翻译服务未配置完整（缺少 API Key 或端点）。"
+    },
+    {
+      "name": "translate_error_empty",
+      "value": "没有可翻译的正文。"
+    },
+    {
+      "name": "translate_error_same",
+      "value": "文章已经是目标语言。"
+    },
+    {
+      "name": "translate_error_network",
+      "value": "网络不可用或超时，请检查网络后重试。"
+    },
+    {
+      "name": "translate_error_auth",
+      "value": "API Key 无效或已失效。"
+    },
+    {
+      "name": "translate_error_rate",
+      "value": "请求过于频繁，请稍后再试。"
+    },
+    {
+      "name": "translate_error_server",
+      "value": "翻译服务暂时不可用。"
+    },
+    {
+      "name": "translate_error_parse",
+      "value": "翻译服务返回了无法解析的内容。"
+    },
+    {
+      "name": "translate_open_settings",
+      "value": "打开翻译设置"
+    },
+    {
+      "name": "translate_lang_zh",
+      "value": "中文"
+    },
+    {
+      "name": "translate_lang_en",
+      "value": "English"
+    },
+    {
+      "name": "translate_lang_ja",
+      "value": "日本語"
+    },
+    {
+      "name": "translate_lang_ko",
+      "value": "한국어"
+    },
+    {
+      "name": "translate_lang_ru",
+      "value": "Русский"
+    },
+    {
+      "name": "translate_lang_ar",
+      "value": "العربية"
+    },
+    {
+      "name": "translate_lang_und",
+      "value": "自动检测"
+    },
+    {
+      "name": "translate_endpoint_save",
+      "value": "保存"
+    },
+    {
+      "name": "translate_section_test",
+      "value": "连接测试"
     }
   ]
 }

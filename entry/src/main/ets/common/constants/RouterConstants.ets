@@ -37,4 +37,8 @@ export class RouterConstants {
   static readonly PAGE_SHARE_SETTINGS: string = 'shareSettings';
   /** 备份与恢复页（导出 / 导入 / 自动快照）。 */
   static readonly PAGE_BACKUP: string = 'backup';
+  /** 通知设置页（免打扰 / 摘要 / 关键词 / 授权状态）。 */
+  static readonly PAGE_NOTIFY_SETTINGS: string = 'notifySettings';
+  /** 正文翻译设置页（开关 / 服务 / Key / 缓存）。 */
+  static readonly PAGE_TRANSLATE_SETTINGS: string = 'translateSettings';
 }

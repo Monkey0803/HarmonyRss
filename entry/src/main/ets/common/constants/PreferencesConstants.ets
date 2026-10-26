@@ -79,4 +79,28 @@ export class PreferencesConstants {
   static readonly KEY_SHARE_TEMPLATES: string = 'shareTemplates';
   /** 最近一次自动快照的日期（yyyyMMdd），避免同一天重复生成。 */
   static readonly KEY_LAST_SNAPSHOT_AT: string = 'lastSnapshotAt';
+  // ---- 通知策略（免打扰 / 摘要 / 关键词） ----
+  /** 免打扰开关（默认开）。 */
+  static readonly KEY_NOTIFY_DND_ENABLED: string = 'notifyDndEnabled';
+  /** 免打扰开始时间（当天第几分钟，0–1439；默认 1380 = 23:00）。 */
+  static readonly KEY_NOTIFY_DND_START: string = 'notifyDndStart';
+  /** 免打扰结束时间（当天第几分钟，0–1439；默认 480 = 08:00）。 */
+  static readonly KEY_NOTIFY_DND_END: string = 'notifyDndEnd';
+  /** 每日摘要开关（默认关）。 */
+  static readonly KEY_NOTIFY_DIGEST_ENABLED: string = 'notifyDigestEnabled';
+  /** 每日摘要触发小时（0–23；默认 20）。 */
+  static readonly KEY_NOTIFY_DIGEST_HOUR: string = 'notifyDigestHour';
+  /** 全局通知关键词（JSON 字符串数组，最多 20 条）。 */
+  static readonly KEY_NOTIFY_KEYWORDS: string = 'notifyKeywords';
+  /** 免打扰期间待通知队列（JSON：`[{articleId, feedId, at}]`，最多 50 条）。 */
+  static readonly KEY_NOTIFY_QUEUE: string = 'notifyQueue';
+  /** 最近一次发送每日摘要的本地日期（YYYY-MM-DD）。 */
+  static readonly KEY_NOTIFY_LAST_DIGEST: string = 'notifyLastDigest';
+  // ---- 正文翻译（服务端点与开关；API Key 在 Asset Store） ----
+  /** 联网翻译开关（默认关）。 */
+  static readonly KEY_TRANSLATE_ENABLED: string = 'translateEnabled';
+  /** 翻译服务：'deepl' | 'libre'。 */
+  static readonly KEY_TRANSLATE_PROVIDER: string = 'translateProvider';
+  /** 自定义服务端点（空串 = 服务默认端点）。 */
+  static readonly KEY_TRANSLATE_ENDPOINT: string = 'translateEndpoint';
 }

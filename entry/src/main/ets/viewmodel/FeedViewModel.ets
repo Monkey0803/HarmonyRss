@@ -35,6 +35,7 @@ import { settingsStore } from '../service/SettingsStore';
 import { settingsViewModel } from './SettingsViewModel';
 import { retentionService } from '../service/RetentionService';
 import { remoteSyncService } from '../service/remote/RemoteSyncService';
+import { notifyService } from '../service/NotifyService';
 import { ruleService } from '../service/RuleService';
 import { RuleApplyResult } from '../model/Rule';
 
@@ -450,6 +451,14 @@ export class FeedViewModel {
     this.loading = false;
     feedStore.save(this.feeds);
     retentionService.setFeeds(this.feeds);
+    // 通知策略与后台任务共用 notifyNew：只对真正新增且未被规则改写的文章发通知。
+    // 不 await：通知失败 / 系统限流都不该拖慢抓取收尾与界面刷新。
+    const context: common.Context | undefined = this.context;
+    if (context !== undefined && inserted.length > 0) {
+      notifyService.notifyNew(context, this.feeds, inserted).catch((err: BusinessError) => {
+        console.warn('notifyNew failed: ' + err.message);
+      });
+    }
     // 抓取提交后异步执行保留清理（6 小时节流）：绝不 await，不阻塞界面刷新。
     this.applyRetentionIfDue();
   }

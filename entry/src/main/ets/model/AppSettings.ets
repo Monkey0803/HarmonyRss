@@ -8,6 +8,8 @@
 import { ArticleFilter, GroupMode, ReaderViewMode } from '../common/constants/RssConstants';
 import { ArchiveRule, ListDensity, ListRowLayout, RetentionDays, RetentionMode, SummaryLines } from '../common/constants/SettingsConstants';
 import { THEME_OPTIONS, LANGUAGE_OPTIONS, MATERIAL_TYPE_OPTIONS, MATERIAL_LEVEL_OPTIONS, BACKGROUND_OPTIONS, LOGO_OPTIONS, AUTO_REFRESH_OPTIONS, READER_FONT_OPTIONS, READER_LINE_OPTIONS, READER_FAMILY_OPTIONS, READER_WIDTH_OPTIONS, READER_ALIGN_OPTIONS, READER_THEME_OPTIONS } from './SettingsOptions';
+import { NotifyDefaults } from './Notify';
+import { TranslateDefaults } from '../common/constants/TranslateConstants';
 
 @ObservedV2
 export class AppSettings {
@@ -91,6 +93,30 @@ export class AppSettings {
    * 已有合并组保持现状；归一化键仍然写入，重新开启后新文章可并入已有主条。
    */
   @Trace dedupeEnabled: boolean = true;
+
+  // ---- 通知策略（免打扰 / 每日摘要 / 关键词） ----
+
+  /** 免打扰开关：开启后时段内不弹即时通知，改为入队、时段结束合并补发。 */
+  @Trace notifyDndEnabled: boolean = NotifyDefaults.DND_ENABLED;
+  /** 免打扰开始时间（当天第几分钟，0–1439；默认 1380 = 23:00）。 */
+  @Trace notifyDndStart: number = NotifyDefaults.DND_START;
+  /** 免打扰结束时间（当天第几分钟，0–1439；默认 480 = 08:00）。 */
+  @Trace notifyDndEnd: number = NotifyDefaults.DND_END;
+  /** 每日摘要开关（每天最多一条）。 */
+  @Trace notifyDigestEnabled: boolean = NotifyDefaults.DIGEST_ENABLED;
+  /** 每日摘要触发小时（0–23；默认 20 点）。 */
+  @Trace notifyDigestHour: number = NotifyDefaults.DIGEST_HOUR;
+  /** 全局通知关键词（标题 / 摘要包含任一即通过；空数组 = 不过滤）。 */
+  @Trace notifyKeywords: string[] = [];
+
+  // ---- 正文翻译（默认关闭；Key 存 Asset Store，不在此处） ----
+
+  /** 是否允许联网翻译（默认关闭；关闭时阅读页只提示、不发起网络请求）。 */
+  @Trace translateEnabled: boolean = TranslateDefaults.ENABLED;
+  /** 翻译服务：'deepl' | 'libre'。 */
+  @Trace translateProvider: string = TranslateDefaults.PROVIDER;
+  /** 自定义服务端点；空串 = 使用该服务的默认端点。 */
+  @Trace translateEndpoint: string = '';
 }
 
 /** 全局唯一设置实例。 */

@@ -214,6 +214,15 @@ const SQL_SELECT_LIST: string =
   'SELECT ' + LIST_COLUMNS + ' FROM ' + ArticleDbConstants.TABLE_ARTICLES + ' a' +
   ' WHERE a.canonical_id = \'\' ORDER BY a.published_at DESC';
 
+/**
+ * 摘要数据源：某时刻之后入库、仍未读、未隐藏、非重复项的轻量行。
+ * 用 fetched_at（入库时间）而不是发布时间：摘要描述的是「今天新到的」。
+ */
+const SQL_SELECT_FETCHED_SINCE: string =
+  'SELECT ' + LIST_COLUMNS + ' FROM ' + ArticleDbConstants.TABLE_ARTICLES + ' a' +
+  ' WHERE a.fetched_at >= ? AND a.is_read = 0 AND a.is_hidden = 0 AND a.canonical_id = \'\'' +
+  ' ORDER BY a.published_at DESC';
+
 /** 正文：按 id 取。 */
 const SQL_SELECT_BODY: string =
   'SELECT ' + BODY_COLUMNS + ' FROM ' + ArticleDbConstants.TABLE_ARTICLES + ' a WHERE a.id = ?';
@@ -1170,6 +1179,32 @@ export class ArticleStore {
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       hilog.error(DOMAIN, TAG, 'loadForList failed: %{public}d', error.code);
+    }
+    return result;
+  }
+
+  /**
+   * 某时刻之后入库的新文章（轻量列）：未读 + 未隐藏 + 非重复项，按发布时间倒序。
+   * 每日摘要的数据源（`ts` 一般是当天 00:00），不做正文 / HTML 读取。
+   */
+  async articlesFetchedSince(ts: number): Promise<Article[]> {
+    const store: relationalStore.RdbStore | undefined = this.store;
+    const result: Article[] = [];
+    if (store === undefined) {
+      return result;
+    }
+    try {
+      const rs: relationalStore.ResultSet = await store.querySql(SQL_SELECT_FETCHED_SINCE, [ts]);
+      try {
+        while (rs.goToNextRow()) {
+          result.push(this.articleFromListRow(rs));
+        }
+      } finally {
+        rs.close();
+      }
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.error(DOMAIN, TAG, 'articlesFetchedSince failed: %{public}d', error.code);
     }
     return result;
   }

@@ -7,7 +7,7 @@
  * 抓取门控与前台一致：
  *   - 源停用（enabled=false）不抓、不通知，但历史文章保留；
  *   - 源级抓取间隔（fetchIntervalMinutes>0）优先于全局自动刷新间隔；
- *   - 通知按源 notify 设置过滤（global 时取全局通知开关）。
+ *   - 通知走 NotifyService.notifyNew（与前台共用同一套策略：源开关 / 关键词 / 免打扰 / 摘要）。
  *
  * 注意：这里**不依赖 FeedViewModel**（扩展与界面的生命周期无关），只复用 service 层。
  */
@@ -25,7 +25,7 @@ import { appSettings } from '../model/AppSettings';
 import { notifyService } from '../service/NotifyService';
 import { retentionService } from '../service/RetentionService';
 import { ruleService } from '../service/RuleService';
-import { AutoRefreshMinutes, TriState } from '../common/constants/SettingsConstants';
+import { AutoRefreshMinutes } from '../common/constants/SettingsConstants';
 
 const DOMAIN: number = 0x0000;
 const TAG: string = 'RssWorkScheduler';
@@ -61,17 +61,6 @@ export default class RssWorkScheduler extends WorkSchedulerExtensionAbility {
     return feed.lastUpdated <= 0 || Date.now() - feed.lastUpdated >= minutes * MINUTE_MS;
   }
 
-  /** 该源的新文章是否应当通知（三态：global 取全局开关）。 */
-  private notifyEnabled(feed: FeedSource): boolean {
-    if (feed.notify === TriState.ON) {
-      return true;
-    }
-    if (feed.notify === TriState.OFF) {
-      return false;
-    }
-    return appSettings.notifyNewArticles;
-  }
-
   private async fetchAll(): Promise<void> {
     const context: common.Context = this.context as common.Context;
     // 不播种内置源：用户删光订阅后，后台任务不应该再把默认源的文章写回来。
@@ -82,7 +71,6 @@ export default class RssWorkScheduler extends WorkSchedulerExtensionAbility {
     await articleStore.open(context);
     // 通知 / 抓取间隔 / 保留策略都存在偏好库里：扩展与界面可能不是同一份模块状态，这里自己读一次。
     await settingsStore.load(context);
-    const before: number = await articleStore.countAll();
     const fresh: Article[] = [];
     for (let i = 0; i < feeds.length; i += 1) {
       const feed: FeedSource = feeds[i];
@@ -118,23 +106,10 @@ export default class RssWorkScheduler extends WorkSchedulerExtensionAbility {
     feedStore.save(feeds);
     hilog.info(DOMAIN, TAG, 'background refresh done, fetched: %{public}d', fresh.length);
 
-    // 通知：按源通知设置过滤（停用源不会产生 fresh，天然不通知）。
-    const notifyList: Article[] = [];
-    const byId: Map<string, FeedSource> = new Map<string, FeedSource>();
-    for (let i = 0; i < feeds.length; i += 1) {
-      byId.set(feeds[i].id, feeds[i]);
-    }
-    for (let i = 0; i < fresh.length; i += 1) {
-      const feed: FeedSource | undefined = byId.get(fresh[i].feedId);
-      if (feed !== undefined && this.notifyEnabled(feed)) {
-        notifyList.push(fresh[i]);
-      }
-    }
-    if (notifyList.length > 0) {
-      const after: number = await articleStore.countAll();
-      if (after > before) {
-        await notifyService.publishNewArticles(context, notifyList);
-      }
+    // 通知：与前台共用 notifyNew（策略过滤 / 免打扰入队 / 分组限流都在里面）。
+    // 只传真正新入库的文章，避免重复抓取的历史文章触发重复通知。
+    if (inserted.length > 0) {
+      await notifyService.notifyNew(context, feeds, inserted);
     }
 
     // 抓取后执行保留清理与回收站过期清理（低优先级，异常不影响本次抓取结果）。
@@ -147,5 +122,9 @@ export default class RssWorkScheduler extends WorkSchedulerExtensionAbility {
       const error: Error = err as Error;
       hilog.warn(DOMAIN, TAG, 'retention failed: %{public}s', error.message);
     }
+
+    // 离开免打扰后补发队列；每日摘要到点且今天没发过则发一条。
+    await notifyService.flushQueueIfDue(context);
+    await notifyService.maybeSendDigest(context);
   }
 }

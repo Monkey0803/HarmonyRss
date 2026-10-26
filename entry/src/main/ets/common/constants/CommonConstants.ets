@@ -50,4 +50,12 @@ export class CommonConstants {
   static readonly SHARE_TEMPLATE_NAME_MAX: number = 24;
   /** 模板内容最大字符数。 */
   static readonly SHARE_TEMPLATE_CONTENT_MAX: number = 2000;
+  /** 通知限流：同一订阅源一次最多发几条（超出部分合并成「还有 N 篇」）。 */
+  static readonly NOTIFY_MAX_PER_FEED: number = 3;
+  /** 通知限流：一次发布的总条数上限（含聚合条之外的逐条通知）。 */
+  static readonly NOTIFY_MAX_TOTAL: number = 10;
+  /** 免打扰队列长度上限（去重后保留最新的这么多条）。 */
+  static readonly NOTIFY_QUEUE_MAX: number = 50;
+  /** 通知关键词数量上限（超出丢弃）。 */
+  static readonly NOTIFY_KEYWORD_MAX: number = 20;
 }

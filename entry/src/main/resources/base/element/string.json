@@ -2743,6 +2743,422 @@
     {
       "name": "backup_content_list",
       "value": "Subscriptions · reading states · highlights · tags · smart folders · rules · templates · settings"
+    },
+    {
+      "name": "row_notify_settings",
+      "value": "Notification settings"
+    },
+    {
+      "name": "notify_settings_title",
+      "value": "Notification settings"
+    },
+    {
+      "name": "notify_settings_desc",
+      "value": "Decide which new articles notify you, and when."
+    },
+    {
+      "name": "notify_settings_saved",
+      "value": "Notification settings saved"
+    },
+    {
+      "name": "notify_section_permission",
+      "value": "Permission"
+    },
+    {
+      "name": "notify_permission_on",
+      "value": "Notifications allowed"
+    },
+    {
+      "name": "notify_permission_off",
+      "value": "Notifications not allowed"
+    },
+    {
+      "name": "notify_permission_grant",
+      "value": "Allow notifications"
+    },
+    {
+      "name": "notify_permission_hint",
+      "value": "If no dialog appears, turn notifications on for this app in system settings."
+    },
+    {
+      "name": "notify_status_off",
+      "value": "Notification is off. New articles will not be announced."
+    },
+    {
+      "name": "notify_section_policy",
+      "value": "Which articles"
+    },
+    {
+      "name": "notify_global_switch",
+      "value": "Notify on new articles"
+    },
+    {
+      "name": "notify_global_switch_desc",
+      "value": "Per-feed settings still apply. Turn a feed off to silence it."
+    },
+    {
+      "name": "notify_keywords_title",
+      "value": "Keywords"
+    },
+    {
+      "name": "notify_keywords_desc",
+      "value": "Notify only when the title or summary contains a keyword. Leave empty to notify everything."
+    },
+    {
+      "name": "notify_keywords_empty",
+      "value": "No keywords yet"
+    },
+    {
+      "name": "notify_keywords_placeholder",
+      "value": "Add a keyword"
+    },
+    {
+      "name": "notify_keywords_add",
+      "value": "Add"
+    },
+    {
+      "name": "notify_keywords_full",
+      "value": "Up to %d keywords"
+    },
+    {
+      "name": "notify_section_dnd",
+      "value": "Do not disturb"
+    },
+    {
+      "name": "notify_dnd_title",
+      "value": "Do not disturb"
+    },
+    {
+      "name": "notify_dnd_desc",
+      "value": "Hold notifications during this period and deliver them together afterwards."
+    },
+    {
+      "name": "notify_dnd_start",
+      "value": "Start"
+    },
+    {
+      "name": "notify_dnd_end",
+      "value": "End"
+    },
+    {
+      "name": "notify_dnd_same",
+      "value": "Start and end are the same, so do not disturb is off."
+    },
+    {
+      "name": "notify_section_digest",
+      "value": "Daily digest"
+    },
+    {
+      "name": "notify_digest_title",
+      "value": "Daily digest"
+    },
+    {
+      "name": "notify_digest_desc",
+      "value": "Send one summary a day after the set hour, at most once."
+    },
+    {
+      "name": "notify_digest_hour",
+      "value": "Time"
+    },
+    {
+      "name": "notify_section_test",
+      "value": "Test"
+    },
+    {
+      "name": "notify_test_action",
+      "value": "Send a test notification"
+    },
+    {
+      "name": "notify_test_title",
+      "value": "Test notification"
+    },
+    {
+      "name": "notify_test_text",
+      "value": "Notifications are working."
+    },
+    {
+      "name": "notify_test_failed",
+      "value": "Couldn't send the test notification"
+    },
+    {
+      "name": "notify_aggregate_title",
+      "value": "More updates"
+    },
+    {
+      "name": "notify_aggregate_text",
+      "value": "%s: %d more"
+    },
+    {
+      "name": "notify_aggregate_more",
+      "value": "%d more"
+    },
+    {
+      "name": "notify_dnd_flush_title",
+      "value": "%d new articles during do not disturb"
+    },
+    {
+      "name": "notify_dnd_flush_text",
+      "value": "%s"
+    },
+    {
+      "name": "notify_digest_notify_title",
+      "value": "Daily digest: %d new articles"
+    },
+    {
+      "name": "notify_digest_notify_text",
+      "value": "%s"
+    },
+    {
+      "name": "notify_action_star",
+      "value": "Star"
+    },
+    {
+      "name": "notify_permission_check",
+      "value": "Re-check"
+    },
+    {
+      "name": "notify_keyword_exists",
+      "value": "Keyword already added"
+    },
+    {
+      "name": "notify_keyword_remove",
+      "value": "Remove %s"
+    },
+    {
+      "name": "notify_test_sent",
+      "value": "Test notification sent"
+    },
+    {
+      "name": "translate_settings_title",
+      "value": "Translation"
+    },
+    {
+      "name": "translate_settings_desc",
+      "value": "Translate articles with a service you choose. Off by default; results are cached on device."
+    },
+    {
+      "name": "translate_section_service",
+      "value": "Translation service"
+    },
+    {
+      "name": "translate_enable",
+      "value": "Allow online translation"
+    },
+    {
+      "name": "translate_enable_desc",
+      "value": "When off, the reader never sends article text to any server."
+    },
+    {
+      "name": "translate_privacy",
+      "value": "Privacy: only the article body text is sent. Links, images and reading state are not included. The API Key is stored in the system Asset Store."
+    },
+    {
+      "name": "translate_provider",
+      "value": "Service"
+    },
+    {
+      "name": "translate_provider_deepl",
+      "value": "DeepL (API Key required)"
+    },
+    {
+      "name": "translate_provider_libre",
+      "value": "LibreTranslate (self-hosted supported)"
+    },
+    {
+      "name": "translate_endpoint",
+      "value": "Endpoint"
+    },
+    {
+      "name": "translate_endpoint_hint",
+      "value": "Leave empty to use the default endpoint"
+    },
+    {
+      "name": "translate_api_key",
+      "value": "API Key"
+    },
+    {
+      "name": "translate_api_key_hint",
+      "value": "Paste the key; stored securely on this device"
+    },
+    {
+      "name": "translate_api_key_set",
+      "value": "Key configured"
+    },
+    {
+      "name": "translate_api_key_unset",
+      "value": "No API Key configured"
+    },
+    {
+      "name": "translate_api_key_save",
+      "value": "Save Key"
+    },
+    {
+      "name": "translate_api_key_clear",
+      "value": "Clear"
+    },
+    {
+      "name": "translate_target_lang",
+      "value": "Target language"
+    },
+    {
+      "name": "translate_target_auto",
+      "value": "Follows app language"
+    },
+    {
+      "name": "translate_test",
+      "value": "Test translation"
+    },
+    {
+      "name": "translate_test_ok",
+      "value": "Test passed: %s"
+    },
+    {
+      "name": "translate_test_failed",
+      "value": "Test failed: %s"
+    },
+    {
+      "name": "translate_section_cache",
+      "value": "Cache"
+    },
+    {
+      "name": "translate_cache_count",
+      "value": "%d cached translations"
+    },
+    {
+      "name": "translate_cache_clear",
+      "value": "Clear translation cache"
+    },
+    {
+      "name": "translate_cache_cleared",
+      "value": "Cleared %d cached translations"
+    },
+    {
+      "name": "translate_action",
+      "value": "Translate"
+    },
+    {
+      "name": "translate_action_full",
+      "value": "Translate article"
+    },
+    {
+      "name": "translate_action_selection",
+      "value": "Translate selection"
+    },
+    {
+      "name": "translate_sheet_title",
+      "value": "Bilingual translation"
+    },
+    {
+      "name": "translate_only_translation",
+      "value": "Translation only"
+    },
+    {
+      "name": "translate_start",
+      "value": "Start translating"
+    },
+    {
+      "name": "translate_retry",
+      "value": "Translate again"
+    },
+    {
+      "name": "translate_loading",
+      "value": "Translating…"
+    },
+    {
+      "name": "translate_cached",
+      "value": "From cache"
+    },
+    {
+      "name": "translate_truncated",
+      "value": "The article is long; only the first 20,000 characters were translated."
+    },
+    {
+      "name": "translate_source_to_target",
+      "value": "%s → %s"
+    },
+    {
+      "name": "translate_selection_title",
+      "value": "Selected text"
+    },
+    {
+      "name": "translate_error_disabled_title",
+      "value": "Online translation is off"
+    },
+    {
+      "name": "translate_error_disabled_desc",
+      "value": "Turn it on and configure a service in Settings → Translation."
+    },
+    {
+      "name": "translate_error_not_configured",
+      "value": "Translation service is incomplete (API Key or endpoint missing)."
+    },
+    {
+      "name": "translate_error_empty",
+      "value": "There is no text to translate."
+    },
+    {
+      "name": "translate_error_same",
+      "value": "The article is already in the target language."
+    },
+    {
+      "name": "translate_error_network",
+      "value": "Network unavailable or timed out. Check your connection and retry."
+    },
+    {
+      "name": "translate_error_auth",
+      "value": "The API Key is invalid or expired."
+    },
+    {
+      "name": "translate_error_rate",
+      "value": "Too many requests. Try again later."
+    },
+    {
+      "name": "translate_error_server",
+      "value": "The translation service is temporarily unavailable."
+    },
+    {
+      "name": "translate_error_parse",
+      "value": "The translation service returned an unreadable response."
+    },
+    {
+      "name": "translate_open_settings",
+      "value": "Open translation settings"
+    },
+    {
+      "name": "translate_lang_zh",
+      "value": "Chinese"
+    },
+    {
+      "name": "translate_lang_en",
+      "value": "English"
+    },
+    {
+      "name": "translate_lang_ja",
+      "value": "Japanese"
+    },
+    {
+      "name": "translate_lang_ko",
+      "value": "Korean"
+    },
+    {
+      "name": "translate_lang_ru",
+      "value": "Russian"
+    },
+    {
+      "name": "translate_lang_ar",
+      "value": "Arabic"
+    },
+    {
+      "name": "translate_lang_und",
+      "value": "Auto detect"
+    },
+    {
+      "name": "translate_endpoint_save",
+      "value": "Save"
+    },
+    {
+      "name": "translate_section_test",
+      "value": "Connection test"
     }
   ]
 }
