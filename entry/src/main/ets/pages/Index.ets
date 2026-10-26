@@ -73,6 +73,7 @@ import { RemoteServiceView } from '../views/RemoteServiceView';
 import { ShareSettingsView } from '../views/ShareSettingsView';
 import { NotifySettingsView } from '../views/NotifySettingsView';
 import { TranslateSettingsView } from '../views/TranslateSettingsView';
+import { PrivacyView } from '../views/PrivacyView';
 import { remoteSyncService } from '../service/remote/RemoteSyncService';
 import { notifyService } from '../service/NotifyService';
 import { backupService } from '../service/BackupService';
@@ -114,6 +115,7 @@ struct Index {
   private shareSettingsScroller: Scroller = new Scroller();
   private notifySettingsScroller: Scroller = new Scroller();
   private translateSettingsScroller: Scroller = new Scroller();
+  private privacyScroller: Scroller = new Scroller();
 
   /** 收到 Ability 的深链事件后消费（应用已在前台时点卡片的路径）。 */
   private onDeepLinkEvent: () => void = () => {
@@ -814,6 +816,14 @@ struct Index {
       .titleMode(HdsNavDestinationTitleMode.MINI)
       .backgroundColor($r('app.color.hm_web_surface'))
       .bindToScrollable([this.translateSettingsScroller])
+    } else if (name === RouterConstants.PAGE_PRIVACY) {
+      HdsNavDestination() {
+        PrivacyView({ navPathStack: this.navPathStack, scroller: this.privacyScroller })
+      }
+      .titleBar(this.titleOptions($r('app.string.privacy_settings_title')))
+      .titleMode(HdsNavDestinationTitleMode.MINI)
+      .backgroundColor($r('app.color.hm_web_surface'))
+      .bindToScrollable([this.privacyScroller])
     }
   }
 

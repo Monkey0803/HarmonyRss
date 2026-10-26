@@ -41,4 +41,6 @@ export class RouterConstants {
   static readonly PAGE_NOTIFY_SETTINGS: string = 'notifySettings';
   /** 正文翻译设置页（开关 / 服务 / Key / 缓存）。 */
   static readonly PAGE_TRANSLATE_SETTINGS: string = 'translateSettings';
+  /** 隐私与数据页（外发数据说明 / 权限状态 / 数据控制）。 */
+  static readonly PAGE_PRIVACY: string = 'privacy';
 }

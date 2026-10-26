@@ -3159,6 +3159,210 @@
     {
       "name": "translate_section_test",
       "value": "连接测试"
+    },
+    {
+      "name": "privacy_settings_title",
+      "value": "隐私与数据"
+    },
+    {
+      "name": "privacy_settings_desc",
+      "value": "哪些数据留在本机、哪些可能外发，以及控制它们的全部开关。"
+    },
+    {
+      "name": "privacy_section_local",
+      "value": "留在本机的数据"
+    },
+    {
+      "name": "privacy_local_subscriptions_title",
+      "value": "订阅与文章"
+    },
+    {
+      "name": "privacy_local_subscriptions_desc",
+      "value": "订阅列表、文章缓存与提取后的正文保存在应用沙箱内。"
+    },
+    {
+      "name": "privacy_local_reading_title",
+      "value": "阅读状态"
+    },
+    {
+      "name": "privacy_local_reading_desc",
+      "value": "已读 / 收藏 / 稍后读 / 隐藏 / 进度与高亮默认只存本机。"
+    },
+    {
+      "name": "privacy_local_settings_title",
+      "value": "设置与缓存"
+    },
+    {
+      "name": "privacy_local_settings_desc",
+      "value": "偏好、规则、标签、智能文件夹与翻译缓存都保存在本机。"
+    },
+    {
+      "name": "privacy_section_outbound",
+      "value": "可能外发的数据"
+    },
+    {
+      "name": "privacy_out_fetch_title",
+      "value": "订阅抓取、正文与图片"
+    },
+    {
+      "name": "privacy_out_fetch_desc",
+      "value": "只请求订阅 / 文章 / 图片地址，不附带账号与阅读状态。"
+    },
+    {
+      "name": "privacy_out_remote_title",
+      "value": "账号与服务同步"
+    },
+    {
+      "name": "privacy_out_remote_desc",
+      "value": "连接 FreshRSS / Tiny Tiny RSS / Miniflux 后，订阅与阅读状态会同步到你配置的服务器。"
+    },
+    {
+      "name": "privacy_out_translate_title",
+      "value": "正文翻译"
+    },
+    {
+      "name": "privacy_out_translate_desc",
+      "value": "开启后，正文文本会发送到你选择的翻译服务（DeepL 或 LibreTranslate）。默认关闭。"
+    },
+    {
+      "name": "privacy_out_share_title",
+      "value": "系统分享与外部目标"
+    },
+    {
+      "name": "privacy_out_share_desc",
+      "value": "只有你点击分享时才投递，不会在后台发送。"
+    },
+    {
+      "name": "privacy_out_backup_title",
+      "value": "备份与导出"
+    },
+    {
+      "name": "privacy_out_backup_desc",
+      "value": "自动快照保存在应用沙箱；手动导出写入你选择的位置。"
+    },
+    {
+      "name": "privacy_section_permission",
+      "value": "权限与授权"
+    },
+    {
+      "name": "privacy_perm_notification_title",
+      "value": "通知"
+    },
+    {
+      "name": "privacy_perm_notification_desc",
+      "value": "只在你开启文章通知时申请系统授权。"
+    },
+    {
+      "name": "privacy_perm_background_title",
+      "value": "后台抓取"
+    },
+    {
+      "name": "privacy_perm_background_desc",
+      "value": "由系统 WorkScheduler 调度；可关闭自动刷新或在系统设置中撤销。"
+    },
+    {
+      "name": "privacy_perm_network_title",
+      "value": "网络状态"
+    },
+    {
+      "name": "privacy_perm_network_desc",
+      "value": "仅用于在本页展示在线 / 离线状态。"
+    },
+    {
+      "name": "privacy_perm_files_title",
+      "value": "文件与相册"
+    },
+    {
+      "name": "privacy_perm_files_desc",
+      "value": "只通过系统选择器或应用沙箱访问，不申请存储权限。"
+    },
+    {
+      "name": "privacy_perm_clipboard_title",
+      "value": "剪贴板"
+    },
+    {
+      "name": "privacy_perm_clipboard_desc",
+      "value": "仅在你点击应用内系统 PasteButton 时读取。"
+    },
+    {
+      "name": "privacy_status_granted",
+      "value": "已授权"
+    },
+    {
+      "name": "privacy_status_denied",
+      "value": "未授权"
+    },
+    {
+      "name": "privacy_network_online",
+      "value": "在线"
+    },
+    {
+      "name": "privacy_network_offline",
+      "value": "离线"
+    },
+    {
+      "name": "privacy_translation_on",
+      "value": "已开启"
+    },
+    {
+      "name": "privacy_translation_off",
+      "value": "已关闭"
+    },
+    {
+      "name": "privacy_remote_connected",
+      "value": "已连接"
+    },
+    {
+      "name": "privacy_remote_disconnected",
+      "value": "未连接"
+    },
+    {
+      "name": "privacy_remote_unknown",
+      "value": "未配置"
+    },
+    {
+      "name": "privacy_section_control",
+      "value": "数据控制"
+    },
+    {
+      "name": "privacy_control_cache_title",
+      "value": "翻译缓存"
+    },
+    {
+      "name": "privacy_control_cache_desc",
+      "value": "本机已缓存 %d 篇译文"
+    },
+    {
+      "name": "privacy_control_clear_cache",
+      "value": "清空翻译缓存"
+    },
+    {
+      "name": "privacy_cache_cleared",
+      "value": "已清理 %d 条翻译缓存"
+    },
+    {
+      "name": "privacy_control_remote_entry",
+      "value": "管理账号与服务"
+    },
+    {
+      "name": "privacy_control_backup_entry",
+      "value": "备份与恢复"
+    },
+    {
+      "name": "privacy_control_translate_entry",
+      "value": "翻译设置"
+    },
+    {
+      "name": "privacy_footer_no_tracking",
+      "value": "本应用不包含广告、统计或用户行为追踪 SDK；只在启用对应功能时发送必要数据。"
+    },
+    {
+      "name": "privacy_version",
+      "value": "隐私说明版本 2026-10"
+    },
+    {
+      "name": "privacy_out_cross_border_desc",
+      "value": "你配置的第三方服务端点可能位于其他地区，数据由该服务按其隐私政策处理。"
     }
   ]
 }

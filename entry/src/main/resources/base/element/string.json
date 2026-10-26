@@ -3159,6 +3159,210 @@
     {
       "name": "translate_section_test",
       "value": "Connection test"
+    },
+    {
+      "name": "privacy_settings_title",
+      "value": "Privacy & data"
+    },
+    {
+      "name": "privacy_settings_desc",
+      "value": "What stays on device, what may leave it, and every switch that controls it."
+    },
+    {
+      "name": "privacy_section_local",
+      "value": "Stays on this device"
+    },
+    {
+      "name": "privacy_local_subscriptions_title",
+      "value": "Subscriptions and articles"
+    },
+    {
+      "name": "privacy_local_subscriptions_desc",
+      "value": "Feed list, cached articles and extracted reading text live in the app sandbox."
+    },
+    {
+      "name": "privacy_local_reading_title",
+      "value": "Reading state"
+    },
+    {
+      "name": "privacy_local_reading_desc",
+      "value": "Read / starred / saved / hidden / progress and highlights are local by default."
+    },
+    {
+      "name": "privacy_local_settings_title",
+      "value": "Settings and cache"
+    },
+    {
+      "name": "privacy_local_settings_desc",
+      "value": "Preferences, rules, tags, smart folders and translation cache are stored locally."
+    },
+    {
+      "name": "privacy_section_outbound",
+      "value": "What may leave the device"
+    },
+    {
+      "name": "privacy_out_fetch_title",
+      "value": "Feed fetch, full text and images"
+    },
+    {
+      "name": "privacy_out_fetch_desc",
+      "value": "Only the feed / article / image URL is requested. Account and reading state are not attached."
+    },
+    {
+      "name": "privacy_out_remote_title",
+      "value": "Account & service sync"
+    },
+    {
+      "name": "privacy_out_remote_desc",
+      "value": "When you connect FreshRSS / Tiny Tiny RSS / Miniflux, subscriptions and reading state sync to that server."
+    },
+    {
+      "name": "privacy_out_translate_title",
+      "value": "Article translation"
+    },
+    {
+      "name": "privacy_out_translate_desc",
+      "value": "When enabled, article body text is sent to the service you choose (DeepL or LibreTranslate). Off by default."
+    },
+    {
+      "name": "privacy_out_share_title",
+      "value": "System share and external targets"
+    },
+    {
+      "name": "privacy_out_share_desc",
+      "value": "Only runs after you tap share; nothing is sent in the background."
+    },
+    {
+      "name": "privacy_out_backup_title",
+      "value": "Backups and export"
+    },
+    {
+      "name": "privacy_out_backup_desc",
+      "value": "Automatic snapshots stay in the app sandbox. Manual export saves to the location you pick."
+    },
+    {
+      "name": "privacy_section_permission",
+      "value": "Permissions and authorizations"
+    },
+    {
+      "name": "privacy_perm_notification_title",
+      "value": "Notifications"
+    },
+    {
+      "name": "privacy_perm_notification_desc",
+      "value": "Requested only when you turn on article notifications."
+    },
+    {
+      "name": "privacy_perm_background_title",
+      "value": "Background refresh"
+    },
+    {
+      "name": "privacy_perm_background_desc",
+      "value": "Scheduled by the system WorkScheduler; disable auto refresh or revoke it in system settings."
+    },
+    {
+      "name": "privacy_perm_network_title",
+      "value": "Network status"
+    },
+    {
+      "name": "privacy_perm_network_desc",
+      "value": "Read only to show online / offline on this page."
+    },
+    {
+      "name": "privacy_perm_files_title",
+      "value": "Files and photos"
+    },
+    {
+      "name": "privacy_perm_files_desc",
+      "value": "Accessed only through system pickers or the app sandbox; no storage permission is requested."
+    },
+    {
+      "name": "privacy_perm_clipboard_title",
+      "value": "Clipboard"
+    },
+    {
+      "name": "privacy_perm_clipboard_desc",
+      "value": "Read only when you tap the system PasteButton inside the app."
+    },
+    {
+      "name": "privacy_status_granted",
+      "value": "Granted"
+    },
+    {
+      "name": "privacy_status_denied",
+      "value": "Not granted"
+    },
+    {
+      "name": "privacy_network_online",
+      "value": "Online"
+    },
+    {
+      "name": "privacy_network_offline",
+      "value": "Offline"
+    },
+    {
+      "name": "privacy_translation_on",
+      "value": "Enabled"
+    },
+    {
+      "name": "privacy_translation_off",
+      "value": "Disabled"
+    },
+    {
+      "name": "privacy_remote_connected",
+      "value": "Connected"
+    },
+    {
+      "name": "privacy_remote_disconnected",
+      "value": "Not connected"
+    },
+    {
+      "name": "privacy_remote_unknown",
+      "value": "Not configured"
+    },
+    {
+      "name": "privacy_section_control",
+      "value": "Data controls"
+    },
+    {
+      "name": "privacy_control_cache_title",
+      "value": "Translation cache"
+    },
+    {
+      "name": "privacy_control_cache_desc",
+      "value": "%d articles cached locally"
+    },
+    {
+      "name": "privacy_control_clear_cache",
+      "value": "Clear translation cache"
+    },
+    {
+      "name": "privacy_cache_cleared",
+      "value": "Cleared %d cached translations"
+    },
+    {
+      "name": "privacy_control_remote_entry",
+      "value": "Manage account & service"
+    },
+    {
+      "name": "privacy_control_backup_entry",
+      "value": "Backup & restore"
+    },
+    {
+      "name": "privacy_control_translate_entry",
+      "value": "Translation settings"
+    },
+    {
+      "name": "privacy_footer_no_tracking",
+      "value": "This app contains no ads, analytics or behavioral tracking SDK. Data is only sent for the features you enable."
+    },
+    {
+      "name": "privacy_version",
+      "value": "Privacy notice version 2026-10"
+    },
+    {
+      "name": "privacy_out_cross_border_desc",
+      "value": "Third-party endpoints you configure may process data outside your region, under that service's privacy policy."
     }
   ]
 }

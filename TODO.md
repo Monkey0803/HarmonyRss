@@ -16,6 +16,8 @@ P2-1 通知增强已完成：策略化通知（源开关 / 关键词 / 免打扰
 > 订阅抓取、正文抓取、图片内联、Google Reader 同步全部接入。
 > P1-4 正文翻译已完成：整篇 / 选段翻译、逐段对照与仅看译文、语言自动识别 + 目标语言跟随应用、
 > DeepL / LibreTranslate 可配置（Key 存 Asset Store）、独立缓存库；联网翻译默认关闭。
+> 横切「权限 + 隐私合规」已完成：权限审计（仅 normal / system_grant）、通知 / 后台 / 文件 / 相册 /
+> 剪贴板申请时机说明、应用内「隐私与数据」页、`PRIVACY.md`；联网能力默认关闭。
 
 ## 0. 优先级总览
 
@@ -286,11 +288,13 @@ P2-1 通知增强已完成：策略化通知（源开关 / 关键词 / 免打扰
 ## 横切技术前置
 
 - [X] **数据库版本化**：已用 `RdbStore.version` 做 v1→v4 显式迁移（FTS、回收站、标签、智能文件夹）。
-- [ ] **权限**：`module.json5` 现仅 INTERNET / DETECT_GESTURE / DLP_GET_HIDE_STATUS；
-      通知、后台任务、网络状态、文件读写需按需补充并给出申请时机。
+- [X] **权限**：`module.json5` 已按实际使用声明 INTERNET / GET_NETWORK_INFO / DETECT_GESTURE /
+      DLP_GET_HIDE_STATUS；通知走运行时授权，后台任务 / 文件 / 相册 / 剪贴板无需额外权限，
+      申请时机与降级见 `spec/privacy-compliance/permissions-audit.md`。
 - [X] **网络层统一**：`service/HttpClient.ets` 统一超时、重试（指数退避 / Retry-After）、条件请求、
       User-Agent、系统代理、全局并发上限与按主机限流；抓取 / 正文 / 图片 / 远端同步已全部接入。
-- [ ] **隐私合规**：翻译与同步涉及外发数据，需隐私政策、开关默认关闭、数据出境说明。
+- [X] **隐私合规**：新增 `PRIVACY.md` 与应用内「隐私与数据」页，逐项说明外发数据 / 授权状态 /
+      数据控制；翻译与远端自动同步默认关闭，Key 存 Asset Store。
 - [X] **测试**：检索、标签、保留策略、FeedStore 迁移均已有 ohosTest（注意测试 HAP 会覆盖主包）。
 
 ## 里程碑建议

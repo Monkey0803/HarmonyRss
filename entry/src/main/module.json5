@@ -28,13 +28,25 @@
         "resource": "$profile:network_config"
       }
     ],
+    // 权限申请原则：只声明「系统授权即可、运行时不弹窗」的 normal / system_grant 权限。
+    // - 通知：不需要 manifest 权限，走运行时 requestEnableNotification（见 NotifySettingsView）。
+    // - 后台抓取：WorkSchedulerExtensionAbility 由系统调度，无独立权限。
+    // - 文件 / 相册：备份导出与背景图都通过系统 picker + 应用沙箱，不申请存储 / 媒体权限。
+    // - 剪贴板：只在 PasteButton 点击时读取，不后台读取。
     "requestPermissions": [
+      // 订阅抓取 / 正文 / 图片 / 翻译 / 远端同步。
       {
         "name": "ohos.permission.INTERNET"
       },
+      // 隐私页展示在线 / 离线状态（只读查询，normal + system_grant）。
+      {
+        "name": "ohos.permission.GET_NETWORK_INFO"
+      },
+      // 智感握姿（系统手势检测，normal + system_grant）。
       {
         "name": "ohos.permission.DETECT_GESTURE"
       },
+      // 防窥保护（读取系统防窥状态）。
       {
         "name": "ohos.permission.DLP_GET_HIDE_STATUS"
       }

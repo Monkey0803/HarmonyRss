@@ -829,6 +829,10 @@ export struct SettingsTabView {
           })
           Divider().color($r('app.color.hm_divider'))
           this.NavRow($r('sys.symbol.link'), $r('app.string.remote_entry_title'), RouterConstants.PAGE_REMOTE)
+          Divider().color($r('app.color.hm_divider'))
+          // 外发数据说明 / 权限状态 / 数据控制集中在一页。
+          this.NavRow($r('sys.symbol.lock'), $r('app.string.privacy_settings_title'),
+            RouterConstants.PAGE_PRIVACY)
         }
         .width('100%')
         .backgroundColor($r('app.color.hm_card_background'))

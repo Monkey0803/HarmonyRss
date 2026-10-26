@@ -63,6 +63,10 @@ HarmonyOS（ArkTS）RSS 阅读器。基于 **UI Design Kit（HDS）** 组件与 
   可选每日摘要（默认关，20:00 后每天一条）。同源通知按 `feed_<id>` 分组，每源最多 3 条、
   单次最多 10 条，超出部分合并为「还有 N 篇」；单条通知可「标记已读 / 收藏」，点击直达文章。
   通知权限状态与申请引导、测试通知在「设置 → 通知设置」。
+- **隐私与数据**：应用内「隐私与数据」页集中说明本机数据、可能外发的数据、通知 / 网络授权状态与
+  数据控制（翻译缓存、账号、备份入口）。联网翻译与远端自动同步默认关闭，API Key / 密码存入系统
+  Asset Store；权限申请时机见 [`spec/privacy-compliance/permissions-audit.md`](spec/privacy-compliance/permissions-audit.md)，
+  完整说明见 [`PRIVACY.md`](PRIVACY.md)。
 - **桌面服务卡片**：`entry/src/main/ets/form`。
 - **外观**：主题、全局背景图、沉浸光感材质、App logo、防窥保护、智感握姿。
 
