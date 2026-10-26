@@ -6,6 +6,7 @@
  */
 
 import { picker, fileIo } from '@kit.CoreFileKit';
+import { util } from '@kit.ArkTS';
 import { common } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
@@ -84,7 +85,32 @@ export class OpmlService {
     }
   }
 
+  /**
+   * 读文本：选择器返回的是 `file://docs/...` 这类 URI，`readTextSync` 只认沙箱路径，
+   * 直接传 URI 会报 "No such file or directory"。必须先 open 拿到 fd 再按字节读。
+   */
   private readText(uri: string): string {
+    let file: fileIo.File | undefined = undefined;
+    try {
+      file = fileIo.openSync(uri, fileIo.OpenMode.READ_ONLY);
+      const size: number = fileIo.statSync(file.fd).size;
+      if (size > 0) {
+        const buffer: ArrayBuffer = new ArrayBuffer(size);
+        const readLen: number = fileIo.readSync(file.fd, buffer);
+        if (readLen > 0) {
+          const bytes: Uint8Array = new Uint8Array(buffer, 0, readLen);
+          return util.TextDecoder.create('utf-8').decodeToString(bytes);
+        }
+      }
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.error(DOMAIN, TAG, 'read failed: %{public}d', error.code);
+    } finally {
+      if (file !== undefined) {
+        this.closeQuietly(file);
+      }
+    }
+    // 兜底：沙箱内路径仍走 readTextSync。
     try {
       return fileIo.readTextSync(uri, { encoding: 'utf-8' });
     } catch (err) {

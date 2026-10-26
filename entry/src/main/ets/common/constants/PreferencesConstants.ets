@@ -77,4 +77,6 @@ export class PreferencesConstants {
   static readonly KEY_DEDUPE_ENABLED: string = 'dedupeEnabled';
   /** 自定义分享模板（JSON 数组：id / name / content / sort）。 */
   static readonly KEY_SHARE_TEMPLATES: string = 'shareTemplates';
+  /** 最近一次自动快照的日期（yyyyMMdd），避免同一天重复生成。 */
+  static readonly KEY_LAST_SNAPSHOT_AT: string = 'lastSnapshotAt';
 }

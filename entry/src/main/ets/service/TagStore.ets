@@ -15,6 +15,7 @@ import { relationalStore } from '@kit.ArkData';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { Article } from '../model/Feed';
+import { BackupTag } from '../model/Backup';
 import { TagWithCount } from '../model/Tag';
 import { ArticleDbConstants, ReaderState, TagConstants } from '../common/constants/RssConstants';
 import { articleStore } from './ArticleStore';
@@ -85,6 +86,21 @@ function placeholders(count: number): string {
 /** 生成稳定 id：时间戳 + 随机后缀（同一毫秒内多次创建也不会撞）。 */
 function newId(prefix: string): string {
   return prefix + Date.now() + '_' + Math.floor(Math.random() * 1000000);
+}
+
+/**
+ * 标签合并结果。
+ * mapping：备份里的 tagId → 本地实际 tagId（导入 articleTags 时按它改写关联）；
+ * added：本次真正新建的标签数。
+ */
+export class TagMergeResult {
+  mapping: Map<string, string>;
+  added: number;
+
+  constructor(mapping: Map<string, string> = new Map<string, string>(), added: number = 0) {
+    this.mapping = mapping;
+    this.added = added;
+  }
 }
 
 export class TagStore {
@@ -370,6 +386,100 @@ export class TagStore {
       hilog.error(DOMAIN, TAG, 'countTags failed: %{public}d', error.code);
     }
     return 0;
+  }
+
+  /**
+   * 备份导出：全部标签（id / name / created_at）。
+   * 只读轻量列，库不可用时返回空数组。
+   */
+  async allForBackup(): Promise<BackupTag[]> {
+    await articleStore.whenReady();
+    const store: relationalStore.RdbStore | undefined = articleStore.getStore();
+    const result: BackupTag[] = [];
+    if (store === undefined) {
+      return result;
+    }
+    const sql: string = 'SELECT id, name, created_at FROM ' + ArticleDbConstants.TABLE_TAGS +
+      ' ORDER BY created_at ASC';
+    try {
+      const rs: relationalStore.ResultSet = await store.querySql(sql);
+      try {
+        while (rs.goToNextRow()) {
+          result.push(new BackupTag(
+            rs.getString(rs.getColumnIndex('id')),
+            rs.getString(rs.getColumnIndex('name')),
+            rs.getLong(rs.getColumnIndex('created_at'))));
+        }
+      } finally {
+        rs.close();
+      }
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      const detail: string = error.message !== undefined ? error.message : 'unknown';
+      hilog.error(DOMAIN, TAG, 'allForBackup failed: %{public}s', detail);
+    }
+    return result;
+  }
+
+  /**
+   * 备份导入：按 name_key（归一后小写）合并标签。
+   *   - 已存在同名标签 → 映射到现有 id，不新建；
+   *   - 不存在 → 用备份 id 插入（INSERT OR IGNORE，兜住并发 / 唯一键冲突）；
+   *   - 异常一律降级为空 mapping，导入其它段不受影响。
+   */
+  async mergeForBackup(records: BackupTag[]): Promise<TagMergeResult> {
+    const mapping: Map<string, string> = new Map<string, string>();
+    let added: number = 0;
+    if (records.length === 0) {
+      return new TagMergeResult(mapping, added);
+    }
+    await articleStore.whenReady();
+    const store: relationalStore.RdbStore | undefined = articleStore.getStore();
+    if (store === undefined) {
+      return new TagMergeResult(mapping, added);
+    }
+    try {
+      for (let i = 0; i < records.length; i += 1) {
+        const record: BackupTag = records[i];
+        const backupId: string = record.id.trim();
+        const key: string = tagNameKey(record.name);
+        if (backupId.length === 0 || key.length === 0) {
+          continue;
+        }
+        const existing: TagWithCount | undefined = await this.findByKey(key);
+        if (existing !== undefined) {
+          mapping.set(backupId, existing.id);
+          continue;
+        }
+        const display: string = normalizeTagName(record.name);
+        const createdAt: number = record.createdAt > 0 ? record.createdAt : Date.now();
+        let inserted: boolean = false;
+        try {
+          store.executeSync('INSERT OR IGNORE INTO ' + ArticleDbConstants.TABLE_TAGS +
+            ' (id, name, name_key, created_at) VALUES (?, ?, ?, ?)',
+            [backupId, display, key, createdAt]);
+          inserted = this.lastChanges() > 0;
+        } catch (writeErr) {
+          const writeError: BusinessError = writeErr as BusinessError;
+          const detail: string = writeError.message !== undefined ? writeError.message : 'unknown';
+          hilog.warn(DOMAIN, TAG, 'mergeForBackup insert failed: %{public}s', detail);
+        }
+        // INSERT OR IGNORE 可能被唯一键挡下（并发 / id 冲突）：按 name_key 回查真实 id。
+        const saved: TagWithCount | undefined = await this.findByKey(key);
+        if (saved !== undefined) {
+          mapping.set(backupId, saved.id);
+        } else {
+          mapping.set(backupId, backupId);
+        }
+        if (inserted) {
+          added += 1;
+        }
+      }
+    } catch (err) {
+      // 契约：标签段失败只降级为空映射，绝不让整次导入失败。
+      return new TagMergeResult(new Map<string, string>(), 0);
+    }
+    return new TagMergeResult(mapping, added);
   }
 
   /** 按 name_key 查已有标签（去重 / 重命名冲突检查）。 */

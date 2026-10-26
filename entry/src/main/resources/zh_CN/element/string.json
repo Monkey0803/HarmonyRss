@@ -2523,6 +2523,226 @@
     {
       "name": "section_share",
       "value": "分享与导出"
+    },
+    {
+      "name": "backup_title",
+      "value": "备份与恢复"
+    },
+    {
+      "name": "backup_entry",
+      "value": "备份与恢复"
+    },
+    {
+      "name": "backup_intro",
+      "value": "把订阅与阅读数据迁移到新设备，或在本地保留一份安全副本。"
+    },
+    {
+      "name": "backup_section_export",
+      "value": "导出"
+    },
+    {
+      "name": "backup_export_action",
+      "value": "导出备份"
+    },
+    {
+      "name": "backup_export_hint",
+      "value": "把订阅、阅读状态、高亮、标签、规则与模板保存到一个 JSON 文件。"
+    },
+    {
+      "name": "backup_export_cancelled",
+      "value": "已取消导出"
+    },
+    {
+      "name": "backup_section_import",
+      "value": "导入"
+    },
+    {
+      "name": "backup_import_action",
+      "value": "导入备份"
+    },
+    {
+      "name": "backup_import_hint",
+      "value": "与现有数据合并，不会删除任何内容。"
+    },
+    {
+      "name": "backup_import_cancelled",
+      "value": "已取消导入"
+    },
+    {
+      "name": "backup_restore_settings",
+      "value": "同时恢复设置"
+    },
+    {
+      "name": "backup_restore_settings_hint",
+      "value": "应用备份中的主题、排版、列表与同步偏好；默认关闭。"
+    },
+    {
+      "name": "backup_section_snapshots",
+      "value": "自动快照"
+    },
+    {
+      "name": "backup_snapshot_now",
+      "value": "立即备份"
+    },
+    {
+      "name": "backup_snapshot_empty",
+      "value": "暂无快照"
+    },
+    {
+      "name": "backup_snapshot_restore",
+      "value": "恢复"
+    },
+    {
+      "name": "backup_snapshot_delete",
+      "value": "删除"
+    },
+    {
+      "name": "backup_snapshot_keep_hint",
+      "value": "每天自动生成一份快照，仅保留最近 7 份。"
+    },
+    {
+      "name": "backup_snapshot_created",
+      "value": "创建于 %s"
+    },
+    {
+      "name": "backup_snapshot_size",
+      "value": "大小 %s"
+    },
+    {
+      "name": "backup_last_snapshot",
+      "value": "上次快照：%s"
+    },
+    {
+      "name": "backup_never",
+      "value": "从未"
+    },
+    {
+      "name": "backup_result_title",
+      "value": "最近一次结果"
+    },
+    {
+      "name": "backup_result_label_feeds",
+      "value": "订阅"
+    },
+    {
+      "name": "backup_result_label_articles",
+      "value": "文章"
+    },
+    {
+      "name": "backup_result_label_updated",
+      "value": "更新"
+    },
+    {
+      "name": "backup_result_label_tags",
+      "value": "标签"
+    },
+    {
+      "name": "backup_result_label_highlights",
+      "value": "高亮"
+    },
+    {
+      "name": "backup_result_label_skipped",
+      "value": "跳过"
+    },
+    {
+      "name": "backup_result_label_failed",
+      "value": "失败"
+    },
+    {
+      "name": "backup_result_added",
+      "value": "新增：%d"
+    },
+    {
+      "name": "backup_result_updated",
+      "value": "更新：%d"
+    },
+    {
+      "name": "backup_result_skipped",
+      "value": "跳过：%d"
+    },
+    {
+      "name": "backup_result_failed",
+      "value": "失败：%d"
+    },
+    {
+      "name": "backup_privacy_notice",
+      "value": "备份文件包含你的阅读记录，请妥善保管。"
+    },
+    {
+      "name": "backup_error_parse",
+      "value": "该文件不是有效的备份文件。"
+    },
+    {
+      "name": "backup_error_version",
+      "value": "不支持该备份文件的版本。"
+    },
+    {
+      "name": "backup_error_empty",
+      "value": "备份文件为空。"
+    },
+    {
+      "name": "backup_error_read",
+      "value": "无法读取文件。"
+    },
+    {
+      "name": "backup_error_write",
+      "value": "无法保存文件。"
+    },
+    {
+      "name": "backup_error_snapshot",
+      "value": "快照生成失败。"
+    },
+    {
+      "name": "backup_error_busy",
+      "value": "已有备份任务在进行，请稍后重试。"
+    },
+    {
+      "name": "backup_toast_exported",
+      "value": "备份已导出"
+    },
+    {
+      "name": "backup_toast_imported",
+      "value": "备份已导入"
+    },
+    {
+      "name": "backup_toast_restored",
+      "value": "快照已恢复"
+    },
+    {
+      "name": "backup_toast_deleted",
+      "value": "快照已删除"
+    },
+    {
+      "name": "backup_toast_snapshot_created",
+      "value": "快照已生成"
+    },
+    {
+      "name": "backup_confirm_restore_title",
+      "value": "恢复这份快照？"
+    },
+    {
+      "name": "backup_confirm_restore_message",
+      "value": "数据会合并到当前资料库，已有内容不会被删除。"
+    },
+    {
+      "name": "backup_confirm_delete_title",
+      "value": "删除这份快照？"
+    },
+    {
+      "name": "backup_confirm_delete_message",
+      "value": "快照文件将被删除且无法找回。"
+    },
+    {
+      "name": "backup_working",
+      "value": "处理中…"
+    },
+    {
+      "name": "backup_section_about",
+      "value": "关于备份"
+    },
+    {
+      "name": "backup_content_list",
+      "value": "订阅 · 阅读状态 · 高亮 · 标签 · 智能文件夹 · 规则 · 模板 · 设置"
     }
   ]
 }

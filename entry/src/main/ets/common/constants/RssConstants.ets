@@ -25,6 +25,18 @@ export class RssConstants {
   static readonly DEDUPE_WINDOW_MS: number = 24 * 60 * 60 * 1000;
   /** 跨源去重：单组最多展示的来源数（超出仍挂靠到主条，只是不再展示）。 */
   static readonly MAX_GROUP_SOURCES: number = 5;
+
+  // ---- 备份 / 迁移（文件格式的元数据，不是界面文案） ----
+  /** 备份文档结构版本：不匹配时整份拒绝，保证旧版本可增量扩展。 */
+  static readonly BACKUP_VERSION: number = 1;
+  /** 导出文件名前缀（后接日期，避免多次导出互相覆盖）。 */
+  static readonly BACKUP_FILE_PREFIX: string = 'harmonyrss-backup-';
+  /** 自动快照目录名（位于应用私有 filesDir 下）。 */
+  static readonly BACKUP_SNAPSHOT_DIR: string = 'backups';
+  /** 自动快照保留份数（超出按日期文件名从旧到新清理）。 */
+  static readonly BACKUP_SNAPSHOT_KEEP: number = 7;
+  /** 备份文件后缀过滤（系统文件选择器用）。 */
+  static readonly BACKUP_SUFFIX_FILTER: string = '.json';
 }
 
 /** 订阅源操作的结果码（视图据此映射到文案）。 */

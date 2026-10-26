@@ -12,6 +12,9 @@ import { common } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { PreferencesConstants } from '../common/constants/PreferencesConstants';
 import { FeedSource } from '../model/Feed';
+import { BackupFeed } from '../model/Backup';
+import { UrlText } from '../common/utils/UrlText';
+import { DedupeKeys } from './DedupeKeys';
 import { DEFAULT_FEEDS, FeedSeed } from '../model/DefaultFeeds';
 import { FullTextMode, TriState } from '../common/constants/SettingsConstants';
 
@@ -150,6 +153,66 @@ export function encodeFeeds(feeds: FeedSource[]): string {
     records.push(record);
   }
   return JSON.stringify(records);
+}
+
+/**
+ * 订阅合并键：优先用归一化 URL，归一化失败时退回去空白后的原串 / id。
+ * 最后再套一遍跨源去重的 URL 归一（小写 scheme / host、去追踪参数、忽略末尾斜杠），
+ * 避免同一订阅因大小写或尾斜杠差异被重复导入。
+ * 纯函数，导出供备份合并单测复用。
+ */
+export function feedMergeKey(url: string, fallbackId: string): string {
+  const normalized: string = UrlText.normalizeUrlInput(url);
+  let base: string = normalized;
+  if (base.length === 0) {
+    const trimmed: string = url.trim();
+    base = trimmed.length > 0 ? trimmed : fallbackId.trim();
+  }
+  if (base.length === 0) {
+    return '';
+  }
+  return DedupeKeys.urlKey(base);
+}
+
+/**
+ * 合并备份订阅（纯函数）：按归一化 URL 去重。
+ *   - 已存在：保留本地（不覆盖标题 / 分组 / 抓取信息等）；
+ *   - 不存在：用备份数据新建 FeedSource，并应用新字段；
+ *   - 备份内部的重复项也只保留第一条。
+ * 返回新数组，不修改入参。
+ */
+export function mergeFeedsForBackup(local: FeedSource[], incoming: BackupFeed[]): FeedSource[] {
+  const merged: FeedSource[] = local.slice();
+  const seen: Set<string> = new Set<string>();
+  for (let i = 0; i < merged.length; i += 1) {
+    const key: string = feedMergeKey(merged[i].url, merged[i].id);
+    if (key.length > 0) {
+      seen.add(key);
+    }
+  }
+  for (let i = 0; i < incoming.length; i += 1) {
+    const item: BackupFeed = incoming[i];
+    // 合并键严格用归一化地址：归一化失败（非法地址）直接跳过，避免写入脏订阅。
+    const url: string = UrlText.normalizeUrlInput(item.url);
+    if (url.length === 0) {
+      continue;
+    }
+    const key: string = feedMergeKey(url, '');
+    if (key.length === 0 || seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    const title: string = item.title.length > 0 ? item.title : url;
+    const feed: FeedSource = new FeedSource(url, title, url, item.siteUrl, item.group);
+    feed.enabled = item.enabled;
+    feed.fetchIntervalMinutes = normalizeFeedInterval(item.fetchIntervalMinutes);
+    feed.fullTextMode = normalizeFeedFullTextMode(item.fullTextMode);
+    feed.retentionDays = normalizeFeedRetention(item.retentionDays);
+    feed.notify = normalizeFeedTriState(item.notify);
+    feed.markReadOnScroll = normalizeFeedTriState(item.markReadOnScroll);
+    merged.push(feed);
+  }
+  return merged;
 }
 
 export class FeedStore {

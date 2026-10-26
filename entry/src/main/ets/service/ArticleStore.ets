@@ -17,6 +17,13 @@ import { common } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { Article } from '../model/Feed';
+import {
+  ArticleStatePatch,
+  BackupArticle,
+  BackupArticleTag,
+  BackupHighlight
+} from '../model/Backup';
+import { mergeArticleState } from './BackupCodec';
 import { DedupeCandidate, GroupSource } from '../model/Dedupe';
 import { appSettings } from '../model/AppSettings';
 import { Highlight, HighlightLibraryItem } from '../model/Highlight';
@@ -153,6 +160,54 @@ const SQL_INSERT: string =
   ' (id, feed_id, feed_title, title, link, summary, content, published_at, is_read, is_starred, fetched_at,' +
   ' image_url, author, content_html, link_key, title_key, canonical_id)' +
   ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+
+/** 备份导入：单事务最多处理的条数（2 万篇 ≈ 100 个短事务，避免长事务卡顿）。 */
+const BACKUP_BATCH_SIZE: number = 200;
+
+/** 备份导出：文章段只取元数据 + 阅读状态列（不含正文缓存 / fetched_at）。 */
+const SQL_SELECT_BACKUP_ARTICLES: string =
+  'SELECT id, feed_id, feed_title, title, link, summary, author, published_at, image_url,' +
+  ' is_read, is_starred, is_saved, progress, progress_ratio, is_hidden,' +
+  ' canonical_id, link_key, title_key FROM ' + ArticleDbConstants.TABLE_ARTICLES;
+
+/** 备份导入：按 id 查已有文章的状态列（决定 INSERT 还是状态并集 UPDATE）。 */
+const SQL_SELECT_BACKUP_ARTICLE_STATE: string =
+  'SELECT id, is_read, is_starred, is_saved, is_hidden, progress, progress_ratio, canonical_id FROM ' +
+  ArticleDbConstants.TABLE_ARTICLES + ' WHERE id = ?';
+
+/** 备份导入新文章：正文列留空（首次打开时重新提取），fetched_at 记导入时间。 */
+const SQL_INSERT_BACKUP_ARTICLE: string =
+  'INSERT INTO ' + ArticleDbConstants.TABLE_ARTICLES +
+  ' (id, feed_id, feed_title, title, link, summary, content, published_at,' +
+  ' is_read, is_starred, is_saved, is_hidden, fetched_at, image_url, author,' +
+  ' progress, progress_ratio, link_key, title_key, canonical_id)' +
+  ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+
+/** 备份导入已有文章：只并集状态列，不动标题 / 正文 / 来源等已有内容。 */
+const SQL_UPDATE_BACKUP_ARTICLE_STATE: string =
+  'UPDATE ' + ArticleDbConstants.TABLE_ARTICLES +
+  ' SET is_read = ?, is_starred = ?, is_saved = ?, is_hidden = ?, progress = ?,' +
+  ' progress_ratio = ?, canonical_id = ? WHERE id = ?';
+
+/** 备份导出：标注段全字段。 */
+const SQL_SELECT_BACKUP_HIGHLIGHTS: string =
+  'SELECT id, article_id, quote, note, color, created_at, anchor_text, anchor_ratio FROM ' +
+  ArticleDbConstants.TABLE_HIGHLIGHTS;
+
+/** 备份导入标注：主键相同即忽略（幂等，不覆盖本地备注 / 配色）。 */
+const SQL_INSERT_BACKUP_HIGHLIGHT: string =
+  'INSERT OR IGNORE INTO ' + ArticleDbConstants.TABLE_HIGHLIGHTS +
+  ' (id, article_id, quote, note, color, created_at, anchor_text, anchor_ratio)' +
+  ' VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
+
+/** 备份导出：文章 ↔ 标签关联全表。 */
+const SQL_SELECT_BACKUP_ARTICLE_TAGS: string =
+  'SELECT article_id, tag_id FROM ' + ArticleDbConstants.TABLE_ARTICLE_TAGS;
+
+/** 备份导入关联：联合主键相同即忽略（幂等）。 */
+const SQL_INSERT_BACKUP_ARTICLE_TAG: string =
+  'INSERT OR IGNORE INTO ' + ArticleDbConstants.TABLE_ARTICLE_TAGS +
+  ' (article_id, tag_id) VALUES (?, ?)';
 
 /** 列表：轻量列，按发布时间倒序；只取主条（重复项不进主表列表）。 */
 const SQL_SELECT_LIST: string =
@@ -391,6 +446,19 @@ function placeholders(count: number): string {
     parts.push('?');
   }
   return parts.join(',');
+}
+
+/** 一次文章段合并的统计：新增 / 状态更新 / 因订阅缺失跳过。 */
+export class BackupMergeCount {
+  added: number;
+  updated: number;
+  skipped: number;
+
+  constructor(added: number = 0, updated: number = 0, skipped: number = 0) {
+    this.added = added;
+    this.updated = updated;
+    this.skipped = skipped;
+  }
 }
 
 export class ArticleStore {
@@ -3143,6 +3211,282 @@ export class ArticleStore {
    */
   prune(): void {
     // no-op：固定条数上限已移除。
+  }
+
+  // ---- 备份 / 迁移 ----
+  //
+  // 只做数据搬运：导出取全量元数据，导入按主键并集（不删任何本地数据）。
+  // 导入不写 FTS / 中文索引 —— 由 BackupService 在整次导入结束后统一重建，
+  // 避免逐条建索引拖慢导入，也避免重复项占索引。
+  // 所有方法失败时只记日志并返回 0 / 空数组，不向调用方抛异常。
+
+  /** 导出文章段（仅元数据 + 阅读状态列，不含正文缓存）。 */
+  async allArticlesForBackup(): Promise<BackupArticle[]> {
+    const store: relationalStore.RdbStore | undefined = this.store;
+    const result: BackupArticle[] = [];
+    if (store === undefined) {
+      return result;
+    }
+    try {
+      const rs: relationalStore.ResultSet = await store.querySql(SQL_SELECT_BACKUP_ARTICLES);
+      try {
+        while (rs.goToNextRow()) {
+          result.push(new BackupArticle(
+            rs.getString(rs.getColumnIndex('id')),
+            rs.getString(rs.getColumnIndex('feed_id')),
+            rs.getString(rs.getColumnIndex('feed_title')),
+            rs.getString(rs.getColumnIndex('title')),
+            rs.getString(rs.getColumnIndex('link')),
+            rs.getString(rs.getColumnIndex('summary')),
+            rs.getString(rs.getColumnIndex('author')),
+            rs.getLong(rs.getColumnIndex('published_at')),
+            rs.getString(rs.getColumnIndex('image_url')),
+            rs.getLong(rs.getColumnIndex('is_read')) === 1,
+            rs.getLong(rs.getColumnIndex('is_starred')) === 1,
+            rs.getLong(rs.getColumnIndex('is_saved')) === 1,
+            rs.getLong(rs.getColumnIndex('is_hidden')) === 1,
+            rs.getDouble(rs.getColumnIndex('progress')),
+            rs.getDouble(rs.getColumnIndex('progress_ratio')),
+            rs.getString(rs.getColumnIndex('canonical_id')),
+            rs.getString(rs.getColumnIndex('link_key')),
+            rs.getString(rs.getColumnIndex('title_key'))));
+        }
+      } finally {
+        rs.close();
+      }
+    } catch (err) {
+      const message: string = err instanceof Error ? err.message : 'unknown error';
+      hilog.error(DOMAIN, TAG, 'allArticlesForBackup failed: %{public}s', message);
+    }
+    return result;
+  }
+
+  /**
+   * 导入文章段：分批事务 + 状态并集（幂等）。
+   *
+   * - `validFeedIds`：本次导入后确实存在的订阅 id 集合。订阅在 preferences 里，本库没有 feeds 表，
+   *   所以由 BackupService 传入；不在集合里的文章计入 skipped（不报错、不中断）。
+   * - 已存在：`mergeArticleState` 决定并集后的状态（读 / 收藏 / 稍后读 / 隐藏 OR、进度 max、
+   *   canonicalId 保留本地非空值），只 UPDATE 状态列，不覆盖标题 / 正文。
+   * - 不存在：整行 INSERT（正文列留空，首次打开时重新提取），状态取备份值。
+   * - 单个批次失败只回滚该批次并记日志，已提交的批次保留；返回值只统计已提交的部分。
+   */
+  async mergeArticlesForBackup(records: BackupArticle[],
+    validFeedIds: string[]): Promise<BackupMergeCount> {
+    const counts: BackupMergeCount = new BackupMergeCount();
+    const store: relationalStore.RdbStore | undefined = this.store;
+    if (store === undefined || records.length === 0) {
+      return counts;
+    }
+    const allowed: Set<string> = new Set<string>();
+    for (let i = 0; i < validFeedIds.length; i += 1) {
+      allowed.add(validFeedIds[i]);
+    }
+    const now: number = Date.now();
+    for (let start = 0; start < records.length; start += BACKUP_BATCH_SIZE) {
+      const end: number = Math.min(start + BACKUP_BATCH_SIZE, records.length);
+      let batchAdded: number = 0;
+      let batchUpdated: number = 0;
+      let batchSkipped: number = 0;
+      try {
+        store.beginTransaction();
+        try {
+          for (let i = start; i < end; i += 1) {
+            const record: BackupArticle = records[i];
+            if (record.id.length === 0 || !allowed.has(record.feedId)) {
+              batchSkipped += 1;
+              continue;
+            }
+            const existing: ArticleStatePatch | undefined =
+              this.readBackupArticleState(store, record.id);
+            if (existing === undefined) {
+              store.executeSync(SQL_INSERT_BACKUP_ARTICLE, [
+                record.id, record.feedId, record.feedTitle, record.title, record.link,
+                record.summary, '', record.publishedAt,
+                record.read ? 1 : 0, record.starred ? 1 : 0, record.saved ? 1 : 0,
+                record.hidden ? 1 : 0, now, record.imageUrl, record.author,
+                record.progress, record.progressRatio, record.linkKey, record.titleKey,
+                record.canonicalId
+              ]);
+              batchAdded += 1;
+            } else {
+              const merged: ArticleStatePatch = mergeArticleState(existing, record);
+              store.executeSync(SQL_UPDATE_BACKUP_ARTICLE_STATE, [
+                merged.read ? 1 : 0, merged.starred ? 1 : 0, merged.saved ? 1 : 0,
+                merged.hidden ? 1 : 0, merged.progress, merged.progressRatio,
+                merged.canonicalId, record.id
+              ]);
+              batchUpdated += 1;
+            }
+          }
+          store.commit();
+        } catch (inner) {
+          store.rollBack();
+          throw inner as Error;
+        }
+        counts.added += batchAdded;
+        counts.updated += batchUpdated;
+        counts.skipped += batchSkipped;
+      } catch (err) {
+        const message: string = err instanceof Error ? err.message : 'unknown error';
+        hilog.error(DOMAIN, TAG, 'mergeArticlesForBackup batch failed: %{public}s', message);
+      }
+    }
+    return counts;
+  }
+
+  /** 读已有文章的状态列；不存在返回 undefined（同步查询，事务内不会被其它等待打断）。 */
+  private readBackupArticleState(store: relationalStore.RdbStore,
+    id: string): ArticleStatePatch | undefined {
+    const rs: relationalStore.ResultSet = store.querySqlSync(SQL_SELECT_BACKUP_ARTICLE_STATE, [id]);
+    try {
+      if (!rs.goToNextRow()) {
+        return undefined;
+      }
+      return new ArticleStatePatch(
+        rs.getLong(rs.getColumnIndex('is_read')) === 1,
+        rs.getLong(rs.getColumnIndex('is_starred')) === 1,
+        rs.getLong(rs.getColumnIndex('is_saved')) === 1,
+        rs.getLong(rs.getColumnIndex('is_hidden')) === 1,
+        rs.getDouble(rs.getColumnIndex('progress')),
+        rs.getDouble(rs.getColumnIndex('progress_ratio')),
+        rs.getString(rs.getColumnIndex('canonical_id')));
+    } finally {
+      rs.close();
+    }
+  }
+
+  /** 导出标注段（全表）。 */
+  async allHighlightsForBackup(): Promise<BackupHighlight[]> {
+    const store: relationalStore.RdbStore | undefined = this.store;
+    const result: BackupHighlight[] = [];
+    if (store === undefined) {
+      return result;
+    }
+    try {
+      const rs: relationalStore.ResultSet = await store.querySql(SQL_SELECT_BACKUP_HIGHLIGHTS);
+      try {
+        while (rs.goToNextRow()) {
+          result.push(new BackupHighlight(
+            rs.getString(rs.getColumnIndex('id')),
+            rs.getString(rs.getColumnIndex('article_id')),
+            rs.getString(rs.getColumnIndex('quote')),
+            rs.getString(rs.getColumnIndex('note')),
+            rs.getString(rs.getColumnIndex('color')),
+            rs.getLong(rs.getColumnIndex('created_at')),
+            rs.getString(rs.getColumnIndex('anchor_text')),
+            rs.getDouble(rs.getColumnIndex('anchor_ratio'))));
+        }
+      } finally {
+        rs.close();
+      }
+    } catch (err) {
+      const message: string = err instanceof Error ? err.message : 'unknown error';
+      hilog.error(DOMAIN, TAG, 'allHighlightsForBackup failed: %{public}s', message);
+    }
+    return result;
+  }
+
+  /** 导入标注段：INSERT OR IGNORE，返回实际新增条数（已有 id 不计）。 */
+  async mergeHighlightsForBackup(records: BackupHighlight[]): Promise<number> {
+    const store: relationalStore.RdbStore | undefined = this.store;
+    if (store === undefined || records.length === 0) {
+      return 0;
+    }
+    let added: number = 0;
+    for (let start = 0; start < records.length; start += BACKUP_BATCH_SIZE) {
+      const end: number = Math.min(start + BACKUP_BATCH_SIZE, records.length);
+      let batchAdded: number = 0;
+      try {
+        store.beginTransaction();
+        try {
+          for (let i = start; i < end; i += 1) {
+            const item: BackupHighlight = records[i];
+            if (item.id.length === 0 || item.articleId.length === 0) {
+              continue;
+            }
+            store.executeSync(SQL_INSERT_BACKUP_HIGHLIGHT, [
+              item.id, item.articleId, item.quote, item.note, item.color, item.createdAt,
+              item.anchorText, item.anchorRatio
+            ]);
+            if (this.lastChanges() > 0) {
+              batchAdded += 1;
+            }
+          }
+          store.commit();
+        } catch (inner) {
+          store.rollBack();
+          throw inner as Error;
+        }
+        added += batchAdded;
+      } catch (err) {
+        const message: string = err instanceof Error ? err.message : 'unknown error';
+        hilog.error(DOMAIN, TAG, 'mergeHighlightsForBackup batch failed: %{public}s', message);
+      }
+    }
+    return added;
+  }
+
+  /** 导出文章 ↔ 标签关联（全表）。 */
+  async allArticleTagsForBackup(): Promise<BackupArticleTag[]> {
+    const store: relationalStore.RdbStore | undefined = this.store;
+    const result: BackupArticleTag[] = [];
+    if (store === undefined) {
+      return result;
+    }
+    try {
+      const rs: relationalStore.ResultSet = await store.querySql(SQL_SELECT_BACKUP_ARTICLE_TAGS);
+      try {
+        while (rs.goToNextRow()) {
+          result.push(new BackupArticleTag(
+            rs.getString(rs.getColumnIndex('article_id')),
+            rs.getString(rs.getColumnIndex('tag_id'))));
+        }
+      } finally {
+        rs.close();
+      }
+    } catch (err) {
+      const message: string = err instanceof Error ? err.message : 'unknown error';
+      hilog.error(DOMAIN, TAG, 'allArticleTagsForBackup failed: %{public}s', message);
+    }
+    return result;
+  }
+
+  /** 导入关联：INSERT OR IGNORE，返回实际新增条数（联合主键已存在不计）。 */
+  async mergeArticleTagsForBackup(records: BackupArticleTag[]): Promise<number> {
+    const store: relationalStore.RdbStore | undefined = this.store;
+    if (store === undefined || records.length === 0) {
+      return 0;
+    }
+    let added: number = 0;
+    for (let start = 0; start < records.length; start += BACKUP_BATCH_SIZE) {
+      const end: number = Math.min(start + BACKUP_BATCH_SIZE, records.length);
+      let batchAdded: number = 0;
+      try {
+        store.beginTransaction();
+        try {
+          for (let i = start; i < end; i += 1) {
+            const item: BackupArticleTag = records[i];
+            if (item.articleId.length === 0 || item.tagId.length === 0) {
+              continue;
+            }
+            store.executeSync(SQL_INSERT_BACKUP_ARTICLE_TAG, [item.articleId, item.tagId]);
+            if (this.lastChanges() > 0) {
+              batchAdded += 1;
+            }
+          }
+          store.commit();
+        } catch (inner) {
+          store.rollBack();
+          throw inner as Error;
+        }
+        added += batchAdded;
+      } catch (err) {
+        const message: string = err instanceof Error ? err.message : 'unknown error';
+        hilog.error(DOMAIN, TAG, 'mergeArticleTagsForBackup batch failed: %{public}s', message);
+      }
+    }
+    return added;
   }
 
   /** 只为老库补列：列已存在时 executeSync 会抛错，这里静默处理。 */

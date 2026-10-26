@@ -14,6 +14,7 @@ import { relationalStore } from '@kit.ArkData';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { Article } from '../model/Feed';
+import { BackupRule } from '../model/Backup';
 import { Rule, RuleAction, RuleDraft, RuleError, RuleField } from '../model/Rule';
 import { ArticleDbConstants, RuleConstants } from '../common/constants/RssConstants';
 import { articleStore } from './ArticleStore';
@@ -361,6 +362,109 @@ export class RuleStore {
     return result;
   }
 
+  /**
+   * 备份导出：全部规则（含命中统计）。
+   * keywords / feedIds / tagIds 解成数组，fields / actions 解成合法值数组。
+   */
+  async allForBackup(): Promise<BackupRule[]> {
+    await articleStore.whenReady();
+    const store: relationalStore.RdbStore | undefined = articleStore.getStore();
+    const result: BackupRule[] = [];
+    if (store === undefined) {
+      return result;
+    }
+    try {
+      const rs: relationalStore.ResultSet = await store.querySql(
+        'SELECT id, name, enabled, priority, keywords, fields, feed_ids, actions, tag_ids,' +
+        ' match_count, last_hit_at FROM ' + ArticleDbConstants.TABLE_RULES +
+        ' ORDER BY priority ASC, created_at ASC');
+      try {
+        while (rs.goToNextRow()) {
+          result.push(new BackupRule(
+            rs.getString(rs.getColumnIndex('id')),
+            rs.getString(rs.getColumnIndex('name')),
+            rs.getLong(rs.getColumnIndex('enabled')) === 1,
+            rs.getLong(rs.getColumnIndex('priority')),
+            decodeArray(rs.getString(rs.getColumnIndex('keywords'))),
+            decodeCodes(rs.getString(rs.getColumnIndex('fields')),
+              (v: string): boolean => RuleField.isValid(v)),
+            decodeArray(rs.getString(rs.getColumnIndex('feed_ids'))),
+            decodeCodes(rs.getString(rs.getColumnIndex('actions')),
+              (v: string): boolean => RuleAction.isValid(v)),
+            decodeArray(rs.getString(rs.getColumnIndex('tag_ids'))),
+            rs.getLong(rs.getColumnIndex('match_count')),
+            rs.getLong(rs.getColumnIndex('last_hit_at'))));
+        }
+      } finally {
+        rs.close();
+      }
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      const detail: string = error.message !== undefined ? error.message : 'unknown';
+      hilog.error(DOMAIN, TAG, 'allForBackup failed: %{public}s', detail);
+    }
+    return result;
+  }
+
+  /**
+   * 备份导入：按 id 合并（存在则跳过，不存在则用备份 id 插入）。
+   * 数组字段重新编码为 JSON / 逗号串，与读取端格式保持一致；失败整体回滚并返回 0。
+   */
+  async mergeForBackup(records: BackupRule[]): Promise<number> {
+    if (records.length === 0) {
+      return 0;
+    }
+    await articleStore.whenReady();
+    const store: relationalStore.RdbStore | undefined = articleStore.getStore();
+    if (store === undefined) {
+      return 0;
+    }
+    let added: number = 0;
+    const now: number = Date.now();
+    try {
+      store.beginTransaction();
+      try {
+        for (let i = 0; i < records.length; i += 1) {
+          const record: BackupRule = records[i];
+          const id: string = record.id.trim();
+          const name: string = record.name.trim();
+          if (id.length === 0 || name.length === 0) {
+            continue;
+          }
+          const keywords: string = JSON.stringify(this.cleanKeywords(record.keywords));
+          const fields: string = encodeCodes(record.fields,
+            (v: string): boolean => RuleField.isValid(v));
+          const feedIds: string = encodeArray(record.feedIds);
+          const actions: string = encodeCodes(record.actions,
+            (v: string): boolean => RuleAction.isValid(v));
+          const tagIds: string = encodeArray(record.tagIds);
+          const priority: number = record.priority > 0 ? Math.round(record.priority) : 0;
+          const matchCount: number = record.matchCount > 0 ? Math.round(record.matchCount) : 0;
+          const lastHitAt: number = record.lastHitAt > 0 ? record.lastHitAt : 0;
+          store.executeSync('INSERT OR IGNORE INTO ' + ArticleDbConstants.TABLE_RULES +
+            ' (id, name, enabled, priority, keywords, fields, feed_ids, actions, tag_ids,' +
+            ' match_count, last_hit_at, created_at, updated_at)' +
+            ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [id, name, record.enabled ? 1 : 0, priority, keywords, fields, feedIds, actions,
+              tagIds, matchCount, lastHitAt, now, now]);
+          if (this.lastChanges() > 0) {
+            added += 1;
+          }
+        }
+        store.commit();
+      } catch (inner) {
+        store.rollBack();
+        throw inner as Error;
+      }
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      const detail: string = error.message !== undefined ? error.message : 'unknown';
+      hilog.error(DOMAIN, TAG, 'mergeForBackup failed: %{public}s', detail);
+      return 0;
+    }
+    return added;
+  }
+
   private fromRow(rs: relationalStore.ResultSet): Rule {
     return new Rule(
       rs.getString(rs.getColumnIndex('id')),
@@ -398,6 +502,27 @@ export class RuleStore {
     article.saved = rs.getLong(rs.getColumnIndex('is_saved')) === 1;
     article.hidden = rs.getLong(rs.getColumnIndex('is_hidden')) === 1;
     return article;
+  }
+
+  /** 最近一条语句影响的行数（INSERT OR IGNORE 是否真的插入）。 */
+  private lastChanges(): number {
+    const store: relationalStore.RdbStore | undefined = articleStore.getStore();
+    if (store === undefined) {
+      return 0;
+    }
+    try {
+      const rs: relationalStore.ResultSet = store.querySqlSync('SELECT changes() AS c');
+      try {
+        if (rs.goToNextRow()) {
+          return rs.getLong(rs.getColumnIndex('c'));
+        }
+      } finally {
+        rs.close();
+      }
+    } catch (err) {
+      return 0;
+    }
+    return 0;
   }
 }
 

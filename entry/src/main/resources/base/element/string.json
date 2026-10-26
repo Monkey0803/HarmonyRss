@@ -2523,6 +2523,226 @@
     {
       "name": "section_share",
       "value": "Sharing"
+    },
+    {
+      "name": "backup_title",
+      "value": "Backup & restore"
+    },
+    {
+      "name": "backup_entry",
+      "value": "Backup & restore"
+    },
+    {
+      "name": "backup_intro",
+      "value": "Move your subscriptions and reading data to a new device, or keep a local safety copy."
+    },
+    {
+      "name": "backup_section_export",
+      "value": "Export"
+    },
+    {
+      "name": "backup_export_action",
+      "value": "Export backup"
+    },
+    {
+      "name": "backup_export_hint",
+      "value": "Save subscriptions, reading states, highlights, tags, rules and templates to one JSON file."
+    },
+    {
+      "name": "backup_export_cancelled",
+      "value": "Export cancelled"
+    },
+    {
+      "name": "backup_section_import",
+      "value": "Import"
+    },
+    {
+      "name": "backup_import_action",
+      "value": "Import backup"
+    },
+    {
+      "name": "backup_import_hint",
+      "value": "Existing data is merged; nothing is deleted."
+    },
+    {
+      "name": "backup_import_cancelled",
+      "value": "Import cancelled"
+    },
+    {
+      "name": "backup_restore_settings",
+      "value": "Also restore settings"
+    },
+    {
+      "name": "backup_restore_settings_hint",
+      "value": "Apply theme, layout, list and sync preferences from the backup. Off by default."
+    },
+    {
+      "name": "backup_section_snapshots",
+      "value": "Automatic snapshots"
+    },
+    {
+      "name": "backup_snapshot_now",
+      "value": "Back up now"
+    },
+    {
+      "name": "backup_snapshot_empty",
+      "value": "No snapshots yet"
+    },
+    {
+      "name": "backup_snapshot_restore",
+      "value": "Restore"
+    },
+    {
+      "name": "backup_snapshot_delete",
+      "value": "Delete"
+    },
+    {
+      "name": "backup_snapshot_keep_hint",
+      "value": "One snapshot is created per day; the latest 7 are kept."
+    },
+    {
+      "name": "backup_snapshot_created",
+      "value": "Created %s"
+    },
+    {
+      "name": "backup_snapshot_size",
+      "value": "Size %s"
+    },
+    {
+      "name": "backup_last_snapshot",
+      "value": "Last snapshot: %s"
+    },
+    {
+      "name": "backup_never",
+      "value": "Never"
+    },
+    {
+      "name": "backup_result_title",
+      "value": "Last result"
+    },
+    {
+      "name": "backup_result_label_feeds",
+      "value": "Subscriptions"
+    },
+    {
+      "name": "backup_result_label_articles",
+      "value": "Articles"
+    },
+    {
+      "name": "backup_result_label_updated",
+      "value": "Updated"
+    },
+    {
+      "name": "backup_result_label_highlights",
+      "value": "Highlights"
+    },
+    {
+      "name": "backup_result_label_tags",
+      "value": "Tags"
+    },
+    {
+      "name": "backup_result_label_skipped",
+      "value": "Skipped"
+    },
+    {
+      "name": "backup_result_label_failed",
+      "value": "Failed"
+    },
+    {
+      "name": "backup_result_added",
+      "value": "Added: %d"
+    },
+    {
+      "name": "backup_result_updated",
+      "value": "Updated: %d"
+    },
+    {
+      "name": "backup_result_skipped",
+      "value": "Skipped: %d"
+    },
+    {
+      "name": "backup_result_failed",
+      "value": "Failed: %d"
+    },
+    {
+      "name": "backup_privacy_notice",
+      "value": "The backup contains your reading history. Keep the file safe."
+    },
+    {
+      "name": "backup_error_parse",
+      "value": "This file is not a valid backup."
+    },
+    {
+      "name": "backup_error_version",
+      "value": "This backup version is not supported."
+    },
+    {
+      "name": "backup_error_empty",
+      "value": "The backup file is empty."
+    },
+    {
+      "name": "backup_error_read",
+      "value": "Could not read the file."
+    },
+    {
+      "name": "backup_error_write",
+      "value": "Could not save the file."
+    },
+    {
+      "name": "backup_error_snapshot",
+      "value": "Snapshot could not be created."
+    },
+    {
+      "name": "backup_error_busy",
+      "value": "Another backup task is still running. Please try again in a moment."
+    },
+    {
+      "name": "backup_toast_exported",
+      "value": "Backup exported"
+    },
+    {
+      "name": "backup_toast_imported",
+      "value": "Backup imported"
+    },
+    {
+      "name": "backup_toast_restored",
+      "value": "Snapshot restored"
+    },
+    {
+      "name": "backup_toast_deleted",
+      "value": "Snapshot deleted"
+    },
+    {
+      "name": "backup_toast_snapshot_created",
+      "value": "Snapshot created"
+    },
+    {
+      "name": "backup_confirm_restore_title",
+      "value": "Restore this snapshot?"
+    },
+    {
+      "name": "backup_confirm_restore_message",
+      "value": "Data is merged into the current library. Existing items are not deleted."
+    },
+    {
+      "name": "backup_confirm_delete_title",
+      "value": "Delete this snapshot?"
+    },
+    {
+      "name": "backup_confirm_delete_message",
+      "value": "This snapshot file will be removed and cannot be recovered."
+    },
+    {
+      "name": "backup_working",
+      "value": "Working…"
+    },
+    {
+      "name": "backup_section_about",
+      "value": "About backups"
+    },
+    {
+      "name": "backup_content_list",
+      "value": "Subscriptions · reading states · highlights · tags · smart folders · rules · templates · settings"
     }
   ]
 }

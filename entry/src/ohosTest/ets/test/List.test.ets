@@ -4,6 +4,7 @@
  * 覆盖 Reader 正文提取管线的纯函数（HTML 解析 / 净化 / 主容器提取 / feed 解析 / 图片 mime 嗅探），
  * 阅读排版档位与 Reader CSS 生成，规则引擎的匹配 / 执行顺序（RuleEngine / RuleOrder），
  * 跨源去重的归一化键与匹配决策（DedupeKeys / DedupePlan），
+ * 备份编解码与订阅合并（BackupCodec / BackupMerge），
  * 以及分享目标 URI 构造与分享模板渲染（ShareTargets / ShareTemplates）。
  */
 
@@ -23,6 +24,8 @@ import cjkTokenizerTest from './CjkTokenizer.test';
 import searchPlanTest from './SearchPlan.test';
 import retentionTest from './Retention.test';
 import feedStoreTest from './FeedStore.test';
+import backupCodecTest from './BackupCodec.test';
+import backupMergeTest from './BackupMerge.test';
 import tagStoreTest from './TagStore.test';
 import smartFolderTest from './SmartFolder.test';
 import searchPerfTest from './SearchPerf.test';
@@ -53,6 +56,8 @@ export default function testsuite() {
   searchPlanTest();
   retentionTest();
   feedStoreTest();
+  backupCodecTest();
+  backupMergeTest();
   tagStoreTest();
   smartFolderTest();
   searchPerfTest();

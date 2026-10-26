@@ -12,6 +12,8 @@ import { ARCHIVE_OPTIONS, LIST_DENSITY_OPTIONS, ROW_LAYOUT_OPTIONS, SUMMARY_LINE
 import { PreferencesConstants } from '../common/constants/PreferencesConstants';
 import { ReaderTypography } from '../common/constants/SettingsConstants';
 import { normalizeArticleFilter, normalizeReaderViewMode } from '../common/constants/RssConstants';
+import { BackupScalar, BackupSettings } from '../model/Backup';
+import { settingsWhitelist } from './BackupCodec';
 
 /** 远端自动同步间隔归一：脏值一律退回「关」。 */
 export function normalizeRemoteAutoSync(value: string): string {
@@ -19,6 +21,42 @@ export function normalizeRemoteAutoSync(value: string): string {
     return value;
   }
   return 'off';
+}
+
+// ---- 备份段取值辅助（类型不符一律回退当前值，避免脏备份清空设置） ----
+
+function stringValue(value: BackupScalar | undefined, fallback: string): string {
+  return typeof value === 'string' && value.length > 0 ? value : fallback;
+}
+
+function booleanValue(value: BackupScalar | undefined, fallback: boolean): boolean {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+  if (typeof value === 'number') {
+    return value !== 0;
+  }
+  if (typeof value === 'string') {
+    const normalized: string = value.trim().toLowerCase();
+    if (normalized === 'true' || normalized === '1') {
+      return true;
+    }
+    if (normalized === 'false' || normalized === '0') {
+      return false;
+    }
+  }
+  return fallback;
+}
+
+function numberValue(value: BackupScalar | undefined, fallback: number): number {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : fallback;
+  }
+  if (typeof value === 'string') {
+    const parsed: number = Number(value);
+    return Number.isFinite(parsed) ? parsed : fallback;
+  }
+  return fallback;
 }
 
 export class SettingsStore {
@@ -113,6 +151,234 @@ export class SettingsStore {
       const error: BusinessError = err as BusinessError;
       console.error('SettingsStore.load failed: ' + error.code.toString());
     }
+  }
+
+  /**
+   * 备份导出：只读取白名单键（与 BackupCodec.settingsWhitelist 一致）。
+   * 用 switch 显式映射到 appSettings 字段，避免动态属性访问（ArkTS 严格模式）。
+   */
+  exportWhitelisted(): BackupSettings {
+    const settings: BackupSettings = new BackupSettings();
+    const keys: string[] = settingsWhitelist();
+    for (let i = 0; i < keys.length; i += 1) {
+      const key: string = keys[i];
+      switch (key) {
+        case PreferencesConstants.KEY_THEME_MODE:
+          settings.set(key, appSettings.themeMode);
+          break;
+        case PreferencesConstants.KEY_LANGUAGE_MODE:
+          settings.set(key, appSettings.languageMode);
+          break;
+        case PreferencesConstants.KEY_MATERIAL_TYPE:
+          settings.set(key, appSettings.materialType);
+          break;
+        case PreferencesConstants.KEY_MATERIAL_LEVEL:
+          settings.set(key, appSettings.materialLevel);
+          break;
+        case PreferencesConstants.KEY_BACKGROUND_KIND:
+          settings.set(key, appSettings.backgroundKind);
+          break;
+        case PreferencesConstants.KEY_IMMERSIVE_ON:
+          settings.set(key, appSettings.immersiveOn);
+          break;
+        case PreferencesConstants.KEY_POINT_LIGHT:
+          settings.set(key, appSettings.pointLightEnabled);
+          break;
+        case PreferencesConstants.KEY_TITLE_BAR_SCROLL:
+          settings.set(key, appSettings.titleBarScrollsWithContent);
+          break;
+        case PreferencesConstants.KEY_STATUS_BAR_SCROLL:
+          settings.set(key, appSettings.statusBarScrollsWithContent);
+          break;
+        case PreferencesConstants.KEY_LOGO_KIND:
+          settings.set(key, appSettings.logoKind);
+          break;
+        case PreferencesConstants.KEY_AUTO_REFRESH:
+          settings.set(key, appSettings.autoRefresh);
+          break;
+        case PreferencesConstants.KEY_READER_KEEP_SCREEN_ON:
+          settings.set(key, appSettings.readerKeepScreenOn);
+          break;
+        case PreferencesConstants.KEY_READER_FONT:
+          settings.set(key, appSettings.readerFont);
+          break;
+        case PreferencesConstants.KEY_READER_FONT_SCALE:
+          settings.set(key, appSettings.readerFontScale);
+          break;
+        case PreferencesConstants.KEY_READER_LINE_SCALE:
+          settings.set(key, appSettings.readerLineScale);
+          break;
+        case PreferencesConstants.KEY_READER_LINE:
+          settings.set(key, appSettings.readerLine);
+          break;
+        case PreferencesConstants.KEY_READER_FAMILY:
+          settings.set(key, appSettings.readerFontFamily);
+          break;
+        case PreferencesConstants.KEY_READER_WIDTH:
+          settings.set(key, appSettings.readerWidth);
+          break;
+        case PreferencesConstants.KEY_READER_ALIGN:
+          settings.set(key, appSettings.readerAlign);
+          break;
+        case PreferencesConstants.KEY_READER_THEME:
+          settings.set(key, appSettings.readerTheme);
+          break;
+        case PreferencesConstants.KEY_NOTIFY_NEW:
+          settings.set(key, appSettings.notifyNewArticles);
+          break;
+        case PreferencesConstants.KEY_LIST_NEWEST_FIRST:
+          settings.set(key, appSettings.listNewestFirst);
+          break;
+        case PreferencesConstants.KEY_LIST_GROUP_MODE:
+          settings.set(key, appSettings.listGroupMode);
+          break;
+        case PreferencesConstants.KEY_HOME_FILTER:
+          settings.set(key, appSettings.homeFilter);
+          break;
+        case PreferencesConstants.KEY_READER_VIEW_MODE:
+          settings.set(key, appSettings.readerViewMode);
+          break;
+        case PreferencesConstants.KEY_ROW_LAYOUT:
+          settings.set(key, appSettings.listRowLayout);
+          break;
+        case PreferencesConstants.KEY_SUMMARY_LINES:
+          settings.set(key, appSettings.listSummaryLines);
+          break;
+        case PreferencesConstants.KEY_LIST_DENSITY:
+          settings.set(key, appSettings.listDensity);
+          break;
+        case PreferencesConstants.KEY_ARCHIVE_RULE:
+          settings.set(key, appSettings.archiveRule);
+          break;
+        case PreferencesConstants.KEY_DEDUPE_ENABLED:
+          settings.set(key, appSettings.dedupeEnabled);
+          break;
+        case PreferencesConstants.KEY_REMOTE_AUTO_SYNC:
+          settings.set(key, appSettings.remoteAutoSync);
+          break;
+        default:
+          break;
+      }
+    }
+    return settings;
+  }
+
+  /**
+   * 备份恢复：仅白名单键生效（switch 显式写回 appSettings），随后 save()。
+   * 主题 / 语言的运行期副作用（ThemeController / LocaleController）由 ViewModel 负责，
+   * 这里只改状态与落盘。
+   */
+  applyWhitelisted(settings: BackupSettings): void {
+    const keys: string[] = settingsWhitelist();
+    for (let i = 0; i < keys.length; i += 1) {
+      const key: string = keys[i];
+      if (!settings.has(key)) {
+        continue;
+      }
+      const value: BackupScalar | undefined = settings.get(key);
+      switch (key) {
+        case PreferencesConstants.KEY_THEME_MODE:
+          appSettings.themeMode = THEME_OPTIONS.normalize(stringValue(value, appSettings.themeMode));
+          break;
+        case PreferencesConstants.KEY_LANGUAGE_MODE:
+          appSettings.languageMode = LANGUAGE_OPTIONS.normalize(stringValue(value, appSettings.languageMode));
+          break;
+        case PreferencesConstants.KEY_MATERIAL_TYPE:
+          appSettings.materialType = MATERIAL_TYPE_OPTIONS.normalize(stringValue(value, appSettings.materialType));
+          break;
+        case PreferencesConstants.KEY_MATERIAL_LEVEL:
+          appSettings.materialLevel = MATERIAL_LEVEL_OPTIONS.normalize(stringValue(value, appSettings.materialLevel));
+          break;
+        case PreferencesConstants.KEY_BACKGROUND_KIND:
+          appSettings.backgroundKind = BACKGROUND_OPTIONS.normalize(stringValue(value, appSettings.backgroundKind));
+          break;
+        case PreferencesConstants.KEY_IMMERSIVE_ON:
+          appSettings.immersiveOn = booleanValue(value, appSettings.immersiveOn);
+          break;
+        case PreferencesConstants.KEY_POINT_LIGHT:
+          appSettings.pointLightEnabled = booleanValue(value, appSettings.pointLightEnabled);
+          break;
+        case PreferencesConstants.KEY_TITLE_BAR_SCROLL:
+          appSettings.titleBarScrollsWithContent = booleanValue(value, appSettings.titleBarScrollsWithContent);
+          break;
+        case PreferencesConstants.KEY_STATUS_BAR_SCROLL:
+          appSettings.statusBarScrollsWithContent = booleanValue(value, appSettings.statusBarScrollsWithContent);
+          break;
+        case PreferencesConstants.KEY_LOGO_KIND:
+          appSettings.logoKind = LOGO_OPTIONS.normalize(stringValue(value, appSettings.logoKind));
+          break;
+        case PreferencesConstants.KEY_AUTO_REFRESH:
+          appSettings.autoRefresh = AUTO_REFRESH_OPTIONS.normalize(stringValue(value, appSettings.autoRefresh));
+          break;
+        case PreferencesConstants.KEY_READER_KEEP_SCREEN_ON:
+          appSettings.readerKeepScreenOn = booleanValue(value, appSettings.readerKeepScreenOn);
+          break;
+        case PreferencesConstants.KEY_READER_FONT:
+          appSettings.readerFont = READER_FONT_OPTIONS.normalize(stringValue(value, appSettings.readerFont));
+          break;
+        case PreferencesConstants.KEY_READER_FONT_SCALE:
+          appSettings.readerFontScale = numberValue(value, appSettings.readerFontScale);
+          break;
+        case PreferencesConstants.KEY_READER_LINE_SCALE:
+          appSettings.readerLineScale = numberValue(value, appSettings.readerLineScale);
+          break;
+        case PreferencesConstants.KEY_READER_LINE:
+          appSettings.readerLine = READER_LINE_OPTIONS.normalize(stringValue(value, appSettings.readerLine));
+          break;
+        case PreferencesConstants.KEY_READER_FAMILY:
+          appSettings.readerFontFamily = READER_FAMILY_OPTIONS.normalize(
+            stringValue(value, appSettings.readerFontFamily));
+          break;
+        case PreferencesConstants.KEY_READER_WIDTH:
+          appSettings.readerWidth = READER_WIDTH_OPTIONS.normalize(stringValue(value, appSettings.readerWidth));
+          break;
+        case PreferencesConstants.KEY_READER_ALIGN:
+          appSettings.readerAlign = READER_ALIGN_OPTIONS.normalize(stringValue(value, appSettings.readerAlign));
+          break;
+        case PreferencesConstants.KEY_READER_THEME:
+          appSettings.readerTheme = READER_THEME_OPTIONS.normalize(stringValue(value, appSettings.readerTheme));
+          break;
+        case PreferencesConstants.KEY_NOTIFY_NEW:
+          appSettings.notifyNewArticles = booleanValue(value, appSettings.notifyNewArticles);
+          break;
+        case PreferencesConstants.KEY_LIST_NEWEST_FIRST:
+          appSettings.listNewestFirst = booleanValue(value, appSettings.listNewestFirst);
+          break;
+        case PreferencesConstants.KEY_LIST_GROUP_MODE:
+          appSettings.listGroupMode = stringValue(value, appSettings.listGroupMode);
+          break;
+        case PreferencesConstants.KEY_HOME_FILTER:
+          appSettings.homeFilter = normalizeArticleFilter(stringValue(value, appSettings.homeFilter));
+          break;
+        case PreferencesConstants.KEY_READER_VIEW_MODE:
+          appSettings.readerViewMode = normalizeReaderViewMode(
+            stringValue(value, appSettings.readerViewMode));
+          break;
+        case PreferencesConstants.KEY_ROW_LAYOUT:
+          appSettings.listRowLayout = ROW_LAYOUT_OPTIONS.normalize(stringValue(value, appSettings.listRowLayout));
+          break;
+        case PreferencesConstants.KEY_SUMMARY_LINES:
+          appSettings.listSummaryLines = SUMMARY_LINES_OPTIONS.normalize(
+            stringValue(value, appSettings.listSummaryLines));
+          break;
+        case PreferencesConstants.KEY_LIST_DENSITY:
+          appSettings.listDensity = LIST_DENSITY_OPTIONS.normalize(stringValue(value, appSettings.listDensity));
+          break;
+        case PreferencesConstants.KEY_ARCHIVE_RULE:
+          appSettings.archiveRule = ARCHIVE_OPTIONS.normalize(stringValue(value, appSettings.archiveRule));
+          break;
+        case PreferencesConstants.KEY_DEDUPE_ENABLED:
+          appSettings.dedupeEnabled = booleanValue(value, appSettings.dedupeEnabled);
+          break;
+        case PreferencesConstants.KEY_REMOTE_AUTO_SYNC:
+          appSettings.remoteAutoSync = normalizeRemoteAutoSync(
+            stringValue(value, appSettings.remoteAutoSync));
+          break;
+        default:
+          break;
+      }
+    }
+    this.save();
   }
 
   /** 把当前 appSettings 全量写回。任何一次用户改动后调用。 */

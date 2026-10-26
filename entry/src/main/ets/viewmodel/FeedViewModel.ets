@@ -498,6 +498,23 @@ export class FeedViewModel {
   }
 
   /**
+   * 导入 / 恢复备份后刷新：订阅源从偏好库重读（备份可能带来新源或改动的单源设置），
+   * 文章列表重新读库并重新出列表与未读数。
+   *
+   * context 由调用方传入：分享扩展等入口可能只走过 ensureReady、或根本没有绑定过 context，
+   * 这里顺手补上，后续本地操作不会因为 context 为空而失效。
+   * 订阅读取用 seedWhenEmpty=false：用户主动导入时不该把内置种子「复活」。
+   */
+  async reloadAfterBackup(context: common.Context): Promise<void> {
+    this.context = context;
+    this.feeds = await feedStore.load(context, false);
+    retentionService.configure(context, this.feeds);
+    await articleStore.whenReady();
+    await this.reloadFromStore();
+    this.publish();
+  }
+
+  /**
    * 订阅列表里是否已有该地址（两侧都做归一化，降低「同址不同写法」漏判）。
    * 空地址不算重复。
    */

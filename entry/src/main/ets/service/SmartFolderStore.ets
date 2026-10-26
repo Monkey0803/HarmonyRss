@@ -14,6 +14,7 @@ import { relationalStore } from '@kit.ArkData';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { SmartFolder } from '../model/Tag';
+import { BackupSmartFolder } from '../model/Backup';
 import { ArticleDbConstants, TagConstants } from '../common/constants/RssConstants';
 import { articleStore } from './ArticleStore';
 import { emptyQuery } from './SearchQueryParser';
@@ -232,6 +233,88 @@ export class SmartFolderStore {
     }
   }
 
+  /**
+   * 备份导出：全部智能文件夹（id / name / query / sort_order）。
+   * 库不可用时返回空数组。
+   */
+  async allForBackup(): Promise<BackupSmartFolder[]> {
+    await articleStore.whenReady();
+    const store: relationalStore.RdbStore | undefined = articleStore.getStore();
+    const result: BackupSmartFolder[] = [];
+    if (store === undefined) {
+      return result;
+    }
+    try {
+      const rs: relationalStore.ResultSet = await store.querySql(
+        'SELECT id, name, query, sort_order FROM ' + ArticleDbConstants.TABLE_SMART_FOLDERS +
+        ' ORDER BY sort_order ASC, created_at ASC');
+      try {
+        while (rs.goToNextRow()) {
+          result.push(new BackupSmartFolder(
+            rs.getString(rs.getColumnIndex('id')),
+            rs.getString(rs.getColumnIndex('name')),
+            rs.getString(rs.getColumnIndex('query')),
+            rs.getLong(rs.getColumnIndex('sort_order'))));
+        }
+      } finally {
+        rs.close();
+      }
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      const detail: string = error.message !== undefined ? error.message : 'unknown';
+      hilog.error(DOMAIN, TAG, 'allForBackup failed: %{public}s', detail);
+    }
+    return result;
+  }
+
+  /**
+   * 备份导入：按 id 合并（存在则跳过，不存在则用备份 id 插入）。
+   * 事务内批量写入；失败整体回滚并返回 0，避免半套数据。
+   */
+  async mergeForBackup(records: BackupSmartFolder[]): Promise<number> {
+    if (records.length === 0) {
+      return 0;
+    }
+    await articleStore.whenReady();
+    const store: relationalStore.RdbStore | undefined = articleStore.getStore();
+    if (store === undefined) {
+      return 0;
+    }
+    let added: number = 0;
+    const now: number = Date.now();
+    try {
+      store.beginTransaction();
+      try {
+        for (let i = 0; i < records.length; i += 1) {
+          const record: BackupSmartFolder = records[i];
+          const id: string = record.id.trim();
+          const name: string = normalizeFolderName(record.name);
+          if (id.length === 0 || name.length === 0) {
+            continue;
+          }
+          const query: string = record.query.trim();
+          const sortOrder: number = record.sortOrder > 0 ? Math.round(record.sortOrder) : 0;
+          store.executeSync('INSERT OR IGNORE INTO ' + ArticleDbConstants.TABLE_SMART_FOLDERS +
+            ' (id, name, query, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
+            [id, name, query, sortOrder, now, now]);
+          if (this.lastChanges() > 0) {
+            added += 1;
+          }
+        }
+        store.commit();
+      } catch (inner) {
+        store.rollBack();
+        throw inner as Error;
+      }
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      const detail: string = error.message !== undefined ? error.message : 'unknown';
+      hilog.error(DOMAIN, TAG, 'mergeForBackup failed: %{public}s', detail);
+      return 0;
+    }
+    return added;
+  }
+
   private fromRow(rs: relationalStore.ResultSet): SmartFolder {
     return new SmartFolder(
       rs.getString(rs.getColumnIndex('id')),
@@ -240,6 +323,27 @@ export class SmartFolderStore {
       rs.getLong(rs.getColumnIndex('sort_order')),
       rs.getLong(rs.getColumnIndex('created_at')),
       rs.getLong(rs.getColumnIndex('updated_at')));
+  }
+
+  /** 最近一条语句影响的行数（INSERT OR IGNORE 是否真的插入）。 */
+  private lastChanges(): number {
+    const store: relationalStore.RdbStore | undefined = articleStore.getStore();
+    if (store === undefined) {
+      return 0;
+    }
+    try {
+      const rs: relationalStore.ResultSet = store.querySqlSync('SELECT changes() AS c');
+      try {
+        if (rs.goToNextRow()) {
+          return rs.getLong(rs.getColumnIndex('c'));
+        }
+      } finally {
+        rs.close();
+      }
+    } catch (err) {
+      return 0;
+    }
+    return 0;
   }
 }
 

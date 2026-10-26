@@ -61,6 +61,7 @@ import { feedViewModel } from '../viewmodel/FeedViewModel';
 import { HighlightsView } from '../views/HighlightsView';
 import { SearchView } from '../views/SearchView';
 import { StorageView } from '../views/StorageView';
+import { BackupView } from '../views/BackupView';
 import { FeedSettingsView } from '../views/FeedSettingsView';
 import { TagsView } from '../views/TagsView';
 import { TagArticlesView } from '../views/TagArticlesView';
@@ -71,6 +72,7 @@ import { HiddenArticlesView } from '../views/HiddenArticlesView';
 import { RemoteServiceView } from '../views/RemoteServiceView';
 import { ShareSettingsView } from '../views/ShareSettingsView';
 import { remoteSyncService } from '../service/remote/RemoteSyncService';
+import { backupService } from '../service/BackupService';
 import { deepLink, DEEP_LINK_EVENT, DeepLinkParams } from '../service/DeepLink';
 import { shareHandoff } from '../service/ShareHandoff';
 import { Article } from '../model/Feed';
@@ -97,6 +99,7 @@ struct Index {
   private articleScroller: Scroller = new Scroller();
   private searchScroller: Scroller = new Scroller();
   private storageScroller: Scroller = new Scroller();
+  private backupScroller: Scroller = new Scroller();
   private feedSettingsScroller: Scroller = new Scroller();
   private tagsScroller: Scroller = new Scroller();
   private tagArticlesScroller: Scroller = new Scroller();
@@ -225,6 +228,11 @@ struct Index {
     feedViewModel.maybeAutoRefresh();
     // 远端服务：按「账号与服务」里的自动同步间隔判断（默认关）。
     remoteSyncService.maybeAutoSync();
+    // 本地兜底快照：距上次不足 24 小时直接跳过；后台执行、失败静默，不阻塞首屏。
+    const context: common.Context | undefined = this.getUIContext().getHostContext();
+    if (context !== undefined) {
+      backupService.maybeAutoSnapshot(context);
+    }
   }
 
   private materialParams(): SystemMaterialParams {
@@ -695,6 +703,14 @@ struct Index {
       .titleMode(HdsNavDestinationTitleMode.MINI)
       .backgroundColor($r('app.color.hm_web_surface'))
       .bindToScrollable([this.storageScroller])
+    } else if (name === RouterConstants.PAGE_BACKUP) {
+      HdsNavDestination() {
+        BackupView({ navPathStack: this.navPathStack, scroller: this.backupScroller })
+      }
+      .titleBar(this.titleOptions($r('app.string.backup_title')))
+      .titleMode(HdsNavDestinationTitleMode.MINI)
+      .backgroundColor($r('app.color.hm_web_surface'))
+      .bindToScrollable([this.backupScroller])
     } else if (name === RouterConstants.PAGE_FEED_SETTINGS) {
       HdsNavDestination() {
         FeedSettingsView({ navPathStack: this.navPathStack, scroller: this.feedSettingsScroller })

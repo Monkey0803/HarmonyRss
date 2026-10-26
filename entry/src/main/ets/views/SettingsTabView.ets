@@ -841,6 +841,10 @@ export struct SettingsTabView {
           // 保留策略 / 存储占用 / 回收站 / 索引重建都收在独立页面。
           this.NavRow($r('sys.symbol.externaldrive'), $r('app.string.storage_title'), RouterConstants.PAGE_STORAGE)
           Divider().color($r('app.color.hm_divider'))
+          // 备份与迁移：导出 JSON / 合并导入 / 本地快照都在独立页面里。
+          this.NavRow($r('sys.symbol.externaldrive'), $r('app.string.backup_entry'),
+            RouterConstants.PAGE_BACKUP)
+          Divider().color($r('app.color.hm_divider'))
           Row() {
             SettingLeading($r('sys.symbol.externaldrive'), $r('app.string.row_reader_cache'))
             Blank()

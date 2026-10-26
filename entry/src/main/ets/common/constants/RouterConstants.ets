@@ -35,4 +35,6 @@ export class RouterConstants {
   static readonly PAGE_HIDDEN: string = 'hiddenArticles';
   /** 分享与模板管理页。 */
   static readonly PAGE_SHARE_SETTINGS: string = 'shareSettings';
+  /** 备份与恢复页（导出 / 导入 / 自动快照）。 */
+  static readonly PAGE_BACKUP: string = 'backup';
 }
