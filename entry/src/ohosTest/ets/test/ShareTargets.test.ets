@@ -114,7 +114,7 @@ export default function shareTargetsTest() {
       const uri: string = buildUri(ShareTargetId.EMAIL, ctx);
       // 300 字符 + 省略号：摘要被截断（编码后不会出现 400 个 s）。
       expect(uri.indexOf('s'.repeat(301)) < 0).assertTrue();
-      expect(uri.indexOf('ssss')).assertTrue();
+      expect(uri.indexOf('ssss') >= 0).assertTrue();
     });
 
     // ---------- 缺链接 / 不支持 ----------

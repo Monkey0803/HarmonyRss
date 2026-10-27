@@ -100,7 +100,11 @@ export class DedupeService {
         : item;
       byId.set(item.id, registered);
       indexCandidate(byLink, item.linkKey, registered);
-      indexCandidate(byTitle, item.titleKey, registered);
+      if (root.length === 0) {
+        // 只有独立主条才进标题索引：重复项的发布时间不能用来延长标题时间窗，
+        // 否则同批中后续文章可能经「重复项」而非根主条命中（真实踩过：25h 的标题也被合并）。
+        indexCandidate(byTitle, item.titleKey, registered);
+      }
       if (root.length > 0) {
         matches.set(item.id, root);
       }

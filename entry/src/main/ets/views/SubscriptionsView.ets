@@ -618,6 +618,7 @@ export struct SubscriptionsView {
         SymbolGlyph($r('sys.symbol.more'))
           .fontSize($r('app.float.icon_size'))
           .fontColor([$r('app.color.hm_text_secondary')])
+          .accessibilityText($r('app.string.action_more'))
           .padding($r('app.float.space_xs'))
           .bindMenu(this.FeedMenu(feed), MaterialController.menuOptions({}, appSettings.immersiveOn))
       }

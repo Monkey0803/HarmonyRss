@@ -1,0 +1,4072 @@
+{
+  "string": [
+    {
+      "name": "work_scheduler_desc",
+      "value": "後臺定時重新整理訂閱源"
+    },
+    {
+      "name": "module_desc",
+      "value": "HDS 應用入口模組"
+    },
+    {
+      "name": "EntryAbility_desc",
+      "value": "HDS 應用"
+    },
+    {
+      "name": "EntryAbility_label",
+      "value": "HarmonyRss"
+    },
+    {
+      "name": "tab_home",
+      "value": "閱讀"
+    },
+    {
+      "name": "tab_settings",
+      "value": "設定"
+    },
+    {
+      "name": "tab_images",
+      "value": "圖片"
+    },
+    {
+      "name": "tab_subs",
+      "value": "訂閱源"
+    },
+    {
+      "name": "home_title",
+      "value": "閱讀"
+    },
+    {
+      "name": "settings_title",
+      "value": "設定"
+    },
+    {
+      "name": "settings_entry_look",
+      "value": "外觀與語言"
+    },
+    {
+      "name": "settings_entry_material",
+      "value": "材質與動效"
+    },
+    {
+      "name": "settings_entry_reading",
+      "value": "閱讀與列表"
+    },
+    {
+      "name": "settings_entry_feed",
+      "value": "訂閱與通知"
+    },
+    {
+      "name": "settings_entry_system",
+      "value": "系統與隱私"
+    },
+    {
+      "name": "settings_entry_storage",
+      "value": "儲存與備份"
+    },
+    {
+      "name": "section_appearance",
+      "value": "外觀"
+    },
+    {
+      "name": "section_language",
+      "value": "語言"
+    },
+    {
+      "name": "section_system",
+      "value": "系統特性"
+    },
+    {
+      "name": "section_navigation",
+      "value": "導航"
+    },
+    {
+      "name": "section_feed",
+      "value": "訂閱"
+    },
+    {
+      "name": "section_reading",
+      "value": "閱讀"
+    },
+    {
+      "name": "row_reader_font",
+      "value": "正文字號"
+    },
+    {
+      "name": "row_reader_line",
+      "value": "正文行距"
+    },
+    {
+      "name": "row_reader_family",
+      "value": "正文字型"
+    },
+    {
+      "name": "row_reader_width",
+      "value": "閱讀欄寬"
+    },
+    {
+      "name": "row_reader_align",
+      "value": "正文對齊"
+    },
+    {
+      "name": "row_reader_theme",
+      "value": "閱讀主題"
+    },
+    {
+      "name": "opt_family_system",
+      "value": "系統預設"
+    },
+    {
+      "name": "opt_family_serif",
+      "value": "襯線"
+    },
+    {
+      "name": "opt_family_sans",
+      "value": "無襯線"
+    },
+    {
+      "name": "opt_width_narrow",
+      "value": "窄"
+    },
+    {
+      "name": "opt_width_standard",
+      "value": "標準"
+    },
+    {
+      "name": "opt_width_wide",
+      "value": "寬"
+    },
+    {
+      "name": "opt_align_left",
+      "value": "左對齊"
+    },
+    {
+      "name": "opt_align_justify",
+      "value": "兩端對齊"
+    },
+    {
+      "name": "opt_reader_theme_system",
+      "value": "跟隨系統"
+    },
+    {
+      "name": "opt_reader_theme_light",
+      "value": "淺色"
+    },
+    {
+      "name": "opt_reader_theme_sepia",
+      "value": "護眼"
+    },
+    {
+      "name": "opt_reader_theme_dark",
+      "value": "暗色"
+    },
+    {
+      "name": "opt_font_small",
+      "value": "小"
+    },
+    {
+      "name": "opt_font_medium",
+      "value": "中"
+    },
+    {
+      "name": "opt_font_large",
+      "value": "大"
+    },
+    {
+      "name": "opt_line_compact",
+      "value": "緊湊"
+    },
+    {
+      "name": "opt_line_normal",
+      "value": "標準"
+    },
+    {
+      "name": "opt_line_loose",
+      "value": "寬鬆"
+    },
+    {
+      "name": "row_title_bar_scroll",
+      "value": "標題欄隨內容滾動"
+    },
+    {
+      "name": "action_find_in_article",
+      "value": "在文章中查詢"
+    },
+    {
+      "name": "find_hint",
+      "value": "在文章中查詢"
+    },
+    {
+      "name": "find_count",
+      "value": "%d/%d"
+    },
+    {
+      "name": "find_none",
+      "value": "無匹配"
+    },
+    {
+      "name": "action_start_speech",
+      "value": "朗讀正文"
+    },
+    {
+      "name": "action_stop_speech",
+      "value": "停止朗讀"
+    },
+    {
+      "name": "speech_running",
+      "value": "正在朗讀…"
+    },
+    {
+      "name": "speech_paused",
+      "value": "已暫停"
+    },
+    {
+      "name": "action_pause_speech",
+      "value": "暫停"
+    },
+    {
+      "name": "action_resume_speech",
+      "value": "繼續"
+    },
+    {
+      "name": "toast_speech_unsupported",
+      "value": "本機不支援朗讀"
+    },
+    {
+      "name": "action_copy",
+      "value": "複製"
+    },
+    {
+      "name": "action_share_selection",
+      "value": "分享選段"
+    },
+    {
+      "name": "action_copy_body",
+      "value": "複製正文"
+    },
+    {
+      "name": "action_share_body",
+      "value": "分享正文"
+    },
+    {
+      "name": "snack_body_copied",
+      "value": "正文已複製"
+    },
+    {
+      "name": "snack_selection_copied",
+      "value": "已複製選段"
+    },
+    {
+      "name": "row_reader_keep_on",
+      "value": "閱讀時常亮"
+    },
+    {
+      "name": "section_storage",
+      "value": "儲存"
+    },
+    {
+      "name": "row_reader_cache",
+      "value": "清理正文快取"
+    },
+    {
+      "name": "cache_summary",
+      "value": "%d 篇 · %s"
+    },
+    {
+      "name": "aux_reader_cache",
+      "value": "清理未收藏文章的正文與內聯圖片快取；已讀狀態與列表保留。"
+    },
+    {
+      "name": "dialog_clear_cache_title",
+      "value": "清理正文快取？"
+    },
+    {
+      "name": "dialog_clear_cache_message",
+      "value": "已快取的正文與內聯圖片會被刪除，未收藏的文章再次開啟時需要聯網。"
+    },
+    {
+      "name": "snack_cache_cleared",
+      "value": "已清理 %d 篇"
+    },
+    {
+      "name": "list_load_more",
+      "value": "載入更多…"
+    },
+    {
+      "name": "list_sort_toggle",
+      "value": "切換排序"
+    },
+    {
+      "name": "list_group_unread",
+      "value": "%d 未讀"
+    },
+    {
+      "name": "sort_newest",
+      "value": "最新在前"
+    },
+    {
+      "name": "sort_oldest",
+      "value": "最舊在前"
+    },
+    {
+      "name": "group_none",
+      "value": "平鋪列表"
+    },
+    {
+      "name": "group_by_feed",
+      "value": "按訂閱源分組"
+    },
+    {
+      "name": "group_by_date",
+      "value": "按日期分組"
+    },
+    {
+      "name": "group_today",
+      "value": "今天"
+    },
+    {
+      "name": "group_yesterday",
+      "value": "昨天"
+    },
+    {
+      "name": "group_this_week",
+      "value": "本週"
+    },
+    {
+      "name": "group_earlier",
+      "value": "更早"
+    },
+    {
+      "name": "filter_saved",
+      "value": "稍後讀"
+    },
+    {
+      "name": "filter_archived",
+      "value": "歸檔"
+    },
+    {
+      "name": "action_save",
+      "value": "稍後讀"
+    },
+    {
+      "name": "action_unsave",
+      "value": "取消稍後讀"
+    },
+    {
+      "name": "action_mark_above_read",
+      "value": "以上已讀"
+    },
+    {
+      "name": "action_delete",
+      "value": "刪除"
+    },
+    {
+      "name": "select_count",
+      "value": "已選 %d 條"
+    },
+    {
+      "name": "select_all",
+      "value": "全選"
+    },
+    {
+      "name": "select_done",
+      "value": "完成"
+    },
+    {
+      "name": "delete_selected_confirm_title",
+      "value": "刪除選中的文章？"
+    },
+    {
+      "name": "delete_selected_confirm_message",
+      "value": "將把選中的 %d 篇文章從本地快取中移除。"
+    },
+    {
+      "name": "row_archive_rule",
+      "value": "歸檔規則"
+    },
+    {
+      "name": "opt_archive_off",
+      "value": "不歸檔"
+    },
+    {
+      "name": "opt_archive_7",
+      "value": "已讀超過 7 天"
+    },
+    {
+      "name": "opt_archive_14",
+      "value": "已讀超過 14 天"
+    },
+    {
+      "name": "opt_archive_30",
+      "value": "已讀超過 30 天"
+    },
+    {
+      "name": "opt_archive_90",
+      "value": "已讀超過 90 天"
+    },
+    {
+      "name": "home_last_sync",
+      "value": "%s 已同步"
+    },
+    {
+      "name": "home_never_synced",
+      "value": "尚未同步"
+    },
+    {
+      "name": "row_refresh_now",
+      "value": "立即重新整理"
+    },
+    {
+      "name": "action_retry",
+      "value": "重試"
+    },
+    {
+      "name": "action_scope_feed",
+      "value": "只看該源"
+    },
+    {
+      "name": "toast_refreshing",
+      "value": "正在重新整理…"
+    },
+    {
+      "name": "snack_refreshed",
+      "value": "訂閱源已更新"
+    },
+    {
+      "name": "section_list",
+      "value": "列表"
+    },
+    {
+      "name": "row_list_layout",
+      "value": "行樣式"
+    },
+    {
+      "name": "row_summary_lines",
+      "value": "摘要行數"
+    },
+    {
+      "name": "row_list_density",
+      "value": "列表密度"
+    },
+    {
+      "name": "opt_layout_text",
+      "value": "純文字"
+    },
+    {
+      "name": "opt_layout_thumb",
+      "value": "縮圖"
+    },
+    {
+      "name": "opt_layout_card",
+      "value": "大圖卡片"
+    },
+    {
+      "name": "opt_lines_1",
+      "value": "1 行"
+    },
+    {
+      "name": "opt_lines_2",
+      "value": "2 行"
+    },
+    {
+      "name": "opt_lines_3",
+      "value": "3 行"
+    },
+    {
+      "name": "opt_density_compact",
+      "value": "緊湊"
+    },
+    {
+      "name": "opt_density_standard",
+      "value": "標準"
+    },
+    {
+      "name": "opt_density_relaxed",
+      "value": "寬鬆"
+    },
+    {
+      "name": "widget_refresh",
+      "value": "重新整理卡片資料"
+    },
+    {
+      "name": "notify_action_mark_read",
+      "value": "標記已讀"
+    },
+    {
+      "name": "action_highlight",
+      "value": "高亮"
+    },
+    {
+      "name": "hl_panel_entry",
+      "value": "標註"
+    },
+    {
+      "name": "hl_panel_title",
+      "value": "%d 條標註"
+    },
+    {
+      "name": "hl_panel_empty",
+      "value": "還沒有標註。選中正文裡的文字即可加一條。"
+    },
+    {
+      "name": "hl_editor_title",
+      "value": "編輯標註"
+    },
+    {
+      "name": "hl_note_hint",
+      "value": "備註（可留空）"
+    },
+    {
+      "name": "hl_action_goto",
+      "value": "定位"
+    },
+    {
+      "name": "hl_action_note",
+      "value": "備註"
+    },
+    {
+      "name": "hl_action_color",
+      "value": "改色"
+    },
+    {
+      "name": "snack_highlight_added",
+      "value": "已新增標註"
+    },
+    {
+      "name": "snack_highlight_removed",
+      "value": "已刪除標註"
+    },
+    {
+      "name": "hl_library_title",
+      "value": "標註"
+    },
+    {
+      "name": "hl_export_md",
+      "value": "匯出 Markdown"
+    },
+    {
+      "name": "hl_export_json",
+      "value": "匯出 JSON"
+    },
+    {
+      "name": "hl_export_empty",
+      "value": "還沒有可匯出的標註"
+    },
+    {
+      "name": "hl_article_gone",
+      "value": "這篇文章已不在本地快取裡"
+    },
+    {
+      "name": "read_panel_title",
+      "value": "閱讀排版"
+    },
+    {
+      "name": "read_panel_preview_text",
+      "value": "預覽：拖動下面的滑塊，正文會按新排版即時重排。"
+    },
+    {
+      "name": "read_panel_font_value",
+      "value": "字號 %s px"
+    },
+    {
+      "name": "read_panel_line_value",
+      "value": "行距 %s 倍"
+    },
+    {
+      "name": "read_panel_reset",
+      "value": "恢復預設"
+    },
+    {
+      "name": "read_panel_web_hint",
+      "value": "網頁原文模式下欄寬、對齊、主題、字型不生效：站點自身排版優先。"
+    },
+    {
+      "name": "row_status_bar_scroll",
+      "value": "狀態列隨內容滾動"
+    },
+    {
+      "name": "row_theme",
+      "value": "主題"
+    },
+    {
+      "name": "row_global_background",
+      "value": "全域性背景圖"
+    },
+    {
+      "name": "opt_bg_default",
+      "value": "預設"
+    },
+    {
+      "name": "opt_bg_aurora",
+      "value": "極光"
+    },
+    {
+      "name": "opt_bg_sunset",
+      "value": "暮色"
+    },
+    {
+      "name": "opt_bg_custom",
+      "value": "相簿圖片"
+    },
+    {
+      "name": "opt_bg_none",
+      "value": "無"
+    },
+    {
+      "name": "row_language",
+      "value": "語言"
+    },
+    {
+      "name": "row_immersive",
+      "value": "沉浸光感"
+    },
+    {
+      "name": "row_material_type",
+      "value": "材質型別"
+    },
+    {
+      "name": "row_material_level",
+      "value": "沉浸光感材質"
+    },
+    {
+      "name": "row_grip",
+      "value": "智感握姿"
+    },
+    {
+      "name": "row_antipeep",
+      "value": "防窺保護"
+    },
+    {
+      "name": "opt_follow_system",
+      "value": "跟隨系統"
+    },
+    {
+      "name": "opt_light",
+      "value": "淺色"
+    },
+    {
+      "name": "opt_dark",
+      "value": "深色"
+    },
+    {
+      "name": "opt_chinese",
+      "value": "簡體中文"
+    },
+    {
+      "name": "opt_chinese_traditional",
+      "value": "繁體中文"
+    },
+    {
+      "name": "opt_english",
+      "value": "English"
+    },
+    {
+      "name": "opt_material_adaptive",
+      "value": "自適應"
+    },
+    {
+      "name": "opt_material_immersive",
+      "value": "沉浸式"
+    },
+    {
+      "name": "opt_material_none",
+      "value": "無材質效果"
+    },
+    {
+      "name": "opt_level_exquisite",
+      "value": "精美"
+    },
+    {
+      "name": "opt_level_gentle",
+      "value": "輕柔"
+    },
+    {
+      "name": "opt_level_smooth",
+      "value": "流暢"
+    },
+    {
+      "name": "opt_level_adaptive",
+      "value": "自適應"
+    },
+    {
+      "name": "aux_global_immersive_on",
+      "value": "全域性沉浸：已開啟"
+    },
+    {
+      "name": "aux_global_immersive_off",
+      "value": "全域性沉浸：已關閉"
+    },
+    {
+      "name": "aux_antipeep_unsupported",
+      "value": "未生效：裝置不支援防窺保護"
+    },
+    {
+      "name": "veil_message",
+      "value": "已為你隱藏螢幕內容"
+    },
+    {
+      "name": "veil_dismiss",
+      "value": "輕點任意位置繼續"
+    },
+    {
+      "name": "home_refresh",
+      "value": "重新整理"
+    },
+    {
+      "name": "home_feed_count",
+      "value": "%d 個訂閱源"
+    },
+    {
+      "name": "home_unread_count",
+      "value": "%d 未讀"
+    },
+    {
+      "name": "filter_all",
+      "value": "全部"
+    },
+    {
+      "name": "filter_unread",
+      "value": "未讀"
+    },
+    {
+      "name": "filter_starred",
+      "value": "收藏"
+    },
+    {
+      "name": "home_mark_all_read",
+      "value": "全部已讀"
+    },
+    {
+      "name": "mark_all_read_confirm_title",
+      "value": "全部標為已讀"
+    },
+    {
+      "name": "mark_all_read_confirm_message",
+      "value": "確定把全部文章標為已讀嗎？"
+    },
+    {
+      "name": "dialog_confirm",
+      "value": "確定"
+    },
+    {
+      "name": "filter_empty_unread",
+      "value": "沒有未讀文章"
+    },
+    {
+      "name": "filter_empty_starred",
+      "value": "沒有收藏文章"
+    },
+    {
+      "name": "filter_empty_search",
+      "value": "沒有匹配的文章"
+    },
+    {
+      "name": "home_search_hint",
+      "value": "搜尋標題 / 正文"
+    },
+    {
+      "name": "home_scope_prefix",
+      "value": "來源：%s"
+    },
+    {
+      "name": "action_reader_retry",
+      "value": "重新提取正文"
+    },
+    {
+      "name": "action_copy_link",
+      "value": "複製連結"
+    },
+    {
+      "name": "action_open_browser",
+      "value": "用瀏覽器開啟"
+    },
+    {
+      "name": "action_share",
+      "value": "分享"
+    },
+    {
+      "name": "action_reload",
+      "value": "重新載入"
+    },
+    {
+      "name": "toast_action_failed",
+      "value": "當前裝置不支援該操作"
+    },
+    {
+      "name": "subs_rename",
+      "value": "重新命名"
+    },
+    {
+      "name": "subs_rename_hint",
+      "value": "訂閱源名稱"
+    },
+    {
+      "name": "dialog_save",
+      "value": "儲存"
+    },
+    {
+      "name": "group_ungrouped",
+      "value": "未分組"
+    },
+    {
+      "name": "group_move_to",
+      "value": "移動到「%s」"
+    },
+    {
+      "name": "group_clear",
+      "value": "移出分組"
+    },
+    {
+      "name": "group_new",
+      "value": "新建分組…"
+    },
+    {
+      "name": "group_hint",
+      "value": "分組名稱（留空 = 移出分組）"
+    },
+    {
+      "name": "feed_move_up",
+      "value": "上移"
+    },
+    {
+      "name": "feed_move_down",
+      "value": "下移"
+    },
+    {
+      "name": "row_auto_refresh",
+      "value": "自動重新整理"
+    },
+    {
+      "name": "opt_refresh_off",
+      "value": "關閉"
+    },
+    {
+      "name": "opt_refresh_15",
+      "value": "每 15 分鐘"
+    },
+    {
+      "name": "opt_refresh_30",
+      "value": "每 30 分鐘"
+    },
+    {
+      "name": "opt_refresh_60",
+      "value": "每小時"
+    },
+    {
+      "name": "home_manage_subs",
+      "value": "訂閱管理"
+    },
+    {
+      "name": "effect_title",
+      "value": "光影效果"
+    },
+    {
+      "name": "effect_hint",
+      "value": "按住光源按鈕，周圍元件隨之被照亮"
+    },
+    {
+      "name": "effect_source",
+      "value": "光源"
+    },
+    {
+      "name": "effect_target",
+      "value": "受光體"
+    },
+    {
+      "name": "home_empty_title",
+      "value": "還沒有文章"
+    },
+    {
+      "name": "home_empty_hint",
+      "value": "下拉重新整理，或先新增一個 RSS 訂閱源。"
+    },
+    {
+      "name": "home_empty_action",
+      "value": "新增訂閱源"
+    },
+    {
+      "name": "home_loading",
+      "value": "正在載入…"
+    },
+    {
+      "name": "subs_title",
+      "value": "訂閱源管理"
+    },
+    {
+      "name": "subs_url_hint",
+      "value": "輸入 RSS / Atom 訂閱地址"
+    },
+    {
+      "name": "subs_add",
+      "value": "新增"
+    },
+    {
+      "name": "subs_adding",
+      "value": "新增中…"
+    },
+    {
+      "name": "subs_remove",
+      "value": "刪除"
+    },
+    {
+      "name": "subs_remove_confirm_title",
+      "value": "刪除訂閱源"
+    },
+    {
+      "name": "subs_remove_confirm_message",
+      "value": "確定刪除「%s」及其全部文章嗎？"
+    },
+    {
+      "name": "dialog_cancel",
+      "value": "取消"
+    },
+    {
+      "name": "subs_empty",
+      "value": "暫無訂閱源"
+    },
+    {
+      "name": "subs_import_opml",
+      "value": "匯入 OPML"
+    },
+    {
+      "name": "subs_export_opml",
+      "value": "匯出 OPML"
+    },
+    {
+      "name": "subs_import_result",
+      "value": "已匯入 %d 個訂閱源"
+    },
+    {
+      "name": "subs_import_empty",
+      "value": "檔案裡沒有可匯入的訂閱源"
+    },
+    {
+      "name": "subs_import_duplicate",
+      "value": "這些訂閱源都已存在"
+    },
+    {
+      "name": "subs_export_success",
+      "value": "OPML 已匯出"
+    },
+    {
+      "name": "subs_export_empty",
+      "value": "還沒有可匯出的訂閱源"
+    },
+    {
+      "name": "subs_article_count",
+      "value": "%d 篇文章"
+    },
+    {
+      "name": "subs_error_prefix",
+      "value": "上次錯誤："
+    },
+    {
+      "name": "feed_articles_title",
+      "value": "文章"
+    },
+    {
+      "name": "feed_sort_newest",
+      "value": "最新在前"
+    },
+    {
+      "name": "feed_sort_oldest",
+      "value": "最早在前"
+    },
+    {
+      "name": "home_add_feed_title",
+      "value": "新增訂閱源"
+    },
+    {
+      "name": "article_title",
+      "value": "文章"
+    },
+    {
+      "name": "article_open_link",
+      "value": "原文連結"
+    },
+    {
+      "name": "article_no_content",
+      "value": "該條目沒有正文，可開啟原文連結檢視。"
+    },
+    {
+      "name": "article_mode_web",
+      "value": "網頁原文"
+    },
+    {
+      "name": "article_mode_text",
+      "value": "提取正文"
+    },
+    {
+      "name": "article_mode_reader",
+      "value": "閱讀模式"
+    },
+    {
+      "name": "article_reader_failed",
+      "value": "正文提取失敗，已為你開啟網頁原文。"
+    },
+    {
+      "name": "article_prev",
+      "value": "上一篇"
+    },
+    {
+      "name": "article_next",
+      "value": "下一篇"
+    },
+    {
+      "name": "article_next_unread",
+      "value": "下一條未讀"
+    },
+    {
+      "name": "err_empty_url",
+      "value": "請輸入訂閱地址"
+    },
+    {
+      "name": "err_duplicate_url",
+      "value": "該訂閱源已存在"
+    },
+    {
+      "name": "subs_paste",
+      "value": "貼上"
+    },
+    {
+      "name": "subs_paste_denied",
+      "value": "未獲得剪貼簿讀取授權"
+    },
+    {
+      "name": "subs_preview_title",
+      "value": "確認訂閱"
+    },
+    {
+      "name": "subs_preview_latest",
+      "value": "最新文章"
+    },
+    {
+      "name": "subs_preview_no_items",
+      "value": "該訂閱源暫無文章"
+    },
+    {
+      "name": "subs_confirm",
+      "value": "訂閱"
+    },
+    {
+      "name": "subs_batch_result",
+      "value": "新增 %d 個 · 已存在 %d 個 · 失敗 %d 個"
+    },
+    {
+      "name": "subs_duplicate_site",
+      "value": "疑似與「%s」是同一站點"
+    },
+    {
+      "name": "subs_edit_url",
+      "value": "編輯訂閱地址"
+    },
+    {
+      "name": "subs_edit_url_hint",
+      "value": "新的訂閱地址"
+    },
+    {
+      "name": "subs_bulk_move",
+      "value": "移動到分組"
+    },
+    {
+      "name": "subs_bulk_remove",
+      "value": "刪除"
+    },
+    {
+      "name": "subs_bulk_enter",
+      "value": "多選"
+    },
+    {
+      "name": "subs_bulk_selected",
+      "value": "已選 %d 個"
+    },
+    {
+      "name": "subs_bulk_remove_message",
+      "value": "刪除已選的 %d 個訂閱源及其文章？"
+    },
+    {
+      "name": "share_ability_desc",
+      "value": "把分享的連結加入 RSS"
+    },
+    {
+      "name": "share_page_title",
+      "value": "新增到 RSS"
+    },
+    {
+      "name": "err_fetch_failed",
+      "value": "獲取失敗，請檢查網路或地址。"
+    },
+    {
+      "name": "err_timeout",
+      "value": "請求超時，請檢查網路後重試。"
+    },
+    {
+      "name": "err_network",
+      "value": "網路連線失敗，請檢查網路後重試。"
+    },
+    {
+      "name": "err_http",
+      "value": "伺服器返回錯誤，請稍後重試。"
+    },
+    {
+      "name": "err_empty_response",
+      "value": "伺服器返回空內容，該地址可能不是有效的訂閱源。"
+    },
+    {
+      "name": "err_parse",
+      "value": "無法解析該地址，請確認是有效的 RSS / Atom 訂閱源。"
+    },
+    {
+      "name": "err_not_a_feed",
+      "value": "該地址不是訂閱源，頁面裡也沒有找到可訂閱的連結。"
+    },
+    {
+      "name": "row_point_light",
+      "value": "點光源效果"
+    },
+    {
+      "name": "image_title",
+      "value": "圖片"
+    },
+    {
+      "name": "image_hdr",
+      "value": "HDR"
+    },
+    {
+      "name": "image_animated",
+      "value": "檢測到動圖格式（GIF / WebP）"
+    },
+    {
+      "name": "image_static",
+      "value": "靜態圖片"
+    },
+    {
+      "name": "image_hint",
+      "value": "GIF / WebP 動圖由系統 Image 元件自動播放。"
+    },
+    {
+      "name": "section_branding",
+      "value": "應用圖示"
+    },
+    {
+      "name": "brand_name",
+      "value": "HarmonyRss"
+    },
+    {
+      "name": "logo_classic",
+      "value": "經典"
+    },
+    {
+      "name": "logo_aurora",
+      "value": "極光"
+    },
+    {
+      "name": "logo_sunset",
+      "value": "暮色"
+    },
+    {
+      "name": "logo_mono",
+      "value": "墨黑"
+    },
+    {
+      "name": "aux_logo_launcher_hint",
+      "value": "所選 logo 會用於應用內展示；系統桌面圖示需應用上架 AppGallery 後才能同步切換。"
+    },
+    {
+      "name": "toast_logo_launcher_failed",
+      "value": "桌面圖示未切換：應用尚未上架或未配置動態圖示。"
+    },
+    {
+      "name": "effect_flow_title",
+      "value": "雙邊流光"
+    },
+    {
+      "name": "effect_flow_hint",
+      "value": "兩條邊緣流光沿元件周界流動"
+    },
+    {
+      "name": "action_more",
+      "value": "更多"
+    },
+    {
+      "name": "action_star",
+      "value": "收藏"
+    },
+    {
+      "name": "action_unstar",
+      "value": "取消收藏"
+    },
+    {
+      "name": "action_mark_read",
+      "value": "標為已讀"
+    },
+    {
+      "name": "action_mark_unread",
+      "value": "標為未讀"
+    },
+    {
+      "name": "snack_link_copied",
+      "value": "連結已複製"
+    },
+    {
+      "name": "snack_dismiss",
+      "value": "關閉"
+    },
+    {
+      "name": "row_notify_new",
+      "value": "新文章通知"
+    },
+    {
+      "name": "notify_new_title",
+      "value": "%d 篇新文章"
+    },
+    {
+      "name": "notify_new_text",
+      "value": "%s：%s"
+    },
+    {
+      "name": "toast_notify_denied",
+      "value": "系統未允許本應用傳送通知"
+    },
+    {
+      "name": "row_effect_preview",
+      "value": "光影效果預覽"
+    },
+    {
+      "name": "widget_desc",
+      "value": "最新 RSS 文章"
+    },
+    {
+      "name": "widget_title",
+      "value": "RSS 閱讀"
+    },
+    {
+      "name": "widget_empty",
+      "value": "暫無文章"
+    },
+    {
+      "name": "retention_mode_forever",
+      "value": "全部保留"
+    },
+    {
+      "name": "retention_mode_days",
+      "value": "按天數保留"
+    },
+    {
+      "name": "retention_mode_unread",
+      "value": "僅保留未讀與收藏"
+    },
+    {
+      "name": "retention_days_30",
+      "value": "30 天"
+    },
+    {
+      "name": "retention_days_90",
+      "value": "90 天"
+    },
+    {
+      "name": "retention_days_365",
+      "value": "365 天"
+    },
+    {
+      "name": "retention_forever",
+      "value": "永久"
+    },
+    {
+      "name": "search_title",
+      "value": "搜尋"
+    },
+    {
+      "name": "search_hint",
+      "value": "搜尋全部文章"
+    },
+    {
+      "name": "search_history",
+      "value": "最近搜尋"
+    },
+    {
+      "name": "search_clear_history",
+      "value": "清空歷史"
+    },
+    {
+      "name": "search_syntax_hint",
+      "value": "試試 from:來源 is:unread after:2026-01-01 \"完整短語\""
+    },
+    {
+      "name": "search_empty",
+      "value": "輸入關鍵詞即可檢索全部歷史文章"
+    },
+    {
+      "name": "search_no_result",
+      "value": "沒有匹配的文章"
+    },
+    {
+      "name": "search_result_count",
+      "value": "%d 條結果"
+    },
+    {
+      "name": "search_filter_all",
+      "value": "全部"
+    },
+    {
+      "name": "search_filter_unread",
+      "value": "未讀"
+    },
+    {
+      "name": "search_filter_starred",
+      "value": "收藏"
+    },
+    {
+      "name": "search_filter_saved",
+      "value": "稍後讀"
+    },
+    {
+      "name": "search_searching",
+      "value": "搜尋中…"
+    },
+    {
+      "name": "search_error",
+      "value": "搜尋失敗，請重試"
+    },
+    {
+      "name": "search_index_building",
+      "value": "正在重建索引…"
+    },
+    {
+      "name": "search_diag_section",
+      "value": "索引診斷"
+    },
+    {
+      "name": "search_diag_main_index",
+      "value": "主索引"
+    },
+    {
+      "name": "search_diag_cjk_index",
+      "value": "中文索引"
+    },
+    {
+      "name": "search_diag_tokenizer",
+      "value": "中文分詞"
+    },
+    {
+      "name": "search_diag_state_ready",
+      "value": "就緒"
+    },
+    {
+      "name": "search_diag_state_degraded",
+      "value": "已降級"
+    },
+    {
+      "name": "search_diag_state_available",
+      "value": "可用"
+    },
+    {
+      "name": "search_diag_state_unavailable",
+      "value": "不可用"
+    },
+    {
+      "name": "search_diag_indexed",
+      "value": "%d 條"
+    },
+    {
+      "name": "search_diag_last_search",
+      "value": "最近檢索"
+    },
+    {
+      "name": "search_diag_path_none",
+      "value": "尚未檢索"
+    },
+    {
+      "name": "search_diag_path_fts",
+      "value": "主索引"
+    },
+    {
+      "name": "search_diag_path_cjk",
+      "value": "中文索引"
+    },
+    {
+      "name": "search_diag_path_like",
+      "value": "全表掃描"
+    },
+    {
+      "name": "storage_title",
+      "value": "儲存與保留"
+    },
+    {
+      "name": "storage_section_retention",
+      "value": "保留策略"
+    },
+    {
+      "name": "storage_section_usage",
+      "value": "儲存佔用"
+    },
+    {
+      "name": "storage_section_per_feed",
+      "value": "按訂閱源佔用"
+    },
+    {
+      "name": "storage_section_trash",
+      "value": "最近刪除"
+    },
+    {
+      "name": "storage_section_index",
+      "value": "搜尋索引"
+    },
+    {
+      "name": "storage_total",
+      "value": "共 %d 篇文章"
+    },
+    {
+      "name": "storage_text_size",
+      "value": "文字佔用：%s"
+    },
+    {
+      "name": "storage_cleanable",
+      "value": "可清理 %d 篇"
+    },
+    {
+      "name": "storage_clean_now",
+      "value": "立即清理"
+    },
+    {
+      "name": "storage_clean_confirm_title",
+      "value": "清理舊文章？"
+    },
+    {
+      "name": "storage_clean_confirm_message",
+      "value": "%d 篇文章將移入「最近刪除」，7 天內可恢復。"
+    },
+    {
+      "name": "storage_clean_done",
+      "value": "已清理 %d 篇"
+    },
+    {
+      "name": "storage_trash_count",
+      "value": "%d 篇可恢復"
+    },
+    {
+      "name": "storage_restore",
+      "value": "全部恢復"
+    },
+    {
+      "name": "storage_restore_done",
+      "value": "已恢復 %d 篇"
+    },
+    {
+      "name": "storage_rebuild",
+      "value": "重建索引"
+    },
+    {
+      "name": "storage_rebuilding",
+      "value": "正在重建 %d/%d"
+    },
+    {
+      "name": "storage_rebuild_done",
+      "value": "索引已重建"
+    },
+    {
+      "name": "storage_empty",
+      "value": "本地還沒有文章"
+    },
+    {
+      "name": "storage_retention_hint",
+      "value": "收藏、稍後讀、含高亮以及當前開啟的文章永不刪除。"
+    },
+    {
+      "name": "feed_settings_title",
+      "value": "源設定"
+    },
+    {
+      "name": "feed_settings_entry",
+      "value": "源設定"
+    },
+    {
+      "name": "feed_settings_enabled",
+      "value": "啟用抓取"
+    },
+    {
+      "name": "feed_settings_enabled_hint",
+      "value": "停用後不抓取、不通知，歷史文章仍可閱讀。"
+    },
+    {
+      "name": "feed_settings_interval",
+      "value": "抓取間隔"
+    },
+    {
+      "name": "feed_settings_fulltext",
+      "value": "全文策略"
+    },
+    {
+      "name": "feed_settings_retention",
+      "value": "保留文章"
+    },
+    {
+      "name": "feed_settings_notify",
+      "value": "新文章通知"
+    },
+    {
+      "name": "feed_settings_scroll_read",
+      "value": "滾動即已讀"
+    },
+    {
+      "name": "feed_settings_scroll_read_hint",
+      "value": "開啟後，滾到文末才標記為已讀。"
+    },
+    {
+      "name": "feed_settings_section_health",
+      "value": "源健康"
+    },
+    {
+      "name": "feed_settings_follow_global",
+      "value": "跟隨全域性"
+    },
+    {
+      "name": "feed_settings_on",
+      "value": "開"
+    },
+    {
+      "name": "feed_settings_off",
+      "value": "關"
+    },
+    {
+      "name": "feed_settings_interval_15",
+      "value": "每 15 分鐘"
+    },
+    {
+      "name": "feed_settings_interval_30",
+      "value": "每 30 分鐘"
+    },
+    {
+      "name": "feed_settings_interval_60",
+      "value": "每 1 小時"
+    },
+    {
+      "name": "feed_settings_interval_180",
+      "value": "每 3 小時"
+    },
+    {
+      "name": "feed_settings_fulltext_auto",
+      "value": "自動"
+    },
+    {
+      "name": "feed_settings_fulltext_always",
+      "value": "總是抓原文"
+    },
+    {
+      "name": "feed_settings_fulltext_never",
+      "value": "從不抓原文"
+    },
+    {
+      "name": "health_last_success",
+      "value": "最後成功：%s"
+    },
+    {
+      "name": "health_failure_count",
+      "value": "連續失敗 %d 次"
+    },
+    {
+      "name": "health_never",
+      "value": "尚未成功同步"
+    },
+    {
+      "name": "health_retry",
+      "value": "立即重試"
+    },
+    {
+      "name": "health_retrying",
+      "value": "重試中…"
+    },
+    {
+      "name": "health_ok",
+      "value": "狀態正常"
+    },
+    {
+      "name": "retention_days_label",
+      "value": "保留天數"
+    },
+    {
+      "name": "storage_show_all",
+      "value": "展開全部訂閱源"
+    },
+    {
+      "name": "storage_show_less",
+      "value": "收起"
+    },
+    {
+      "name": "feed_settings_section_policy",
+      "value": "抓取與保留"
+    },
+    {
+      "name": "feed_settings_disabled",
+      "value": "已停止抓取"
+    },
+    {
+      "name": "storage_retention_mode",
+      "value": "保留方式"
+    },
+    {
+      "name": "search_index_fallback",
+      "value": "已使用基礎匹配（索引不可用）"
+    },
+    {
+      "name": "tag_title",
+      "value": "標籤"
+    },
+    {
+      "name": "tag_entry",
+      "value": "標籤（%d）"
+    },
+    {
+      "name": "tag_empty",
+      "value": "還沒有標籤"
+    },
+    {
+      "name": "tag_new_hint",
+      "value": "新建標籤名"
+    },
+    {
+      "name": "tag_new",
+      "value": "新建標籤"
+    },
+    {
+      "name": "tag_name_invalid",
+      "value": "請輸入標籤名（最多 32 個字元）"
+    },
+    {
+      "name": "tag_limit_reached",
+      "value": "標籤數量已達上限（100 個）"
+    },
+    {
+      "name": "tag_rename",
+      "value": "重新命名"
+    },
+    {
+      "name": "tag_rename_hint",
+      "value": "標籤名"
+    },
+    {
+      "name": "tag_remove",
+      "value": "刪除標籤"
+    },
+    {
+      "name": "tag_remove_confirm_title",
+      "value": "刪除標籤？"
+    },
+    {
+      "name": "tag_remove_confirm_message",
+      "value": "文章內容保留，僅移除該標籤。"
+    },
+    {
+      "name": "tag_view_results",
+      "value": "檢視結果"
+    },
+    {
+      "name": "tag_articles_title",
+      "value": "標籤文章"
+    },
+    {
+      "name": "tag_picker_title",
+      "value": "標籤"
+    },
+    {
+      "name": "tag_picker_empty",
+      "value": "還沒有標籤，可在下方新建"
+    },
+    {
+      "name": "tag_apply",
+      "value": "應用"
+    },
+    {
+      "name": "tag_select_hint",
+      "value": "請至少選擇一個標籤"
+    },
+    {
+      "name": "tag_added",
+      "value": "已新增標籤"
+    },
+    {
+      "name": "tag_removed",
+      "value": "已移除標籤"
+    },
+    {
+      "name": "tag_batch_done",
+      "value": "已為 %d 篇文章打標籤"
+    },
+    {
+      "name": "tag_action_failed",
+      "value": "標籤操作失敗"
+    },
+    {
+      "name": "tag_manage_hint",
+      "value": "選擇標籤後檢視同時具備這些標籤的文章"
+    },
+    {
+      "name": "smart_folder_title",
+      "value": "智慧資料夾"
+    },
+    {
+      "name": "smart_folder_entry",
+      "value": "智慧資料夾（%d）"
+    },
+    {
+      "name": "smart_folder_empty",
+      "value": "還沒有智慧資料夾"
+    },
+    {
+      "name": "smart_folder_new",
+      "value": "新建智慧資料夾"
+    },
+    {
+      "name": "smart_folder_name_hint",
+      "value": "資料夾名稱"
+    },
+    {
+      "name": "smart_folder_query_hint",
+      "value": "查詢條件，如 from:Feed is:unread AI"
+    },
+    {
+      "name": "smart_folder_query_label",
+      "value": "查詢條件"
+    },
+    {
+      "name": "smart_folder_save_current",
+      "value": "儲存為智慧資料夾"
+    },
+    {
+      "name": "smart_folder_saved",
+      "value": "已儲存為智慧資料夾"
+    },
+    {
+      "name": "smart_folder_query_empty",
+      "value": "查詢條件不能為空"
+    },
+    {
+      "name": "smart_folder_name_invalid",
+      "value": "請輸入名稱（最多 32 個字元）"
+    },
+    {
+      "name": "smart_folder_limit_reached",
+      "value": "智慧資料夾已達上限（50 個）"
+    },
+    {
+      "name": "smart_folder_query_too_long",
+      "value": "查詢條件過長（最多 512 個字元）"
+    },
+    {
+      "name": "smart_folder_edit",
+      "value": "編輯"
+    },
+    {
+      "name": "smart_folder_save",
+      "value": "儲存"
+    },
+    {
+      "name": "smart_folder_remove",
+      "value": "刪除智慧資料夾"
+    },
+    {
+      "name": "smart_folder_remove_confirm_title",
+      "value": "刪除智慧資料夾？"
+    },
+    {
+      "name": "smart_folder_remove_confirm_message",
+      "value": "僅刪除已儲存的查詢，文章不受影響。"
+    },
+    {
+      "name": "smart_folder_move_up",
+      "value": "上移"
+    },
+    {
+      "name": "smart_folder_move_down",
+      "value": "下移"
+    },
+    {
+      "name": "smart_folder_open_failed",
+      "value": "無法開啟該智慧資料夾"
+    },
+    {
+      "name": "remote_entry_title",
+      "value": "賬號與服務"
+    },
+    {
+      "name": "remote_title",
+      "value": "賬號與服務"
+    },
+    {
+      "name": "remote_section_connect",
+      "value": "連線服務"
+    },
+    {
+      "name": "remote_field_base_url",
+      "value": "服務地址"
+    },
+    {
+      "name": "remote_field_base_url_hint",
+      "value": "https://rss.example.com"
+    },
+    {
+      "name": "remote_field_username",
+      "value": "使用者名稱"
+    },
+    {
+      "name": "remote_field_password",
+      "value": "密碼"
+    },
+    {
+      "name": "remote_allow_http",
+      "value": "允許明文 HTTP"
+    },
+    {
+      "name": "remote_allow_http_hint",
+      "value": "僅用於信任的自建服務；HTTP 流量不加密。"
+    },
+    {
+      "name": "remote_connect",
+      "value": "連線"
+    },
+    {
+      "name": "remote_connecting",
+      "value": "正在連線…"
+    },
+    {
+      "name": "remote_connected",
+      "value": "已連線"
+    },
+    {
+      "name": "remote_not_connected",
+      "value": "未連線"
+    },
+    {
+      "name": "remote_section_status",
+      "value": "同步狀態"
+    },
+    {
+      "name": "remote_status_service",
+      "value": "服務型別"
+    },
+    {
+      "name": "remote_status_service_value",
+      "value": "Google Reader API"
+    },
+    {
+      "name": "remote_status_base_url",
+      "value": "地址"
+    },
+    {
+      "name": "remote_status_username",
+      "value": "賬號"
+    },
+    {
+      "name": "remote_status_last_sync",
+      "value": "最近同步"
+    },
+    {
+      "name": "remote_status_never",
+      "value": "尚未同步"
+    },
+    {
+      "name": "remote_status_pending",
+      "value": "待同步變更"
+    },
+    {
+      "name": "remote_status_failures",
+      "value": "連續失敗"
+    },
+    {
+      "name": "remote_status_last_error",
+      "value": "最近錯誤"
+    },
+    {
+      "name": "remote_sync_now",
+      "value": "立即同步"
+    },
+    {
+      "name": "remote_syncing",
+      "value": "正在同步…"
+    },
+    {
+      "name": "remote_logout",
+      "value": "退出登入"
+    },
+    {
+      "name": "remote_logout_confirm_title",
+      "value": "退出登入？"
+    },
+    {
+      "name": "remote_logout_confirm_message",
+      "value": "本地文章與閱讀狀態會保留。你也可以同時清除同步對映與待同步佇列。"
+    },
+    {
+      "name": "remote_logout_keep",
+      "value": "保留本地資料"
+    },
+    {
+      "name": "remote_logout_clear",
+      "value": "清除同步資料"
+    },
+    {
+      "name": "remote_logout_done",
+      "value": "已退出登入"
+    },
+    {
+      "name": "remote_phase_feeds",
+      "value": "正在拉取訂閱…"
+    },
+    {
+      "name": "remote_phase_articles",
+      "value": "正在拉取文章…"
+    },
+    {
+      "name": "remote_phase_push",
+      "value": "正在回寫閱讀狀態…"
+    },
+    {
+      "name": "remote_phase_pull",
+      "value": "正在應用遠端狀態…"
+    },
+    {
+      "name": "remote_phase_done",
+      "value": "同步完成"
+    },
+    {
+      "name": "remote_progress",
+      "value": "已同步 %d / %d 個訂閱源"
+    },
+    {
+      "name": "remote_error_network",
+      "value": "無法連線服務，請檢查地址與網路。"
+    },
+    {
+      "name": "remote_error_tls",
+      "value": "證書不受信任，請使用有效證書或允許 HTTP。"
+    },
+    {
+      "name": "remote_error_auth",
+      "value": "賬號或密碼錯誤。"
+    },
+    {
+      "name": "remote_error_api",
+      "value": "該地址沒有可用的服務 API。"
+    },
+    {
+      "name": "remote_error_rate",
+      "value": "服務端限流，請稍後重試。"
+    },
+    {
+      "name": "remote_error_server",
+      "value": "服務端錯誤，請稍後重試。"
+    },
+    {
+      "name": "remote_error_parse",
+      "value": "服務端返回了無法解析的內容。"
+    },
+    {
+      "name": "remote_error_insecure",
+      "value": "已禁用 HTTP。如需使用該地址，請開啟「允許明文 HTTP」。"
+    },
+    {
+      "name": "remote_error_empty",
+      "value": "請填寫必填項。"
+    },
+    {
+      "name": "remote_error_busy",
+      "value": "已有同步正在進行。"
+    },
+    {
+      "name": "remote_error_not_connected",
+      "value": "請先連線服務。"
+    },
+    {
+      "name": "remote_sync_done",
+      "value": "同步完成"
+    },
+    {
+      "name": "remote_sync_summary",
+      "value": "%d 個訂閱源 · %d 篇文章 · %d 條狀態回寫"
+    },
+    {
+      "name": "remote_form_hint",
+      "value": "支援 FreshRSS、Tiny Tiny RSS、Miniflux（Google Reader API）。"
+    },
+    {
+      "name": "remote_aux_credentials",
+      "value": "憑據儲存在系統 Asset Store，不會明文儲存。"
+    },
+    {
+      "name": "remote_empty_status",
+      "value": "連線服務後可同步訂閱與閱讀狀態。"
+    },
+    {
+      "name": "remote_status_feeds",
+      "value": "遠端訂閱"
+    },
+    {
+      "name": "remote_auto_sync",
+      "value": "自動同步"
+    },
+    {
+      "name": "rule_title",
+      "value": "規則"
+    },
+    {
+      "name": "rule_entry",
+      "value": "規則（%d）"
+    },
+    {
+      "name": "rule_empty",
+      "value": "還沒有規則。新建規則後，命中的新文章會自動處理。"
+    },
+    {
+      "name": "rule_new",
+      "value": "新建規則"
+    },
+    {
+      "name": "rule_edit_title",
+      "value": "規則"
+    },
+    {
+      "name": "rule_manage_hint",
+      "value": "規則按優先順序對本地抓取與遠端同步的新文章執行；動作只增不減（已讀 / 收藏 / 標籤 / 隱藏），不會撤銷已有狀態。"
+    },
+    {
+      "name": "rule_enabled",
+      "value": "啟用"
+    },
+    {
+      "name": "rule_name_hint",
+      "value": "規則名稱"
+    },
+    {
+      "name": "rule_keywords_label",
+      "value": "關鍵詞"
+    },
+    {
+      "name": "rule_keywords_hint",
+      "value": "關鍵詞用逗號分隔，需全部命中"
+    },
+    {
+      "name": "rule_fields_label",
+      "value": "匹配欄位"
+    },
+    {
+      "name": "rule_field_title",
+      "value": "標題"
+    },
+    {
+      "name": "rule_field_summary",
+      "value": "摘要"
+    },
+    {
+      "name": "rule_field_content",
+      "value": "正文"
+    },
+    {
+      "name": "rule_field_author",
+      "value": "作者"
+    },
+    {
+      "name": "rule_source_label",
+      "value": "來源範圍"
+    },
+    {
+      "name": "rule_source_all",
+      "value": "全部來源"
+    },
+    {
+      "name": "rule_source_custom",
+      "value": "指定來源"
+    },
+    {
+      "name": "rule_source_invalid",
+      "value": "部分所選來源已失效，請重新選擇。"
+    },
+    {
+      "name": "rule_actions_label",
+      "value": "動作"
+    },
+    {
+      "name": "rule_action_read",
+      "value": "標記已讀"
+    },
+    {
+      "name": "rule_action_star",
+      "value": "收藏"
+    },
+    {
+      "name": "rule_action_tag",
+      "value": "新增標籤"
+    },
+    {
+      "name": "rule_action_hide",
+      "value": "隱藏"
+    },
+    {
+      "name": "rule_tags_label",
+      "value": "標籤"
+    },
+    {
+      "name": "rule_tags_empty",
+      "value": "還沒有標籤，請先在標籤頁建立。"
+    },
+    {
+      "name": "rule_save",
+      "value": "儲存規則"
+    },
+    {
+      "name": "rule_match_count",
+      "value": "累計命中 %d 篇"
+    },
+    {
+      "name": "rule_last_hit",
+      "value": "最後命中 %s"
+    },
+    {
+      "name": "rule_never_hit",
+      "value": "從未命中"
+    },
+    {
+      "name": "rule_test",
+      "value": "試執行"
+    },
+    {
+      "name": "rule_testing",
+      "value": "試執行中…"
+    },
+    {
+      "name": "rule_test_result",
+      "value": "最近 %d 篇中命中 %d 篇"
+    },
+    {
+      "name": "rule_edit",
+      "value": "編輯"
+    },
+    {
+      "name": "rule_move_up",
+      "value": "上移"
+    },
+    {
+      "name": "rule_move_down",
+      "value": "下移"
+    },
+    {
+      "name": "rule_remove",
+      "value": "刪除"
+    },
+    {
+      "name": "rule_remove_confirm_title",
+      "value": "刪除規則"
+    },
+    {
+      "name": "rule_remove_confirm_message",
+      "value": "刪除後該規則不再處理新文章；已產生的已讀 / 收藏 / 標籤 / 隱藏狀態會保留。"
+    },
+    {
+      "name": "rule_name_invalid",
+      "value": "請填寫規則名稱"
+    },
+    {
+      "name": "rule_keywords_invalid",
+      "value": "請至少填寫一個關鍵詞"
+    },
+    {
+      "name": "rule_keywords_too_many",
+      "value": "關鍵詞過多（最多 %d 個）"
+    },
+    {
+      "name": "rule_fields_empty",
+      "value": "請至少選擇一個匹配欄位"
+    },
+    {
+      "name": "rule_actions_empty",
+      "value": "請至少選擇一個動作"
+    },
+    {
+      "name": "rule_tags_required",
+      "value": "「新增標籤」動作至少需要一個標籤"
+    },
+    {
+      "name": "rule_limit_reached",
+      "value": "規則數量已達上限"
+    },
+    {
+      "name": "rule_action_failed",
+      "value": "操作失敗"
+    },
+    {
+      "name": "rule_error_name_empty",
+      "value": "請填寫規則名稱"
+    },
+    {
+      "name": "rule_error_name_too_long",
+      "value": "規則名稱過長（最多 %d 個字元）"
+    },
+    {
+      "name": "rule_error_keywords_empty",
+      "value": "請至少填寫一個關鍵詞"
+    },
+    {
+      "name": "rule_error_keywords_too_many",
+      "value": "關鍵詞過多（最多 %d 個）"
+    },
+    {
+      "name": "rule_error_fields_empty",
+      "value": "請至少選擇一個匹配欄位"
+    },
+    {
+      "name": "rule_error_actions_empty",
+      "value": "請至少選擇一個動作"
+    },
+    {
+      "name": "rule_error_tags_empty",
+      "value": "「新增標籤」動作至少需要一個標籤"
+    },
+    {
+      "name": "rule_error_limit_reached",
+      "value": "規則數量已達上限"
+    },
+    {
+      "name": "rule_keywords_limit_hint",
+      "value": "最多 %d 個關鍵詞，用逗號分隔；需全部命中"
+    },
+    {
+      "name": "rule_hidden_entry",
+      "value": "已隱藏（%d）"
+    },
+    {
+      "name": "hidden_title",
+      "value": "已隱藏文章"
+    },
+    {
+      "name": "hidden_empty",
+      "value": "沒有被隱藏的文章"
+    },
+    {
+      "name": "hidden_hint",
+      "value": "被隱藏的文章不會出現在主列表與未讀數里，但仍可檢索、開啟閱讀。"
+    },
+    {
+      "name": "hidden_unhide",
+      "value": "取消隱藏"
+    },
+    {
+      "name": "hidden_unhide_done",
+      "value": "文章已恢復到主列表"
+    },
+    {
+      "name": "dedupe_sources_count",
+      "value": "%d 個來源"
+    },
+    {
+      "name": "dedupe_sources_title",
+      "value": "全部來源"
+    },
+    {
+      "name": "dedupe_source_label",
+      "value": "來源"
+    },
+    {
+      "name": "dedupe_merged_hint",
+      "value": "這篇文章還被另外 %d 個來源收錄"
+    },
+    {
+      "name": "dedupe_group_empty",
+      "value": "暫無來源資訊"
+    },
+    {
+      "name": "dedupe_settings_title",
+      "value": "跨源去重"
+    },
+    {
+      "name": "dedupe_settings_desc",
+      "value": "多個訂閱源收錄同一篇文章時只顯示一次，並保留全部來源。"
+    },
+    {
+      "name": "dedupe_toggle_on",
+      "value": "已開啟跨源去重"
+    },
+    {
+      "name": "dedupe_toggle_off",
+      "value": "已關閉跨源去重"
+    },
+    {
+      "name": "dedupe_match_failed",
+      "value": "去重判定失敗，文章已按普通條目儲存"
+    },
+    {
+      "name": "dedupe_open_failed",
+      "value": "無法開啟該來源連結"
+    },
+    {
+      "name": "dedupe_source_count",
+      "value": "%d 個來源"
+    },
+    {
+      "name": "dedupe_switch_desc",
+      "value": "多個訂閱源收錄同一篇文章時只顯示一次，並保留全部來源。"
+    },
+    {
+      "name": "dedupe_source_current",
+      "value": "當前"
+    },
+    {
+      "name": "share_panel_title",
+      "value": "分享"
+    },
+    {
+      "name": "share_group_actions",
+      "value": "動作"
+    },
+    {
+      "name": "share_group_targets",
+      "value": "傳送到"
+    },
+    {
+      "name": "share_group_templates",
+      "value": "模板"
+    },
+    {
+      "name": "share_group_export",
+      "value": "匯出高亮"
+    },
+    {
+      "name": "share_action_system",
+      "value": "系統分享"
+    },
+    {
+      "name": "share_action_copy_link",
+      "value": "複製連結"
+    },
+    {
+      "name": "share_action_copy_body",
+      "value": "複製正文"
+    },
+    {
+      "name": "share_action_browser",
+      "value": "瀏覽器開啟"
+    },
+    {
+      "name": "share_action_saved",
+      "value": "加入稍後讀"
+    },
+    {
+      "name": "share_target_pocket",
+      "value": "Pocket"
+    },
+    {
+      "name": "share_target_instapaper",
+      "value": "Instapaper"
+    },
+    {
+      "name": "share_target_flomo",
+      "value": "Flomo"
+    },
+    {
+      "name": "share_target_email",
+      "value": "郵件"
+    },
+    {
+      "name": "share_toast_shared",
+      "value": "已開啟系統分享面板"
+    },
+    {
+      "name": "share_toast_copied",
+      "value": "已複製"
+    },
+    {
+      "name": "share_toast_copy_failed",
+      "value": "複製失敗"
+    },
+    {
+      "name": "share_toast_open_failed",
+      "value": "無法開啟該應用"
+    },
+    {
+      "name": "share_toast_fallback_copied",
+      "value": "應用不可用，已複製連結"
+    },
+    {
+      "name": "share_toast_share_failed",
+      "value": "當前無法分享"
+    },
+    {
+      "name": "share_toast_nothing_to_share",
+      "value": "沒有可分享的內容"
+    },
+    {
+      "name": "share_toast_busy",
+      "value": "請稍候…"
+    },
+    {
+      "name": "share_toast_saved",
+      "value": "已加入稍後讀"
+    },
+    {
+      "name": "share_disabled_no_url",
+      "value": "該內容沒有連結"
+    },
+    {
+      "name": "share_disabled_no_highlights",
+      "value": "這篇文章還沒有高亮"
+    },
+    {
+      "name": "share_export_article",
+      "value": "匯出本篇高亮"
+    },
+    {
+      "name": "share_export_all",
+      "value": "匯出全部高亮"
+    },
+    {
+      "name": "share_export_empty",
+      "value": "沒有可匯出的高亮"
+    },
+    {
+      "name": "share_settings_title",
+      "value": "分享與匯出"
+    },
+    {
+      "name": "tpl_section_title",
+      "value": "分享模板"
+    },
+    {
+      "name": "tpl_default_name",
+      "value": "預設"
+    },
+    {
+      "name": "tpl_new",
+      "value": "新建模板"
+    },
+    {
+      "name": "tpl_edit",
+      "value": "編輯模板"
+    },
+    {
+      "name": "tpl_name_label",
+      "value": "名稱"
+    },
+    {
+      "name": "tpl_content_label",
+      "value": "內容"
+    },
+    {
+      "name": "tpl_placeholder_help",
+      "value": "佔位符：{title} {url} {summary} {author} {tags}"
+    },
+    {
+      "name": "tpl_save",
+      "value": "儲存"
+    },
+    {
+      "name": "tpl_cancel",
+      "value": "取消"
+    },
+    {
+      "name": "tpl_delete",
+      "value": "刪除"
+    },
+    {
+      "name": "tpl_delete_confirm",
+      "value": "刪除這個模板？"
+    },
+    {
+      "name": "tpl_move_up",
+      "value": "上移"
+    },
+    {
+      "name": "tpl_move_down",
+      "value": "下移"
+    },
+    {
+      "name": "tpl_copy",
+      "value": "複製"
+    },
+    {
+      "name": "tpl_share",
+      "value": "分享"
+    },
+    {
+      "name": "tpl_empty",
+      "value": "還沒有模板"
+    },
+    {
+      "name": "tpl_err_name_empty",
+      "value": "請輸入模板名稱"
+    },
+    {
+      "name": "tpl_err_name_long",
+      "value": "模板名稱過長"
+    },
+    {
+      "name": "tpl_err_content_empty",
+      "value": "模板內容不能為空"
+    },
+    {
+      "name": "tpl_err_content_long",
+      "value": "模板內容過長"
+    },
+    {
+      "name": "tpl_err_max",
+      "value": "最多儲存 20 個模板"
+    },
+    {
+      "name": "tpl_limit_hint",
+      "value": "最多 20 個模板；這裡的順序就是分享面板中的順序。"
+    },
+    {
+      "name": "share_action_unsave",
+      "value": "取消稍後讀"
+    },
+    {
+      "name": "share_toast_unsaved",
+      "value": "已取消稍後讀"
+    },
+    {
+      "name": "tpl_name_hint",
+      "value": "例如：短分享"
+    },
+    {
+      "name": "tpl_content_hint",
+      "value": "{title} — {url}"
+    },
+    {
+      "name": "tpl_toast_saved",
+      "value": "模板已儲存"
+    },
+    {
+      "name": "tpl_toast_deleted",
+      "value": "模板已刪除"
+    },
+    {
+      "name": "tpl_err_save_failed",
+      "value": "模板儲存失敗"
+    },
+    {
+      "name": "tpl_default_hint",
+      "value": "內建模板，新建模板後可自定義。"
+    },
+    {
+      "name": "tpl_delete_confirm_named",
+      "value": "刪除「%s」？"
+    },
+    {
+      "name": "section_share",
+      "value": "分享與匯出"
+    },
+    {
+      "name": "backup_title",
+      "value": "備份與恢復"
+    },
+    {
+      "name": "backup_entry",
+      "value": "備份與恢復"
+    },
+    {
+      "name": "backup_intro",
+      "value": "把訂閱與閱讀資料遷移到新裝置，或在本地保留一份安全副本。"
+    },
+    {
+      "name": "backup_section_export",
+      "value": "匯出"
+    },
+    {
+      "name": "backup_export_action",
+      "value": "匯出備份"
+    },
+    {
+      "name": "backup_export_hint",
+      "value": "把訂閱、閱讀狀態、高亮、標籤、規則與模板儲存到一個 JSON 檔案。"
+    },
+    {
+      "name": "backup_export_cancelled",
+      "value": "已取消匯出"
+    },
+    {
+      "name": "backup_section_import",
+      "value": "匯入"
+    },
+    {
+      "name": "backup_import_action",
+      "value": "匯入備份"
+    },
+    {
+      "name": "backup_import_hint",
+      "value": "與現有資料合併，不會刪除任何內容。"
+    },
+    {
+      "name": "backup_import_cancelled",
+      "value": "已取消匯入"
+    },
+    {
+      "name": "backup_restore_settings",
+      "value": "同時恢復設定"
+    },
+    {
+      "name": "backup_restore_settings_hint",
+      "value": "應用備份中的主題、排版、列表與同步偏好；預設關閉。"
+    },
+    {
+      "name": "backup_section_snapshots",
+      "value": "自動快照"
+    },
+    {
+      "name": "backup_snapshot_now",
+      "value": "立即備份"
+    },
+    {
+      "name": "backup_snapshot_empty",
+      "value": "暫無快照"
+    },
+    {
+      "name": "backup_snapshot_restore",
+      "value": "恢復"
+    },
+    {
+      "name": "backup_snapshot_delete",
+      "value": "刪除"
+    },
+    {
+      "name": "backup_snapshot_keep_hint",
+      "value": "每天自動生成一份快照，僅保留最近 7 份。"
+    },
+    {
+      "name": "backup_snapshot_created",
+      "value": "建立於 %s"
+    },
+    {
+      "name": "backup_snapshot_size",
+      "value": "大小 %s"
+    },
+    {
+      "name": "backup_last_snapshot",
+      "value": "上次快照：%s"
+    },
+    {
+      "name": "backup_never",
+      "value": "從未"
+    },
+    {
+      "name": "backup_result_title",
+      "value": "最近一次結果"
+    },
+    {
+      "name": "backup_result_label_feeds",
+      "value": "訂閱"
+    },
+    {
+      "name": "backup_result_label_articles",
+      "value": "文章"
+    },
+    {
+      "name": "backup_result_label_updated",
+      "value": "更新"
+    },
+    {
+      "name": "backup_result_label_tags",
+      "value": "標籤"
+    },
+    {
+      "name": "backup_result_label_highlights",
+      "value": "高亮"
+    },
+    {
+      "name": "backup_result_label_skipped",
+      "value": "跳過"
+    },
+    {
+      "name": "backup_result_label_failed",
+      "value": "失敗"
+    },
+    {
+      "name": "backup_result_added",
+      "value": "新增：%d"
+    },
+    {
+      "name": "backup_result_updated",
+      "value": "更新：%d"
+    },
+    {
+      "name": "backup_result_skipped",
+      "value": "跳過：%d"
+    },
+    {
+      "name": "backup_result_failed",
+      "value": "失敗：%d"
+    },
+    {
+      "name": "backup_privacy_notice",
+      "value": "備份檔案包含你的閱讀記錄，請妥善保管。"
+    },
+    {
+      "name": "backup_error_parse",
+      "value": "該檔案不是有效的備份檔案。"
+    },
+    {
+      "name": "backup_error_version",
+      "value": "不支援該備份檔案的版本。"
+    },
+    {
+      "name": "backup_error_empty",
+      "value": "備份檔案為空。"
+    },
+    {
+      "name": "backup_error_read",
+      "value": "無法讀取檔案。"
+    },
+    {
+      "name": "backup_error_write",
+      "value": "無法儲存檔案。"
+    },
+    {
+      "name": "backup_error_snapshot",
+      "value": "快照生成失敗。"
+    },
+    {
+      "name": "backup_error_busy",
+      "value": "已有備份任務在進行，請稍後重試。"
+    },
+    {
+      "name": "backup_toast_exported",
+      "value": "備份已匯出"
+    },
+    {
+      "name": "backup_toast_imported",
+      "value": "備份已匯入"
+    },
+    {
+      "name": "backup_toast_restored",
+      "value": "快照已恢復"
+    },
+    {
+      "name": "backup_toast_deleted",
+      "value": "快照已刪除"
+    },
+    {
+      "name": "backup_toast_snapshot_created",
+      "value": "快照已生成"
+    },
+    {
+      "name": "backup_confirm_restore_title",
+      "value": "恢復這份快照？"
+    },
+    {
+      "name": "backup_confirm_restore_message",
+      "value": "資料會合併到當前資料庫，已有內容不會被刪除。"
+    },
+    {
+      "name": "backup_confirm_delete_title",
+      "value": "刪除這份快照？"
+    },
+    {
+      "name": "backup_confirm_delete_message",
+      "value": "快照檔案將被刪除且無法找回。"
+    },
+    {
+      "name": "backup_working",
+      "value": "處理中…"
+    },
+    {
+      "name": "backup_section_about",
+      "value": "關於備份"
+    },
+    {
+      "name": "backup_content_list",
+      "value": "訂閱 · 閱讀狀態 · 高亮 · 標籤 · 智慧資料夾 · 規則 · 模板 · 設定"
+    },
+    {
+      "name": "row_notify_settings",
+      "value": "通知設定"
+    },
+    {
+      "name": "notify_settings_title",
+      "value": "通知設定"
+    },
+    {
+      "name": "notify_settings_desc",
+      "value": "決定哪些新文章需要提醒，以及什麼時候提醒。"
+    },
+    {
+      "name": "notify_settings_saved",
+      "value": "通知設定已儲存"
+    },
+    {
+      "name": "notify_section_permission",
+      "value": "通知授權"
+    },
+    {
+      "name": "notify_permission_on",
+      "value": "已允許通知"
+    },
+    {
+      "name": "notify_permission_off",
+      "value": "未允許通知"
+    },
+    {
+      "name": "notify_permission_grant",
+      "value": "允許通知"
+    },
+    {
+      "name": "notify_permission_hint",
+      "value": "若沒有彈出授權視窗，請在系統設定裡為本應用開啟通知。"
+    },
+    {
+      "name": "notify_status_off",
+      "value": "通知已關閉，新文章不會提醒。"
+    },
+    {
+      "name": "notify_section_policy",
+      "value": "通知範圍"
+    },
+    {
+      "name": "notify_global_switch",
+      "value": "新文章通知"
+    },
+    {
+      "name": "notify_global_switch_desc",
+      "value": "單源設定仍然生效，關閉某個源即可不再提醒該源。"
+    },
+    {
+      "name": "notify_keywords_title",
+      "value": "關鍵詞"
+    },
+    {
+      "name": "notify_keywords_desc",
+      "value": "僅當標題或摘要包含關鍵詞時提醒；留空表示全部提醒。"
+    },
+    {
+      "name": "notify_keywords_empty",
+      "value": "還沒有關鍵詞"
+    },
+    {
+      "name": "notify_keywords_placeholder",
+      "value": "新增關鍵詞"
+    },
+    {
+      "name": "notify_keywords_add",
+      "value": "新增"
+    },
+    {
+      "name": "notify_keywords_full",
+      "value": "最多 %d 個關鍵詞"
+    },
+    {
+      "name": "notify_section_dnd",
+      "value": "免打擾"
+    },
+    {
+      "name": "notify_dnd_title",
+      "value": "免打擾"
+    },
+    {
+      "name": "notify_dnd_desc",
+      "value": "時段內不彈即時通知，結束後合併補發一次。"
+    },
+    {
+      "name": "notify_dnd_start",
+      "value": "開始"
+    },
+    {
+      "name": "notify_dnd_end",
+      "value": "結束"
+    },
+    {
+      "name": "notify_dnd_same",
+      "value": "起止時間相同，免打擾不生效。"
+    },
+    {
+      "name": "notify_section_digest",
+      "value": "每日摘要"
+    },
+    {
+      "name": "notify_digest_title",
+      "value": "每日摘要"
+    },
+    {
+      "name": "notify_digest_desc",
+      "value": "每天到達設定時間後傳送一條摘要，每天最多一次。"
+    },
+    {
+      "name": "notify_digest_hour",
+      "value": "時間"
+    },
+    {
+      "name": "notify_section_test",
+      "value": "測試"
+    },
+    {
+      "name": "notify_test_action",
+      "value": "傳送測試通知"
+    },
+    {
+      "name": "notify_test_title",
+      "value": "測試通知"
+    },
+    {
+      "name": "notify_test_text",
+      "value": "通知功能正常。"
+    },
+    {
+      "name": "notify_test_failed",
+      "value": "測試通知傳送失敗"
+    },
+    {
+      "name": "notify_aggregate_title",
+      "value": "更多更新"
+    },
+    {
+      "name": "notify_aggregate_text",
+      "value": "%s：還有 %d 篇"
+    },
+    {
+      "name": "notify_aggregate_more",
+      "value": "還有 %d 篇"
+    },
+    {
+      "name": "notify_dnd_flush_title",
+      "value": "免打擾期間 %d 篇新文章"
+    },
+    {
+      "name": "notify_dnd_flush_text",
+      "value": "%s"
+    },
+    {
+      "name": "notify_digest_notify_title",
+      "value": "今日摘要：%d 篇新文章"
+    },
+    {
+      "name": "notify_digest_notify_text",
+      "value": "%s"
+    },
+    {
+      "name": "notify_action_star",
+      "value": "收藏"
+    },
+    {
+      "name": "notify_permission_check",
+      "value": "重新檢查"
+    },
+    {
+      "name": "notify_keyword_exists",
+      "value": "關鍵詞已存在"
+    },
+    {
+      "name": "notify_keyword_remove",
+      "value": "移除 %s"
+    },
+    {
+      "name": "notify_test_sent",
+      "value": "測試通知已傳送"
+    },
+    {
+      "name": "translate_settings_title",
+      "value": "正文翻譯"
+    },
+    {
+      "name": "translate_settings_desc",
+      "value": "使用你選擇的翻譯服務翻譯文章。預設關閉；結果快取在本機。"
+    },
+    {
+      "name": "translate_section_service",
+      "value": "翻譯服務"
+    },
+    {
+      "name": "translate_enable",
+      "value": "允許聯網翻譯"
+    },
+    {
+      "name": "translate_enable_desc",
+      "value": "關閉時閱讀頁不會把正文傳送到任何服務。"
+    },
+    {
+      "name": "translate_privacy",
+      "value": "隱私說明：只傳送正文文字，不包含連結、圖片與閱讀狀態。API Key 存放在系統資產庫。"
+    },
+    {
+      "name": "translate_provider",
+      "value": "服務"
+    },
+    {
+      "name": "translate_provider_deepl",
+      "value": "DeepL（需要 API Key）"
+    },
+    {
+      "name": "translate_provider_libre",
+      "value": "LibreTranslate（支援自建例項）"
+    },
+    {
+      "name": "translate_endpoint",
+      "value": "服務地址"
+    },
+    {
+      "name": "translate_endpoint_hint",
+      "value": "留空使用預設地址"
+    },
+    {
+      "name": "translate_api_key",
+      "value": "API Key"
+    },
+    {
+      "name": "translate_api_key_hint",
+      "value": "貼上 Key，僅儲存在本機"
+    },
+    {
+      "name": "translate_api_key_set",
+      "value": "已配置 Key"
+    },
+    {
+      "name": "translate_api_key_unset",
+      "value": "未配置 API Key"
+    },
+    {
+      "name": "translate_api_key_save",
+      "value": "儲存 Key"
+    },
+    {
+      "name": "translate_api_key_clear",
+      "value": "清除"
+    },
+    {
+      "name": "translate_target_lang",
+      "value": "目標語言"
+    },
+    {
+      "name": "translate_target_auto",
+      "value": "跟隨應用語言"
+    },
+    {
+      "name": "translate_test",
+      "value": "測試翻譯"
+    },
+    {
+      "name": "translate_test_ok",
+      "value": "測試成功：%s"
+    },
+    {
+      "name": "translate_test_failed",
+      "value": "測試失敗：%s"
+    },
+    {
+      "name": "translate_section_cache",
+      "value": "快取"
+    },
+    {
+      "name": "translate_cache_count",
+      "value": "已快取 %d 篇譯文"
+    },
+    {
+      "name": "translate_cache_clear",
+      "value": "清空翻譯快取"
+    },
+    {
+      "name": "translate_cache_cleared",
+      "value": "已清理 %d 條翻譯快取"
+    },
+    {
+      "name": "translate_action",
+      "value": "翻譯"
+    },
+    {
+      "name": "translate_action_full",
+      "value": "翻譯全文"
+    },
+    {
+      "name": "translate_action_selection",
+      "value": "翻譯選中段"
+    },
+    {
+      "name": "translate_sheet_title",
+      "value": "對照翻譯"
+    },
+    {
+      "name": "translate_only_translation",
+      "value": "只看譯文"
+    },
+    {
+      "name": "translate_start",
+      "value": "開始翻譯"
+    },
+    {
+      "name": "translate_retry",
+      "value": "重新翻譯"
+    },
+    {
+      "name": "translate_loading",
+      "value": "正在翻譯…"
+    },
+    {
+      "name": "translate_cached",
+      "value": "來自快取"
+    },
+    {
+      "name": "translate_truncated",
+      "value": "正文較長，僅翻譯了前 20000 個字元。"
+    },
+    {
+      "name": "translate_source_to_target",
+      "value": "%s → %s"
+    },
+    {
+      "name": "translate_selection_title",
+      "value": "選中文字"
+    },
+    {
+      "name": "translate_error_disabled_title",
+      "value": "聯網翻譯未開啟"
+    },
+    {
+      "name": "translate_error_disabled_desc",
+      "value": "請先在「設定 → 正文翻譯」開啟開關並配置服務。"
+    },
+    {
+      "name": "translate_error_not_configured",
+      "value": "翻譯服務未配置完整（缺少 API Key 或端點）。"
+    },
+    {
+      "name": "translate_error_empty",
+      "value": "沒有可翻譯的正文。"
+    },
+    {
+      "name": "translate_error_same",
+      "value": "文章已經是目標語言。"
+    },
+    {
+      "name": "translate_error_network",
+      "value": "網路不可用或超時，請檢查網路後重試。"
+    },
+    {
+      "name": "translate_error_auth",
+      "value": "API Key 無效或已失效。"
+    },
+    {
+      "name": "translate_error_rate",
+      "value": "請求過於頻繁，請稍後再試。"
+    },
+    {
+      "name": "translate_error_server",
+      "value": "翻譯服務暫時不可用。"
+    },
+    {
+      "name": "translate_error_parse",
+      "value": "翻譯服務返回了無法解析的內容。"
+    },
+    {
+      "name": "translate_open_settings",
+      "value": "開啟翻譯設定"
+    },
+    {
+      "name": "translate_lang_zh",
+      "value": "中文"
+    },
+    {
+      "name": "translate_lang_en",
+      "value": "English"
+    },
+    {
+      "name": "translate_lang_ja",
+      "value": "日本語"
+    },
+    {
+      "name": "translate_lang_ko",
+      "value": "한국어"
+    },
+    {
+      "name": "translate_lang_ru",
+      "value": "Русский"
+    },
+    {
+      "name": "translate_lang_ar",
+      "value": "العربية"
+    },
+    {
+      "name": "translate_lang_und",
+      "value": "自動檢測"
+    },
+    {
+      "name": "translate_endpoint_save",
+      "value": "儲存"
+    },
+    {
+      "name": "translate_section_test",
+      "value": "連線測試"
+    },
+    {
+      "name": "privacy_settings_title",
+      "value": "隱私與資料"
+    },
+    {
+      "name": "privacy_settings_desc",
+      "value": "哪些資料留在本機、哪些可能外發，以及控制它們的全部開關。"
+    },
+    {
+      "name": "privacy_section_local",
+      "value": "留在本機的資料"
+    },
+    {
+      "name": "privacy_local_subscriptions_title",
+      "value": "訂閱與文章"
+    },
+    {
+      "name": "privacy_local_subscriptions_desc",
+      "value": "訂閱列表、文章快取與提取後的正文儲存在應用沙箱內。"
+    },
+    {
+      "name": "privacy_local_reading_title",
+      "value": "閱讀狀態"
+    },
+    {
+      "name": "privacy_local_reading_desc",
+      "value": "已讀 / 收藏 / 稍後讀 / 隱藏 / 進度與高亮預設只存本機。"
+    },
+    {
+      "name": "privacy_local_settings_title",
+      "value": "設定與快取"
+    },
+    {
+      "name": "privacy_local_settings_desc",
+      "value": "偏好、規則、標籤、智慧資料夾與翻譯快取都儲存在本機。"
+    },
+    {
+      "name": "privacy_section_outbound",
+      "value": "可能外發的資料"
+    },
+    {
+      "name": "privacy_out_fetch_title",
+      "value": "訂閱抓取、正文與圖片"
+    },
+    {
+      "name": "privacy_out_fetch_desc",
+      "value": "只請求訂閱 / 文章 / 圖片地址，不附帶賬號與閱讀狀態。"
+    },
+    {
+      "name": "privacy_out_remote_title",
+      "value": "賬號與服務同步"
+    },
+    {
+      "name": "privacy_out_remote_desc",
+      "value": "連線 FreshRSS / Tiny Tiny RSS / Miniflux 後，訂閱與閱讀狀態會同步到你配置的伺服器。"
+    },
+    {
+      "name": "privacy_out_translate_title",
+      "value": "正文翻譯"
+    },
+    {
+      "name": "privacy_out_translate_desc",
+      "value": "開啟後，正文文字會傳送到你選擇的翻譯服務（DeepL 或 LibreTranslate）。預設關閉。"
+    },
+    {
+      "name": "privacy_out_share_title",
+      "value": "系統分享與外部目標"
+    },
+    {
+      "name": "privacy_out_share_desc",
+      "value": "只有你點選分享時才投遞，不會在後臺傳送。"
+    },
+    {
+      "name": "privacy_out_backup_title",
+      "value": "備份與匯出"
+    },
+    {
+      "name": "privacy_out_backup_desc",
+      "value": "自動快照儲存在應用沙箱；手動匯出寫入你選擇的位置。"
+    },
+    {
+      "name": "privacy_section_permission",
+      "value": "許可權與授權"
+    },
+    {
+      "name": "privacy_perm_notification_title",
+      "value": "通知"
+    },
+    {
+      "name": "privacy_perm_notification_desc",
+      "value": "只在你開啟文章通知時申請系統授權。"
+    },
+    {
+      "name": "privacy_perm_background_title",
+      "value": "後臺抓取"
+    },
+    {
+      "name": "privacy_perm_background_desc",
+      "value": "由系統 WorkScheduler 排程；可關閉自動重新整理或在系統設定中撤銷。"
+    },
+    {
+      "name": "privacy_perm_network_title",
+      "value": "網路狀態"
+    },
+    {
+      "name": "privacy_perm_network_desc",
+      "value": "僅用於在本頁展示線上 / 離線狀態。"
+    },
+    {
+      "name": "privacy_perm_files_title",
+      "value": "檔案與相簿"
+    },
+    {
+      "name": "privacy_perm_files_desc",
+      "value": "只透過系統選擇器或應用沙箱訪問，不申請儲存許可權。"
+    },
+    {
+      "name": "privacy_perm_clipboard_title",
+      "value": "剪貼簿"
+    },
+    {
+      "name": "privacy_perm_clipboard_desc",
+      "value": "僅在你點選應用內系統 PasteButton 時讀取。"
+    },
+    {
+      "name": "privacy_status_granted",
+      "value": "已授權"
+    },
+    {
+      "name": "privacy_status_denied",
+      "value": "未授權"
+    },
+    {
+      "name": "privacy_network_online",
+      "value": "線上"
+    },
+    {
+      "name": "privacy_network_offline",
+      "value": "離線"
+    },
+    {
+      "name": "privacy_translation_on",
+      "value": "已開啟"
+    },
+    {
+      "name": "privacy_translation_off",
+      "value": "已關閉"
+    },
+    {
+      "name": "privacy_remote_connected",
+      "value": "已連線"
+    },
+    {
+      "name": "privacy_remote_disconnected",
+      "value": "未連線"
+    },
+    {
+      "name": "privacy_remote_unknown",
+      "value": "未配置"
+    },
+    {
+      "name": "privacy_section_control",
+      "value": "資料控制"
+    },
+    {
+      "name": "privacy_control_cache_title",
+      "value": "翻譯快取"
+    },
+    {
+      "name": "privacy_control_cache_desc",
+      "value": "本機已快取 %d 篇譯文"
+    },
+    {
+      "name": "privacy_control_clear_cache",
+      "value": "清空翻譯快取"
+    },
+    {
+      "name": "privacy_cache_cleared",
+      "value": "已清理 %d 條翻譯快取"
+    },
+    {
+      "name": "privacy_control_remote_entry",
+      "value": "管理賬號與服務"
+    },
+    {
+      "name": "privacy_control_backup_entry",
+      "value": "備份與恢復"
+    },
+    {
+      "name": "privacy_control_translate_entry",
+      "value": "翻譯設定"
+    },
+    {
+      "name": "privacy_footer_no_tracking",
+      "value": "本應用不包含廣告、統計或使用者行為追蹤 SDK；只在啟用對應功能時傳送必要資料。"
+    },
+    {
+      "name": "privacy_version",
+      "value": "隱私說明版本 2026-10"
+    },
+    {
+      "name": "privacy_out_cross_border_desc",
+      "value": "你配置的第三方服務端點可能位於其他地區，資料由該服務按其隱私政策處理。"
+    },
+    {
+      "name": "media_audio_label",
+      "value": "播客"
+    },
+    {
+      "name": "media_video_label",
+      "value": "影片"
+    },
+    {
+      "name": "media_audio_with_duration",
+      "value": "播客 · %s"
+    },
+    {
+      "name": "media_play_audio_feed",
+      "value": "播放播客（本源）"
+    },
+    {
+      "name": "media_play_audio_all",
+      "value": "播放全部未聽播客"
+    },
+    {
+      "name": "media_open_video",
+      "value": "開啟影片"
+    },
+    {
+      "name": "media_error",
+      "value": "無法播放該音訊"
+    },
+    {
+      "name": "media_pause",
+      "value": "暫停"
+    },
+    {
+      "name": "media_resume",
+      "value": "繼續"
+    },
+    {
+      "name": "media_stop",
+      "value": "停止"
+    },
+    {
+      "name": "media_rewind",
+      "value": "快退 15 秒"
+    },
+    {
+      "name": "media_forward",
+      "value": "快進 15 秒"
+    },
+    {
+      "name": "media_previous",
+      "value": "上一首"
+    },
+    {
+      "name": "media_next",
+      "value": "下一首"
+    },
+    {
+      "name": "media_speed",
+      "value": "播放速度"
+    },
+    {
+      "name": "privacy_perm_media_title",
+      "value": "後臺音訊"
+    },
+    {
+      "name": "privacy_perm_media_desc",
+      "value": "播客播放使用 AUDIO_PLAYBACK 連續任務與 AVSession，停止播放後立即結束。"
+    },
+    {
+      "name": "discover_entry",
+      "value": "發現"
+    },
+    {
+      "name": "discover_title",
+      "value": "發現與推薦"
+    },
+    {
+      "name": "discover_desc",
+      "value": "內建精選訂閱源、本地相似源推薦、RSSHub 路由助手與剪貼簿匯入；只有點選「訂閱」時才會發起抓取。"
+    },
+    {
+      "name": "discover_search_hint",
+      "value": "搜尋精選訂閱源"
+    },
+    {
+      "name": "discover_category_all",
+      "value": "全部"
+    },
+    {
+      "name": "discover_cat_hot",
+      "value": "熱門"
+    },
+    {
+      "name": "discover_cat_tech",
+      "value": "科技"
+    },
+    {
+      "name": "discover_cat_design",
+      "value": "設計"
+    },
+    {
+      "name": "discover_cat_business",
+      "value": "商業"
+    },
+    {
+      "name": "discover_cat_science",
+      "value": "科學"
+    },
+    {
+      "name": "discover_cat_indie",
+      "value": "獨立部落格"
+    },
+    {
+      "name": "discover_cat_cn",
+      "value": "中文"
+    },
+    {
+      "name": "discover_section_recommended",
+      "value": "為你推薦"
+    },
+    {
+      "name": "discover_recommend_hint",
+      "value": "根據你已訂閱源的主題標籤在本地計算，不上傳訂閱列表。"
+    },
+    {
+      "name": "discover_section_popular",
+      "value": "熱門站點榜"
+    },
+    {
+      "name": "discover_section_catalog",
+      "value": "精選目錄"
+    },
+    {
+      "name": "discover_subscribe",
+      "value": "訂閱"
+    },
+    {
+      "name": "discover_subscribed",
+      "value": "已訂閱"
+    },
+    {
+      "name": "discover_subscribing",
+      "value": "訂閱中…"
+    },
+    {
+      "name": "discover_subscribe_ok",
+      "value": "已訂閱：%s"
+    },
+    {
+      "name": "discover_subscribe_success",
+      "value": "訂閱成功"
+    },
+    {
+      "name": "discover_subscribe_duplicate",
+      "value": "已經訂閱過這個源"
+    },
+    {
+      "name": "discover_empty",
+      "value": "沒有匹配的訂閱源"
+    },
+    {
+      "name": "discover_section_import",
+      "value": "從剪貼簿匯入"
+    },
+    {
+      "name": "discover_import_desc",
+      "value": "貼上瀏覽器書籤或多條地址；每條都會按訂閱源校驗（支援從網頁自動發現 RSS）。"
+    },
+    {
+      "name": "discover_importing",
+      "value": "匯入中…"
+    },
+    {
+      "name": "discover_import_result",
+      "value": "成功 %d · 重複 %d · 失敗 %d"
+    },
+    {
+      "name": "discover_import_empty",
+      "value": "剪貼簿裡沒有可用地址"
+    },
+    {
+      "name": "discover_section_rsshub",
+      "value": "RSSHub 路由助手"
+    },
+    {
+      "name": "discover_rsshub_desc",
+      "value": "貼上站點或個人主頁地址，生成候選 RSSHub 路由；可換成自建例項，訂閱前不會發起抓取。"
+    },
+    {
+      "name": "discover_rsshub_base",
+      "value": "RSSHub 例項"
+    },
+    {
+      "name": "discover_rsshub_input_hint",
+      "value": "https://github.com/user/repo"
+    },
+    {
+      "name": "discover_rsshub_generate",
+      "value": "生成路由"
+    },
+    {
+      "name": "discover_rsshub_empty",
+      "value": "沒有匹配的路由。請換用支援的站點地址，或查閱 RSSHub 文件。"
+    },
+    {
+      "name": "discover_rsshub_kind_commits",
+      "value": "倉庫提交"
+    },
+    {
+      "name": "discover_rsshub_kind_releases",
+      "value": "版本釋出"
+    },
+    {
+      "name": "discover_rsshub_kind_issues",
+      "value": "Issue"
+    },
+    {
+      "name": "discover_rsshub_kind_video",
+      "value": "影片"
+    },
+    {
+      "name": "discover_rsshub_kind_user_video",
+      "value": "使用者影片"
+    },
+    {
+      "name": "discover_rsshub_kind_channel",
+      "value": "頻道"
+    },
+    {
+      "name": "discover_rsshub_kind_user",
+      "value": "使用者"
+    },
+    {
+      "name": "discover_rsshub_kind_timeline",
+      "value": "使用者時間線"
+    },
+    {
+      "name": "discover_rsshub_kind_activity",
+      "value": "使用者動態"
+    },
+    {
+      "name": "discover_rsshub_kind_articles",
+      "value": "使用者文章"
+    },
+    {
+      "name": "discover_rsshub_kind_posts",
+      "value": "使用者帖子"
+    },
+    {
+      "name": "discover_rsshub_kind_route",
+      "value": "路由"
+    },
+    {
+      "name": "diagnostics_entry",
+      "value": "診斷與效能"
+    },
+    {
+      "name": "diagnostics_title",
+      "value": "診斷與效能"
+    },
+    {
+      "name": "diagnostics_desc",
+      "value": "僅儲存在本機的啟動 / 抓取耗時、失敗歸類、源健康與上次退出原因，不上報任何資料。"
+    },
+    {
+      "name": "diagnostics_section_startup",
+      "value": "啟動與上次退出"
+    },
+    {
+      "name": "diagnostics_first_screen",
+      "value": "啟動到首屏"
+    },
+    {
+      "name": "diagnostics_started_at",
+      "value": "本次啟動時間"
+    },
+    {
+      "name": "diagnostics_last_exit",
+      "value": "上次退出原因"
+    },
+    {
+      "name": "diagnostics_last_exit_detail",
+      "value": "上次退出詳情"
+    },
+    {
+      "name": "diagnostics_exit_unknown",
+      "value": "未知"
+    },
+    {
+      "name": "diagnostics_exit_normal",
+      "value": "正常退出"
+    },
+    {
+      "name": "diagnostics_exit_js",
+      "value": "JS 異常"
+    },
+    {
+      "name": "diagnostics_exit_cpp",
+      "value": "Native 崩潰"
+    },
+    {
+      "name": "diagnostics_exit_freeze",
+      "value": "應用卡死"
+    },
+    {
+      "name": "diagnostics_exit_resource",
+      "value": "資源管控"
+    },
+    {
+      "name": "diagnostics_exit_upgrade",
+      "value": "應用升級"
+    },
+    {
+      "name": "diagnostics_exit_user",
+      "value": "使用者或系統請求"
+    },
+    {
+      "name": "diagnostics_exit_other",
+      "value": "其他"
+    },
+    {
+      "name": "diagnostics_no_data",
+      "value": "暫無記錄"
+    },
+    {
+      "name": "diagnostics_section_fetch",
+      "value": "抓取效能"
+    },
+    {
+      "name": "diagnostics_fetch_last",
+      "value": "上次抓取"
+    },
+    {
+      "name": "diagnostics_fetch_duration",
+      "value": "總耗時"
+    },
+    {
+      "name": "diagnostics_fetch_sources",
+      "value": "訂閱源"
+    },
+    {
+      "name": "diagnostics_fetch_ok",
+      "value": "成功"
+    },
+    {
+      "name": "diagnostics_fetch_failed",
+      "value": "失敗"
+    },
+    {
+      "name": "diagnostics_fetch_avg",
+      "value": "平均每源"
+    },
+    {
+      "name": "diagnostics_session_runs",
+      "value": "本次程序抓取輪數"
+    },
+    {
+      "name": "diagnostics_section_failure",
+      "value": "失敗歸類"
+    },
+    {
+      "name": "diagnostics_fail_timeout",
+      "value": "超時"
+    },
+    {
+      "name": "diagnostics_fail_network",
+      "value": "網路"
+    },
+    {
+      "name": "diagnostics_fail_http",
+      "value": "HTTP 狀態"
+    },
+    {
+      "name": "diagnostics_fail_content",
+      "value": "內容或解析"
+    },
+    {
+      "name": "diagnostics_fail_other",
+      "value": "其他"
+    },
+    {
+      "name": "diagnostics_section_slow",
+      "value": "最慢的源"
+    },
+    {
+      "name": "diagnostics_section_health",
+      "value": "源健康"
+    },
+    {
+      "name": "diagnostics_health_ok",
+      "value": "全部訂閱源均正常。"
+    },
+    {
+      "name": "diagnostics_health_failures",
+      "value": "連續失敗 %d 次"
+    },
+    {
+      "name": "diagnostics_retry",
+      "value": "重試全部源"
+    },
+    {
+      "name": "diagnostics_retrying",
+      "value": "重試中…"
+    },
+    {
+      "name": "diagnostics_retry_done",
+      "value": "已重試 %d 個源，失敗 %d 個"
+    },
+    {
+      "name": "diagnostics_section_runtime",
+      "value": "執行時"
+    },
+    {
+      "name": "diagnostics_runtime_articles",
+      "value": "本地文章"
+    },
+    {
+      "name": "diagnostics_runtime_cached",
+      "value": "正文快取"
+    },
+    {
+      "name": "diagnostics_runtime_cached_value",
+      "value": "%d 篇 · %d 字元"
+    },
+    {
+      "name": "diagnostics_runtime_virtualization",
+      "value": "列表虛擬化"
+    },
+    {
+      "name": "diagnostics_runtime_virtualization_value",
+      "value": "LazyForEach · 每頁 %d 條"
+    },
+    {
+      "name": "diagnostics_runtime_fps",
+      "value": "滾動幀率"
+    },
+    {
+      "name": "diagnostics_runtime_fps_value",
+      "value": "%d fps · 最差 %d ms"
+    },
+    {
+      "name": "diagnostics_runtime_indexes",
+      "value": "資料庫索引"
+    },
+    {
+      "name": "diagnostics_runtime_indexes_value",
+      "value": "feed_id + published_at、is_read、is_starred、highlights.article_id"
+    },
+    {
+      "name": "diagnostics_section_record",
+      "value": "診斷記錄"
+    },
+    {
+      "name": "diagnostics_toggle",
+      "value": "記錄本地診斷"
+    },
+    {
+      "name": "diagnostics_toggle_desc",
+      "value": "關閉後不再記錄啟動與抓取耗時；上次退出原因仍由系統提供。"
+    },
+    {
+      "name": "diagnostics_clear",
+      "value": "清除診斷記錄"
+    },
+    {
+      "name": "diagnostics_cleared",
+      "value": "診斷記錄已清除"
+    },
+    {
+      "name": "diagnostics_privacy",
+      "value": "所有指標只寫入應用私有偏好庫，未實現任何埋點上報。"
+    },
+    {
+      "name": "remote_field_service",
+      "value": "服務"
+    },
+    {
+      "name": "remote_service_greader",
+      "value": "FreshRSS / TTRSS / Miniflux"
+    },
+    {
+      "name": "remote_service_feedbin",
+      "value": "Feedbin"
+    },
+    {
+      "name": "remote_status_service_value_feedbin",
+      "value": "Feedbin"
+    },
+    {
+      "name": "remote_field_username_email",
+      "value": "郵箱"
+    },
+    {
+      "name": "remote_feedbin_base_hint",
+      "value": "https://api.feedbin.com"
+    },
+    {
+      "name": "remote_feedbin_hint",
+      "value": "Feedbin 使用 HTTPS + Basic Auth，請填寫 Feedbin 賬號郵箱和密碼。"
+    },
+    {
+      "name": "remote_status_mode",
+      "value": "訂閱模式"
+    },
+    {
+      "name": "remote_mode_unset",
+      "value": "未設定"
+    },
+    {
+      "name": "remote_mode_merge",
+      "value": "合併（保留本地獨有）"
+    },
+    {
+      "name": "remote_mode_migrated",
+      "value": "已遷入遠端"
+    },
+    {
+      "name": "remote_mode_remote_only",
+      "value": "僅遠端"
+    },
+    {
+      "name": "remote_migration_title",
+      "value": "訂閱遷移"
+    },
+    {
+      "name": "remote_migration_entry",
+      "value": "訂閱遷移"
+    },
+    {
+      "name": "remote_migration_desc",
+      "value": "選擇本地訂閱與遠端服務的共存方式；後續同步按所選模式執行。"
+    },
+    {
+      "name": "remote_migration_loading",
+      "value": "正在讀取遠端訂閱…"
+    },
+    {
+      "name": "remote_migration_section_preview",
+      "value": "概覽"
+    },
+    {
+      "name": "remote_migration_local_total",
+      "value": "本地訂閱"
+    },
+    {
+      "name": "remote_migration_remote_total",
+      "value": "遠端訂閱"
+    },
+    {
+      "name": "remote_migration_overlap",
+      "value": "本地與遠端都有"
+    },
+    {
+      "name": "remote_migration_local_only",
+      "value": "僅本地"
+    },
+    {
+      "name": "remote_migration_section_mode",
+      "value": "模式"
+    },
+    {
+      "name": "remote_migration_mode_merge",
+      "value": "合併"
+    },
+    {
+      "name": "remote_migration_mode_merge_desc",
+      "value": "把遠端源加到本地，同時保留本地獨有源。"
+    },
+    {
+      "name": "remote_migration_mode_migrated",
+      "value": "遷入遠端"
+    },
+    {
+      "name": "remote_migration_mode_migrated_desc",
+      "value": "把每個本地獨有源訂閱到遠端服務，本地不刪除任何資料。"
+    },
+    {
+      "name": "remote_migration_mode_remote_only",
+      "value": "僅遠端"
+    },
+    {
+      "name": "remote_migration_mode_remote_only_desc",
+      "value": "遠端為權威；本地獨有源停用但保留歷史，切回「合併」即可恢復。"
+    },
+    {
+      "name": "remote_migration_note",
+      "value": "模式按賬號儲存，並在後續同步中持續生效。"
+    },
+    {
+      "name": "remote_migration_apply",
+      "value": "應用模式"
+    },
+    {
+      "name": "remote_migration_applying",
+      "value": "應用中…"
+    },
+    {
+      "name": "remote_migration_done_merge",
+      "value": "已切換為合併模式"
+    },
+    {
+      "name": "remote_migration_done_migrated",
+      "value": "已遷入 %d 個本地源"
+    },
+    {
+      "name": "remote_migration_done_remote_only",
+      "value": "已停用 %d 個本地獨有源"
+    },
+    {
+      "name": "remote_migration_partial",
+      "value": "%d 個源遷移失敗，模式未變更。"
+    },
+    {
+      "name": "remote_migration_retry",
+      "value": "重試"
+    },
+    {
+      "name": "remote_migration_prompt_title",
+      "value": "發現本地獨有訂閱"
+    },
+    {
+      "name": "remote_migration_prompt_message",
+      "value": "有 %d 個本地獨有源可以遷移到遠端服務。"
+    },
+    {
+      "name": "remote_migration_later",
+      "value": "稍後"
+    },
+    {
+      "name": "remote_migration_go",
+      "value": "去遷移"
+    },
+    {
+      "name": "remote_error_subscription",
+      "value": "遠端服務無法訂閱這個地址。"
+    },
+    {
+      "name": "a11y_article_read",
+      "value": "已讀"
+    },
+    {
+      "name": "a11y_article_unread",
+      "value": "未讀"
+    },
+    {
+      "name": "a11y_article_starred",
+      "value": "已收藏"
+    },
+    {
+      "name": "shortcut_hint",
+      "value": "鍵盤：j/k 上一篇 / 下一篇 · m 已讀 · s 收藏 · / 搜尋 · Esc 返回"
+    },
+    {
+      "name": "a11y_find_prev",
+      "value": "上一處"
+    },
+    {
+      "name": "a11y_find_next",
+      "value": "下一處"
+    },
+    {
+      "name": "a11y_find_close",
+      "value": "關閉查詢"
+    },
+    {
+      "name": "a11y_clear_scope",
+      "value": "清除來源篩選"
+    },
+    {
+      "name": "a11y_row_selected",
+      "value": "已選中"
+    },
+    {
+      "name": "a11y_row_not_selected",
+      "value": "未選中"
+    }
+  ]
+}

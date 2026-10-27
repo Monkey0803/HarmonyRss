@@ -27,6 +27,7 @@ import {
   HdsBarWidthRangeOptions
 } from '@kit.UIDesignKit';
 import { display, SymbolGlyphModifier } from '@kit.ArkUI';
+import { KeyCode } from '@kit.InputKit';
 import { Article } from '../model/Feed';
 import { GroupSource } from '../model/Dedupe';
 import { feedViewModel } from '../viewmodel/FeedViewModel';
@@ -955,6 +956,63 @@ export struct ArticleDetailView {
    * 原地切换到上一篇 / 下一篇 / 下一条未读（不重新 push 路由）。
    * slideFrom：1 = 新内容从右侧滑入（下一篇），-1 = 从左侧滑入（上一篇）。
    */
+  /**
+   * 详情页键盘快捷键（仅在无半模态 / 查找条时生效）：
+   * j / k = 下 / 上篇，m = 切换已读，s = 切换收藏，/ = 搜索，Esc = 关闭查找或返回。
+   * 返回 true 表示事件已消费，阻止继续冒泡。
+   */
+  private handleShortcut(event: KeyEvent): boolean {
+    if (event.type !== KeyType.Down) {
+      return false;
+    }
+    const code: number = event.keyCode;
+    if (code === KeyCode.KEYCODE_ESCAPE || code === 1) {
+      if (this.findOpen) {
+        this.closeFind();
+      } else if (!this.showSheet) {
+        this.navPathStack.pop();
+      }
+      return true;
+    }
+    if (this.findOpen || this.showSheet) {
+      // 查找条 / 半模态里正在输入或选择，不劫持按键。
+      return false;
+    }
+    const article: Article | undefined = feedViewModel.currentArticle();
+    if (article === undefined) {
+      return false;
+    }
+    if (code === KeyCode.KEYCODE_J || code === 36) {
+      const next: string = feedViewModel.nextArticleId();
+      if (next.length === 0) {
+        return false;
+      }
+      this.openRelative(next, 1);
+      return true;
+    }
+    if (code === KeyCode.KEYCODE_K || code === 37) {
+      const prev: string = feedViewModel.prevArticleId();
+      if (prev.length === 0) {
+        return false;
+      }
+      this.openRelative(prev, -1);
+      return true;
+    }
+    if (code === KeyCode.KEYCODE_M || code === 50) {
+      feedViewModel.toggleRead(article.id);
+      return true;
+    }
+    if (code === KeyCode.KEYCODE_S || code === 31) {
+      feedViewModel.toggleStar(article.id);
+      return true;
+    }
+    if (code === KeyCode.KEYCODE_SLASH || code === 53) {
+      this.navPathStack.pushPath(new NavPathInfo(RouterConstants.PAGE_SEARCH, ''));
+      return true;
+    }
+    return false;
+  }
+
   private openRelative(id: string, slideFrom: number = 1): void {
     if (id.length === 0) {
       return;
@@ -1968,6 +2026,10 @@ export struct ArticleDetailView {
           Web({ src: '', controller: this.readerController })
             .width('100%')
             .height('100%')
+            // Reader Web 通常会拿到焦点：在这里也挂快捷键，避免只依赖页面根节点焦点。
+            .onKeyEvent((event: KeyEvent): boolean => {
+              return this.handleShortcut(event);
+            })
             .darkMode(WebDarkMode.Auto)
             .javaScriptAccess(true)
             .domStorageAccess(false)
@@ -2230,6 +2292,7 @@ export struct ArticleDetailView {
         SymbolGlyph($r('sys.symbol.chevron_up'))
           .fontSize($r('app.float.icon_size_small'))
           .fontColor([this.findCount > 0 ? $r('app.color.hm_brand') : $r('app.color.hm_text_secondary')])
+          .accessibilityText($r('app.string.a11y_find_prev'))
           .enabled(this.findCount > 0)
           .onClick(() => {
             this.stepFind(-1);
@@ -2238,6 +2301,7 @@ export struct ArticleDetailView {
         SymbolGlyph($r('sys.symbol.chevron_down'))
           .fontSize($r('app.float.icon_size_small'))
           .fontColor([this.findCount > 0 ? $r('app.color.hm_brand') : $r('app.color.hm_text_secondary')])
+          .accessibilityText($r('app.string.a11y_find_next'))
           .enabled(this.findCount > 0)
           .onClick(() => {
             this.stepFind(1);
@@ -2246,6 +2310,7 @@ export struct ArticleDetailView {
         SymbolGlyph($r('sys.symbol.xmark'))
           .fontSize($r('app.float.icon_size_small'))
           .fontColor([$r('app.color.hm_text_secondary')])
+          .accessibilityText($r('app.string.a11y_find_close'))
           .onClick(() => {
             this.closeFind();
           })
@@ -2746,6 +2811,12 @@ export struct ArticleDetailView {
     }
     .width('100%')
     .height('100%')
+    // 详情页键盘快捷键：页面根节点默认持焦；点击正文等子组件后仍会向上冒泡到这里。
+    .focusable(true)
+    .defaultFocus(true)
+    .onKeyEvent((event: KeyEvent): boolean => {
+      return this.handleShortcut(event);
+    })
     .backgroundColor($r('app.color.hm_page_transparent'))
     .bindSheet(this.showSheet, this.SheetContent(), MaterialController.sheetOptions({
       // 分享面板内容较长（动作 / 目标 / 模板 / 导出四组），用大面板避免挤在中段要一直滚。

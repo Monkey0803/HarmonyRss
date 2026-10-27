@@ -16,6 +16,7 @@ export enum ThemeMode {
 export enum AppLanguage {
   SYSTEM = 'system',
   ZH = 'zh',
+  ZH_TW = 'zhTW',
   EN = 'en'
 }
 

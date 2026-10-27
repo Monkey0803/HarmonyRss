@@ -41,6 +41,30 @@
       "value": "设置"
     },
     {
+      "name": "settings_entry_look",
+      "value": "外观与语言"
+    },
+    {
+      "name": "settings_entry_material",
+      "value": "材质与动效"
+    },
+    {
+      "name": "settings_entry_reading",
+      "value": "阅读与列表"
+    },
+    {
+      "name": "settings_entry_feed",
+      "value": "订阅与通知"
+    },
+    {
+      "name": "settings_entry_system",
+      "value": "系统与隐私"
+    },
+    {
+      "name": "settings_entry_storage",
+      "value": "存储与备份"
+    },
+    {
       "name": "section_appearance",
       "value": "外观"
     },
@@ -627,6 +651,10 @@
     {
       "name": "opt_chinese",
       "value": "简体中文"
+    },
+    {
+      "name": "opt_chinese_traditional",
+      "value": "繁體中文"
     },
     {
       "name": "opt_english",
@@ -3999,6 +4027,46 @@
     {
       "name": "remote_error_subscription",
       "value": "远端服务无法订阅这个地址。"
+    },
+    {
+      "name": "a11y_article_read",
+      "value": "已读"
+    },
+    {
+      "name": "a11y_article_unread",
+      "value": "未读"
+    },
+    {
+      "name": "a11y_article_starred",
+      "value": "已收藏"
+    },
+    {
+      "name": "shortcut_hint",
+      "value": "键盘：j/k 上一篇 / 下一篇 · m 已读 · s 收藏 · / 搜索 · Esc 返回"
+    },
+    {
+      "name": "a11y_find_prev",
+      "value": "上一处"
+    },
+    {
+      "name": "a11y_find_next",
+      "value": "下一处"
+    },
+    {
+      "name": "a11y_find_close",
+      "value": "关闭查找"
+    },
+    {
+      "name": "a11y_clear_scope",
+      "value": "清除来源筛选"
+    },
+    {
+      "name": "a11y_row_selected",
+      "value": "已选中"
+    },
+    {
+      "name": "a11y_row_not_selected",
+      "value": "未选中"
     }
   ]
 }

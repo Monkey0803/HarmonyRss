@@ -1,5 +1,5 @@
 /*
- * LocaleController.ets — 语言（跟随系统 / 简体中文 / 英语）。
+ * LocaleController.ets — 语言（跟随系统 / 简体中文 / 繁體中文 / 英语）。
  *
  * `setAppPreferredLanguage('default')` = 跟随系统。但需求要求：当系统语言既不是英语也
  * 不是简体中文时，默认使用英语 —— 所以「跟随系统」在这种系统语言下改成显式 'en'。
@@ -14,6 +14,10 @@ export class LocaleController {
     try {
       if (mode === AppLanguage.ZH) {
         i18n.System.setAppPreferredLanguage('zh-Hans');
+        return;
+      }
+      if (mode === AppLanguage.ZH_TW) {
+        i18n.System.setAppPreferredLanguage('zh-Hant');
         return;
       }
       if (mode === AppLanguage.EN) {

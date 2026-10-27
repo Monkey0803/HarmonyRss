@@ -53,7 +53,7 @@ export default function shareTemplatesTest() {
     it('render_empty_fields_produce_empty_text', 0, () => {
       const ctx: ShareContext = new ShareContext(ShareKind.HIGHLIGHT, '', '', '', '', [], '', 'quote', '', 'a1', '');
       const template: ShareTemplate = new ShareTemplate('t1', 'n', '[{title}][{url}][{tags}]', 0);
-      expect(render(template, ctx)).assertEqual('[][]');
+      expect(render(template, ctx)).assertEqual('[][][]');
     });
 
     it('render_highlight_tags_is_empty_string', 0, () => {

@@ -56,6 +56,19 @@ export struct ArticleListItem {
     return this.article.progressRatio > 0.02 && this.article.progressRatio < 0.98;
   }
 
+  /** 屏幕阅读器使用的列表行状态说明（已收藏优先于已读 / 未读）。 */
+  private accessibilityState(): Resource {
+    if (this.selecting) {
+      return this.picked ? $r('app.string.a11y_row_selected') : $r('app.string.a11y_row_not_selected');
+    }
+    if (this.article.starred) {
+      return $r('app.string.a11y_article_starred');
+    }
+    return this.article.read
+      ? $r('app.string.a11y_article_read')
+      : $r('app.string.a11y_article_unread');
+  }
+
   /** 是否是多来源合并出的主条（duplicateCount 含自己，>1 表示还有别的源收录）。 */
   private merged(): boolean {
     return this.article.duplicateCount > 1;
@@ -229,6 +242,7 @@ export struct ArticleListItem {
       ? $r('app.color.hm_menu_item_selected')
       : $r('app.color.hm_card_background'))
     .borderRadius($r('app.float.radius_card'))
+    .accessibilityDescription(this.accessibilityState())
     .onClick(() => {
       this.onOpen();
     })

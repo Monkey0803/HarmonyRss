@@ -41,6 +41,30 @@
       "value": "Settings"
     },
     {
+      "name": "settings_entry_look",
+      "value": "Look & language"
+    },
+    {
+      "name": "settings_entry_material",
+      "value": "Materials & motion"
+    },
+    {
+      "name": "settings_entry_reading",
+      "value": "Reading & lists"
+    },
+    {
+      "name": "settings_entry_feed",
+      "value": "Feeds & alerts"
+    },
+    {
+      "name": "settings_entry_system",
+      "value": "System & privacy"
+    },
+    {
+      "name": "settings_entry_storage",
+      "value": "Storage & backup"
+    },
+    {
       "name": "section_appearance",
       "value": "Appearance"
     },
@@ -627,6 +651,10 @@
     {
       "name": "opt_chinese",
       "value": "简体中文"
+    },
+    {
+      "name": "opt_chinese_traditional",
+      "value": "繁體中文"
     },
     {
       "name": "opt_english",
@@ -3999,6 +4027,46 @@
     {
       "name": "remote_error_subscription",
       "value": "The remote service could not subscribe this feed."
+    },
+    {
+      "name": "a11y_article_read",
+      "value": "Read"
+    },
+    {
+      "name": "a11y_article_unread",
+      "value": "Unread"
+    },
+    {
+      "name": "a11y_article_starred",
+      "value": "Starred"
+    },
+    {
+      "name": "shortcut_hint",
+      "value": "Keyboard: j/k previous/next · m read · s star · / search · Esc back"
+    },
+    {
+      "name": "a11y_find_prev",
+      "value": "Previous match"
+    },
+    {
+      "name": "a11y_find_next",
+      "value": "Next match"
+    },
+    {
+      "name": "a11y_find_close",
+      "value": "Close search"
+    },
+    {
+      "name": "a11y_clear_scope",
+      "value": "Clear source filter"
+    },
+    {
+      "name": "a11y_row_selected",
+      "value": "Selected"
+    },
+    {
+      "name": "a11y_row_not_selected",
+      "value": "Not selected"
     }
   ]
 }

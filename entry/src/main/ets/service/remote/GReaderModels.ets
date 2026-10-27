@@ -17,11 +17,11 @@ interface RawSubscriptionCategory {
 interface RawSubscription {
   id?: string;
   title?: string;
-  categories?: RawSubscriptionCategory[];
+  categories?: RawSubscriptionCategory[] | null;
 }
 
 interface RawSubscriptionList {
-  subscriptions?: RawSubscription[];
+  subscriptions?: RawSubscription[] | null;
 }
 
 /** 文章列表响应。 */
@@ -43,16 +43,16 @@ interface RawItem {
   title?: string;
   published?: number;
   updated?: number;
-  alternate?: RawAlternate[];
-  summary?: RawContentBlock;
-  content?: RawContentBlock;
+  alternate?: RawAlternate[] | null;
+  summary?: RawContentBlock | null;
+  content?: RawContentBlock | null;
   author?: string;
-  origin?: RawOrigin;
+  origin?: RawOrigin | null;
   categories?: string[];
 }
 
 interface RawContents {
-  items?: RawItem[];
+  items?: RawItem[] | null;
   continuation?: string | number;
 }
 
@@ -62,7 +62,7 @@ interface RawItemRef {
 }
 
 interface RawIdList {
-  itemRefs?: RawItemRef[];
+  itemRefs?: RawItemRef[] | null;
   continuation?: string | number;
 }
 
@@ -132,8 +132,8 @@ export function parseSubscriptions(body: string): RemoteFeed[] {
   } catch (err) {
     return feeds;
   }
-  const list: RawSubscription[] | undefined = raw.subscriptions;
-  if (list === undefined) {
+  const list: RawSubscription[] | undefined | null = raw.subscriptions;
+  if (list === undefined || list === null) {
     return feeds;
   }
   for (let i = 0; i < list.length; i += 1) {
@@ -147,8 +147,8 @@ export function parseSubscriptions(body: string): RemoteFeed[] {
       continue;
     }
     let group: string = '';
-    const categories: RawSubscriptionCategory[] | undefined = item.categories;
-    if (categories !== undefined && categories.length > 0) {
+    const categories: RawSubscriptionCategory[] | undefined | null = item.categories;
+    if (categories !== undefined && categories !== null && categories.length > 0) {
       group = textOf(categories[0].label);
     }
     const title: string = textOf(item.title);
@@ -170,12 +170,12 @@ export function parseContents(body: string): RemoteContentsPage {
   } catch (err) {
     return new RemoteContentsPage(items, continuation);
   }
-  if (raw.continuation !== undefined) {
+  if (raw.continuation !== undefined && raw.continuation !== null) {
     continuation = typeof raw.continuation === 'string'
       ? raw.continuation : raw.continuation.toString();
   }
-  const list: RawItem[] | undefined = raw.items;
-  if (list === undefined) {
+  const list: RawItem[] | undefined | null = raw.items;
+  if (list === undefined || list === null) {
     return new RemoteContentsPage(items, continuation);
   }
   for (let i = 0; i < list.length; i += 1) {
@@ -184,17 +184,19 @@ export function parseContents(body: string): RemoteContentsPage {
     if (remoteId.length === 0) {
       continue;
     }
-    const origin: RawOrigin | undefined = item.origin;
-    const feedUrl: string = origin !== undefined ? textOf(origin.streamId) : '';
-    const feedTitle: string = origin !== undefined ? textOf(origin.title) : '';
+    const origin: RawOrigin | undefined | null = item.origin;
+    const feedUrl: string = origin !== undefined && origin !== null ? textOf(origin.streamId) : '';
+    const feedTitle: string = origin !== undefined && origin !== null ? textOf(origin.title) : '';
     let link: string = '';
-    const alternate: RawAlternate[] | undefined = item.alternate;
-    if (alternate !== undefined && alternate.length > 0) {
+    const alternate: RawAlternate[] | undefined | null = item.alternate;
+    if (alternate !== undefined && alternate !== null && alternate.length > 0) {
       link = textOf(alternate[0].href);
     }
     const title: string = textOf(item.title);
-    const summaryRaw: string = item.summary !== undefined ? textOf(item.summary.content) : '';
-    const contentRaw: string = item.content !== undefined ? textOf(item.content.content) : '';
+    const summaryRaw: string = item.summary !== undefined && item.summary !== null
+      ? textOf(item.summary.content) : '';
+    const contentRaw: string = item.content !== undefined && item.content !== null
+      ? textOf(item.content.content) : '';
     const article: RemoteArticle = new RemoteArticle(
       remoteId, feedUrl, feedTitle,
       title.length > 0 ? title : (link.length > 0 ? link : remoteId),
@@ -226,12 +228,12 @@ export function parseIdPage(body: string): RemoteIdPage {
   } catch (err) {
     return new RemoteIdPage(ids, continuation);
   }
-  if (raw.continuation !== undefined) {
+  if (raw.continuation !== undefined && raw.continuation !== null) {
     continuation = typeof raw.continuation === 'string'
       ? raw.continuation : raw.continuation.toString();
   }
-  const refs: RawItemRef[] | undefined = raw.itemRefs;
-  if (refs === undefined) {
+  const refs: RawItemRef[] | undefined | null = raw.itemRefs;
+  if (refs === undefined || refs === null) {
     return new RemoteIdPage(ids, continuation);
   }
   for (let i = 0; i < refs.length; i += 1) {

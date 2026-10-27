@@ -71,6 +71,7 @@ export const THEME_OPTIONS: ChoiceSet = new ChoiceSet([
 export const LANGUAGE_OPTIONS: ChoiceSet = new ChoiceSet([
   new ChoiceOption(AppLanguage.SYSTEM, $r('app.string.opt_follow_system')),
   new ChoiceOption(AppLanguage.ZH, $r('app.string.opt_chinese')),
+  new ChoiceOption(AppLanguage.ZH_TW, $r('app.string.opt_chinese_traditional')),
   new ChoiceOption(AppLanguage.EN, $r('app.string.opt_english'))
 ], AppLanguage.SYSTEM);
 

@@ -29,6 +29,7 @@ import { ShareContext } from '../model/Share';
 import { shareService } from '../service/ShareService';
 import { shareViewModel } from '../viewmodel/ShareViewModel';
 import { frameRateSampler } from '../service/FrameRateSampler';
+import { KeyCode } from '@kit.InputKit';
 
 @ComponentV2
 export struct HomeTabView {
@@ -73,6 +74,18 @@ export struct HomeTabView {
     // 下拉刷新是用户手动动作：force=true 绕过源级间隔（停用源仍然跳过）。
     await feedViewModel.refreshAll(true);
     this.refreshing = false;
+  }
+
+  /** 列表快捷键：/ 打开全局搜索（其余按键留给系统 / 详情页）。 */
+  private handleListKey(event: KeyEvent): boolean {
+    if (event.type !== KeyType.Down) {
+      return false;
+    }
+    if (event.keyCode === KeyCode.KEYCODE_SLASH || event.keyCode === 53) {
+      this.navPathStack.pushPath(new NavPathInfo(RouterConstants.PAGE_SEARCH, ''));
+      return true;
+    }
+    return false;
   }
 
   private openArticle(article: Article): void {
@@ -201,6 +214,7 @@ export struct HomeTabView {
           SymbolGlyph($r('sys.symbol.xmark'))
             .fontSize($r('app.float.font_size_caption'))
             .fontColor([$r('app.color.hm_text_secondary')])
+            .accessibilityText($r('app.string.a11y_clear_scope'))
             .onClick(() => {
               feedViewModel.clearScope();
             })
@@ -625,6 +639,13 @@ export struct HomeTabView {
       .width('100%')
       .height('100%')
       .scrollBar(BarState.Off)
+      // 键盘：列表持焦时 / 直接打开搜索；触屏点击空白处也会让列表重新获得焦点。
+      .focusable(true)
+      .focusOnTouch(true)
+      .defaultFocus(true)
+      .onKeyEvent((event: KeyEvent): boolean => {
+        return this.handleListKey(event);
+      })
       // 列表帧率采样：用户开始滚动时开一个 2s 窗口（30s 内最多一次，诊断关闭时跳过）。
       .onScrollStart(() => {
         frameRateSampler.start();
