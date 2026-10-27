@@ -631,34 +631,13 @@ struct Index {
     }
   }
 
-  /**
-   * 页签栏的一个入口（自绘）。
-   * withBadge=true 时在图标右上角挂未读角标：数量直接读 feedViewModel.unreadTotal，
-   * 读的是 @ObservedV2 单例的 @Trace 属性，因此未读数变化会驱动这里重建。
-   */
+  /** 页签栏的一个入口（自绘）。 */
   @Builder
-  barBuilder(icon: Resource, label: ResourceStr, active: boolean, withBadge: boolean) {
+  barBuilder(icon: Resource, label: ResourceStr, active: boolean) {
     Column({ space: $r('app.float.space_xxs') }) {
-      if (withBadge && feedViewModel.unreadTotal > 0) {
-        Badge({
-          count: feedViewModel.unreadTotal,
-          maxCount: CommonConstants.BADGE_MAX_COUNT,
-          position: BadgePosition.RightTop,
-          style: {
-            fontSize: $r('app.float.badge_font_size'),
-            badgeSize: $r('app.float.badge_size'),
-            badgeColor: $r('app.color.hm_brand')
-          }
-        }) {
-          SymbolGlyph(icon)
-            .fontSize($r('app.float.tab_icon_size'))
-            .fontColor([active ? $r('app.color.hm_brand') : $r('app.color.hm_text_secondary')])
-        }
-      } else {
-        SymbolGlyph(icon)
-          .fontSize($r('app.float.tab_icon_size'))
-          .fontColor([active ? $r('app.color.hm_brand') : $r('app.color.hm_text_secondary')])
-      }
+      SymbolGlyph(icon)
+        .fontSize($r('app.float.tab_icon_size'))
+        .fontColor([active ? $r('app.color.hm_brand') : $r('app.color.hm_text_secondary')])
       Text(label)
         .fontSize($r('app.float.tab_font_size'))
         .fontColor(active ? $r('app.color.hm_brand') : $r('app.color.hm_text_secondary'))
@@ -879,26 +858,26 @@ struct Index {
             })
           }
           .tabBar(this.barBuilder($r('sys.symbol.house'), $r('app.string.tab_home'),
-            this.currentTab === TabIndex.HOME, true))
+            this.currentTab === TabIndex.HOME))
 
           TabContent() {
             SubscriptionsView({ navPathStack: this.navPathStack, scroller: this.subsScroller })
           }
           .tabBar(this.barBuilder($r('sys.symbol.folder'), $r('app.string.tab_subs'),
-            this.currentTab === TabIndex.SUBSCRIPTIONS, false))
+            this.currentTab === TabIndex.SUBSCRIPTIONS))
 
           TabContent() {
             SettingsTabView({ navPathStack: this.navPathStack, scroller: this.settingsScroller })
           }
           .tabBar(this.barBuilder($r('sys.symbol.gearshape'), $r('app.string.tab_settings'),
-            this.currentTab === TabIndex.SETTINGS, false))
+            this.currentTab === TabIndex.SETTINGS))
 
           if (IMAGE_DOMAIN) {
             TabContent() {
               ImageTabView()
             }
             .tabBar(this.barBuilder($r('sys.symbol.picture'), $r('app.string.tab_images'),
-              this.currentTab === TabIndex.IMAGES, false))
+              this.currentTab === TabIndex.IMAGES))
           }
         }
         .barPosition(BarPosition.End)
