@@ -511,6 +511,8 @@ export struct SearchView {
     .width('100%')
     .height('100%')
     .scrollBar(BarState.Off)
+    // Scroll 默认会把「内容比视口短」的内容整体居中，首屏顶部会多出一条空白；固定从顶部排。
+    .align(Alignment.TopStart)
     .clip(false)
     // 触底续页
     .onReachEnd(() => {
