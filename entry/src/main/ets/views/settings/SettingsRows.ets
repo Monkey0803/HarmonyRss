@@ -149,7 +149,6 @@ export struct OptionSelectRow {
       .height('100%')
       .padding({ left: $r('app.float.space_m'), right: $r('app.float.space_m') })
       .alignItems(VerticalAlign.Center)
-      .margin({ left: $r('app.float.space_xs'), right: $r('app.float.space_xs') })
       .backgroundColor(selected ? $r('app.color.hm_menu_item_selected') : $r('app.color.hm_page_transparent'))
       // 与菜单容器圆角一致，避免内外圆角不一致。
       .borderRadius($r('app.float.radius_card'))

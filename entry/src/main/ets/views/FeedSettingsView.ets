@@ -34,22 +34,27 @@ struct FeedOptionRow {
 
   @Builder
   ItemContent(option: ChoiceOption) {
-    Row() {
-      Text(option.label)
-        .fontSize($r('app.float.font_size_body'))
-        .fontWeight(option.id === this.currentId ? FontWeight.Medium : FontWeight.Regular)
-        .fontColor(option.id === this.currentId ? $r('app.color.hm_brand') : $r('app.color.hm_text_primary'))
+    // 外层 Stack 定高定宽，高亮块只用 width/height 100% 撑满；
+    // 不再叠 margin —— 100% 宽度加外边距会在右侧溢出，左右留白不对称。
+    Stack() {
+      Row() {
+        Text(option.label)
+          .fontSize($r('app.float.font_size_body'))
+          .fontWeight(option.id === this.currentId ? FontWeight.Medium : FontWeight.Regular)
+          .fontColor(option.id === this.currentId ? $r('app.color.hm_brand') : $r('app.color.hm_text_primary'))
+      }
+      .width('100%')
+      .height('100%')
+      .padding({ left: $r('app.float.space_m'), right: $r('app.float.space_m') })
+      .alignItems(VerticalAlign.Center)
+      .backgroundColor(option.id === this.currentId
+        ? $r('app.color.hm_menu_item_selected')
+        : $r('app.color.hm_page_transparent'))
+      // 与菜单容器圆角一致，避免内外圆角不一致。
+      .borderRadius($r('app.float.radius_card'))
     }
     .width('100%')
     .height($r('app.float.menu_item_height'))
-    .padding({ left: $r('app.float.space_m'), right: $r('app.float.space_m') })
-    .alignItems(VerticalAlign.Center)
-    .margin({ left: $r('app.float.space_xs'), right: $r('app.float.space_xs') })
-    .backgroundColor(option.id === this.currentId
-      ? $r('app.color.hm_menu_item_selected')
-      : $r('app.color.hm_page_transparent'))
-    // 与菜单容器圆角一致，避免内外圆角不一致。
-    .borderRadius($r('app.float.radius_card'))
     .onClick(() => {
       this.onPick(option.id);
     })
