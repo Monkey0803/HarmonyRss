@@ -273,6 +273,20 @@ export class GReaderClient {
     return token;
   }
 
+  /** 创建订阅（本地独有源迁入远端）。 */
+  async subscribe(baseUrl: string, auth: string, writeToken: string, feedUrl: string): Promise<void> {
+    const header: Record<string, string> = {};
+    header['Content-Type'] = 'application/x-www-form-urlencoded';
+    const body: string = formEncode([
+      'ac=subscribe',
+      's=' + encodeURIComponent('feed/' + feedUrl),
+      'T=' + encodeURIComponent(writeToken)
+    ]);
+    const response: TextResponse = await this.send(HttpMethod.POST,
+      baseUrl + '/reader/api/0/subscription/edit', header, body);
+    this.ensureOk(response, 'subscribe');
+  }
+
   /** 回写已读 / 收藏（一次可带多个 a / r 参数）。 */
   async editTag(baseUrl: string, auth: string, writeToken: string, remoteId: string,
     addTags: string[], removeTags: string[]): Promise<void> {

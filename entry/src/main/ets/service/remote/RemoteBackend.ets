@@ -98,6 +98,9 @@ export interface RemoteBackend {
   /** 收藏 id。 */
   fetchStarredIds(baseUrl: string, session: RemoteSession, continuation: string): Promise<RemoteIdPage>;
 
+  /** 在远端创建一个订阅（迁移本地独有源用）。 */
+  subscribeFeed(baseUrl: string, session: RemoteSession, feedUrl: string): Promise<void>;
+
   /** 回写已读 / 收藏；部分失败通过结果返回，鉴权失效直接抛 AUTH。 */
   pushStateChanges(baseUrl: string, session: RemoteSession,
     changes: RemoteStateChange[]): Promise<RemotePushResult>;

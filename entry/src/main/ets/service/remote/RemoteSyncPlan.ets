@@ -79,6 +79,25 @@ export function mergeFeeds(local: FeedSource[], remote: RemoteFeed[]): FeedMerge
   return new FeedMergeResult(result, added, changed);
 }
 
+/** 本地独有订阅：本地地址在远端订阅列表中找不到（按归一化 URL 比较）。 */
+export function localOnlyFeeds(local: FeedSource[], remote: RemoteFeed[]): FeedSource[] {
+  const remoteKeys: Set<string> = new Set<string>();
+  for (let i = 0; i < remote.length; i += 1) {
+    const key: string = feedKey(remote[i].url);
+    if (key.length > 0) {
+      remoteKeys.add(key);
+    }
+  }
+  const result: FeedSource[] = [];
+  for (let i = 0; i < local.length; i += 1) {
+    const key: string = feedKey(local[i].url);
+    if (key.length === 0 || !remoteKeys.has(key)) {
+      result.push(local[i]);
+    }
+  }
+  return result;
+}
+
 /**
  * 冲突决策（push-first）：待同步队列里的字段以本地为准；否则采用远端值。
  * 阅读进度不参与远端同步，由调用方保留本地值。

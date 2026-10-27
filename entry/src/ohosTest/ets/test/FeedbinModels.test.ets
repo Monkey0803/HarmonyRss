@@ -12,6 +12,7 @@ import {
   isoMillis,
   normalizeFeedbinBaseUrl,
   parseFeedbinEntries,
+  parseFeedbinFeedOptions,
   parseFeedbinIds,
   parseFeedbinSubscriptions
 } from '../../../main/ets/service/remote/FeedbinModels';
@@ -60,6 +61,16 @@ export default function feedbinModelsTest() {
       expect(page.items[0].read).assertFalse();
       expect(page.items[0].starred).assertFalse();
       expect(page.items[0].publishedAt).assertEqual(isoMillis('2013-02-03T01:00:19.000000Z'));
+    });
+
+
+    it('parse_feed_options_for_300', 0, () => {
+      const options: string[] = parseFeedbinFeedOptions(
+        '[{"feed_url":"https://github.com/blog.atom","title":"Blog"},' +
+        '{"feed_url":"https://github.com/blog/broadcasts.atom","title":"Broadcasts"}]');
+      expect(options.length).assertEqual(2);
+      expect(options[0]).assertEqual('https://github.com/blog.atom');
+      expect(parseFeedbinFeedOptions('not json').length).assertEqual(0);
     });
 
     it('parse_ids_and_api_url', 0, () => {

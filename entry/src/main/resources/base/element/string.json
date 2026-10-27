@@ -3863,6 +3863,142 @@
     {
       "name": "remote_feedbin_hint",
       "value": "Feedbin uses HTTP Basic auth over HTTPS. Use your Feedbin account email and password."
+    },
+    {
+      "name": "remote_status_mode",
+      "value": "Subscription mode"
+    },
+    {
+      "name": "remote_mode_unset",
+      "value": "Not set"
+    },
+    {
+      "name": "remote_mode_merge",
+      "value": "Merge (keep local-only)"
+    },
+    {
+      "name": "remote_mode_migrated",
+      "value": "Migrated to remote"
+    },
+    {
+      "name": "remote_mode_remote_only",
+      "value": "Remote only"
+    },
+    {
+      "name": "remote_migration_title",
+      "value": "Subscription migration"
+    },
+    {
+      "name": "remote_migration_entry",
+      "value": "Subscription migration"
+    },
+    {
+      "name": "remote_migration_desc",
+      "value": "Choose how local subscriptions and the remote service should coexist. Later syncs follow the selected mode."
+    },
+    {
+      "name": "remote_migration_loading",
+      "value": "Loading remote subscriptions…"
+    },
+    {
+      "name": "remote_migration_section_preview",
+      "value": "Overview"
+    },
+    {
+      "name": "remote_migration_local_total",
+      "value": "Local subscriptions"
+    },
+    {
+      "name": "remote_migration_remote_total",
+      "value": "Remote subscriptions"
+    },
+    {
+      "name": "remote_migration_overlap",
+      "value": "Both sides"
+    },
+    {
+      "name": "remote_migration_local_only",
+      "value": "Local only"
+    },
+    {
+      "name": "remote_migration_section_mode",
+      "value": "Mode"
+    },
+    {
+      "name": "remote_migration_mode_merge",
+      "value": "Merge"
+    },
+    {
+      "name": "remote_migration_mode_merge_desc",
+      "value": "Add remote feeds locally and keep local-only feeds."
+    },
+    {
+      "name": "remote_migration_mode_migrated",
+      "value": "Migrate local feeds"
+    },
+    {
+      "name": "remote_migration_mode_migrated_desc",
+      "value": "Subscribe every local-only feed on the remote service. Nothing is deleted locally."
+    },
+    {
+      "name": "remote_migration_mode_remote_only",
+      "value": "Remote only"
+    },
+    {
+      "name": "remote_migration_mode_remote_only_desc",
+      "value": "Remote is authoritative. Local-only feeds are disabled but their history is kept; switch back to Merge to re-enable them."
+    },
+    {
+      "name": "remote_migration_note",
+      "value": "The mode is stored per account and also applies to future syncs."
+    },
+    {
+      "name": "remote_migration_apply",
+      "value": "Apply mode"
+    },
+    {
+      "name": "remote_migration_applying",
+      "value": "Applying…"
+    },
+    {
+      "name": "remote_migration_done_merge",
+      "value": "Mode set to Merge"
+    },
+    {
+      "name": "remote_migration_done_migrated",
+      "value": "Migrated %d local feeds"
+    },
+    {
+      "name": "remote_migration_done_remote_only",
+      "value": "Disabled %d local-only feeds"
+    },
+    {
+      "name": "remote_migration_partial",
+      "value": "%d feeds failed to migrate; mode was not changed."
+    },
+    {
+      "name": "remote_migration_retry",
+      "value": "Retry"
+    },
+    {
+      "name": "remote_migration_prompt_title",
+      "value": "Local subscriptions found"
+    },
+    {
+      "name": "remote_migration_prompt_message",
+      "value": "%d local-only feeds can be migrated to the remote service."
+    },
+    {
+      "name": "remote_migration_later",
+      "value": "Later"
+    },
+    {
+      "name": "remote_migration_go",
+      "value": "Migrate"
+    },
+    {
+      "name": "remote_error_subscription",
+      "value": "The remote service could not subscribe this feed."
     }
   ]
 }

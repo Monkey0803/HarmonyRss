@@ -47,4 +47,6 @@ export class RouterConstants {
   static readonly PAGE_DISCOVER: string = 'discover';
   /** 诊断与性能页（启动 / 抓取耗时、失败归类、上次退出原因、源健康）。 */
   static readonly PAGE_DIAGNOSTICS: string = 'diagnostics';
+  /** 远端订阅迁移 / 服务模式页。 */
+  static readonly PAGE_REMOTE_MIGRATION: string = 'remoteMigration';
 }

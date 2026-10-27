@@ -34,6 +34,7 @@ import {
   feedbinApiUrl,
   normalizeFeedbinBaseUrl,
   parseFeedbinEntries,
+  parseFeedbinFeedOptions,
   parseFeedbinIds,
   parseFeedbinSubscriptions
 } from './FeedbinModels';
@@ -157,6 +158,42 @@ export class FeedbinBackend implements RemoteBackend {
     this.ensureOk(response, 'starred entries');
     this.ensureIdListBody(response, 'starred entries');
     return new RemoteIdPage(parseFeedbinIds(response.body), '');
+  }
+
+  async subscribeFeed(baseUrl: string, session: RemoteSession, feedUrl: string): Promise<void> {
+    const target: string = feedUrl.trim();
+    if (target.length === 0) {
+      throw new RemoteError(RemoteErrorCode.EMPTY, 'empty feed url');
+    }
+    let response: TextResponse = await this.postJson(baseUrl, '/subscriptions.json', session,
+      this.subscribeBody(target));
+    if (response.status === 300) {
+      const options: string[] = parseFeedbinFeedOptions(response.body);
+      if (options.length === 0) {
+        throw new RemoteError(RemoteErrorCode.SUBSCRIPTION_FAILED, 'multiple choices without feed_url');
+      }
+      response = await this.postJson(baseUrl, '/subscriptions.json', session,
+        this.subscribeBody(options[0]));
+    }
+    if (response.status >= 200 && response.status < 300) {
+      return;
+    }
+    if (response.status === 302) {
+      return;
+    }
+    const code: RemoteErrorCode = errorCodeForStatus(response.status);
+    if (code === RemoteErrorCode.AUTH || code === RemoteErrorCode.RATE_LIMIT
+      || code === RemoteErrorCode.SERVER) {
+      throw new RemoteError(code, 'subscribe HTTP ' + response.status.toString());
+    }
+    throw new RemoteError(RemoteErrorCode.SUBSCRIPTION_FAILED,
+      'subscribe HTTP ' + response.status.toString());
+  }
+
+  /** Feedbin 的创建订阅请求体（feed_url 只含常规 URL 字符，这里仍转义引号 / 反斜杠）。 */
+  private subscribeBody(feedUrl: string): string {
+    const escaped: string = feedUrl.split('\\').join('\\\\').split('"').join('\\"');
+    return '{"feed_url":"' + escaped + '"}';
   }
 
   async pushStateChanges(baseUrl: string, session: RemoteSession,

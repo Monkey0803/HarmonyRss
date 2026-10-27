@@ -7,6 +7,7 @@ import {
   buildEditTagBatches,
   decideState,
   FeedMergeResult,
+  localOnlyFeeds,
   mergeFeeds
 } from '../../../main/ets/service/remote/RemoteSyncPlan';
 import { ArticleState, EditTagOp, GReaderTags, OutboxItem, RemoteFeed, StateDecision } from '../../../main/ets/model/Remote';
@@ -78,6 +79,23 @@ export default function remoteSyncPlanTest() {
       const clean: StateDecision = decideState(local.read, local.starred, false, true, false);
       expect(clean.read).assertFalse();
       expect(clean.starred).assertTrue();
+    });
+
+
+    it('local_only_feeds_normalized', 0, () => {
+      const local: FeedSource[] = [
+        feed('https://a.com/rss/', 'A'),
+        feed('https://b.com/rss', 'B'),
+        feed('https://c.com/rss', 'C')
+      ];
+      const remote: RemoteFeed[] = [
+        new RemoteFeed('feed/https://a.com/rss', 'https://a.com/rss', 'A'),
+        new RemoteFeed('feed/https://c.com/rss', 'https://c.com/rss', 'C')
+      ];
+      const only: FeedSource[] = localOnlyFeeds(local, remote);
+      expect(only.length).assertEqual(1);
+      expect(only[0].url).assertEqual('https://b.com/rss');
+      expect(localOnlyFeeds(local, []).length).assertEqual(3);
     });
 
     it('edit_tag_batches_split_and_tags', 0, () => {

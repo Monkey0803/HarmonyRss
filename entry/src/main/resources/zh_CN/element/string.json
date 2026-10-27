@@ -3863,6 +3863,142 @@
     {
       "name": "remote_feedbin_hint",
       "value": "Feedbin 使用 HTTPS + Basic Auth，请填写 Feedbin 账号邮箱和密码。"
+    },
+    {
+      "name": "remote_status_mode",
+      "value": "订阅模式"
+    },
+    {
+      "name": "remote_mode_unset",
+      "value": "未设置"
+    },
+    {
+      "name": "remote_mode_merge",
+      "value": "合并（保留本地独有）"
+    },
+    {
+      "name": "remote_mode_migrated",
+      "value": "已迁入远端"
+    },
+    {
+      "name": "remote_mode_remote_only",
+      "value": "仅远端"
+    },
+    {
+      "name": "remote_migration_title",
+      "value": "订阅迁移"
+    },
+    {
+      "name": "remote_migration_entry",
+      "value": "订阅迁移"
+    },
+    {
+      "name": "remote_migration_desc",
+      "value": "选择本地订阅与远端服务的共存方式；后续同步按所选模式执行。"
+    },
+    {
+      "name": "remote_migration_loading",
+      "value": "正在读取远端订阅…"
+    },
+    {
+      "name": "remote_migration_section_preview",
+      "value": "概览"
+    },
+    {
+      "name": "remote_migration_local_total",
+      "value": "本地订阅"
+    },
+    {
+      "name": "remote_migration_remote_total",
+      "value": "远端订阅"
+    },
+    {
+      "name": "remote_migration_overlap",
+      "value": "本地与远端都有"
+    },
+    {
+      "name": "remote_migration_local_only",
+      "value": "仅本地"
+    },
+    {
+      "name": "remote_migration_section_mode",
+      "value": "模式"
+    },
+    {
+      "name": "remote_migration_mode_merge",
+      "value": "合并"
+    },
+    {
+      "name": "remote_migration_mode_merge_desc",
+      "value": "把远端源加到本地，同时保留本地独有源。"
+    },
+    {
+      "name": "remote_migration_mode_migrated",
+      "value": "迁入远端"
+    },
+    {
+      "name": "remote_migration_mode_migrated_desc",
+      "value": "把每个本地独有源订阅到远端服务，本地不删除任何数据。"
+    },
+    {
+      "name": "remote_migration_mode_remote_only",
+      "value": "仅远端"
+    },
+    {
+      "name": "remote_migration_mode_remote_only_desc",
+      "value": "远端为权威；本地独有源停用但保留历史，切回「合并」即可恢复。"
+    },
+    {
+      "name": "remote_migration_note",
+      "value": "模式按账号保存，并在后续同步中持续生效。"
+    },
+    {
+      "name": "remote_migration_apply",
+      "value": "应用模式"
+    },
+    {
+      "name": "remote_migration_applying",
+      "value": "应用中…"
+    },
+    {
+      "name": "remote_migration_done_merge",
+      "value": "已切换为合并模式"
+    },
+    {
+      "name": "remote_migration_done_migrated",
+      "value": "已迁入 %d 个本地源"
+    },
+    {
+      "name": "remote_migration_done_remote_only",
+      "value": "已停用 %d 个本地独有源"
+    },
+    {
+      "name": "remote_migration_partial",
+      "value": "%d 个源迁移失败，模式未变更。"
+    },
+    {
+      "name": "remote_migration_retry",
+      "value": "重试"
+    },
+    {
+      "name": "remote_migration_prompt_title",
+      "value": "发现本地独有订阅"
+    },
+    {
+      "name": "remote_migration_prompt_message",
+      "value": "有 %d 个本地独有源可以迁移到远端服务。"
+    },
+    {
+      "name": "remote_migration_later",
+      "value": "稍后"
+    },
+    {
+      "name": "remote_migration_go",
+      "value": "去迁移"
+    },
+    {
+      "name": "remote_error_subscription",
+      "value": "远端服务无法订阅这个地址。"
     }
   ]
 }

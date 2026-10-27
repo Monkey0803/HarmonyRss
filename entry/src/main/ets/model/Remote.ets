@@ -28,7 +28,9 @@ export enum RemoteErrorCode {
   /** 已有同步在跑。 */
   BUSY = 'busy',
   /** 未连接账号。 */
-  NOT_CONNECTED = 'notConnected'
+  NOT_CONNECTED = 'notConnected',
+  /** 远端拒绝了订阅创建（地址无法识别 / 多重选择 / 服务不支持）。 */
+  SUBSCRIPTION_FAILED = 'subscriptionFailed'
 }
 
 /** 携带分类错误码的异常（与 FeedFetchError 同构）。 */
@@ -203,6 +205,10 @@ export class RemoteConnectResult {
   feedCount: number;
   /** 连接成功但首次同步失败时的提示（连接本身仍算成功）。 */
   syncError: string;
+  /** 本地独有（远端没有）的订阅数；用于迁移提示。 */
+  localOnlyCount: number = 0;
+  /** 是否应在连接后提示迁移（本地独有源 > 0 且从未选择过模式）。 */
+  needsMigration: boolean = false;
 
   constructor(ok: boolean, code: RemoteErrorCode, message: string, feedCount: number = 0) {
     this.ok = ok;
@@ -210,6 +216,54 @@ export class RemoteConnectResult {
     this.message = message;
     this.feedCount = feedCount;
     this.syncError = '';
+    this.localOnlyCount = 0;
+    this.needsMigration = false;
+  }
+}
+
+/** 订阅迁移模式。 */
+export class RemoteMigrationMode {
+  /** 合并：远端源加入本地，本地独有源保留（默认）。 */
+  static readonly MERGE: string = 'merge';
+  /** 迁入：把本地独有源订阅到远端。 */
+  static readonly MIGRATED: string = 'migrated';
+  /** 仅远端：远端为权威，本地独有源停用但保留历史。 */
+  static readonly REMOTE_ONLY: string = 'remoteOnly';
+}
+
+/** 迁移前预览（数量均来自当前本地列表 + 远端订阅列表）。 */
+export class RemoteMigrationPreview {
+  localTotal: number;
+  remoteTotal: number;
+  overlap: number;
+  localOnly: number;
+  mode: string;
+
+  constructor(localTotal: number, remoteTotal: number, overlap: number, localOnly: number, mode: string) {
+    this.localTotal = localTotal;
+    this.remoteTotal = remoteTotal;
+    this.overlap = overlap;
+    this.localOnly = localOnly;
+    this.mode = mode;
+  }
+}
+
+/** 一次迁移的结果。 */
+export class RemoteMigrationResult {
+  mode: string;
+  /** 成功订阅到远端的本地源数量。 */
+  pushed: number;
+  failed: number;
+  /** remoteOnly 模式下被停用的本地独有源数量。 */
+  disabled: number;
+  errors: string[];
+
+  constructor(mode: string) {
+    this.mode = mode;
+    this.pushed = 0;
+    this.failed = 0;
+    this.disabled = 0;
+    this.errors = [];
   }
 }
 

@@ -15,6 +15,7 @@ import { settingsStore } from '../service/SettingsStore';
 import { AUTO_REFRESH_OPTIONS, ChoiceOption } from '../model/SettingsOptions';
 import { RemoteSyncConstants } from '../common/constants/RssConstants';
 import { MaterialController } from '../service/MaterialController';
+import { RouterConstants } from '../common/constants/RouterConstants';
 
 @ComponentV2
 export struct RemoteServiceView {
@@ -66,7 +67,38 @@ export struct RemoteServiceView {
         ToastUtil.show(this.getUIContext(),
           remoteAccountViewModel.errorText(remoteAccountViewModel.warningCode));
       }
+      if (remoteAccountViewModel.needsMigration) {
+        this.showMigrationPrompt();
+      }
     });
+  }
+
+  private openMigration(): void {
+    this.navPathStack.pushPath(new NavPathInfo(RouterConstants.PAGE_REMOTE_MIGRATION, ''));
+  }
+
+  /** 连接后发现本地独有源：提示是否进入迁移页（不阻塞连接本身）。 */
+  private showMigrationPrompt(): void {
+    const later: AlertDialogButtonBaseOptions = {
+      value: $r('app.string.remote_migration_later'),
+      action: () => {
+      }
+    };
+    const go: AlertDialogButtonBaseOptions = {
+      value: $r('app.string.remote_migration_go'),
+      fontColor: $r('app.color.hm_brand'),
+      action: () => {
+        this.openMigration();
+      }
+    };
+    const params: AlertDialogParamWithButtons = {
+      title: $r('app.string.remote_migration_prompt_title'),
+      message: $r('app.string.remote_migration_prompt_message', remoteAccountViewModel.localOnlyCount),
+      autoCancel: true,
+      primaryButton: later,
+      secondaryButton: go
+    };
+    this.getUIContext().showAlertDialog(MaterialController.dialogParams(params, appSettings.immersiveOn));
   }
 
   private syncNow(): void {
@@ -278,6 +310,25 @@ export struct RemoteServiceView {
         remoteAccountViewModel.status.failures.toString())
       Divider().color($r('app.color.hm_divider'))
       this.InfoRow($r('app.string.remote_status_last_error'), this.statusErrorText())
+      Divider().color($r('app.color.hm_divider'))
+      this.InfoRow($r('app.string.remote_status_mode'),
+        remoteAccountViewModel.modeText(remoteAccountViewModel.subscriptionMode))
+      Divider().color($r('app.color.hm_divider'))
+      Row({ space: $r('app.float.space_s') }) {
+        Text($r('app.string.remote_migration_entry'))
+          .fontSize($r('app.float.font_size_caption'))
+          .fontColor($r('app.color.hm_text_primary'))
+          .layoutWeight(1)
+        SymbolGlyph($r('sys.symbol.chevron_right'))
+          .fontSize($r('app.float.icon_size_small'))
+          .fontColor([$r('app.color.hm_text_secondary')])
+      }
+      .width('100%')
+      .height($r('app.float.row_height'))
+      .padding({ left: $r('app.float.space_m'), right: $r('app.float.space_m') })
+      .onClick(() => {
+        this.openMigration();
+      })
       Divider().color($r('app.color.hm_divider'))
       Row() {
         Text($r('app.string.remote_auto_sync'))

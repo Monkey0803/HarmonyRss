@@ -9,6 +9,9 @@ import {
   RemoteConnectResult,
   RemoteError,
   RemoteErrorCode,
+  RemoteMigrationMode,
+  RemoteMigrationPreview,
+  RemoteMigrationResult,
   SyncResult,
   SyncStatus
 } from '../model/Remote';
@@ -36,6 +39,15 @@ export class RemoteAccountViewModel {
   /** 首次同步失败等非致命提示的错误码。 */
   @Trace warningCode: RemoteErrorCode = RemoteErrorCode.NONE;
   @Trace initialized: boolean = false;
+  /** 当前订阅模式：'' | merge | migrated | remoteOnly。 */
+  @Trace subscriptionMode: string = '';
+  /** 迁移预览（进入迁移页时加载）。 */
+  @Trace migrationPreview: RemoteMigrationPreview | undefined = undefined;
+  @Trace migrationLoading: boolean = false;
+  @Trace migrationApplying: boolean = false;
+  /** 连接后是否需要提示迁移。 */
+  @Trace needsMigration: boolean = false;
+  @Trace localOnlyCount: number = 0;
 
   /** 进入页面：恢复账号并刷新状态。 */
   async init(): Promise<void> {
@@ -86,6 +98,7 @@ export class RemoteAccountViewModel {
     this.applyAccount(account);
     this.status = await remoteSyncService.status();
     this.feedCount = await remoteSyncService.remoteFeedCount();
+    this.subscriptionMode = await remoteSyncService.subscriptionMode();
   }
 
   /** 连接服务；返回是否成功（失败时 errorCode 已设置）。 */
@@ -104,6 +117,8 @@ export class RemoteAccountViewModel {
         return false;
       }
       this.feedCount = result.feedCount;
+      this.localOnlyCount = result.localOnlyCount;
+      this.needsMigration = result.needsMigration;
       // 连接成功后立刻清掉内存里的密码（已进 Asset Store）。
       this.password = '';
       this.warningCode = result.syncError.length > 0
@@ -134,6 +149,60 @@ export class RemoteAccountViewModel {
     } finally {
       this.syncing = false;
     }
+  }
+
+  /** 加载迁移预览（需要联网读取远端订阅列表）。 */
+  async loadMigrationPreview(): Promise<void> {
+    if (this.migrationLoading) {
+      return;
+    }
+    this.migrationLoading = true;
+    this.errorCode = RemoteErrorCode.NONE;
+    try {
+      this.migrationPreview = await remoteSyncService.previewMigration();
+      this.subscriptionMode = this.migrationPreview.mode;
+    } catch (err) {
+      this.errorCode = err instanceof RemoteError ? err.code : RemoteErrorCode.SERVER;
+    } finally {
+      this.migrationLoading = false;
+    }
+  }
+
+  /** 应用迁移模式；失败返回 undefined 并设置 errorCode。 */
+  async applyMigration(mode: string): Promise<RemoteMigrationResult | undefined> {
+    if (this.migrationApplying) {
+      return undefined;
+    }
+    this.migrationApplying = true;
+    this.errorCode = RemoteErrorCode.NONE;
+    try {
+      const result: RemoteMigrationResult = await remoteSyncService.applyMigration(mode);
+      this.subscriptionMode = result.mode;
+      if (result.failed === 0) {
+        this.needsMigration = false;
+      }
+      await this.refresh();
+      return result;
+    } catch (err) {
+      this.errorCode = err instanceof RemoteError ? err.code : RemoteErrorCode.SERVER;
+      return undefined;
+    } finally {
+      this.migrationApplying = false;
+    }
+  }
+
+  /** 订阅模式 → 文案。 */
+  modeText(mode: string): ResourceStr {
+    if (mode === RemoteMigrationMode.MIGRATED) {
+      return $r('app.string.remote_mode_migrated');
+    }
+    if (mode === RemoteMigrationMode.REMOTE_ONLY) {
+      return $r('app.string.remote_mode_remote_only');
+    }
+    if (mode === RemoteMigrationMode.MERGE) {
+      return $r('app.string.remote_mode_merge');
+    }
+    return $r('app.string.remote_mode_unset');
   }
 
   /** 退出登录；clearSyncData = true 时一并清除映射 / 队列 / 游标。 */
@@ -183,6 +252,9 @@ export class RemoteAccountViewModel {
     }
     if (code === RemoteErrorCode.NOT_CONNECTED) {
       return $r('app.string.remote_error_not_connected');
+    }
+    if (code === RemoteErrorCode.SUBSCRIPTION_FAILED) {
+      return $r('app.string.remote_error_subscription');
     }
     return $r('app.string.remote_error_server');
   }

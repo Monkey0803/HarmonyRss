@@ -99,6 +99,25 @@ export class GReaderBackend implements RemoteBackend {
     return this.client.fetchStarredIds(baseUrl, session.token, continuation);
   }
 
+  async subscribeFeed(baseUrl: string, session: RemoteSession, feedUrl: string): Promise<void> {
+    if (feedUrl.trim().length === 0) {
+      throw new RemoteError(RemoteErrorCode.EMPTY, 'empty feed url');
+    }
+    try {
+      const writeToken: string = await this.client.fetchWriteToken(baseUrl, session.token);
+      await this.client.subscribe(baseUrl, session.token, writeToken, feedUrl.trim());
+    } catch (err) {
+      // 订阅期间 404 更可能是「这个地址不是可用订阅源」，而不是整个 API 未开启。
+      if (err instanceof RemoteError && err.code === RemoteErrorCode.API_DISABLED) {
+        throw new RemoteError(RemoteErrorCode.SUBSCRIPTION_FAILED, 'feed rejected by server');
+      }
+      if (err instanceof RemoteError) {
+        throw err;
+      }
+      throw new RemoteError(RemoteErrorCode.SUBSCRIPTION_FAILED, 'subscribe failed');
+    }
+  }
+
   async pushStateChanges(baseUrl: string, session: RemoteSession,
     changes: RemoteStateChange[]): Promise<RemotePushResult> {
     const ops: EditTagOp[] = [];

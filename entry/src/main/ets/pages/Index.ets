@@ -71,6 +71,7 @@ import { RulesView } from '../views/RulesView';
 import { RuleEditView } from '../views/RuleEditView';
 import { HiddenArticlesView } from '../views/HiddenArticlesView';
 import { RemoteServiceView } from '../views/RemoteServiceView';
+import { RemoteMigrationView } from '../views/RemoteMigrationView';
 import { ShareSettingsView } from '../views/ShareSettingsView';
 import { NotifySettingsView } from '../views/NotifySettingsView';
 import { TranslateSettingsView } from '../views/TranslateSettingsView';
@@ -115,6 +116,7 @@ struct Index {
   private ruleEditScroller: Scroller = new Scroller();
   private hiddenScroller: Scroller = new Scroller();
   private remoteScroller: Scroller = new Scroller();
+  private remoteMigrationScroller: Scroller = new Scroller();
   private shareSettingsScroller: Scroller = new Scroller();
   private notifySettingsScroller: Scroller = new Scroller();
   private translateSettingsScroller: Scroller = new Scroller();
@@ -801,6 +803,14 @@ struct Index {
       .titleMode(HdsNavDestinationTitleMode.MINI)
       .backgroundColor($r('app.color.hm_web_surface'))
       .bindToScrollable([this.remoteScroller])
+    } else if (name === RouterConstants.PAGE_REMOTE_MIGRATION) {
+      HdsNavDestination() {
+        RemoteMigrationView({ navPathStack: this.navPathStack, scroller: this.remoteMigrationScroller })
+      }
+      .titleBar(this.titleOptions($r('app.string.remote_migration_title')))
+      .titleMode(HdsNavDestinationTitleMode.MINI)
+      .backgroundColor($r('app.color.hm_web_surface'))
+      .bindToScrollable([this.remoteMigrationScroller])
     } else if (name === RouterConstants.PAGE_SHARE_SETTINGS) {
       HdsNavDestination() {
         ShareSettingsView({ navPathStack: this.navPathStack, scroller: this.shareSettingsScroller })

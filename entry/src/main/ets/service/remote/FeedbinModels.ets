@@ -207,6 +207,34 @@ export function parseFeedbinIds(body: string): string[] {
   return result;
 }
 
+interface FeedbinFeedOptionRaw {
+  feed_url?: string;
+}
+
+/** 300 Multiple Choices 响应里的候选 feed_url。 */
+export function parseFeedbinFeedOptions(body: string): string[] {
+  const result: string[] = [];
+  if (body.length === 0) {
+    return result;
+  }
+  let raw: FeedbinFeedOptionRaw[];
+  try {
+    raw = JSON.parse(body);
+  } catch (err) {
+    return result;
+  }
+  if (!Array.isArray(raw)) {
+    return result;
+  }
+  for (let i = 0; i < raw.length; i += 1) {
+    const value: string = textOf(raw[i].feed_url);
+    if (value.length > 0) {
+      result.push(value);
+    }
+  }
+  return result;
+}
+
 /** 摘要 / 正文裁剪（与 GReader 解析保持同一上限）。 */
 function plainOf(html: string): string {
   if (html.length === 0) {

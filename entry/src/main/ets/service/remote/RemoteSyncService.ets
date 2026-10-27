@@ -20,6 +20,9 @@ import {
   RemoteFeed,
   RemoteIdPage,
   RemoteMapping,
+  RemoteMigrationMode,
+  RemoteMigrationPreview,
+  RemoteMigrationResult,
   SyncResult,
   SyncStatus
 } from '../../model/Remote';
@@ -47,12 +50,20 @@ import {
   decideState,
   feedKey,
   FeedMergeResult,
+  localOnlyFeeds,
   mergeFeeds
 } from './RemoteSyncPlan';
 import { appSettings } from '../../model/AppSettings';
 
 const DOMAIN: number = 0x0000;
 const TAG: string = 'RemoteSyncService';
+const MODE_KEY: string = 'subscription_mode';
+const MODE_DISABLED_KEY: string = 'mode_disabled_feeds';
+
+function isMigrationMode(value: string): boolean {
+  return value === RemoteMigrationMode.MERGE || value === RemoteMigrationMode.MIGRATED
+    || value === RemoteMigrationMode.REMOTE_ONLY;
+}
 
 /** 纯逻辑在 RemoteSyncPlan 中实现；这里 re-export，保持「同步服务对外提供纯函数」的契约。 */
 export { FeedMergeResult, mergeFeeds, decideState, buildEditTagBatches, feedKey };
@@ -220,6 +231,10 @@ export class RemoteSyncService {
       this.accountLoaded = true;
       this.session = session;
       this.authAccountId = account.id;
+      const provider = this.feedProvider;
+      const localFeeds: FeedSource[] = provider !== undefined ? provider() : [];
+      const localOnlyCount: number = localOnlyFeeds(localFeeds, remoteFeeds).length;
+      const previousMode: string = await this.subscriptionMode();
       const result: RemoteConnectResult =
         new RemoteConnectResult(true, RemoteErrorCode.NONE, '', remoteFeeds.length);
       // 首次同步：失败不影响「已连接」，但把原因带回界面。
@@ -229,6 +244,11 @@ export class RemoteSyncService {
         result.syncError = this.codeOf(err);
         hilog.warn(DOMAIN, TAG, 'first sync failed: %{public}s', result.syncError);
       }
+      if (previousMode.length === 0) {
+        await remoteAccountStore.setState(MODE_KEY, RemoteMigrationMode.MERGE);
+      }
+      result.localOnlyCount = localOnlyCount;
+      result.needsMigration = localOnlyCount > 0 && previousMode.length === 0;
       return result;
     } catch (err) {
       const code: RemoteErrorCode = this.codeOfObject(err);
@@ -267,8 +287,56 @@ export class RemoteSyncService {
       const localFeeds: FeedSource[] = provider !== undefined ? provider() : [];
       const merged: FeedMergeResult = mergeFeeds(localFeeds, remoteFeeds);
       result.feedsAdded = merged.added;
+      let feedsChanged: boolean = merged.changed;
+      // 「仅远端」模式：远端是权威，本地独有源停用但保留历史；记下本次停用的 id 以便切回时恢复。
+      let mode: string = await this.subscriptionMode();
+      if (mode.length === 0) {
+        // 老账号没有模式记录：按历史上既有的「合并」行为落一次，避免界面长期显示未设置。
+        mode = RemoteMigrationMode.MERGE;
+        await remoteAccountStore.setState(MODE_KEY, mode);
+      }
+      if (mode === RemoteMigrationMode.REMOTE_ONLY) {
+        const localOnly: FeedSource[] = localOnlyFeeds(merged.feeds, remoteFeeds);
+        const localOnlyIds: Set<string> = new Set();
+        for (let i = 0; i < localOnly.length; i += 1) {
+          localOnlyIds.add(localOnly[i].id);
+        }
+        const previousDisabled: string[] = await this.readModeDisabledIds();
+        const previousSet: Set<string> = new Set(previousDisabled);
+        const nextDisabled: string[] = [];
+        // 之前因「仅远端」停用、但现在远端已经有的源：恢复启用。
+        for (let i = 0; i < previousDisabled.length; i += 1) {
+          const id: string = previousDisabled[i];
+          if (localOnlyIds.has(id)) {
+            nextDisabled.push(id);
+            continue;
+          }
+          for (let j = 0; j < merged.feeds.length; j += 1) {
+            const feed: FeedSource = merged.feeds[j];
+            if (feed.id === id) {
+              if (!feed.enabled) {
+                feed.enabled = true;
+                feedsChanged = true;
+              }
+              break;
+            }
+          }
+        }
+        for (let i = 0; i < localOnly.length; i += 1) {
+          const feed: FeedSource = localOnly[i];
+          if (feed.enabled) {
+            feed.enabled = false;
+            feedsChanged = true;
+            nextDisabled.push(feed.id);
+          } else if (previousSet.has(feed.id) && nextDisabled.indexOf(feed.id) < 0) {
+            // 已被「仅远端」停用过的源继续保留在记录里；手动停用的源不碰。
+            nextDisabled.push(feed.id);
+          }
+        }
+        await this.saveModeDisabledIds(nextDisabled);
+      }
       const feedChanged = this.feedChanged;
-      if (merged.changed && feedChanged !== undefined) {
+      if (feedsChanged && feedChanged !== undefined) {
         feedChanged(merged.feeds);
       }
       // 2) 文章增量拉取
@@ -596,6 +664,151 @@ export class RemoteSyncService {
       continuation = page.continuation;
     }
     return ids;
+  }
+
+  /** 当前订阅模式（未设置 / 脏值返回空串）。 */
+  async subscriptionMode(): Promise<string> {
+    const value: string = await remoteAccountStore.getState(MODE_KEY);
+    return isMigrationMode(value) ? value : '';
+  }
+
+  /** 迁移预览：本地总数 / 远端总数 / 重合 / 本地独有 + 当前模式。 */
+  async previewMigration(): Promise<RemoteMigrationPreview> {
+    const account: RemoteAccount | undefined = await this.ensureAccount();
+    if (account === undefined) {
+      throw new RemoteError(RemoteErrorCode.NOT_CONNECTED, 'no account');
+    }
+    const backend: RemoteBackend = this.backendFor(account.serviceType);
+    const session: RemoteSession = await this.ensureSession(account, backend);
+    const remoteFeeds: RemoteFeed[] = await backend.listSubscriptions(account.baseUrl, session);
+    const provider = this.feedProvider;
+    const localFeeds: FeedSource[] = provider !== undefined ? provider() : [];
+    const localOnly: FeedSource[] = localOnlyFeeds(localFeeds, remoteFeeds);
+    return new RemoteMigrationPreview(localFeeds.length, remoteFeeds.length,
+      localFeeds.length - localOnly.length, localOnly.length, await this.subscriptionMode());
+  }
+
+  /**
+   * 应用订阅迁移模式。
+   * - merge：远端源并入本地，本地独有源保留；
+   * - migrated：把本地独有源逐个订阅到远端，全部成功才切模式；
+   * - remoteOnly：本地独有源停用（保留历史），远端为权威。
+   */
+  async applyMigration(mode: string): Promise<RemoteMigrationResult> {
+    if (!isMigrationMode(mode)) {
+      throw new RemoteError(RemoteErrorCode.EMPTY, 'invalid migration mode');
+    }
+    const account: RemoteAccount | undefined = await this.ensureAccount();
+    if (account === undefined) {
+      throw new RemoteError(RemoteErrorCode.NOT_CONNECTED, 'no account');
+    }
+    const backend: RemoteBackend = this.backendFor(account.serviceType);
+    const session: RemoteSession = await this.ensureSession(account, backend);
+    const remoteFeeds: RemoteFeed[] = await backend.listSubscriptions(account.baseUrl, session);
+    const provider = this.feedProvider;
+    const localFeeds: FeedSource[] = provider !== undefined ? provider() : [];
+    const merged: FeedMergeResult = mergeFeeds(localFeeds, remoteFeeds);
+    const localOnly: FeedSource[] = localOnlyFeeds(localFeeds, remoteFeeds);
+    const result: RemoteMigrationResult = new RemoteMigrationResult(mode);
+
+    if (mode === RemoteMigrationMode.MIGRATED) {
+      for (let i = 0; i < localOnly.length; i += 1) {
+        try {
+          await backend.subscribeFeed(account.baseUrl, session, localOnly[i].url);
+          result.pushed += 1;
+        } catch (err) {
+          const code: RemoteErrorCode = this.codeOfObject(err);
+          if (code === RemoteErrorCode.AUTH) {
+            throw new RemoteError(code, 'auth expired during migration');
+          }
+          result.failed += 1;
+          result.errors.push(code.toString());
+        }
+      }
+      if (result.failed > 0) {
+        // 保持原模式，页面可重试；已成功的远端订阅是幂等的，重试不会重复。
+        result.mode = await this.subscriptionMode();
+        return result;
+      }
+    }
+
+    const feedChanged = this.feedChanged;
+    let changed: boolean = merged.changed;
+    if (mode === RemoteMigrationMode.REMOTE_ONLY) {
+      const disabledIds: string[] = await this.readModeDisabledIds();
+      for (let i = 0; i < localOnly.length; i += 1) {
+        const feed: FeedSource = localOnly[i];
+        if (feed.enabled) {
+          feed.enabled = false;
+          if (disabledIds.indexOf(feed.id) < 0) {
+            disabledIds.push(feed.id);
+          }
+          result.disabled += 1;
+          changed = true;
+        }
+      }
+      await this.saveModeDisabledIds(disabledIds);
+    } else {
+      // merge / migrated：恢复之前因「仅远端」被停用的源。
+      const restored: boolean = await this.restoreModeDisabledFeeds(merged.feeds);
+      if (restored) {
+        changed = true;
+      }
+    }
+    if (changed && feedChanged !== undefined) {
+      feedChanged(merged.feeds);
+    }
+    const remoteCount: number = remoteFeeds.length
+      + (mode === RemoteMigrationMode.MIGRATED ? result.pushed : 0);
+    await remoteAccountStore.setState('remote_feed_count', remoteCount.toString());
+    await remoteAccountStore.setState(MODE_KEY, mode);
+    result.mode = mode;
+    return result;
+  }
+
+  /** 读「仅远端模式」下被停用的源 id（损坏 JSON 一律当空）。 */
+  private async readModeDisabledIds(): Promise<string[]> {
+    const text: string = await remoteAccountStore.getState(MODE_DISABLED_KEY);
+    if (text.length === 0) {
+      return [];
+    }
+    try {
+      const raw: string[] = JSON.parse(text);
+      if (!Array.isArray(raw)) {
+        return [];
+      }
+      const result: string[] = [];
+      for (let i = 0; i < raw.length; i += 1) {
+        if (typeof raw[i] === 'string' && raw[i].length > 0) {
+          result.push(raw[i]);
+        }
+      }
+      return result;
+    } catch (err) {
+      return [];
+    }
+  }
+
+  private async saveModeDisabledIds(ids: string[]): Promise<void> {
+    await remoteAccountStore.setState(MODE_DISABLED_KEY, ids.length > 0 ? JSON.stringify(ids) : '');
+  }
+
+  /** 恢复因「仅远端」被停用的源；返回是否有变化。 */
+  private async restoreModeDisabledFeeds(feeds: FeedSource[]): Promise<boolean> {
+    const ids: string[] = await this.readModeDisabledIds();
+    if (ids.length === 0) {
+      return false;
+    }
+    const targets: Set<string> = new Set(ids);
+    let changed: boolean = false;
+    for (let i = 0; i < feeds.length; i += 1) {
+      if (targets.has(feeds[i].id) && !feeds[i].enabled) {
+        feeds[i].enabled = true;
+        changed = true;
+      }
+    }
+    await this.saveModeDisabledIds([]);
+    return changed;
   }
 
   /** 退出登录：默认保留本地文章与状态；clearSyncData = true 时清空映射 / 队列 / 游标。 */
