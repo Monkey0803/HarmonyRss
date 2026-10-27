@@ -1,0 +1,4088 @@
+{
+  "string": [
+    {
+      "name": "module_desc",
+      "value": "Módulo de entrada de la aplicación HDS"
+    },
+    {
+      "name": "work_scheduler_desc",
+      "value": "Actualización de fuentes en segundo plano"
+    },
+    {
+      "name": "EntryAbility_desc",
+      "value": "Aplicación HDS"
+    },
+    {
+      "name": "EntryAbility_label",
+      "value": "HarmonyRss"
+    },
+    {
+      "name": "tab_home",
+      "value": "Leer"
+    },
+    {
+      "name": "tab_settings",
+      "value": "Ajustes"
+    },
+    {
+      "name": "tab_images",
+      "value": "Imágenes"
+    },
+    {
+      "name": "tab_subs",
+      "value": "Fuentes"
+    },
+    {
+      "name": "home_title",
+      "value": "Leer"
+    },
+    {
+      "name": "settings_title",
+      "value": "Ajustes"
+    },
+    {
+      "name": "settings_entry_look",
+      "value": "Apariencia e idioma"
+    },
+    {
+      "name": "settings_entry_material",
+      "value": "Materiales y movimiento"
+    },
+    {
+      "name": "settings_entry_reading",
+      "value": "Lectura y listas"
+    },
+    {
+      "name": "settings_entry_feed",
+      "value": "Fuentes y avisos"
+    },
+    {
+      "name": "settings_entry_system",
+      "value": "Sistema y privacidad"
+    },
+    {
+      "name": "settings_entry_storage",
+      "value": "Almacenamiento y copia"
+    },
+    {
+      "name": "section_appearance",
+      "value": "Apariencia"
+    },
+    {
+      "name": "section_language",
+      "value": "Idioma"
+    },
+    {
+      "name": "section_system",
+      "value": "Funciones del sistema"
+    },
+    {
+      "name": "section_navigation",
+      "value": "Navegación"
+    },
+    {
+      "name": "section_feed",
+      "value": "Fuentes"
+    },
+    {
+      "name": "section_reading",
+      "value": "Lectura"
+    },
+    {
+      "name": "row_reader_font",
+      "value": "Tamaño del texto"
+    },
+    {
+      "name": "row_reader_line",
+      "value": "Interlineado"
+    },
+    {
+      "name": "row_reader_family",
+      "value": "Tipografía"
+    },
+    {
+      "name": "row_reader_width",
+      "value": "Ancho de columna"
+    },
+    {
+      "name": "row_reader_align",
+      "value": "Alineación del texto"
+    },
+    {
+      "name": "row_reader_theme",
+      "value": "Tema de lectura"
+    },
+    {
+      "name": "opt_family_system",
+      "value": "Predeterminada"
+    },
+    {
+      "name": "opt_family_serif",
+      "value": "Serif"
+    },
+    {
+      "name": "opt_family_sans",
+      "value": "Sans serif"
+    },
+    {
+      "name": "opt_width_narrow",
+      "value": "Estrecho"
+    },
+    {
+      "name": "opt_width_standard",
+      "value": "Estándar"
+    },
+    {
+      "name": "opt_width_wide",
+      "value": "Ancho"
+    },
+    {
+      "name": "opt_align_left",
+      "value": "Izquierda"
+    },
+    {
+      "name": "opt_align_justify",
+      "value": "Justificado"
+    },
+    {
+      "name": "opt_reader_theme_system",
+      "value": "Seguir el sistema"
+    },
+    {
+      "name": "opt_reader_theme_light",
+      "value": "Claro"
+    },
+    {
+      "name": "opt_reader_theme_sepia",
+      "value": "Sepia"
+    },
+    {
+      "name": "opt_reader_theme_dark",
+      "value": "Oscuro"
+    },
+    {
+      "name": "opt_font_small",
+      "value": "Pequeño"
+    },
+    {
+      "name": "opt_font_medium",
+      "value": "Mediano"
+    },
+    {
+      "name": "opt_font_large",
+      "value": "Grande"
+    },
+    {
+      "name": "opt_line_compact",
+      "value": "Compacto"
+    },
+    {
+      "name": "opt_line_normal",
+      "value": "Normal"
+    },
+    {
+      "name": "opt_line_loose",
+      "value": "Amplio"
+    },
+    {
+      "name": "row_title_bar_scroll",
+      "value": "Ocultar la barra de título al desplazar"
+    },
+    {
+      "name": "action_find_in_article",
+      "value": "Buscar en el artículo"
+    },
+    {
+      "name": "find_hint",
+      "value": "Buscar en el artículo"
+    },
+    {
+      "name": "find_count",
+      "value": "%d/%d"
+    },
+    {
+      "name": "find_none",
+      "value": "Sin coincidencias"
+    },
+    {
+      "name": "action_start_speech",
+      "value": "Leer en voz alta"
+    },
+    {
+      "name": "action_stop_speech",
+      "value": "Detener la lectura"
+    },
+    {
+      "name": "speech_running",
+      "value": "Leyendo en voz alta…"
+    },
+    {
+      "name": "speech_paused",
+      "value": "En pausa"
+    },
+    {
+      "name": "action_pause_speech",
+      "value": "Pausa"
+    },
+    {
+      "name": "action_resume_speech",
+      "value": "Reanudar"
+    },
+    {
+      "name": "toast_speech_unsupported",
+      "value": "La lectura en voz alta no es compatible con este dispositivo"
+    },
+    {
+      "name": "action_copy",
+      "value": "Copiar"
+    },
+    {
+      "name": "action_share_selection",
+      "value": "Compartir selección"
+    },
+    {
+      "name": "action_copy_body",
+      "value": "Copiar el texto del artículo"
+    },
+    {
+      "name": "action_share_body",
+      "value": "Compartir el texto del artículo"
+    },
+    {
+      "name": "snack_body_copied",
+      "value": "Texto del artículo copiado"
+    },
+    {
+      "name": "snack_selection_copied",
+      "value": "Selección copiada"
+    },
+    {
+      "name": "row_reader_keep_on",
+      "value": "Mantener la pantalla encendida al leer"
+    },
+    {
+      "name": "section_storage",
+      "value": "Almacenamiento"
+    },
+    {
+      "name": "row_reader_cache",
+      "value": "Borrar caché de artículos"
+    },
+    {
+      "name": "cache_summary",
+      "value": "%d artículos · %s"
+    },
+    {
+      "name": "aux_reader_cache",
+      "value": "Borra el texto y las imágenes en caché de los artículos no marcados; se conservan el estado de lectura y la lista."
+    },
+    {
+      "name": "dialog_clear_cache_title",
+      "value": "¿Borrar la caché de artículos?"
+    },
+    {
+      "name": "dialog_clear_cache_message",
+      "value": "Se eliminarán el texto en caché y las imágenes incrustadas. Los artículos no marcados necesitarán conexión para abrirse de nuevo."
+    },
+    {
+      "name": "snack_cache_cleared",
+      "value": "%d artículos borrados"
+    },
+    {
+      "name": "list_load_more",
+      "value": "Cargando más…"
+    },
+    {
+      "name": "list_sort_toggle",
+      "value": "Cambiar el orden"
+    },
+    {
+      "name": "list_group_unread",
+      "value": "%d sin leer"
+    },
+    {
+      "name": "sort_newest",
+      "value": "Más recientes primero"
+    },
+    {
+      "name": "sort_oldest",
+      "value": "Más antiguos primero"
+    },
+    {
+      "name": "group_none",
+      "value": "Lista plana"
+    },
+    {
+      "name": "group_by_feed",
+      "value": "Agrupar por fuente"
+    },
+    {
+      "name": "group_by_date",
+      "value": "Agrupar por fecha"
+    },
+    {
+      "name": "group_today",
+      "value": "Hoy"
+    },
+    {
+      "name": "group_yesterday",
+      "value": "Ayer"
+    },
+    {
+      "name": "group_this_week",
+      "value": "Esta semana"
+    },
+    {
+      "name": "group_earlier",
+      "value": "Anteriores"
+    },
+    {
+      "name": "filter_saved",
+      "value": "Para después"
+    },
+    {
+      "name": "filter_archived",
+      "value": "Archivo"
+    },
+    {
+      "name": "action_save",
+      "value": "Guardar para después"
+    },
+    {
+      "name": "action_unsave",
+      "value": "Quitar de «Para después»"
+    },
+    {
+      "name": "action_mark_above_read",
+      "value": "Marcar lo anterior como leído"
+    },
+    {
+      "name": "action_delete",
+      "value": "Eliminar"
+    },
+    {
+      "name": "select_count",
+      "value": "%d seleccionados"
+    },
+    {
+      "name": "select_all",
+      "value": "Seleccionar todo"
+    },
+    {
+      "name": "select_done",
+      "value": "Listo"
+    },
+    {
+      "name": "delete_selected_confirm_title",
+      "value": "¿Eliminar los artículos seleccionados?"
+    },
+    {
+      "name": "delete_selected_confirm_message",
+      "value": "Los %d artículos seleccionados se quitarán de la caché local."
+    },
+    {
+      "name": "row_archive_rule",
+      "value": "Regla de archivo"
+    },
+    {
+      "name": "opt_archive_off",
+      "value": "Nunca"
+    },
+    {
+      "name": "opt_archive_7",
+      "value": "Leído hace más de 7 días"
+    },
+    {
+      "name": "opt_archive_14",
+      "value": "Leído hace más de 14 días"
+    },
+    {
+      "name": "opt_archive_30",
+      "value": "Leído hace más de 30 días"
+    },
+    {
+      "name": "opt_archive_90",
+      "value": "Leído hace más de 90 días"
+    },
+    {
+      "name": "home_last_sync",
+      "value": "Sincronizado %s"
+    },
+    {
+      "name": "home_never_synced",
+      "value": "Aún sin sincronizar"
+    },
+    {
+      "name": "row_refresh_now",
+      "value": "Actualizar ahora"
+    },
+    {
+      "name": "action_retry",
+      "value": "Reintentar"
+    },
+    {
+      "name": "action_scope_feed",
+      "value": "Solo esta fuente"
+    },
+    {
+      "name": "toast_refreshing",
+      "value": "Actualizando…"
+    },
+    {
+      "name": "snack_refreshed",
+      "value": "Fuentes actualizadas"
+    },
+    {
+      "name": "section_list",
+      "value": "Lista"
+    },
+    {
+      "name": "row_list_layout",
+      "value": "Diseño de fila"
+    },
+    {
+      "name": "row_summary_lines",
+      "value": "Líneas del resumen"
+    },
+    {
+      "name": "row_list_density",
+      "value": "Densidad"
+    },
+    {
+      "name": "opt_layout_text",
+      "value": "Solo texto"
+    },
+    {
+      "name": "opt_layout_thumb",
+      "value": "Miniatura"
+    },
+    {
+      "name": "opt_layout_card",
+      "value": "Tarjeta con imagen grande"
+    },
+    {
+      "name": "opt_lines_1",
+      "value": "1 línea"
+    },
+    {
+      "name": "opt_lines_2",
+      "value": "2 líneas"
+    },
+    {
+      "name": "opt_lines_3",
+      "value": "3 líneas"
+    },
+    {
+      "name": "opt_density_compact",
+      "value": "Compacta"
+    },
+    {
+      "name": "opt_density_standard",
+      "value": "Estándar"
+    },
+    {
+      "name": "opt_density_relaxed",
+      "value": "Cómoda"
+    },
+    {
+      "name": "widget_refresh",
+      "value": "Actualizar datos de la tarjeta"
+    },
+    {
+      "name": "notify_action_mark_read",
+      "value": "Marcar como leído"
+    },
+    {
+      "name": "action_highlight",
+      "value": "Resaltar"
+    },
+    {
+      "name": "hl_panel_entry",
+      "value": "Resaltados"
+    },
+    {
+      "name": "hl_panel_title",
+      "value": "%d resaltados"
+    },
+    {
+      "name": "hl_panel_empty",
+      "value": "Aún no hay resaltados. Selecciona texto en el artículo para añadir uno."
+    },
+    {
+      "name": "hl_editor_title",
+      "value": "Editar resaltado"
+    },
+    {
+      "name": "hl_note_hint",
+      "value": "Nota (opcional)"
+    },
+    {
+      "name": "hl_action_goto",
+      "value": "Ir"
+    },
+    {
+      "name": "hl_action_note",
+      "value": "Nota"
+    },
+    {
+      "name": "hl_action_color",
+      "value": "Color"
+    },
+    {
+      "name": "snack_highlight_added",
+      "value": "Resaltado guardado"
+    },
+    {
+      "name": "snack_highlight_removed",
+      "value": "Resaltado eliminado"
+    },
+    {
+      "name": "hl_library_title",
+      "value": "Resaltados"
+    },
+    {
+      "name": "hl_export_md",
+      "value": "Markdown"
+    },
+    {
+      "name": "hl_export_json",
+      "value": "JSON"
+    },
+    {
+      "name": "hl_export_empty",
+      "value": "Aún no hay nada que exportar"
+    },
+    {
+      "name": "hl_article_gone",
+      "value": "El artículo ya no está en la caché local"
+    },
+    {
+      "name": "read_panel_title",
+      "value": "Diseño de lectura"
+    },
+    {
+      "name": "read_panel_preview_text",
+      "value": "Vista previa: mueve los controles de abajo; el artículo se redistribuye con la nueva tipografía."
+    },
+    {
+      "name": "read_panel_font_value",
+      "value": "Tamaño %s px"
+    },
+    {
+      "name": "read_panel_line_value",
+      "value": "Interlineado %s"
+    },
+    {
+      "name": "read_panel_reset",
+      "value": "Restablecer"
+    },
+    {
+      "name": "read_panel_web_hint",
+      "value": "En el modo página original no se aplican el ancho de columna, la alineación, el tema ni la tipografía: prevalece el diseño del sitio."
+    },
+    {
+      "name": "row_status_bar_scroll",
+      "value": "Ocultar la barra de estado al desplazar"
+    },
+    {
+      "name": "row_theme",
+      "value": "Tema"
+    },
+    {
+      "name": "row_global_background",
+      "value": "Fondo global"
+    },
+    {
+      "name": "opt_bg_default",
+      "value": "Predeterminado"
+    },
+    {
+      "name": "opt_bg_aurora",
+      "value": "Aurora"
+    },
+    {
+      "name": "opt_bg_sunset",
+      "value": "Atardecer"
+    },
+    {
+      "name": "opt_bg_custom",
+      "value": "Imagen personalizada"
+    },
+    {
+      "name": "opt_bg_none",
+      "value": "Ninguno"
+    },
+    {
+      "name": "row_language",
+      "value": "Idioma"
+    },
+    {
+      "name": "row_immersive",
+      "value": "Luz inmersiva"
+    },
+    {
+      "name": "row_material_type",
+      "value": "Tipo de material"
+    },
+    {
+      "name": "row_material_level",
+      "value": "Material inmersivo"
+    },
+    {
+      "name": "row_grip",
+      "value": "Agarre inteligente"
+    },
+    {
+      "name": "row_antipeep",
+      "value": "Antimirones"
+    },
+    {
+      "name": "opt_follow_system",
+      "value": "Seguir el sistema"
+    },
+    {
+      "name": "opt_light",
+      "value": "Claro"
+    },
+    {
+      "name": "opt_dark",
+      "value": "Oscuro"
+    },
+    {
+      "name": "opt_chinese",
+      "value": "简体中文"
+    },
+    {
+      "name": "opt_chinese_traditional",
+      "value": "繁體中文"
+    },
+    {
+      "name": "opt_english",
+      "value": "English"
+    },
+    {
+      "name": "opt_japanese",
+      "value": "日本語"
+    },
+    {
+      "name": "opt_german",
+      "value": "Deutsch"
+    },
+    {
+      "name": "opt_french",
+      "value": "Français"
+    },
+    {
+      "name": "opt_spanish",
+      "value": "Español"
+    },
+    {
+      "name": "opt_material_adaptive",
+      "value": "Adaptativo"
+    },
+    {
+      "name": "opt_material_immersive",
+      "value": "Inmersivo"
+    },
+    {
+      "name": "opt_material_none",
+      "value": "Ninguno"
+    },
+    {
+      "name": "opt_level_exquisite",
+      "value": "Exquisito"
+    },
+    {
+      "name": "opt_level_gentle",
+      "value": "Suave"
+    },
+    {
+      "name": "opt_level_smooth",
+      "value": "Fluido"
+    },
+    {
+      "name": "opt_level_adaptive",
+      "value": "Adaptativo"
+    },
+    {
+      "name": "aux_global_immersive_on",
+      "value": "Inmersión global: activada"
+    },
+    {
+      "name": "aux_global_immersive_off",
+      "value": "Inmersión global: desactivada"
+    },
+    {
+      "name": "aux_antipeep_unsupported",
+      "value": "No compatible con este dispositivo"
+    },
+    {
+      "name": "veil_message",
+      "value": "Contenido oculto por privacidad"
+    },
+    {
+      "name": "veil_dismiss",
+      "value": "Toca para continuar"
+    },
+    {
+      "name": "home_refresh",
+      "value": "Actualizar"
+    },
+    {
+      "name": "home_feed_count",
+      "value": "%d fuentes"
+    },
+    {
+      "name": "home_unread_count",
+      "value": "%d sin leer"
+    },
+    {
+      "name": "filter_all",
+      "value": "Todo"
+    },
+    {
+      "name": "filter_unread",
+      "value": "Sin leer"
+    },
+    {
+      "name": "filter_starred",
+      "value": "Favoritos"
+    },
+    {
+      "name": "home_mark_all_read",
+      "value": "Marcar todo como leído"
+    },
+    {
+      "name": "mark_all_read_confirm_title",
+      "value": "Marcar todo como leído"
+    },
+    {
+      "name": "mark_all_read_confirm_message",
+      "value": "¿Marcar todos los artículos como leídos?"
+    },
+    {
+      "name": "dialog_confirm",
+      "value": "Confirmar"
+    },
+    {
+      "name": "filter_empty_unread",
+      "value": "No hay artículos sin leer"
+    },
+    {
+      "name": "filter_empty_starred",
+      "value": "No hay artículos favoritos"
+    },
+    {
+      "name": "filter_empty_search",
+      "value": "No hay artículos coincidentes"
+    },
+    {
+      "name": "home_search_hint",
+      "value": "Buscar por título o texto"
+    },
+    {
+      "name": "home_scope_prefix",
+      "value": "De: %s"
+    },
+    {
+      "name": "action_reader_retry",
+      "value": "Volver a extraer el artículo"
+    },
+    {
+      "name": "action_copy_link",
+      "value": "Copiar enlace"
+    },
+    {
+      "name": "action_open_browser",
+      "value": "Abrir en el navegador"
+    },
+    {
+      "name": "action_share",
+      "value": "Compartir"
+    },
+    {
+      "name": "action_reload",
+      "value": "Recargar página"
+    },
+    {
+      "name": "toast_action_failed",
+      "value": "Acción no compatible con este dispositivo"
+    },
+    {
+      "name": "subs_rename",
+      "value": "Renombrar"
+    },
+    {
+      "name": "subs_rename_hint",
+      "value": "Nombre de la fuente"
+    },
+    {
+      "name": "dialog_save",
+      "value": "Guardar"
+    },
+    {
+      "name": "group_ungrouped",
+      "value": "Sin grupo"
+    },
+    {
+      "name": "group_move_to",
+      "value": "Mover a «%s»"
+    },
+    {
+      "name": "group_clear",
+      "value": "Quitar del grupo"
+    },
+    {
+      "name": "group_new",
+      "value": "Nuevo grupo…"
+    },
+    {
+      "name": "group_hint",
+      "value": "Nombre del grupo (vacío = ninguno)"
+    },
+    {
+      "name": "feed_move_up",
+      "value": "Subir"
+    },
+    {
+      "name": "feed_move_down",
+      "value": "Bajar"
+    },
+    {
+      "name": "row_auto_refresh",
+      "value": "Actualización automática"
+    },
+    {
+      "name": "opt_refresh_off",
+      "value": "Desactivada"
+    },
+    {
+      "name": "opt_refresh_15",
+      "value": "Cada 15 min"
+    },
+    {
+      "name": "opt_refresh_30",
+      "value": "Cada 30 min"
+    },
+    {
+      "name": "opt_refresh_60",
+      "value": "Cada hora"
+    },
+    {
+      "name": "home_manage_subs",
+      "value": "Fuentes"
+    },
+    {
+      "name": "effect_title",
+      "value": "Efectos de luz"
+    },
+    {
+      "name": "effect_hint",
+      "value": "Mantén pulsada la fuente: los componentes cercanos se iluminan"
+    },
+    {
+      "name": "effect_source",
+      "value": "Fuente de luz"
+    },
+    {
+      "name": "effect_target",
+      "value": "Iluminado"
+    },
+    {
+      "name": "home_empty_title",
+      "value": "Aún no hay artículos"
+    },
+    {
+      "name": "home_empty_hint",
+      "value": "Desliza hacia abajo para actualizar o añade primero una fuente RSS."
+    },
+    {
+      "name": "home_empty_action",
+      "value": "Añadir fuente"
+    },
+    {
+      "name": "home_loading",
+      "value": "Cargando…"
+    },
+    {
+      "name": "subs_title",
+      "value": "Fuentes"
+    },
+    {
+      "name": "subs_url_hint",
+      "value": "Introduce la URL de una fuente RSS / Atom"
+    },
+    {
+      "name": "subs_add",
+      "value": "Añadir"
+    },
+    {
+      "name": "subs_adding",
+      "value": "Añadiendo…"
+    },
+    {
+      "name": "subs_remove",
+      "value": "Eliminar"
+    },
+    {
+      "name": "subs_remove_confirm_title",
+      "value": "¿Eliminar esta fuente?"
+    },
+    {
+      "name": "subs_remove_confirm_message",
+      "value": "¿Eliminar «%s» y todos sus artículos?"
+    },
+    {
+      "name": "dialog_cancel",
+      "value": "Cancelar"
+    },
+    {
+      "name": "subs_empty",
+      "value": "Aún no hay fuentes"
+    },
+    {
+      "name": "subs_import_opml",
+      "value": "Importar OPML"
+    },
+    {
+      "name": "subs_export_opml",
+      "value": "Exportar OPML"
+    },
+    {
+      "name": "subs_import_result",
+      "value": "%d fuentes importadas"
+    },
+    {
+      "name": "subs_import_empty",
+      "value": "No se encontró ninguna fuente en este archivo"
+    },
+    {
+      "name": "subs_import_duplicate",
+      "value": "Todas las fuentes ya están suscritas"
+    },
+    {
+      "name": "subs_export_success",
+      "value": "OPML exportado"
+    },
+    {
+      "name": "subs_export_empty",
+      "value": "Nada que exportar"
+    },
+    {
+      "name": "subs_article_count",
+      "value": "%d artículos"
+    },
+    {
+      "name": "subs_error_prefix",
+      "value": "Último error: "
+    },
+    {
+      "name": "feed_articles_title",
+      "value": "Artículos"
+    },
+    {
+      "name": "feed_sort_newest",
+      "value": "Más recientes"
+    },
+    {
+      "name": "feed_sort_oldest",
+      "value": "Más antiguos"
+    },
+    {
+      "name": "home_add_feed_title",
+      "value": "Añadir fuente"
+    },
+    {
+      "name": "article_title",
+      "value": "Artículo"
+    },
+    {
+      "name": "article_open_link",
+      "value": "Enlace original"
+    },
+    {
+      "name": "article_no_content",
+      "value": "Esta entrada no tiene texto completo. Abre el enlace original para leer más."
+    },
+    {
+      "name": "article_mode_web",
+      "value": "Página original"
+    },
+    {
+      "name": "article_mode_text",
+      "value": "Texto extraído"
+    },
+    {
+      "name": "article_mode_reader",
+      "value": "Modo lectura"
+    },
+    {
+      "name": "article_reader_failed",
+      "value": "No se pudo extraer el artículo. Se muestra la página original."
+    },
+    {
+      "name": "article_prev",
+      "value": "Anterior"
+    },
+    {
+      "name": "article_next",
+      "value": "Siguiente"
+    },
+    {
+      "name": "article_next_unread",
+      "value": "Siguiente sin leer"
+    },
+    {
+      "name": "err_empty_url",
+      "value": "Introduce la URL de una fuente"
+    },
+    {
+      "name": "err_duplicate_url",
+      "value": "Esta fuente ya está suscrita"
+    },
+    {
+      "name": "subs_paste",
+      "value": "Pegar"
+    },
+    {
+      "name": "subs_paste_denied",
+      "value": "No se concedió el permiso de pegado"
+    },
+    {
+      "name": "subs_preview_title",
+      "value": "Confirmar suscripción"
+    },
+    {
+      "name": "subs_preview_latest",
+      "value": "Últimos artículos"
+    },
+    {
+      "name": "subs_preview_no_items",
+      "value": "Esta fuente aún no tiene artículos"
+    },
+    {
+      "name": "subs_confirm",
+      "value": "Suscribirse"
+    },
+    {
+      "name": "subs_batch_result",
+      "value": "%d añadidas · %d duplicadas · %d fallidas"
+    },
+    {
+      "name": "subs_duplicate_site",
+      "value": "Parece el mismo sitio que «%s»"
+    },
+    {
+      "name": "subs_edit_url",
+      "value": "Editar URL de la fuente"
+    },
+    {
+      "name": "subs_edit_url_hint",
+      "value": "Nueva URL de la fuente"
+    },
+    {
+      "name": "subs_bulk_move",
+      "value": "Mover a grupo"
+    },
+    {
+      "name": "subs_bulk_remove",
+      "value": "Eliminar"
+    },
+    {
+      "name": "subs_bulk_enter",
+      "value": "Seleccionar"
+    },
+    {
+      "name": "subs_bulk_selected",
+      "value": "%d seleccionadas"
+    },
+    {
+      "name": "subs_bulk_remove_message",
+      "value": "¿Eliminar %d fuentes seleccionadas y sus artículos?"
+    },
+    {
+      "name": "share_ability_desc",
+      "value": "Añadir un enlace compartido a RSS"
+    },
+    {
+      "name": "share_page_title",
+      "value": "Añadir a RSS"
+    },
+    {
+      "name": "err_fetch_failed",
+      "value": "No se pudo cargar la fuente. Comprueba la red o la URL."
+    },
+    {
+      "name": "err_timeout",
+      "value": "La solicitud agotó el tiempo de espera. Comprueba tu red e inténtalo de nuevo."
+    },
+    {
+      "name": "err_network",
+      "value": "Falló la conexión de red. Comprueba tu red e inténtalo de nuevo."
+    },
+    {
+      "name": "err_http",
+      "value": "El servidor devolvió un error. Inténtalo más tarde."
+    },
+    {
+      "name": "err_empty_response",
+      "value": "El servidor no devolvió contenido. Puede que esta dirección no sea una fuente válida."
+    },
+    {
+      "name": "err_parse",
+      "value": "No se pudo analizar esta dirección como fuente RSS / Atom."
+    },
+    {
+      "name": "err_not_a_feed",
+      "value": "Esta dirección no es una fuente y no se encontró ningún enlace de fuente en la página."
+    },
+    {
+      "name": "row_point_light",
+      "value": "Luz puntual"
+    },
+    {
+      "name": "image_title",
+      "value": "Imágenes"
+    },
+    {
+      "name": "image_hdr",
+      "value": "HDR"
+    },
+    {
+      "name": "image_animated",
+      "value": "Formato animado (GIF / WebP) detectado"
+    },
+    {
+      "name": "image_static",
+      "value": "Imagen estática"
+    },
+    {
+      "name": "image_hint",
+      "value": "El componente Image del sistema reproduce automáticamente los GIF / WebP animados."
+    },
+    {
+      "name": "section_branding",
+      "value": "Icono de la aplicación"
+    },
+    {
+      "name": "brand_name",
+      "value": "HarmonyRss"
+    },
+    {
+      "name": "logo_classic",
+      "value": "Clásico"
+    },
+    {
+      "name": "logo_aurora",
+      "value": "Aurora"
+    },
+    {
+      "name": "logo_sunset",
+      "value": "Atardecer"
+    },
+    {
+      "name": "logo_mono",
+      "value": "Mono"
+    },
+    {
+      "name": "aux_logo_launcher_hint",
+      "value": "El logotipo se muestra en la aplicación; el icono de la pantalla de inicio solo cambia tras publicar la aplicación en AppGallery."
+    },
+    {
+      "name": "toast_logo_launcher_failed",
+      "value": "No se cambió el icono de la pantalla de inicio: la aplicación no está publicada o no tiene un icono dinámico."
+    },
+    {
+      "name": "effect_flow_title",
+      "value": "Luz fluida en ambos bordes"
+    },
+    {
+      "name": "effect_flow_hint",
+      "value": "Dos flujos de luz recorren el borde del componente"
+    },
+    {
+      "name": "action_more",
+      "value": "Más"
+    },
+    {
+      "name": "action_star",
+      "value": "Favorito"
+    },
+    {
+      "name": "action_unstar",
+      "value": "Quitar de favoritos"
+    },
+    {
+      "name": "action_mark_read",
+      "value": "Marcar como leído"
+    },
+    {
+      "name": "action_mark_unread",
+      "value": "Marcar como no leído"
+    },
+    {
+      "name": "snack_link_copied",
+      "value": "Enlace copiado"
+    },
+    {
+      "name": "snack_dismiss",
+      "value": "Cerrar"
+    },
+    {
+      "name": "row_notify_new",
+      "value": "Avisar de artículos nuevos"
+    },
+    {
+      "name": "notify_new_title",
+      "value": "%d artículos nuevos"
+    },
+    {
+      "name": "notify_new_text",
+      "value": "%s: %s"
+    },
+    {
+      "name": "toast_notify_denied",
+      "value": "Las notificaciones no están activadas para esta aplicación"
+    },
+    {
+      "name": "row_effect_preview",
+      "value": "Vista previa de efectos de luz"
+    },
+    {
+      "name": "widget_desc",
+      "value": "Últimos artículos RSS"
+    },
+    {
+      "name": "widget_title",
+      "value": "Lector RSS"
+    },
+    {
+      "name": "widget_empty",
+      "value": "Aún no hay artículos"
+    },
+    {
+      "name": "retention_mode_forever",
+      "value": "Conservar todo"
+    },
+    {
+      "name": "retention_mode_days",
+      "value": "Conservar un periodo"
+    },
+    {
+      "name": "retention_mode_unread",
+      "value": "Conservar solo sin leer y guardados"
+    },
+    {
+      "name": "retention_days_30",
+      "value": "30 días"
+    },
+    {
+      "name": "retention_days_90",
+      "value": "90 días"
+    },
+    {
+      "name": "retention_days_365",
+      "value": "365 días"
+    },
+    {
+      "name": "retention_forever",
+      "value": "Siempre"
+    },
+    {
+      "name": "search_title",
+      "value": "Buscar"
+    },
+    {
+      "name": "search_hint",
+      "value": "Buscar en todos los artículos"
+    },
+    {
+      "name": "search_history",
+      "value": "Búsquedas recientes"
+    },
+    {
+      "name": "search_clear_history",
+      "value": "Borrar historial"
+    },
+    {
+      "name": "search_syntax_hint",
+      "value": "Prueba from:nombre is:unread after:2026-01-01 \"frase exacta\""
+    },
+    {
+      "name": "search_empty",
+      "value": "Escribe una palabra clave para buscar en toda la biblioteca"
+    },
+    {
+      "name": "search_no_result",
+      "value": "No hay artículos coincidentes"
+    },
+    {
+      "name": "search_result_count",
+      "value": "%d resultados"
+    },
+    {
+      "name": "search_filter_all",
+      "value": "Todo"
+    },
+    {
+      "name": "search_filter_unread",
+      "value": "Sin leer"
+    },
+    {
+      "name": "search_filter_starred",
+      "value": "Favoritos"
+    },
+    {
+      "name": "search_filter_saved",
+      "value": "Guardados"
+    },
+    {
+      "name": "search_searching",
+      "value": "Buscando…"
+    },
+    {
+      "name": "search_error",
+      "value": "La búsqueda falló, inténtalo de nuevo"
+    },
+    {
+      "name": "search_index_building",
+      "value": "Reconstruyendo el índice…"
+    },
+    {
+      "name": "search_diag_section",
+      "value": "Diagnóstico del índice"
+    },
+    {
+      "name": "search_diag_main_index",
+      "value": "Índice principal"
+    },
+    {
+      "name": "search_diag_cjk_index",
+      "value": "Índice chino"
+    },
+    {
+      "name": "search_diag_tokenizer",
+      "value": "Segmentación china"
+    },
+    {
+      "name": "search_diag_state_ready",
+      "value": "Listo"
+    },
+    {
+      "name": "search_diag_state_degraded",
+      "value": "Degradado"
+    },
+    {
+      "name": "search_diag_state_available",
+      "value": "Disponible"
+    },
+    {
+      "name": "search_diag_state_unavailable",
+      "value": "No disponible"
+    },
+    {
+      "name": "search_diag_indexed",
+      "value": "%d filas"
+    },
+    {
+      "name": "search_diag_last_search",
+      "value": "Última búsqueda"
+    },
+    {
+      "name": "search_diag_path_none",
+      "value": "Aún no ejecutado"
+    },
+    {
+      "name": "search_diag_path_fts",
+      "value": "Índice principal"
+    },
+    {
+      "name": "search_diag_path_cjk",
+      "value": "Índice chino"
+    },
+    {
+      "name": "search_diag_path_like",
+      "value": "Escaneo completo"
+    },
+    {
+      "name": "storage_title",
+      "value": "Almacenamiento y retención"
+    },
+    {
+      "name": "storage_section_retention",
+      "value": "Política de retención"
+    },
+    {
+      "name": "storage_section_usage",
+      "value": "Uso de almacenamiento"
+    },
+    {
+      "name": "storage_section_per_feed",
+      "value": "Uso por fuente"
+    },
+    {
+      "name": "storage_section_trash",
+      "value": "Eliminados recientemente"
+    },
+    {
+      "name": "storage_section_index",
+      "value": "Índice de búsqueda"
+    },
+    {
+      "name": "storage_total",
+      "value": "%d artículos guardados"
+    },
+    {
+      "name": "storage_text_size",
+      "value": "Tamaño del texto: %s"
+    },
+    {
+      "name": "storage_cleanable",
+      "value": "%d artículos se pueden limpiar"
+    },
+    {
+      "name": "storage_clean_now",
+      "value": "Limpiar ahora"
+    },
+    {
+      "name": "storage_clean_confirm_title",
+      "value": "¿Limpiar artículos antiguos?"
+    },
+    {
+      "name": "storage_clean_confirm_message",
+      "value": "%d artículos se moverán a «Eliminados recientemente» y se conservarán 7 días."
+    },
+    {
+      "name": "storage_clean_done",
+      "value": "%d artículos limpiados"
+    },
+    {
+      "name": "storage_trash_count",
+      "value": "%d artículos se pueden restaurar"
+    },
+    {
+      "name": "storage_restore",
+      "value": "Restaurar todo"
+    },
+    {
+      "name": "storage_restore_done",
+      "value": "%d artículos restaurados"
+    },
+    {
+      "name": "storage_rebuild",
+      "value": "Reconstruir índice"
+    },
+    {
+      "name": "storage_rebuilding",
+      "value": "Reconstruyendo %d/%d"
+    },
+    {
+      "name": "storage_rebuild_done",
+      "value": "Índice reconstruido"
+    },
+    {
+      "name": "storage_empty",
+      "value": "Aún no hay nada guardado"
+    },
+    {
+      "name": "storage_retention_hint",
+      "value": "Los artículos favoritos, guardados, resaltados y el artículo abierto nunca se eliminan."
+    },
+    {
+      "name": "feed_settings_title",
+      "value": "Ajustes de la fuente"
+    },
+    {
+      "name": "feed_settings_entry",
+      "value": "Ajustes de la fuente"
+    },
+    {
+      "name": "feed_settings_enabled",
+      "value": "Obtener artículos nuevos"
+    },
+    {
+      "name": "feed_settings_enabled_hint",
+      "value": "Las fuentes desactivadas conservan su historial pero no se obtienen ni generan avisos."
+    },
+    {
+      "name": "feed_settings_interval",
+      "value": "Intervalo de obtención"
+    },
+    {
+      "name": "feed_settings_fulltext",
+      "value": "Texto completo"
+    },
+    {
+      "name": "feed_settings_retention",
+      "value": "Conservar artículos"
+    },
+    {
+      "name": "feed_settings_notify",
+      "value": "Avisar de artículos nuevos"
+    },
+    {
+      "name": "feed_settings_scroll_read",
+      "value": "Marcar como leído al desplazar"
+    },
+    {
+      "name": "feed_settings_scroll_read_hint",
+      "value": "Si está activado, un artículo se marca como leído tras desplazarse hasta el final."
+    },
+    {
+      "name": "feed_settings_section_health",
+      "value": "Estado"
+    },
+    {
+      "name": "feed_settings_follow_global",
+      "value": "Seguir el ajuste global"
+    },
+    {
+      "name": "feed_settings_on",
+      "value": "Activado"
+    },
+    {
+      "name": "feed_settings_off",
+      "value": "Desactivado"
+    },
+    {
+      "name": "feed_settings_interval_15",
+      "value": "Cada 15 min"
+    },
+    {
+      "name": "feed_settings_interval_30",
+      "value": "Cada 30 min"
+    },
+    {
+      "name": "feed_settings_interval_60",
+      "value": "Cada hora"
+    },
+    {
+      "name": "feed_settings_interval_180",
+      "value": "Cada 3 horas"
+    },
+    {
+      "name": "feed_settings_fulltext_auto",
+      "value": "Automático"
+    },
+    {
+      "name": "feed_settings_fulltext_always",
+      "value": "Obtener siempre el original"
+    },
+    {
+      "name": "feed_settings_fulltext_never",
+      "value": "No obtener nunca el original"
+    },
+    {
+      "name": "health_last_success",
+      "value": "Último éxito: %s"
+    },
+    {
+      "name": "health_failure_count",
+      "value": "%d fallos consecutivos"
+    },
+    {
+      "name": "health_never",
+      "value": "Nunca sincronizado"
+    },
+    {
+      "name": "health_retry",
+      "value": "Reintentar ahora"
+    },
+    {
+      "name": "health_retrying",
+      "value": "Reintentando…"
+    },
+    {
+      "name": "health_ok",
+      "value": "Correcto"
+    },
+    {
+      "name": "retention_days_label",
+      "value": "Conservar durante"
+    },
+    {
+      "name": "storage_show_all",
+      "value": "Mostrar todas las fuentes"
+    },
+    {
+      "name": "storage_show_less",
+      "value": "Mostrar menos"
+    },
+    {
+      "name": "feed_settings_section_policy",
+      "value": "Obtención y retención"
+    },
+    {
+      "name": "feed_settings_disabled",
+      "value": "Obtención desactivada"
+    },
+    {
+      "name": "storage_retention_mode",
+      "value": "Retención"
+    },
+    {
+      "name": "search_index_fallback",
+      "value": "Coincidencia básica (índice no disponible)"
+    },
+    {
+      "name": "tag_title",
+      "value": "Etiquetas"
+    },
+    {
+      "name": "tag_entry",
+      "value": "Etiquetas (%d)"
+    },
+    {
+      "name": "tag_empty",
+      "value": "Aún no hay etiquetas"
+    },
+    {
+      "name": "tag_new_hint",
+      "value": "Nombre de la nueva etiqueta"
+    },
+    {
+      "name": "tag_new",
+      "value": "Nueva etiqueta"
+    },
+    {
+      "name": "tag_name_invalid",
+      "value": "Introduce un nombre de etiqueta (máx. 32 caracteres)"
+    },
+    {
+      "name": "tag_limit_reached",
+      "value": "Límite de etiquetas alcanzado (100)"
+    },
+    {
+      "name": "tag_rename",
+      "value": "Renombrar"
+    },
+    {
+      "name": "tag_rename_hint",
+      "value": "Nombre de la etiqueta"
+    },
+    {
+      "name": "tag_remove",
+      "value": "Eliminar etiqueta"
+    },
+    {
+      "name": "tag_remove_confirm_title",
+      "value": "¿Eliminar la etiqueta?"
+    },
+    {
+      "name": "tag_remove_confirm_message",
+      "value": "Los artículos conservan su contenido; solo se quita la etiqueta."
+    },
+    {
+      "name": "tag_view_results",
+      "value": "Ver resultados"
+    },
+    {
+      "name": "tag_articles_title",
+      "value": "Artículos etiquetados"
+    },
+    {
+      "name": "tag_picker_title",
+      "value": "Etiquetas"
+    },
+    {
+      "name": "tag_picker_empty",
+      "value": "Aún no hay etiquetas: crea una abajo"
+    },
+    {
+      "name": "tag_apply",
+      "value": "Aplicar"
+    },
+    {
+      "name": "tag_select_hint",
+      "value": "Selecciona al menos una etiqueta"
+    },
+    {
+      "name": "tag_added",
+      "value": "Etiqueta añadida"
+    },
+    {
+      "name": "tag_removed",
+      "value": "Etiqueta eliminada"
+    },
+    {
+      "name": "tag_batch_done",
+      "value": "%d artículos etiquetados"
+    },
+    {
+      "name": "tag_action_failed",
+      "value": "La acción de etiqueta falló"
+    },
+    {
+      "name": "tag_manage_hint",
+      "value": "Selecciona etiquetas para ver los artículos que las tienen todas"
+    },
+    {
+      "name": "smart_folder_title",
+      "value": "Carpetas inteligentes"
+    },
+    {
+      "name": "smart_folder_entry",
+      "value": "Carpetas inteligentes (%d)"
+    },
+    {
+      "name": "smart_folder_empty",
+      "value": "Aún no hay carpetas inteligentes"
+    },
+    {
+      "name": "smart_folder_new",
+      "value": "Nueva carpeta inteligente"
+    },
+    {
+      "name": "smart_folder_name_hint",
+      "value": "Nombre de la carpeta"
+    },
+    {
+      "name": "smart_folder_query_hint",
+      "value": "Consulta, p. ej. from:Fuente is:unread IA"
+    },
+    {
+      "name": "smart_folder_query_label",
+      "value": "Consulta"
+    },
+    {
+      "name": "smart_folder_save_current",
+      "value": "Guardar como carpeta inteligente"
+    },
+    {
+      "name": "smart_folder_saved",
+      "value": "Carpeta inteligente guardada"
+    },
+    {
+      "name": "smart_folder_query_empty",
+      "value": "La consulta no puede estar vacía"
+    },
+    {
+      "name": "smart_folder_name_invalid",
+      "value": "Introduce un nombre (máx. 32 caracteres)"
+    },
+    {
+      "name": "smart_folder_limit_reached",
+      "value": "Límite de carpetas inteligentes alcanzado (50)"
+    },
+    {
+      "name": "smart_folder_query_too_long",
+      "value": "Consulta demasiado larga (máx. 512 caracteres)"
+    },
+    {
+      "name": "smart_folder_edit",
+      "value": "Editar"
+    },
+    {
+      "name": "smart_folder_save",
+      "value": "Guardar"
+    },
+    {
+      "name": "smart_folder_remove",
+      "value": "Eliminar carpeta inteligente"
+    },
+    {
+      "name": "smart_folder_remove_confirm_title",
+      "value": "¿Eliminar la carpeta inteligente?"
+    },
+    {
+      "name": "smart_folder_remove_confirm_message",
+      "value": "Solo se elimina la consulta guardada; los artículos permanecen."
+    },
+    {
+      "name": "smart_folder_move_up",
+      "value": "Subir"
+    },
+    {
+      "name": "smart_folder_move_down",
+      "value": "Bajar"
+    },
+    {
+      "name": "smart_folder_open_failed",
+      "value": "No se puede abrir esta carpeta"
+    },
+    {
+      "name": "remote_entry_title",
+      "value": "Cuenta y servicios"
+    },
+    {
+      "name": "remote_title",
+      "value": "Cuenta y servicios"
+    },
+    {
+      "name": "remote_section_connect",
+      "value": "Conectar un servicio"
+    },
+    {
+      "name": "remote_field_base_url",
+      "value": "Dirección del servidor"
+    },
+    {
+      "name": "remote_field_base_url_hint",
+      "value": "https://rss.example.com"
+    },
+    {
+      "name": "remote_field_username",
+      "value": "Usuario"
+    },
+    {
+      "name": "remote_field_password",
+      "value": "Contraseña"
+    },
+    {
+      "name": "remote_allow_http",
+      "value": "Permitir HTTP no seguro"
+    },
+    {
+      "name": "remote_allow_http_hint",
+      "value": "Solo para un servidor autoalojado de confianza. El tráfico HTTP no está cifrado."
+    },
+    {
+      "name": "remote_connect",
+      "value": "Conectar"
+    },
+    {
+      "name": "remote_connecting",
+      "value": "Conectando…"
+    },
+    {
+      "name": "remote_connected",
+      "value": "Conectado"
+    },
+    {
+      "name": "remote_not_connected",
+      "value": "No conectado"
+    },
+    {
+      "name": "remote_section_status",
+      "value": "Estado de sincronización"
+    },
+    {
+      "name": "remote_status_service",
+      "value": "Servicio"
+    },
+    {
+      "name": "remote_status_service_value",
+      "value": "Google Reader API"
+    },
+    {
+      "name": "remote_status_base_url",
+      "value": "Dirección"
+    },
+    {
+      "name": "remote_status_username",
+      "value": "Cuenta"
+    },
+    {
+      "name": "remote_status_last_sync",
+      "value": "Última sincronización"
+    },
+    {
+      "name": "remote_status_never",
+      "value": "Nunca sincronizado"
+    },
+    {
+      "name": "remote_status_pending",
+      "value": "Cambios pendientes"
+    },
+    {
+      "name": "remote_status_failures",
+      "value": "Fallos consecutivos"
+    },
+    {
+      "name": "remote_status_last_error",
+      "value": "Último error"
+    },
+    {
+      "name": "remote_sync_now",
+      "value": "Sincronizar ahora"
+    },
+    {
+      "name": "remote_syncing",
+      "value": "Sincronizando…"
+    },
+    {
+      "name": "remote_logout",
+      "value": "Cerrar sesión"
+    },
+    {
+      "name": "remote_logout_confirm_title",
+      "value": "¿Cerrar sesión?"
+    },
+    {
+      "name": "remote_logout_confirm_message",
+      "value": "Los artículos locales y el estado de lectura siguen disponibles. También puedes eliminar las asignaciones de sincronización y la cola pendiente."
+    },
+    {
+      "name": "remote_logout_keep",
+      "value": "Conservar datos locales"
+    },
+    {
+      "name": "remote_logout_clear",
+      "value": "Eliminar datos de sincronización"
+    },
+    {
+      "name": "remote_logout_done",
+      "value": "Sesión cerrada"
+    },
+    {
+      "name": "remote_phase_feeds",
+      "value": "Obteniendo suscripciones…"
+    },
+    {
+      "name": "remote_phase_articles",
+      "value": "Obteniendo artículos…"
+    },
+    {
+      "name": "remote_phase_push",
+      "value": "Subiendo el estado de lectura…"
+    },
+    {
+      "name": "remote_phase_pull",
+      "value": "Aplicando el estado remoto…"
+    },
+    {
+      "name": "remote_phase_done",
+      "value": "Sincronización completada"
+    },
+    {
+      "name": "remote_progress",
+      "value": "%d de %d fuentes sincronizadas"
+    },
+    {
+      "name": "remote_error_network",
+      "value": "No se puede acceder al servidor. Comprueba la dirección y tu red."
+    },
+    {
+      "name": "remote_error_tls",
+      "value": "El certificado no es de confianza. Usa uno válido o permite HTTP."
+    },
+    {
+      "name": "remote_error_auth",
+      "value": "Usuario o contraseña incorrectos."
+    },
+    {
+      "name": "remote_error_api",
+      "value": "La API del servicio no está disponible en esta dirección."
+    },
+    {
+      "name": "remote_error_rate",
+      "value": "El servidor está limitando las solicitudes. Inténtalo más tarde."
+    },
+    {
+      "name": "remote_error_server",
+      "value": "El servidor devolvió un error. Inténtalo más tarde."
+    },
+    {
+      "name": "remote_error_parse",
+      "value": "Respuesta inesperada del servidor."
+    },
+    {
+      "name": "remote_error_insecure",
+      "value": "HTTP está desactivado. Activa «Permitir HTTP no seguro» para usar esta dirección."
+    },
+    {
+      "name": "remote_error_empty",
+      "value": "Rellena los campos obligatorios."
+    },
+    {
+      "name": "remote_error_busy",
+      "value": "Ya hay una sincronización en curso."
+    },
+    {
+      "name": "remote_error_not_connected",
+      "value": "Conecta primero un servicio."
+    },
+    {
+      "name": "remote_sync_done",
+      "value": "Sincronización completada"
+    },
+    {
+      "name": "remote_sync_summary",
+      "value": "%d fuentes · %d artículos · %d estados actualizados"
+    },
+    {
+      "name": "remote_form_hint",
+      "value": "Funciona con FreshRSS, Tiny Tiny RSS y Miniflux (Google Reader API)."
+    },
+    {
+      "name": "remote_aux_credentials",
+      "value": "Las credenciales se guardan en el Asset Store del sistema, nunca en texto plano."
+    },
+    {
+      "name": "remote_empty_status",
+      "value": "Conecta un servicio para sincronizar suscripciones y estado de lectura."
+    },
+    {
+      "name": "remote_status_feeds",
+      "value": "Suscripciones remotas"
+    },
+    {
+      "name": "remote_auto_sync",
+      "value": "Sincronización automática"
+    },
+    {
+      "name": "rule_title",
+      "value": "Reglas"
+    },
+    {
+      "name": "rule_entry",
+      "value": "Reglas (%d)"
+    },
+    {
+      "name": "rule_empty",
+      "value": "Aún no hay reglas. Los artículos nuevos se procesan automáticamente cuando una regla coincide."
+    },
+    {
+      "name": "rule_new",
+      "value": "Nueva regla"
+    },
+    {
+      "name": "rule_edit_title",
+      "value": "Regla"
+    },
+    {
+      "name": "rule_manage_hint",
+      "value": "Las reglas se aplican a los artículos nuevos obtenidos y sincronizados, por orden de prioridad. Las acciones solo añaden estado (leído / favorito / etiquetas / oculto) y nunca lo deshacen."
+    },
+    {
+      "name": "rule_enabled",
+      "value": "Activada"
+    },
+    {
+      "name": "rule_name_hint",
+      "value": "Nombre de la regla"
+    },
+    {
+      "name": "rule_keywords_label",
+      "value": "Palabras clave"
+    },
+    {
+      "name": "rule_keywords_hint",
+      "value": "Palabras clave separadas por comas; todas deben coincidir"
+    },
+    {
+      "name": "rule_fields_label",
+      "value": "Buscar en"
+    },
+    {
+      "name": "rule_field_title",
+      "value": "Título"
+    },
+    {
+      "name": "rule_field_summary",
+      "value": "Resumen"
+    },
+    {
+      "name": "rule_field_content",
+      "value": "Contenido"
+    },
+    {
+      "name": "rule_field_author",
+      "value": "Autor"
+    },
+    {
+      "name": "rule_source_label",
+      "value": "Fuentes"
+    },
+    {
+      "name": "rule_source_all",
+      "value": "Todas las fuentes"
+    },
+    {
+      "name": "rule_source_custom",
+      "value": "Fuentes seleccionadas"
+    },
+    {
+      "name": "rule_source_invalid",
+      "value": "Algunas fuentes seleccionadas ya no existen. Vuelve a seleccionarlas."
+    },
+    {
+      "name": "rule_actions_label",
+      "value": "Acciones"
+    },
+    {
+      "name": "rule_action_read",
+      "value": "Marcar como leído"
+    },
+    {
+      "name": "rule_action_star",
+      "value": "Marcar como favorito"
+    },
+    {
+      "name": "rule_action_tag",
+      "value": "Añadir etiquetas"
+    },
+    {
+      "name": "rule_action_hide",
+      "value": "Ocultar"
+    },
+    {
+      "name": "rule_tags_label",
+      "value": "Etiquetas"
+    },
+    {
+      "name": "rule_tags_empty",
+      "value": "Aún no hay etiquetas. Créalas en la página Etiquetas."
+    },
+    {
+      "name": "rule_save",
+      "value": "Guardar regla"
+    },
+    {
+      "name": "rule_match_count",
+      "value": "%d coincidencias"
+    },
+    {
+      "name": "rule_last_hit",
+      "value": "Última coincidencia %s"
+    },
+    {
+      "name": "rule_never_hit",
+      "value": "Nunca coincidió"
+    },
+    {
+      "name": "rule_test",
+      "value": "Probar"
+    },
+    {
+      "name": "rule_testing",
+      "value": "Probando…"
+    },
+    {
+      "name": "rule_test_result",
+      "value": "Últimos %d artículos · %d coincidencias"
+    },
+    {
+      "name": "rule_edit",
+      "value": "Editar"
+    },
+    {
+      "name": "rule_move_up",
+      "value": "Subir"
+    },
+    {
+      "name": "rule_move_down",
+      "value": "Bajar"
+    },
+    {
+      "name": "rule_remove",
+      "value": "Eliminar"
+    },
+    {
+      "name": "rule_remove_confirm_title",
+      "value": "Eliminar regla"
+    },
+    {
+      "name": "rule_remove_confirm_message",
+      "value": "Las reglas eliminadas dejan de procesar artículos nuevos. El estado leído / favorito / etiqueta / oculto existente se conserva."
+    },
+    {
+      "name": "rule_name_invalid",
+      "value": "El nombre de la regla es obligatorio"
+    },
+    {
+      "name": "rule_keywords_invalid",
+      "value": "Añade al menos una palabra clave"
+    },
+    {
+      "name": "rule_keywords_too_many",
+      "value": "Demasiadas palabras clave (máx. %d)"
+    },
+    {
+      "name": "rule_fields_empty",
+      "value": "Selecciona al menos un campo para comparar"
+    },
+    {
+      "name": "rule_actions_empty",
+      "value": "Selecciona al menos una acción"
+    },
+    {
+      "name": "rule_tags_required",
+      "value": "Selecciona al menos una etiqueta para la acción de etiquetado"
+    },
+    {
+      "name": "rule_limit_reached",
+      "value": "Límite de reglas alcanzado"
+    },
+    {
+      "name": "rule_action_failed",
+      "value": "La operación falló"
+    },
+    {
+      "name": "rule_error_name_empty",
+      "value": "El nombre de la regla es obligatorio"
+    },
+    {
+      "name": "rule_error_name_too_long",
+      "value": "El nombre de la regla es demasiado largo (máx. %d caracteres)"
+    },
+    {
+      "name": "rule_error_keywords_empty",
+      "value": "Añade al menos una palabra clave"
+    },
+    {
+      "name": "rule_error_keywords_too_many",
+      "value": "Demasiadas palabras clave (máx. %d)"
+    },
+    {
+      "name": "rule_error_fields_empty",
+      "value": "Selecciona al menos un campo para comparar"
+    },
+    {
+      "name": "rule_error_actions_empty",
+      "value": "Selecciona al menos una acción"
+    },
+    {
+      "name": "rule_error_tags_empty",
+      "value": "Selecciona al menos una etiqueta para la acción de etiquetado"
+    },
+    {
+      "name": "rule_error_limit_reached",
+      "value": "Límite de reglas alcanzado"
+    },
+    {
+      "name": "rule_keywords_limit_hint",
+      "value": "Hasta %d palabras clave, separadas por comas; todas deben coincidir"
+    },
+    {
+      "name": "rule_hidden_entry",
+      "value": "Ocultos (%d)"
+    },
+    {
+      "name": "hidden_title",
+      "value": "Artículos ocultos"
+    },
+    {
+      "name": "hidden_empty",
+      "value": "No hay artículos ocultos"
+    },
+    {
+      "name": "hidden_hint",
+      "value": "Los artículos ocultos no aparecen en la lista principal ni en los contadores de no leídos, pero se pueden buscar y leer."
+    },
+    {
+      "name": "hidden_unhide",
+      "value": "Mostrar de nuevo"
+    },
+    {
+      "name": "hidden_unhide_done",
+      "value": "Artículo devuelto a la lista principal"
+    },
+    {
+      "name": "dedupe_sources_count",
+      "value": "%d fuentes"
+    },
+    {
+      "name": "dedupe_sources_title",
+      "value": "Todas las fuentes"
+    },
+    {
+      "name": "dedupe_source_label",
+      "value": "Fuente"
+    },
+    {
+      "name": "dedupe_merged_hint",
+      "value": "Este artículo también lo recopilan otras %d fuentes"
+    },
+    {
+      "name": "dedupe_group_empty",
+      "value": "Sin información de fuentes"
+    },
+    {
+      "name": "dedupe_settings_title",
+      "value": "Duplicados entre fuentes"
+    },
+    {
+      "name": "dedupe_settings_desc",
+      "value": "Cuando varias fuentes llevan el mismo artículo, se muestra una vez y se conservan todas las fuentes."
+    },
+    {
+      "name": "dedupe_toggle_on",
+      "value": "Duplicados entre fuentes activado"
+    },
+    {
+      "name": "dedupe_toggle_off",
+      "value": "Duplicados entre fuentes desactivado"
+    },
+    {
+      "name": "dedupe_match_failed",
+      "value": "Falló la comprobación de duplicados; el artículo se guardó por separado"
+    },
+    {
+      "name": "dedupe_open_failed",
+      "value": "No se puede abrir este enlace de fuente"
+    },
+    {
+      "name": "dedupe_source_count",
+      "value": "%d fuentes"
+    },
+    {
+      "name": "dedupe_switch_desc",
+      "value": "Cuando varias fuentes llevan el mismo artículo, se muestra una vez y se conservan todas las fuentes."
+    },
+    {
+      "name": "dedupe_source_current",
+      "value": "Actual"
+    },
+    {
+      "name": "share_panel_title",
+      "value": "Compartir"
+    },
+    {
+      "name": "share_group_actions",
+      "value": "Acciones"
+    },
+    {
+      "name": "share_group_targets",
+      "value": "Enviar a"
+    },
+    {
+      "name": "share_group_templates",
+      "value": "Plantillas"
+    },
+    {
+      "name": "share_group_export",
+      "value": "Exportar resaltados"
+    },
+    {
+      "name": "share_action_system",
+      "value": "Compartir del sistema"
+    },
+    {
+      "name": "share_action_copy_link",
+      "value": "Copiar enlace"
+    },
+    {
+      "name": "share_action_copy_body",
+      "value": "Copiar texto"
+    },
+    {
+      "name": "share_action_browser",
+      "value": "Abrir en el navegador"
+    },
+    {
+      "name": "share_action_saved",
+      "value": "Guardar para después"
+    },
+    {
+      "name": "share_target_pocket",
+      "value": "Pocket"
+    },
+    {
+      "name": "share_target_instapaper",
+      "value": "Instapaper"
+    },
+    {
+      "name": "share_target_flomo",
+      "value": "Flomo"
+    },
+    {
+      "name": "share_target_email",
+      "value": "Correo"
+    },
+    {
+      "name": "share_toast_shared",
+      "value": "Se abrió la hoja de compartir del sistema"
+    },
+    {
+      "name": "share_toast_copied",
+      "value": "Copiado"
+    },
+    {
+      "name": "share_toast_copy_failed",
+      "value": "No se pudo copiar"
+    },
+    {
+      "name": "share_toast_open_failed",
+      "value": "No se pudo abrir la aplicación"
+    },
+    {
+      "name": "share_toast_fallback_copied",
+      "value": "Aplicación no disponible; enlace copiado"
+    },
+    {
+      "name": "share_toast_share_failed",
+      "value": "Compartir no está disponible"
+    },
+    {
+      "name": "share_toast_nothing_to_share",
+      "value": "No hay nada que compartir"
+    },
+    {
+      "name": "share_toast_busy",
+      "value": "Espera un momento…"
+    },
+    {
+      "name": "share_toast_saved",
+      "value": "Guardado para después"
+    },
+    {
+      "name": "share_disabled_no_url",
+      "value": "Este elemento no tiene enlace"
+    },
+    {
+      "name": "share_disabled_no_highlights",
+      "value": "Este artículo no tiene resaltados"
+    },
+    {
+      "name": "share_export_article",
+      "value": "Exportar los resaltados de este artículo"
+    },
+    {
+      "name": "share_export_all",
+      "value": "Exportar todos los resaltados"
+    },
+    {
+      "name": "share_export_empty",
+      "value": "No hay resaltados que exportar"
+    },
+    {
+      "name": "share_settings_title",
+      "value": "Compartir y plantillas"
+    },
+    {
+      "name": "tpl_section_title",
+      "value": "Plantillas"
+    },
+    {
+      "name": "tpl_default_name",
+      "value": "Predeterminada"
+    },
+    {
+      "name": "tpl_new",
+      "value": "Nueva plantilla"
+    },
+    {
+      "name": "tpl_edit",
+      "value": "Editar plantilla"
+    },
+    {
+      "name": "tpl_name_label",
+      "value": "Nombre"
+    },
+    {
+      "name": "tpl_content_label",
+      "value": "Contenido"
+    },
+    {
+      "name": "tpl_placeholder_help",
+      "value": "Marcadores: {title} {url} {summary} {author} {tags}"
+    },
+    {
+      "name": "tpl_save",
+      "value": "Guardar"
+    },
+    {
+      "name": "tpl_cancel",
+      "value": "Cancelar"
+    },
+    {
+      "name": "tpl_delete",
+      "value": "Eliminar"
+    },
+    {
+      "name": "tpl_delete_confirm",
+      "value": "¿Eliminar esta plantilla?"
+    },
+    {
+      "name": "tpl_move_up",
+      "value": "Subir"
+    },
+    {
+      "name": "tpl_move_down",
+      "value": "Bajar"
+    },
+    {
+      "name": "tpl_copy",
+      "value": "Copiar"
+    },
+    {
+      "name": "tpl_share",
+      "value": "Compartir"
+    },
+    {
+      "name": "tpl_empty",
+      "value": "Aún no hay plantillas"
+    },
+    {
+      "name": "tpl_err_name_empty",
+      "value": "Introduce un nombre de plantilla"
+    },
+    {
+      "name": "tpl_err_name_long",
+      "value": "El nombre es demasiado largo"
+    },
+    {
+      "name": "tpl_err_content_empty",
+      "value": "El contenido de la plantilla no puede estar vacío"
+    },
+    {
+      "name": "tpl_err_content_long",
+      "value": "El contenido de la plantilla es demasiado largo"
+    },
+    {
+      "name": "tpl_err_max",
+      "value": "Puedes mantener hasta 20 plantillas"
+    },
+    {
+      "name": "tpl_limit_hint",
+      "value": "Hasta 20 plantillas; el orden aquí es el orden del panel de compartir."
+    },
+    {
+      "name": "share_action_unsave",
+      "value": "Quitar de «Para después»"
+    },
+    {
+      "name": "share_toast_unsaved",
+      "value": "Quitado de «Para después»"
+    },
+    {
+      "name": "tpl_name_hint",
+      "value": "p. ej. Publicación corta"
+    },
+    {
+      "name": "tpl_content_hint",
+      "value": "{title} — {url}"
+    },
+    {
+      "name": "tpl_toast_saved",
+      "value": "Plantilla guardada"
+    },
+    {
+      "name": "tpl_toast_deleted",
+      "value": "Plantilla eliminada"
+    },
+    {
+      "name": "tpl_err_save_failed",
+      "value": "No se pudo guardar la plantilla"
+    },
+    {
+      "name": "tpl_default_hint",
+      "value": "Plantilla integrada; crea la tuya para personalizarla."
+    },
+    {
+      "name": "tpl_delete_confirm_named",
+      "value": "¿Eliminar «%s»?"
+    },
+    {
+      "name": "section_share",
+      "value": "Compartir"
+    },
+    {
+      "name": "backup_title",
+      "value": "Copia y restauración"
+    },
+    {
+      "name": "backup_entry",
+      "value": "Copia y restauración"
+    },
+    {
+      "name": "backup_intro",
+      "value": "Mueve tus suscripciones y datos de lectura a un dispositivo nuevo, o guarda una copia local."
+    },
+    {
+      "name": "backup_section_export",
+      "value": "Exportar"
+    },
+    {
+      "name": "backup_export_action",
+      "value": "Exportar copia"
+    },
+    {
+      "name": "backup_export_hint",
+      "value": "Guarda suscripciones, estados de lectura, resaltados, etiquetas, reglas y plantillas en un archivo JSON."
+    },
+    {
+      "name": "backup_export_cancelled",
+      "value": "Exportación cancelada"
+    },
+    {
+      "name": "backup_section_import",
+      "value": "Importar"
+    },
+    {
+      "name": "backup_import_action",
+      "value": "Importar copia"
+    },
+    {
+      "name": "backup_import_hint",
+      "value": "Los datos existentes se fusionan; no se elimina nada."
+    },
+    {
+      "name": "backup_import_cancelled",
+      "value": "Importación cancelada"
+    },
+    {
+      "name": "backup_restore_settings",
+      "value": "Restaurar también los ajustes"
+    },
+    {
+      "name": "backup_restore_settings_hint",
+      "value": "Aplica el tema, el diseño, la lista y la sincronización desde la copia. Desactivado por defecto."
+    },
+    {
+      "name": "backup_section_snapshots",
+      "value": "Instantáneas automáticas"
+    },
+    {
+      "name": "backup_snapshot_now",
+      "value": "Crear copia ahora"
+    },
+    {
+      "name": "backup_snapshot_empty",
+      "value": "Aún no hay instantáneas"
+    },
+    {
+      "name": "backup_snapshot_restore",
+      "value": "Restaurar"
+    },
+    {
+      "name": "backup_snapshot_delete",
+      "value": "Eliminar"
+    },
+    {
+      "name": "backup_snapshot_keep_hint",
+      "value": "Se crea una instantánea al día; se conservan las 7 últimas."
+    },
+    {
+      "name": "backup_snapshot_created",
+      "value": "Creada %s"
+    },
+    {
+      "name": "backup_snapshot_size",
+      "value": "Tamaño %s"
+    },
+    {
+      "name": "backup_last_snapshot",
+      "value": "Última instantánea: %s"
+    },
+    {
+      "name": "backup_never",
+      "value": "Nunca"
+    },
+    {
+      "name": "backup_result_title",
+      "value": "Último resultado"
+    },
+    {
+      "name": "backup_result_label_feeds",
+      "value": "Suscripciones"
+    },
+    {
+      "name": "backup_result_label_articles",
+      "value": "Artículos"
+    },
+    {
+      "name": "backup_result_label_updated",
+      "value": "Actualizados"
+    },
+    {
+      "name": "backup_result_label_highlights",
+      "value": "Resaltados"
+    },
+    {
+      "name": "backup_result_label_tags",
+      "value": "Etiquetas"
+    },
+    {
+      "name": "backup_result_label_skipped",
+      "value": "Omitidos"
+    },
+    {
+      "name": "backup_result_label_failed",
+      "value": "Fallidos"
+    },
+    {
+      "name": "backup_result_added",
+      "value": "Añadidos: %d"
+    },
+    {
+      "name": "backup_result_updated",
+      "value": "Actualizados: %d"
+    },
+    {
+      "name": "backup_result_skipped",
+      "value": "Omitidos: %d"
+    },
+    {
+      "name": "backup_result_failed",
+      "value": "Fallidos: %d"
+    },
+    {
+      "name": "backup_privacy_notice",
+      "value": "La copia contiene tu historial de lectura. Guarda el archivo de forma segura."
+    },
+    {
+      "name": "backup_error_parse",
+      "value": "Este archivo no es una copia válida."
+    },
+    {
+      "name": "backup_error_version",
+      "value": "Esta versión de copia no es compatible."
+    },
+    {
+      "name": "backup_error_empty",
+      "value": "El archivo de copia está vacío."
+    },
+    {
+      "name": "backup_error_read",
+      "value": "No se pudo leer el archivo."
+    },
+    {
+      "name": "backup_error_write",
+      "value": "No se pudo guardar el archivo."
+    },
+    {
+      "name": "backup_error_snapshot",
+      "value": "No se pudo crear la instantánea."
+    },
+    {
+      "name": "backup_error_busy",
+      "value": "Otra tarea de copia sigue en curso. Inténtalo de nuevo en un momento."
+    },
+    {
+      "name": "backup_toast_exported",
+      "value": "Copia exportada"
+    },
+    {
+      "name": "backup_toast_imported",
+      "value": "Copia importada"
+    },
+    {
+      "name": "backup_toast_restored",
+      "value": "Instantánea restaurada"
+    },
+    {
+      "name": "backup_toast_deleted",
+      "value": "Instantánea eliminada"
+    },
+    {
+      "name": "backup_toast_snapshot_created",
+      "value": "Instantánea creada"
+    },
+    {
+      "name": "backup_confirm_restore_title",
+      "value": "¿Restaurar esta instantánea?"
+    },
+    {
+      "name": "backup_confirm_restore_message",
+      "value": "Los datos se fusionan con la biblioteca actual. No se eliminan los elementos existentes."
+    },
+    {
+      "name": "backup_confirm_delete_title",
+      "value": "¿Eliminar esta instantánea?"
+    },
+    {
+      "name": "backup_confirm_delete_message",
+      "value": "Este archivo de instantánea se eliminará y no se podrá recuperar."
+    },
+    {
+      "name": "backup_working",
+      "value": "Procesando…"
+    },
+    {
+      "name": "backup_section_about",
+      "value": "Acerca de las copias"
+    },
+    {
+      "name": "backup_content_list",
+      "value": "Suscripciones · estados de lectura · resaltados · etiquetas · carpetas inteligentes · reglas · plantillas · ajustes"
+    },
+    {
+      "name": "row_notify_settings",
+      "value": "Ajustes de notificaciones"
+    },
+    {
+      "name": "notify_settings_title",
+      "value": "Ajustes de notificaciones"
+    },
+    {
+      "name": "notify_settings_desc",
+      "value": "Decide qué artículos nuevos te avisan y cuándo."
+    },
+    {
+      "name": "notify_settings_saved",
+      "value": "Ajustes de notificaciones guardados"
+    },
+    {
+      "name": "notify_section_permission",
+      "value": "Permiso"
+    },
+    {
+      "name": "notify_permission_on",
+      "value": "Notificaciones permitidas"
+    },
+    {
+      "name": "notify_permission_off",
+      "value": "Notificaciones no permitidas"
+    },
+    {
+      "name": "notify_permission_grant",
+      "value": "Permitir notificaciones"
+    },
+    {
+      "name": "notify_permission_hint",
+      "value": "Si no aparece ningún diálogo, activa las notificaciones para esta aplicación en los ajustes del sistema."
+    },
+    {
+      "name": "notify_status_off",
+      "value": "Las notificaciones están desactivadas. No se anunciarán artículos nuevos."
+    },
+    {
+      "name": "notify_section_policy",
+      "value": "Qué artículos"
+    },
+    {
+      "name": "notify_global_switch",
+      "value": "Avisar de artículos nuevos"
+    },
+    {
+      "name": "notify_global_switch_desc",
+      "value": "Los ajustes por fuente siguen aplicándose. Desactiva una fuente para silenciarla."
+    },
+    {
+      "name": "notify_keywords_title",
+      "value": "Palabras clave"
+    },
+    {
+      "name": "notify_keywords_desc",
+      "value": "Avisar solo cuando el título o el resumen contenga una palabra clave. Déjalo vacío para avisar de todo."
+    },
+    {
+      "name": "notify_keywords_empty",
+      "value": "Aún no hay palabras clave"
+    },
+    {
+      "name": "notify_keywords_placeholder",
+      "value": "Añadir palabra clave"
+    },
+    {
+      "name": "notify_keywords_add",
+      "value": "Añadir"
+    },
+    {
+      "name": "notify_keywords_full",
+      "value": "Hasta %d palabras clave"
+    },
+    {
+      "name": "notify_section_dnd",
+      "value": "No molestar"
+    },
+    {
+      "name": "notify_dnd_title",
+      "value": "No molestar"
+    },
+    {
+      "name": "notify_dnd_desc",
+      "value": "Retiene las notificaciones durante este periodo y las entrega juntas después."
+    },
+    {
+      "name": "notify_dnd_start",
+      "value": "Inicio"
+    },
+    {
+      "name": "notify_dnd_end",
+      "value": "Fin"
+    },
+    {
+      "name": "notify_dnd_same",
+      "value": "El inicio y el fin coinciden, así que «No molestar» está desactivado."
+    },
+    {
+      "name": "notify_section_digest",
+      "value": "Resumen diario"
+    },
+    {
+      "name": "notify_digest_title",
+      "value": "Resumen diario"
+    },
+    {
+      "name": "notify_digest_desc",
+      "value": "Envía un resumen una vez al día después de la hora indicada."
+    },
+    {
+      "name": "notify_digest_hour",
+      "value": "Hora"
+    },
+    {
+      "name": "notify_section_test",
+      "value": "Prueba"
+    },
+    {
+      "name": "notify_test_action",
+      "value": "Enviar notificación de prueba"
+    },
+    {
+      "name": "notify_test_title",
+      "value": "Notificación de prueba"
+    },
+    {
+      "name": "notify_test_text",
+      "value": "Las notificaciones funcionan."
+    },
+    {
+      "name": "notify_test_failed",
+      "value": "No se pudo enviar la notificación de prueba"
+    },
+    {
+      "name": "notify_aggregate_title",
+      "value": "Más actualizaciones"
+    },
+    {
+      "name": "notify_aggregate_text",
+      "value": "%s: %d más"
+    },
+    {
+      "name": "notify_aggregate_more",
+      "value": "%d más"
+    },
+    {
+      "name": "notify_dnd_flush_title",
+      "value": "%d artículos nuevos durante «No molestar»"
+    },
+    {
+      "name": "notify_dnd_flush_text",
+      "value": "%s"
+    },
+    {
+      "name": "notify_digest_notify_title",
+      "value": "Resumen diario: %d artículos nuevos"
+    },
+    {
+      "name": "notify_digest_notify_text",
+      "value": "%s"
+    },
+    {
+      "name": "notify_action_star",
+      "value": "Favorito"
+    },
+    {
+      "name": "notify_permission_check",
+      "value": "Comprobar de nuevo"
+    },
+    {
+      "name": "notify_keyword_exists",
+      "value": "La palabra clave ya está añadida"
+    },
+    {
+      "name": "notify_keyword_remove",
+      "value": "Eliminar %s"
+    },
+    {
+      "name": "notify_test_sent",
+      "value": "Notificación de prueba enviada"
+    },
+    {
+      "name": "translate_settings_title",
+      "value": "Traducción"
+    },
+    {
+      "name": "translate_settings_desc",
+      "value": "Traduce artículos con el servicio que elijas. Desactivado por defecto; los resultados se guardan en caché en el dispositivo."
+    },
+    {
+      "name": "translate_section_service",
+      "value": "Servicio de traducción"
+    },
+    {
+      "name": "translate_enable",
+      "value": "Permitir traducción en línea"
+    },
+    {
+      "name": "translate_enable_desc",
+      "value": "Si está desactivado, el lector nunca envía el texto del artículo a ningún servidor."
+    },
+    {
+      "name": "translate_privacy",
+      "value": "Privacidad: solo se envía el texto del artículo. No se incluyen enlaces, imágenes ni estado de lectura. La clave API se guarda en el Asset Store del sistema."
+    },
+    {
+      "name": "translate_provider",
+      "value": "Servicio"
+    },
+    {
+      "name": "translate_provider_deepl",
+      "value": "DeepL (requiere clave API)"
+    },
+    {
+      "name": "translate_provider_libre",
+      "value": "LibreTranslate (permite autoalojamiento)"
+    },
+    {
+      "name": "translate_endpoint",
+      "value": "Punto de acceso"
+    },
+    {
+      "name": "translate_endpoint_hint",
+      "value": "Déjalo vacío para usar el punto de acceso predeterminado"
+    },
+    {
+      "name": "translate_api_key",
+      "value": "Clave API"
+    },
+    {
+      "name": "translate_api_key_hint",
+      "value": "Pega la clave; se guarda de forma segura en este dispositivo"
+    },
+    {
+      "name": "translate_api_key_set",
+      "value": "Clave configurada"
+    },
+    {
+      "name": "translate_api_key_unset",
+      "value": "No hay clave API configurada"
+    },
+    {
+      "name": "translate_api_key_save",
+      "value": "Guardar clave"
+    },
+    {
+      "name": "translate_api_key_clear",
+      "value": "Borrar"
+    },
+    {
+      "name": "translate_target_lang",
+      "value": "Idioma de destino"
+    },
+    {
+      "name": "translate_target_auto",
+      "value": "Sigue el idioma de la aplicación"
+    },
+    {
+      "name": "translate_test",
+      "value": "Probar traducción"
+    },
+    {
+      "name": "translate_test_ok",
+      "value": "Prueba superada: %s"
+    },
+    {
+      "name": "translate_test_failed",
+      "value": "Prueba fallida: %s"
+    },
+    {
+      "name": "translate_section_cache",
+      "value": "Caché"
+    },
+    {
+      "name": "translate_cache_count",
+      "value": "%d traducciones en caché"
+    },
+    {
+      "name": "translate_cache_clear",
+      "value": "Borrar caché de traducción"
+    },
+    {
+      "name": "translate_cache_cleared",
+      "value": "Se borraron %d traducciones en caché"
+    },
+    {
+      "name": "translate_action",
+      "value": "Traducir"
+    },
+    {
+      "name": "translate_action_full",
+      "value": "Traducir artículo"
+    },
+    {
+      "name": "translate_action_selection",
+      "value": "Traducir selección"
+    },
+    {
+      "name": "translate_sheet_title",
+      "value": "Traducción bilingüe"
+    },
+    {
+      "name": "translate_only_translation",
+      "value": "Solo traducción"
+    },
+    {
+      "name": "translate_start",
+      "value": "Empezar a traducir"
+    },
+    {
+      "name": "translate_retry",
+      "value": "Traducir de nuevo"
+    },
+    {
+      "name": "translate_loading",
+      "value": "Traduciendo…"
+    },
+    {
+      "name": "translate_cached",
+      "value": "Desde la caché"
+    },
+    {
+      "name": "translate_truncated",
+      "value": "El artículo es largo; solo se tradujeron los primeros 20.000 caracteres."
+    },
+    {
+      "name": "translate_source_to_target",
+      "value": "%s → %s"
+    },
+    {
+      "name": "translate_selection_title",
+      "value": "Texto seleccionado"
+    },
+    {
+      "name": "translate_error_disabled_title",
+      "value": "La traducción en línea está desactivada"
+    },
+    {
+      "name": "translate_error_disabled_desc",
+      "value": "Actívala y configura un servicio en Ajustes → Traducción."
+    },
+    {
+      "name": "translate_error_not_configured",
+      "value": "El servicio de traducción está incompleto (falta la clave API o el punto de acceso)."
+    },
+    {
+      "name": "translate_error_empty",
+      "value": "No hay texto que traducir."
+    },
+    {
+      "name": "translate_error_same",
+      "value": "El artículo ya está en el idioma de destino."
+    },
+    {
+      "name": "translate_error_network",
+      "value": "Red no disponible o tiempo de espera agotado. Comprueba la conexión y reinténtalo."
+    },
+    {
+      "name": "translate_error_auth",
+      "value": "La clave API no es válida o ha caducado."
+    },
+    {
+      "name": "translate_error_rate",
+      "value": "Demasiadas solicitudes. Inténtalo más tarde."
+    },
+    {
+      "name": "translate_error_server",
+      "value": "El servicio de traducción no está disponible temporalmente."
+    },
+    {
+      "name": "translate_error_parse",
+      "value": "El servicio de traducción devolvió una respuesta ilegible."
+    },
+    {
+      "name": "translate_open_settings",
+      "value": "Abrir ajustes de traducción"
+    },
+    {
+      "name": "translate_lang_zh",
+      "value": "Chino"
+    },
+    {
+      "name": "translate_lang_en",
+      "value": "Inglés"
+    },
+    {
+      "name": "translate_lang_ja",
+      "value": "Japonés"
+    },
+    {
+      "name": "translate_lang_ko",
+      "value": "Coreano"
+    },
+    {
+      "name": "translate_lang_ru",
+      "value": "Ruso"
+    },
+    {
+      "name": "translate_lang_ar",
+      "value": "Árabe"
+    },
+    {
+      "name": "translate_lang_und",
+      "value": "Detección automática"
+    },
+    {
+      "name": "translate_endpoint_save",
+      "value": "Guardar"
+    },
+    {
+      "name": "translate_section_test",
+      "value": "Prueba de conexión"
+    },
+    {
+      "name": "privacy_settings_title",
+      "value": "Privacidad y datos"
+    },
+    {
+      "name": "privacy_settings_desc",
+      "value": "Qué permanece en el dispositivo, qué puede salir de él y cada interruptor que lo controla."
+    },
+    {
+      "name": "privacy_section_local",
+      "value": "Permanece en este dispositivo"
+    },
+    {
+      "name": "privacy_local_subscriptions_title",
+      "value": "Suscripciones y artículos"
+    },
+    {
+      "name": "privacy_local_subscriptions_desc",
+      "value": "La lista de fuentes, los artículos en caché y el texto extraído residen en el sandbox de la aplicación."
+    },
+    {
+      "name": "privacy_local_reading_title",
+      "value": "Estado de lectura"
+    },
+    {
+      "name": "privacy_local_reading_desc",
+      "value": "Leído / favorito / guardado / oculto / progreso y resaltados son locales por defecto."
+    },
+    {
+      "name": "privacy_local_settings_title",
+      "value": "Ajustes y caché"
+    },
+    {
+      "name": "privacy_local_settings_desc",
+      "value": "Preferencias, reglas, etiquetas, carpetas inteligentes y caché de traducción se guardan localmente."
+    },
+    {
+      "name": "privacy_section_outbound",
+      "value": "Qué puede salir del dispositivo"
+    },
+    {
+      "name": "privacy_out_fetch_title",
+      "value": "Obtención de fuentes, texto completo e imágenes"
+    },
+    {
+      "name": "privacy_out_fetch_desc",
+      "value": "Solo se solicita la URL de la fuente / artículo / imagen. No se adjuntan la cuenta ni el estado de lectura."
+    },
+    {
+      "name": "privacy_out_remote_title",
+      "value": "Sincronización de cuenta y servicio"
+    },
+    {
+      "name": "privacy_out_remote_desc",
+      "value": "Cuando conectas FreshRSS / Tiny Tiny RSS / Miniflux, las suscripciones y el estado de lectura se sincronizan con ese servidor."
+    },
+    {
+      "name": "privacy_out_translate_title",
+      "value": "Traducción de artículos"
+    },
+    {
+      "name": "privacy_out_translate_desc",
+      "value": "Si se activa, el texto del artículo se envía al servicio elegido (DeepL o LibreTranslate). Desactivado por defecto."
+    },
+    {
+      "name": "privacy_out_share_title",
+      "value": "Compartir del sistema y destinos externos"
+    },
+    {
+      "name": "privacy_out_share_desc",
+      "value": "Solo se ejecuta al tocar compartir; nada se envía en segundo plano."
+    },
+    {
+      "name": "privacy_out_backup_title",
+      "value": "Copias y exportación"
+    },
+    {
+      "name": "privacy_out_backup_desc",
+      "value": "Las instantáneas automáticas permanecen en el sandbox. La exportación manual guarda en la ubicación elegida."
+    },
+    {
+      "name": "privacy_section_permission",
+      "value": "Permisos y autorizaciones"
+    },
+    {
+      "name": "privacy_perm_notification_title",
+      "value": "Notificaciones"
+    },
+    {
+      "name": "privacy_perm_notification_desc",
+      "value": "Se solicitan solo cuando activas las notificaciones de artículos."
+    },
+    {
+      "name": "privacy_perm_background_title",
+      "value": "Actualización en segundo plano"
+    },
+    {
+      "name": "privacy_perm_background_desc",
+      "value": "La planifica el WorkScheduler del sistema; desactiva la actualización automática o revócala en los ajustes del sistema."
+    },
+    {
+      "name": "privacy_perm_network_title",
+      "value": "Estado de la red"
+    },
+    {
+      "name": "privacy_perm_network_desc",
+      "value": "Se lee solo para mostrar en línea / sin conexión en esta página."
+    },
+    {
+      "name": "privacy_perm_files_title",
+      "value": "Archivos y fotos"
+    },
+    {
+      "name": "privacy_perm_files_desc",
+      "value": "Solo se accede mediante selectores del sistema o el sandbox de la aplicación; no se solicita permiso de almacenamiento."
+    },
+    {
+      "name": "privacy_perm_clipboard_title",
+      "value": "Portapapeles"
+    },
+    {
+      "name": "privacy_perm_clipboard_desc",
+      "value": "Se lee solo al tocar el PasteButton del sistema dentro de la aplicación."
+    },
+    {
+      "name": "privacy_status_granted",
+      "value": "Concedido"
+    },
+    {
+      "name": "privacy_status_denied",
+      "value": "No concedido"
+    },
+    {
+      "name": "privacy_network_online",
+      "value": "En línea"
+    },
+    {
+      "name": "privacy_network_offline",
+      "value": "Sin conexión"
+    },
+    {
+      "name": "privacy_translation_on",
+      "value": "Activada"
+    },
+    {
+      "name": "privacy_translation_off",
+      "value": "Desactivada"
+    },
+    {
+      "name": "privacy_remote_connected",
+      "value": "Conectado"
+    },
+    {
+      "name": "privacy_remote_disconnected",
+      "value": "No conectado"
+    },
+    {
+      "name": "privacy_remote_unknown",
+      "value": "Sin configurar"
+    },
+    {
+      "name": "privacy_section_control",
+      "value": "Control de datos"
+    },
+    {
+      "name": "privacy_control_cache_title",
+      "value": "Caché de traducción"
+    },
+    {
+      "name": "privacy_control_cache_desc",
+      "value": "%d artículos en caché local"
+    },
+    {
+      "name": "privacy_control_clear_cache",
+      "value": "Borrar caché de traducción"
+    },
+    {
+      "name": "privacy_cache_cleared",
+      "value": "Se borraron %d traducciones en caché"
+    },
+    {
+      "name": "privacy_control_remote_entry",
+      "value": "Gestionar cuenta y servicio"
+    },
+    {
+      "name": "privacy_control_backup_entry",
+      "value": "Copia y restauración"
+    },
+    {
+      "name": "privacy_control_translate_entry",
+      "value": "Ajustes de traducción"
+    },
+    {
+      "name": "privacy_footer_no_tracking",
+      "value": "Esta aplicación no incluye SDK de publicidad, analítica ni seguimiento conductual. Los datos solo se envían para las funciones que actives."
+    },
+    {
+      "name": "privacy_version",
+      "value": "Versión del aviso de privacidad 2026-10"
+    },
+    {
+      "name": "privacy_out_cross_border_desc",
+      "value": "Los puntos de acceso de terceros que configures pueden tratar datos fuera de tu región según la política de privacidad de ese servicio."
+    },
+    {
+      "name": "media_audio_label",
+      "value": "Pódcast"
+    },
+    {
+      "name": "media_video_label",
+      "value": "Vídeo"
+    },
+    {
+      "name": "media_audio_with_duration",
+      "value": "Pódcast · %s"
+    },
+    {
+      "name": "media_play_audio_feed",
+      "value": "Reproducir pódcast (esta fuente)"
+    },
+    {
+      "name": "media_play_audio_all",
+      "value": "Reproducir todos los pódcast no escuchados"
+    },
+    {
+      "name": "media_open_video",
+      "value": "Abrir vídeo"
+    },
+    {
+      "name": "media_error",
+      "value": "No se puede reproducir este audio"
+    },
+    {
+      "name": "media_pause",
+      "value": "Pausa"
+    },
+    {
+      "name": "media_resume",
+      "value": "Reanudar"
+    },
+    {
+      "name": "media_stop",
+      "value": "Detener"
+    },
+    {
+      "name": "media_rewind",
+      "value": "Retroceder 15 segundos"
+    },
+    {
+      "name": "media_forward",
+      "value": "Avanzar 15 segundos"
+    },
+    {
+      "name": "media_previous",
+      "value": "Anterior"
+    },
+    {
+      "name": "media_next",
+      "value": "Siguiente"
+    },
+    {
+      "name": "media_speed",
+      "value": "Velocidad de reproducción"
+    },
+    {
+      "name": "privacy_perm_media_title",
+      "value": "Audio en segundo plano"
+    },
+    {
+      "name": "privacy_perm_media_desc",
+      "value": "La reproducción de pódcast usa una tarea continua AUDIO_PLAYBACK y AVSession; termina cuando se detiene la reproducción."
+    },
+    {
+      "name": "discover_entry",
+      "value": "Descubrir"
+    },
+    {
+      "name": "discover_title",
+      "value": "Descubrir"
+    },
+    {
+      "name": "discover_desc",
+      "value": "Fuentes seleccionadas, recomendaciones locales, rutas de RSSHub e importación desde el portapapeles. No se obtiene nada hasta que pulses Suscribirse."
+    },
+    {
+      "name": "discover_search_hint",
+      "value": "Buscar fuentes seleccionadas"
+    },
+    {
+      "name": "discover_category_all",
+      "value": "Todo"
+    },
+    {
+      "name": "discover_cat_hot",
+      "value": "Populares"
+    },
+    {
+      "name": "discover_cat_tech",
+      "value": "Tecnología"
+    },
+    {
+      "name": "discover_cat_design",
+      "value": "Diseño"
+    },
+    {
+      "name": "discover_cat_business",
+      "value": "Negocios"
+    },
+    {
+      "name": "discover_cat_science",
+      "value": "Ciencia"
+    },
+    {
+      "name": "discover_cat_indie",
+      "value": "Blogs independientes"
+    },
+    {
+      "name": "discover_cat_cn",
+      "value": "Chino"
+    },
+    {
+      "name": "discover_section_recommended",
+      "value": "Recomendado para ti"
+    },
+    {
+      "name": "discover_recommend_hint",
+      "value": "Basado en los temas de las fuentes que sigues (calculado localmente)."
+    },
+    {
+      "name": "discover_section_popular",
+      "value": "Fuentes populares"
+    },
+    {
+      "name": "discover_section_catalog",
+      "value": "Catálogo seleccionado"
+    },
+    {
+      "name": "discover_subscribe",
+      "value": "Suscribirse"
+    },
+    {
+      "name": "discover_subscribed",
+      "value": "Suscrito"
+    },
+    {
+      "name": "discover_subscribing",
+      "value": "Suscribiendo…"
+    },
+    {
+      "name": "discover_subscribe_ok",
+      "value": "Suscrito: %s"
+    },
+    {
+      "name": "discover_subscribe_success",
+      "value": "Suscrito"
+    },
+    {
+      "name": "discover_subscribe_duplicate",
+      "value": "Ya suscrito"
+    },
+    {
+      "name": "discover_empty",
+      "value": "No hay fuentes coincidentes"
+    },
+    {
+      "name": "discover_section_import",
+      "value": "Importar desde el portapapeles"
+    },
+    {
+      "name": "discover_import_desc",
+      "value": "Pega marcadores o una lista de direcciones. Cada URL se valida como fuente, incluida la detección automática en HTML."
+    },
+    {
+      "name": "discover_importing",
+      "value": "Importando…"
+    },
+    {
+      "name": "discover_import_result",
+      "value": "%d añadidas · %d duplicadas · %d fallidas"
+    },
+    {
+      "name": "discover_import_empty",
+      "value": "No se encontró ninguna URL en el portapapeles"
+    },
+    {
+      "name": "discover_section_rsshub",
+      "value": "Asistente de rutas RSSHub"
+    },
+    {
+      "name": "discover_rsshub_desc",
+      "value": "Pega la URL de un sitio o perfil para generar rutas RSSHub candidatas. Puedes usar una instancia autoalojada; no se obtiene nada hasta suscribirte."
+    },
+    {
+      "name": "discover_rsshub_base",
+      "value": "Instancia de RSSHub"
+    },
+    {
+      "name": "discover_rsshub_input_hint",
+      "value": "https://github.com/user/repo"
+    },
+    {
+      "name": "discover_rsshub_generate",
+      "value": "Generar rutas"
+    },
+    {
+      "name": "discover_rsshub_empty",
+      "value": "No hay ruta coincidente. Prueba una URL de sitio compatible o consulta la documentación de RSSHub."
+    },
+    {
+      "name": "discover_rsshub_kind_commits",
+      "value": "Commits del repositorio"
+    },
+    {
+      "name": "discover_rsshub_kind_releases",
+      "value": "Versiones"
+    },
+    {
+      "name": "discover_rsshub_kind_issues",
+      "value": "Incidencias"
+    },
+    {
+      "name": "discover_rsshub_kind_video",
+      "value": "Vídeo"
+    },
+    {
+      "name": "discover_rsshub_kind_user_video",
+      "value": "Vídeos del usuario"
+    },
+    {
+      "name": "discover_rsshub_kind_channel",
+      "value": "Canal"
+    },
+    {
+      "name": "discover_rsshub_kind_user",
+      "value": "Usuario"
+    },
+    {
+      "name": "discover_rsshub_kind_timeline",
+      "value": "Cronología del usuario"
+    },
+    {
+      "name": "discover_rsshub_kind_activity",
+      "value": "Actividad del usuario"
+    },
+    {
+      "name": "discover_rsshub_kind_articles",
+      "value": "Artículos del usuario"
+    },
+    {
+      "name": "discover_rsshub_kind_posts",
+      "value": "Publicaciones del usuario"
+    },
+    {
+      "name": "discover_rsshub_kind_route",
+      "value": "Ruta"
+    },
+    {
+      "name": "diagnostics_entry",
+      "value": "Diagnóstico"
+    },
+    {
+      "name": "diagnostics_title",
+      "value": "Diagnóstico y rendimiento"
+    },
+    {
+      "name": "diagnostics_desc",
+      "value": "Métricas de inicio y obtención, clasificación de fallos, estado de las fuentes y motivo del último cierre, solo en local. No se sube nada."
+    },
+    {
+      "name": "diagnostics_section_startup",
+      "value": "Inicio y último cierre"
+    },
+    {
+      "name": "diagnostics_first_screen",
+      "value": "Tiempo hasta la primera pantalla"
+    },
+    {
+      "name": "diagnostics_started_at",
+      "value": "Hora de inicio"
+    },
+    {
+      "name": "diagnostics_last_exit",
+      "value": "Motivo del último cierre"
+    },
+    {
+      "name": "diagnostics_last_exit_detail",
+      "value": "Detalle del último cierre"
+    },
+    {
+      "name": "diagnostics_exit_unknown",
+      "value": "Desconocido"
+    },
+    {
+      "name": "diagnostics_exit_normal",
+      "value": "Cierre normal"
+    },
+    {
+      "name": "diagnostics_exit_js",
+      "value": "Error de JS"
+    },
+    {
+      "name": "diagnostics_exit_cpp",
+      "value": "Fallo nativo"
+    },
+    {
+      "name": "diagnostics_exit_freeze",
+      "value": "Bloqueo de la aplicación"
+    },
+    {
+      "name": "diagnostics_exit_resource",
+      "value": "Control de recursos"
+    },
+    {
+      "name": "diagnostics_exit_upgrade",
+      "value": "Actualización de la aplicación"
+    },
+    {
+      "name": "diagnostics_exit_user",
+      "value": "Solicitud del usuario o del sistema"
+    },
+    {
+      "name": "diagnostics_exit_other",
+      "value": "Otro"
+    },
+    {
+      "name": "diagnostics_no_data",
+      "value": "Sin registro"
+    },
+    {
+      "name": "diagnostics_section_fetch",
+      "value": "Rendimiento de obtención"
+    },
+    {
+      "name": "diagnostics_fetch_last",
+      "value": "Última obtención"
+    },
+    {
+      "name": "diagnostics_fetch_duration",
+      "value": "Duración total"
+    },
+    {
+      "name": "diagnostics_fetch_sources",
+      "value": "Fuentes"
+    },
+    {
+      "name": "diagnostics_fetch_ok",
+      "value": "Correctas"
+    },
+    {
+      "name": "diagnostics_fetch_failed",
+      "value": "Fallidas"
+    },
+    {
+      "name": "diagnostics_fetch_avg",
+      "value": "Media por fuente"
+    },
+    {
+      "name": "diagnostics_session_runs",
+      "value": "Obtenciones de esta sesión"
+    },
+    {
+      "name": "diagnostics_section_failure",
+      "value": "Desglose de fallos"
+    },
+    {
+      "name": "diagnostics_fail_timeout",
+      "value": "Tiempo de espera"
+    },
+    {
+      "name": "diagnostics_fail_network",
+      "value": "Red"
+    },
+    {
+      "name": "diagnostics_fail_http",
+      "value": "Estado HTTP"
+    },
+    {
+      "name": "diagnostics_fail_content",
+      "value": "Contenido o análisis"
+    },
+    {
+      "name": "diagnostics_fail_other",
+      "value": "Otro"
+    },
+    {
+      "name": "diagnostics_section_slow",
+      "value": "Fuentes más lentas"
+    },
+    {
+      "name": "diagnostics_section_health",
+      "value": "Estado de las fuentes"
+    },
+    {
+      "name": "diagnostics_health_ok",
+      "value": "Todas las fuentes están bien."
+    },
+    {
+      "name": "diagnostics_health_failures",
+      "value": "%d fallos consecutivos"
+    },
+    {
+      "name": "diagnostics_retry",
+      "value": "Reintentar todas las fuentes"
+    },
+    {
+      "name": "diagnostics_retrying",
+      "value": "Reintentando…"
+    },
+    {
+      "name": "diagnostics_retry_done",
+      "value": "%d fuentes reintentadas, %d fallidas"
+    },
+    {
+      "name": "diagnostics_section_runtime",
+      "value": "Ejecución"
+    },
+    {
+      "name": "diagnostics_runtime_articles",
+      "value": "Artículos locales"
+    },
+    {
+      "name": "diagnostics_runtime_cached",
+      "value": "Contenido en caché"
+    },
+    {
+      "name": "diagnostics_runtime_cached_value",
+      "value": "%d artículos · %d caracteres"
+    },
+    {
+      "name": "diagnostics_runtime_virtualization",
+      "value": "Virtualización de lista"
+    },
+    {
+      "name": "diagnostics_runtime_virtualization_value",
+      "value": "LazyForEach · %d por página"
+    },
+    {
+      "name": "diagnostics_runtime_fps",
+      "value": "Fotogramas por segundo al desplazar"
+    },
+    {
+      "name": "diagnostics_runtime_fps_value",
+      "value": "%d fps · peor %d ms"
+    },
+    {
+      "name": "diagnostics_runtime_indexes",
+      "value": "Índices de base de datos"
+    },
+    {
+      "name": "diagnostics_runtime_indexes_value",
+      "value": "feed_id + published_at, is_read, is_starred, highlights.article_id"
+    },
+    {
+      "name": "diagnostics_section_record",
+      "value": "Registro de diagnóstico"
+    },
+    {
+      "name": "diagnostics_toggle",
+      "value": "Registrar diagnóstico local"
+    },
+    {
+      "name": "diagnostics_toggle_desc",
+      "value": "Si está desactivado, no se registran los tiempos de inicio y obtención. El motivo del último cierre sigue viniendo del sistema."
+    },
+    {
+      "name": "diagnostics_clear",
+      "value": "Borrar diagnóstico"
+    },
+    {
+      "name": "diagnostics_cleared",
+      "value": "Diagnóstico borrado"
+    },
+    {
+      "name": "diagnostics_privacy",
+      "value": "Todo aquí permanece en las preferencias privadas de la aplicación. No se ha implementado ninguna subida de analítica."
+    },
+    {
+      "name": "remote_field_service",
+      "value": "Servicio"
+    },
+    {
+      "name": "remote_service_greader",
+      "value": "FreshRSS / TTRSS / Miniflux"
+    },
+    {
+      "name": "remote_service_feedbin",
+      "value": "Feedbin"
+    },
+    {
+      "name": "remote_status_service_value_feedbin",
+      "value": "Feedbin"
+    },
+    {
+      "name": "remote_field_username_email",
+      "value": "Correo"
+    },
+    {
+      "name": "remote_feedbin_base_hint",
+      "value": "https://api.feedbin.com"
+    },
+    {
+      "name": "remote_feedbin_hint",
+      "value": "Feedbin usa HTTP Basic auth sobre HTTPS. Usa el correo y la contraseña de tu cuenta de Feedbin."
+    },
+    {
+      "name": "remote_status_mode",
+      "value": "Modo de suscripción"
+    },
+    {
+      "name": "remote_mode_unset",
+      "value": "Sin definir"
+    },
+    {
+      "name": "remote_mode_merge",
+      "value": "Fusionar (conservar solo locales)"
+    },
+    {
+      "name": "remote_mode_migrated",
+      "value": "Migrado a remoto"
+    },
+    {
+      "name": "remote_mode_remote_only",
+      "value": "Solo remoto"
+    },
+    {
+      "name": "remote_migration_title",
+      "value": "Migración de suscripciones"
+    },
+    {
+      "name": "remote_migration_entry",
+      "value": "Migración de suscripciones"
+    },
+    {
+      "name": "remote_migration_desc",
+      "value": "Elige cómo deben convivir las suscripciones locales y el servicio remoto. Las sincronizaciones posteriores siguen el modo elegido."
+    },
+    {
+      "name": "remote_migration_loading",
+      "value": "Cargando suscripciones remotas…"
+    },
+    {
+      "name": "remote_migration_section_preview",
+      "value": "Resumen"
+    },
+    {
+      "name": "remote_migration_local_total",
+      "value": "Suscripciones locales"
+    },
+    {
+      "name": "remote_migration_remote_total",
+      "value": "Suscripciones remotas"
+    },
+    {
+      "name": "remote_migration_overlap",
+      "value": "En ambos"
+    },
+    {
+      "name": "remote_migration_local_only",
+      "value": "Solo locales"
+    },
+    {
+      "name": "remote_migration_section_mode",
+      "value": "Modo"
+    },
+    {
+      "name": "remote_migration_mode_merge",
+      "value": "Fusionar"
+    },
+    {
+      "name": "remote_migration_mode_merge_desc",
+      "value": "Añadir las fuentes remotas en local y conservar las fuentes solo locales."
+    },
+    {
+      "name": "remote_migration_mode_migrated",
+      "value": "Migrar fuentes locales"
+    },
+    {
+      "name": "remote_migration_mode_migrated_desc",
+      "value": "Suscribir cada fuente solo local en el servicio remoto. No se elimina nada en local."
+    },
+    {
+      "name": "remote_migration_mode_remote_only",
+      "value": "Solo remoto"
+    },
+    {
+      "name": "remote_migration_mode_remote_only_desc",
+      "value": "El remoto manda. Las fuentes solo locales se desactivan pero conservan su historial; vuelve a Fusionar para reactivarlas."
+    },
+    {
+      "name": "remote_migration_note",
+      "value": "El modo se guarda por cuenta y también se aplica a futuras sincronizaciones."
+    },
+    {
+      "name": "remote_migration_apply",
+      "value": "Aplicar modo"
+    },
+    {
+      "name": "remote_migration_applying",
+      "value": "Aplicando…"
+    },
+    {
+      "name": "remote_migration_done_merge",
+      "value": "Modo establecido en Fusionar"
+    },
+    {
+      "name": "remote_migration_done_migrated",
+      "value": "%d fuentes locales migradas"
+    },
+    {
+      "name": "remote_migration_done_remote_only",
+      "value": "%d fuentes solo locales desactivadas"
+    },
+    {
+      "name": "remote_migration_partial",
+      "value": "%d fuentes no se pudieron migrar; el modo no cambió."
+    },
+    {
+      "name": "remote_migration_retry",
+      "value": "Reintentar"
+    },
+    {
+      "name": "remote_migration_prompt_title",
+      "value": "Se encontraron suscripciones locales"
+    },
+    {
+      "name": "remote_migration_prompt_message",
+      "value": "%d fuentes solo locales se pueden migrar al servicio remoto."
+    },
+    {
+      "name": "remote_migration_later",
+      "value": "Más tarde"
+    },
+    {
+      "name": "remote_migration_go",
+      "value": "Migrar"
+    },
+    {
+      "name": "remote_error_subscription",
+      "value": "El servicio remoto no pudo suscribir esta fuente."
+    },
+    {
+      "name": "a11y_article_read",
+      "value": "Leído"
+    },
+    {
+      "name": "a11y_article_unread",
+      "value": "Sin leer"
+    },
+    {
+      "name": "a11y_article_starred",
+      "value": "Favorito"
+    },
+    {
+      "name": "shortcut_hint",
+      "value": "Teclado: j/k anterior/siguiente · m leído · s favorito · / buscar · Esc atrás"
+    },
+    {
+      "name": "a11y_find_prev",
+      "value": "Coincidencia anterior"
+    },
+    {
+      "name": "a11y_find_next",
+      "value": "Coincidencia siguiente"
+    },
+    {
+      "name": "a11y_find_close",
+      "value": "Cerrar búsqueda"
+    },
+    {
+      "name": "a11y_clear_scope",
+      "value": "Quitar filtro de fuente"
+    },
+    {
+      "name": "a11y_row_selected",
+      "value": "Seleccionado"
+    },
+    {
+      "name": "a11y_row_not_selected",
+      "value": "No seleccionado"
+    }
+  ]
+}

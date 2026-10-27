@@ -15,7 +15,7 @@ import { TranslateDefaults } from '../common/constants/TranslateConstants';
 export class AppSettings {
   /** 主题：'system' | 'light' | 'dark'。 */
   @Trace themeMode: string = THEME_OPTIONS.defaultValue;
-  /** 语言：'system' | 'zh' | 'zhTW' | 'en'。 */
+  /** 语言：'system' | 'zh' | 'zhTW' | 'ja' | 'de' | 'fr' | 'es' | 'en'。 */
   @Trace languageMode: string = LANGUAGE_OPTIONS.defaultValue;
   /** 沉浸光感总开关。 */
   @Trace immersiveOn: boolean = true;

@@ -115,18 +115,30 @@ export function detectLanguage(text: string): string {
   return 'und';
 }
 
+/** 系统语言标签 → 目标语言（取语言主标签，不认识的一律英语）。 */
+function targetOfSystemLanguage(systemLanguage: string): string {
+  const lower: string = systemLanguage.toLowerCase();
+  const supported: string[] = ['zh', 'en', 'ja', 'de', 'fr', 'es'];
+  for (let i = 0; i < supported.length; i += 1) {
+    if (lower.indexOf(supported[i]) === 0) {
+      return supported[i];
+    }
+  }
+  return 'en';
+}
+
 /**
  * 目标语言：跟随应用语言。
- * 应用语言只有「跟随系统 / 简体中文 / 英语」；跟随系统时中文系统 → zh，其余 → en。
+ * 显式选了语言就用该语言；跟随系统时按系统语言决定，没有对应资源的语言退回英语。
  */
 export function targetLanguageOf(appLanguage: string, systemLanguage: string): string {
-  if (appLanguage === AppLanguage.ZH) {
-    return 'zh';
+  if (appLanguage === AppLanguage.SYSTEM) {
+    return targetOfSystemLanguage(systemLanguage);
   }
-  if (appLanguage === AppLanguage.EN) {
-    return 'en';
+  if (appLanguage === AppLanguage.ZH_TW) {
+    return 'zh-hant';
   }
-  return systemLanguage.toLowerCase().indexOf('zh') === 0 ? 'zh' : 'en';
+  return appLanguage;
 }
 
 /** 中文（含繁体）与目标语言是否同一语言：同语言不必翻译。 */

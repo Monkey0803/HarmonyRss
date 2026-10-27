@@ -12,11 +12,15 @@ export enum ThemeMode {
   DARK = 'dark'
 }
 
-/** 语言：跟随系统 / 简体中文 / 英语。 */
+/** 语言：跟随系统 / 简体中文 / 繁體中文 / 日语 / 德语 / 法语 / 西班牙语 / 英语。 */
 export enum AppLanguage {
   SYSTEM = 'system',
   ZH = 'zh',
   ZH_TW = 'zhTW',
+  JA = 'ja',
+  DE = 'de',
+  FR = 'fr',
+  ES = 'es',
   EN = 'en'
 }
 

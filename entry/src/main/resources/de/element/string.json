@@ -1,0 +1,4088 @@
+{
+  "string": [
+    {
+      "name": "module_desc",
+      "value": "Einstiegsmodul der HDS-App"
+    },
+    {
+      "name": "work_scheduler_desc",
+      "value": "Feeds im Hintergrund aktualisieren"
+    },
+    {
+      "name": "EntryAbility_desc",
+      "value": "HDS-App"
+    },
+    {
+      "name": "EntryAbility_label",
+      "value": "HarmonyRss"
+    },
+    {
+      "name": "tab_home",
+      "value": "Lesen"
+    },
+    {
+      "name": "tab_settings",
+      "value": "Einstellungen"
+    },
+    {
+      "name": "tab_images",
+      "value": "Bilder"
+    },
+    {
+      "name": "tab_subs",
+      "value": "Feeds"
+    },
+    {
+      "name": "home_title",
+      "value": "Lesen"
+    },
+    {
+      "name": "settings_title",
+      "value": "Einstellungen"
+    },
+    {
+      "name": "settings_entry_look",
+      "value": "Darstellung & Sprache"
+    },
+    {
+      "name": "settings_entry_material",
+      "value": "Material & Bewegung"
+    },
+    {
+      "name": "settings_entry_reading",
+      "value": "Lesen & Listen"
+    },
+    {
+      "name": "settings_entry_feed",
+      "value": "Feeds & Hinweise"
+    },
+    {
+      "name": "settings_entry_system",
+      "value": "System & Privatsphäre"
+    },
+    {
+      "name": "settings_entry_storage",
+      "value": "Speicher & Backup"
+    },
+    {
+      "name": "section_appearance",
+      "value": "Darstellung"
+    },
+    {
+      "name": "section_language",
+      "value": "Sprache"
+    },
+    {
+      "name": "section_system",
+      "value": "Systemfunktionen"
+    },
+    {
+      "name": "section_navigation",
+      "value": "Navigation"
+    },
+    {
+      "name": "section_feed",
+      "value": "Feeds"
+    },
+    {
+      "name": "section_reading",
+      "value": "Lesen"
+    },
+    {
+      "name": "row_reader_font",
+      "value": "Textgröße"
+    },
+    {
+      "name": "row_reader_line",
+      "value": "Zeilenabstand"
+    },
+    {
+      "name": "row_reader_family",
+      "value": "Schriftart"
+    },
+    {
+      "name": "row_reader_width",
+      "value": "Spaltenbreite"
+    },
+    {
+      "name": "row_reader_align",
+      "value": "Textausrichtung"
+    },
+    {
+      "name": "row_reader_theme",
+      "value": "Lesethema"
+    },
+    {
+      "name": "opt_family_system",
+      "value": "Standard"
+    },
+    {
+      "name": "opt_family_serif",
+      "value": "Serif"
+    },
+    {
+      "name": "opt_family_sans",
+      "value": "Sans-Serif"
+    },
+    {
+      "name": "opt_width_narrow",
+      "value": "Schmal"
+    },
+    {
+      "name": "opt_width_standard",
+      "value": "Standard"
+    },
+    {
+      "name": "opt_width_wide",
+      "value": "Breit"
+    },
+    {
+      "name": "opt_align_left",
+      "value": "Linksbündig"
+    },
+    {
+      "name": "opt_align_justify",
+      "value": "Blocksatz"
+    },
+    {
+      "name": "opt_reader_theme_system",
+      "value": "Systemeinstellung folgen"
+    },
+    {
+      "name": "opt_reader_theme_light",
+      "value": "Hell"
+    },
+    {
+      "name": "opt_reader_theme_sepia",
+      "value": "Sepia"
+    },
+    {
+      "name": "opt_reader_theme_dark",
+      "value": "Dunkel"
+    },
+    {
+      "name": "opt_font_small",
+      "value": "Klein"
+    },
+    {
+      "name": "opt_font_medium",
+      "value": "Mittel"
+    },
+    {
+      "name": "opt_font_large",
+      "value": "Groß"
+    },
+    {
+      "name": "opt_line_compact",
+      "value": "Eng"
+    },
+    {
+      "name": "opt_line_normal",
+      "value": "Normal"
+    },
+    {
+      "name": "opt_line_loose",
+      "value": "Weit"
+    },
+    {
+      "name": "row_title_bar_scroll",
+      "value": "Titelleiste beim Scrollen ausblenden"
+    },
+    {
+      "name": "action_find_in_article",
+      "value": "Im Artikel suchen"
+    },
+    {
+      "name": "find_hint",
+      "value": "Im Artikel suchen"
+    },
+    {
+      "name": "find_count",
+      "value": "%d/%d"
+    },
+    {
+      "name": "find_none",
+      "value": "Keine Treffer"
+    },
+    {
+      "name": "action_start_speech",
+      "value": "Vorlesen"
+    },
+    {
+      "name": "action_stop_speech",
+      "value": "Vorlesen beenden"
+    },
+    {
+      "name": "speech_running",
+      "value": "Wird vorgelesen…"
+    },
+    {
+      "name": "speech_paused",
+      "value": "Pausiert"
+    },
+    {
+      "name": "action_pause_speech",
+      "value": "Pause"
+    },
+    {
+      "name": "action_resume_speech",
+      "value": "Fortsetzen"
+    },
+    {
+      "name": "toast_speech_unsupported",
+      "value": "Vorlesen wird auf diesem Gerät nicht unterstützt"
+    },
+    {
+      "name": "action_copy",
+      "value": "Kopieren"
+    },
+    {
+      "name": "action_share_selection",
+      "value": "Auswahl teilen"
+    },
+    {
+      "name": "action_copy_body",
+      "value": "Artikeltext kopieren"
+    },
+    {
+      "name": "action_share_body",
+      "value": "Artikeltext teilen"
+    },
+    {
+      "name": "snack_body_copied",
+      "value": "Artikeltext kopiert"
+    },
+    {
+      "name": "snack_selection_copied",
+      "value": "Auswahl kopiert"
+    },
+    {
+      "name": "row_reader_keep_on",
+      "value": "Bildschirm beim Lesen anlassen"
+    },
+    {
+      "name": "section_storage",
+      "value": "Speicher"
+    },
+    {
+      "name": "row_reader_cache",
+      "value": "Artikel-Cache leeren"
+    },
+    {
+      "name": "cache_summary",
+      "value": "%d Artikel · %s"
+    },
+    {
+      "name": "aux_reader_cache",
+      "value": "Löscht zwischengespeicherten Text und Bilder nicht markierter Artikel; Lesestatus und Liste bleiben erhalten."
+    },
+    {
+      "name": "dialog_clear_cache_title",
+      "value": "Artikel-Cache leeren?"
+    },
+    {
+      "name": "dialog_clear_cache_message",
+      "value": "Zwischengespeicherter Text und eingebettete Bilder werden entfernt. Nicht markierte Artikel benötigen zum Öffnen wieder eine Verbindung."
+    },
+    {
+      "name": "snack_cache_cleared",
+      "value": "%d Artikel gelöscht"
+    },
+    {
+      "name": "list_load_more",
+      "value": "Weitere werden geladen…"
+    },
+    {
+      "name": "list_sort_toggle",
+      "value": "Sortierung umschalten"
+    },
+    {
+      "name": "list_group_unread",
+      "value": "%d ungelesen"
+    },
+    {
+      "name": "sort_newest",
+      "value": "Neueste zuerst"
+    },
+    {
+      "name": "sort_oldest",
+      "value": "Älteste zuerst"
+    },
+    {
+      "name": "group_none",
+      "value": "Flache Liste"
+    },
+    {
+      "name": "group_by_feed",
+      "value": "Nach Feed gruppieren"
+    },
+    {
+      "name": "group_by_date",
+      "value": "Nach Datum gruppieren"
+    },
+    {
+      "name": "group_today",
+      "value": "Heute"
+    },
+    {
+      "name": "group_yesterday",
+      "value": "Gestern"
+    },
+    {
+      "name": "group_this_week",
+      "value": "Diese Woche"
+    },
+    {
+      "name": "group_earlier",
+      "value": "Älter"
+    },
+    {
+      "name": "filter_saved",
+      "value": "Später"
+    },
+    {
+      "name": "filter_archived",
+      "value": "Archiv"
+    },
+    {
+      "name": "action_save",
+      "value": "Für später speichern"
+    },
+    {
+      "name": "action_unsave",
+      "value": "Aus „Später“ entfernen"
+    },
+    {
+      "name": "action_mark_above_read",
+      "value": "Darüber als gelesen"
+    },
+    {
+      "name": "action_delete",
+      "value": "Löschen"
+    },
+    {
+      "name": "select_count",
+      "value": "%d ausgewählt"
+    },
+    {
+      "name": "select_all",
+      "value": "Alle auswählen"
+    },
+    {
+      "name": "select_done",
+      "value": "Fertig"
+    },
+    {
+      "name": "delete_selected_confirm_title",
+      "value": "Ausgewählte Artikel löschen?"
+    },
+    {
+      "name": "delete_selected_confirm_message",
+      "value": "Die %d ausgewählten Artikel werden aus dem lokalen Cache entfernt."
+    },
+    {
+      "name": "row_archive_rule",
+      "value": "Archivregel"
+    },
+    {
+      "name": "opt_archive_off",
+      "value": "Nie"
+    },
+    {
+      "name": "opt_archive_7",
+      "value": "Gelesen > 7 Tage"
+    },
+    {
+      "name": "opt_archive_14",
+      "value": "Gelesen > 14 Tage"
+    },
+    {
+      "name": "opt_archive_30",
+      "value": "Gelesen > 30 Tage"
+    },
+    {
+      "name": "opt_archive_90",
+      "value": "Gelesen > 90 Tage"
+    },
+    {
+      "name": "home_last_sync",
+      "value": "Synchronisiert %s"
+    },
+    {
+      "name": "home_never_synced",
+      "value": "Noch nicht synchronisiert"
+    },
+    {
+      "name": "row_refresh_now",
+      "value": "Jetzt aktualisieren"
+    },
+    {
+      "name": "action_retry",
+      "value": "Wiederholen"
+    },
+    {
+      "name": "action_scope_feed",
+      "value": "Nur dieser Feed"
+    },
+    {
+      "name": "toast_refreshing",
+      "value": "Wird aktualisiert…"
+    },
+    {
+      "name": "snack_refreshed",
+      "value": "Feeds aktualisiert"
+    },
+    {
+      "name": "section_list",
+      "value": "Liste"
+    },
+    {
+      "name": "row_list_layout",
+      "value": "Zeilenlayout"
+    },
+    {
+      "name": "row_summary_lines",
+      "value": "Zeilen der Zusammenfassung"
+    },
+    {
+      "name": "row_list_density",
+      "value": "Dichte"
+    },
+    {
+      "name": "opt_layout_text",
+      "value": "Nur Text"
+    },
+    {
+      "name": "opt_layout_thumb",
+      "value": "Vorschaubild"
+    },
+    {
+      "name": "opt_layout_card",
+      "value": "Große Bildkarte"
+    },
+    {
+      "name": "opt_lines_1",
+      "value": "1 Zeile"
+    },
+    {
+      "name": "opt_lines_2",
+      "value": "2 Zeilen"
+    },
+    {
+      "name": "opt_lines_3",
+      "value": "3 Zeilen"
+    },
+    {
+      "name": "opt_density_compact",
+      "value": "Kompakt"
+    },
+    {
+      "name": "opt_density_standard",
+      "value": "Standard"
+    },
+    {
+      "name": "opt_density_relaxed",
+      "value": "Komfortabel"
+    },
+    {
+      "name": "widget_refresh",
+      "value": "Kartendaten aktualisieren"
+    },
+    {
+      "name": "notify_action_mark_read",
+      "value": "Als gelesen markieren"
+    },
+    {
+      "name": "action_highlight",
+      "value": "Markieren"
+    },
+    {
+      "name": "hl_panel_entry",
+      "value": "Markierungen"
+    },
+    {
+      "name": "hl_panel_title",
+      "value": "%d Markierungen"
+    },
+    {
+      "name": "hl_panel_empty",
+      "value": "Noch keine Markierungen. Text im Artikel auswählen, um eine hinzuzufügen."
+    },
+    {
+      "name": "hl_editor_title",
+      "value": "Markierung bearbeiten"
+    },
+    {
+      "name": "hl_note_hint",
+      "value": "Notiz (optional)"
+    },
+    {
+      "name": "hl_action_goto",
+      "value": "Gehe zu"
+    },
+    {
+      "name": "hl_action_note",
+      "value": "Notiz"
+    },
+    {
+      "name": "hl_action_color",
+      "value": "Farbe"
+    },
+    {
+      "name": "snack_highlight_added",
+      "value": "Markierung gespeichert"
+    },
+    {
+      "name": "snack_highlight_removed",
+      "value": "Markierung entfernt"
+    },
+    {
+      "name": "hl_library_title",
+      "value": "Markierungen"
+    },
+    {
+      "name": "hl_export_md",
+      "value": "Markdown"
+    },
+    {
+      "name": "hl_export_json",
+      "value": "JSON"
+    },
+    {
+      "name": "hl_export_empty",
+      "value": "Noch nichts zu exportieren"
+    },
+    {
+      "name": "hl_article_gone",
+      "value": "Der Artikel ist nicht mehr im lokalen Cache"
+    },
+    {
+      "name": "read_panel_title",
+      "value": "Lese-Layout"
+    },
+    {
+      "name": "read_panel_preview_text",
+      "value": "Vorschau: Schieberegler unten ziehen; der Artikel wird mit der neuen Typografie neu umbrochen."
+    },
+    {
+      "name": "read_panel_font_value",
+      "value": "Größe %s px"
+    },
+    {
+      "name": "read_panel_line_value",
+      "value": "Zeilenabstand %s"
+    },
+    {
+      "name": "read_panel_reset",
+      "value": "Auf Standard zurücksetzen"
+    },
+    {
+      "name": "read_panel_web_hint",
+      "value": "Im Originalseiten-Modus gelten Spaltenbreite, Ausrichtung, Thema und Schrift nicht: Das Layout der Website hat Vorrang."
+    },
+    {
+      "name": "row_status_bar_scroll",
+      "value": "Statusleiste beim Scrollen ausblenden"
+    },
+    {
+      "name": "row_theme",
+      "value": "Design"
+    },
+    {
+      "name": "row_global_background",
+      "value": "Globaler Hintergrund"
+    },
+    {
+      "name": "opt_bg_default",
+      "value": "Standard"
+    },
+    {
+      "name": "opt_bg_aurora",
+      "value": "Polarlicht"
+    },
+    {
+      "name": "opt_bg_sunset",
+      "value": "Abendrot"
+    },
+    {
+      "name": "opt_bg_custom",
+      "value": "Eigenes Bild"
+    },
+    {
+      "name": "opt_bg_none",
+      "value": "Keiner"
+    },
+    {
+      "name": "row_language",
+      "value": "Sprache"
+    },
+    {
+      "name": "row_immersive",
+      "value": "Immersives Licht"
+    },
+    {
+      "name": "row_material_type",
+      "value": "Materialtyp"
+    },
+    {
+      "name": "row_material_level",
+      "value": "Immersives Material"
+    },
+    {
+      "name": "row_grip",
+      "value": "Smart Grip"
+    },
+    {
+      "name": "row_antipeep",
+      "value": "Blickschutz"
+    },
+    {
+      "name": "opt_follow_system",
+      "value": "Systemeinstellung folgen"
+    },
+    {
+      "name": "opt_light",
+      "value": "Hell"
+    },
+    {
+      "name": "opt_dark",
+      "value": "Dunkel"
+    },
+    {
+      "name": "opt_chinese",
+      "value": "简体中文"
+    },
+    {
+      "name": "opt_chinese_traditional",
+      "value": "繁體中文"
+    },
+    {
+      "name": "opt_english",
+      "value": "English"
+    },
+    {
+      "name": "opt_japanese",
+      "value": "日本語"
+    },
+    {
+      "name": "opt_german",
+      "value": "Deutsch"
+    },
+    {
+      "name": "opt_french",
+      "value": "Français"
+    },
+    {
+      "name": "opt_spanish",
+      "value": "Español"
+    },
+    {
+      "name": "opt_material_adaptive",
+      "value": "Adaptiv"
+    },
+    {
+      "name": "opt_material_immersive",
+      "value": "Immersiv"
+    },
+    {
+      "name": "opt_material_none",
+      "value": "Keins"
+    },
+    {
+      "name": "opt_level_exquisite",
+      "value": "Fein"
+    },
+    {
+      "name": "opt_level_gentle",
+      "value": "Sanft"
+    },
+    {
+      "name": "opt_level_smooth",
+      "value": "Weich"
+    },
+    {
+      "name": "opt_level_adaptive",
+      "value": "Adaptiv"
+    },
+    {
+      "name": "aux_global_immersive_on",
+      "value": "Globale Immersion: an"
+    },
+    {
+      "name": "aux_global_immersive_off",
+      "value": "Globale Immersion: aus"
+    },
+    {
+      "name": "aux_antipeep_unsupported",
+      "value": "Auf diesem Gerät nicht unterstützt"
+    },
+    {
+      "name": "veil_message",
+      "value": "Inhalt aus Datenschutzgründen verborgen"
+    },
+    {
+      "name": "veil_dismiss",
+      "value": "Zum Fortfahren tippen"
+    },
+    {
+      "name": "home_refresh",
+      "value": "Aktualisieren"
+    },
+    {
+      "name": "home_feed_count",
+      "value": "%d Feeds"
+    },
+    {
+      "name": "home_unread_count",
+      "value": "%d ungelesen"
+    },
+    {
+      "name": "filter_all",
+      "value": "Alle"
+    },
+    {
+      "name": "filter_unread",
+      "value": "Ungelesen"
+    },
+    {
+      "name": "filter_starred",
+      "value": "Markiert"
+    },
+    {
+      "name": "home_mark_all_read",
+      "value": "Alle als gelesen"
+    },
+    {
+      "name": "mark_all_read_confirm_title",
+      "value": "Alle als gelesen markieren"
+    },
+    {
+      "name": "mark_all_read_confirm_message",
+      "value": "Alle Artikel als gelesen markieren?"
+    },
+    {
+      "name": "dialog_confirm",
+      "value": "Bestätigen"
+    },
+    {
+      "name": "filter_empty_unread",
+      "value": "Keine ungelesenen Artikel"
+    },
+    {
+      "name": "filter_empty_starred",
+      "value": "Keine markierten Artikel"
+    },
+    {
+      "name": "filter_empty_search",
+      "value": "Keine passenden Artikel"
+    },
+    {
+      "name": "home_search_hint",
+      "value": "Titel oder Text suchen"
+    },
+    {
+      "name": "home_scope_prefix",
+      "value": "Von: %s"
+    },
+    {
+      "name": "action_reader_retry",
+      "value": "Artikel neu extrahieren"
+    },
+    {
+      "name": "action_copy_link",
+      "value": "Link kopieren"
+    },
+    {
+      "name": "action_open_browser",
+      "value": "Im Browser öffnen"
+    },
+    {
+      "name": "action_share",
+      "value": "Teilen"
+    },
+    {
+      "name": "action_reload",
+      "value": "Seite neu laden"
+    },
+    {
+      "name": "toast_action_failed",
+      "value": "Aktion wird auf diesem Gerät nicht unterstützt"
+    },
+    {
+      "name": "subs_rename",
+      "value": "Umbenennen"
+    },
+    {
+      "name": "subs_rename_hint",
+      "value": "Feed-Name"
+    },
+    {
+      "name": "dialog_save",
+      "value": "Speichern"
+    },
+    {
+      "name": "group_ungrouped",
+      "value": "Ohne Gruppe"
+    },
+    {
+      "name": "group_move_to",
+      "value": "Nach „%s“ verschieben"
+    },
+    {
+      "name": "group_clear",
+      "value": "Aus Gruppe entfernen"
+    },
+    {
+      "name": "group_new",
+      "value": "Neue Gruppe…"
+    },
+    {
+      "name": "group_hint",
+      "value": "Gruppenname (leer = keine)"
+    },
+    {
+      "name": "feed_move_up",
+      "value": "Nach oben"
+    },
+    {
+      "name": "feed_move_down",
+      "value": "Nach unten"
+    },
+    {
+      "name": "row_auto_refresh",
+      "value": "Automatisch aktualisieren"
+    },
+    {
+      "name": "opt_refresh_off",
+      "value": "Aus"
+    },
+    {
+      "name": "opt_refresh_15",
+      "value": "Alle 15 Min."
+    },
+    {
+      "name": "opt_refresh_30",
+      "value": "Alle 30 Min."
+    },
+    {
+      "name": "opt_refresh_60",
+      "value": "Jede Stunde"
+    },
+    {
+      "name": "home_manage_subs",
+      "value": "Feeds"
+    },
+    {
+      "name": "effect_title",
+      "value": "Lichteffekte"
+    },
+    {
+      "name": "effect_hint",
+      "value": "Lichtquelle gedrückt halten — benachbarte Elemente leuchten auf"
+    },
+    {
+      "name": "effect_source",
+      "value": "Lichtquelle"
+    },
+    {
+      "name": "effect_target",
+      "value": "Beleuchtet"
+    },
+    {
+      "name": "home_empty_title",
+      "value": "Noch keine Artikel"
+    },
+    {
+      "name": "home_empty_hint",
+      "value": "Zum Aktualisieren nach unten ziehen oder zuerst einen RSS-Feed hinzufügen."
+    },
+    {
+      "name": "home_empty_action",
+      "value": "Feed hinzufügen"
+    },
+    {
+      "name": "home_loading",
+      "value": "Wird geladen…"
+    },
+    {
+      "name": "subs_title",
+      "value": "Feeds"
+    },
+    {
+      "name": "subs_url_hint",
+      "value": "RSS-/Atom-Feed-URL eingeben"
+    },
+    {
+      "name": "subs_add",
+      "value": "Hinzufügen"
+    },
+    {
+      "name": "subs_adding",
+      "value": "Wird hinzugefügt…"
+    },
+    {
+      "name": "subs_remove",
+      "value": "Entfernen"
+    },
+    {
+      "name": "subs_remove_confirm_title",
+      "value": "Diesen Feed entfernen?"
+    },
+    {
+      "name": "subs_remove_confirm_message",
+      "value": "„%s“ und alle zugehörigen Artikel entfernen?"
+    },
+    {
+      "name": "dialog_cancel",
+      "value": "Abbrechen"
+    },
+    {
+      "name": "subs_empty",
+      "value": "Noch keine Feeds"
+    },
+    {
+      "name": "subs_import_opml",
+      "value": "OPML importieren"
+    },
+    {
+      "name": "subs_export_opml",
+      "value": "OPML exportieren"
+    },
+    {
+      "name": "subs_import_result",
+      "value": "%d Feeds importiert"
+    },
+    {
+      "name": "subs_import_empty",
+      "value": "In dieser Datei wurde kein Feed gefunden"
+    },
+    {
+      "name": "subs_import_duplicate",
+      "value": "Alle Feeds sind bereits abonniert"
+    },
+    {
+      "name": "subs_export_success",
+      "value": "OPML exportiert"
+    },
+    {
+      "name": "subs_export_empty",
+      "value": "Nichts zu exportieren"
+    },
+    {
+      "name": "subs_article_count",
+      "value": "%d Artikel"
+    },
+    {
+      "name": "subs_error_prefix",
+      "value": "Letzter Fehler: "
+    },
+    {
+      "name": "feed_articles_title",
+      "value": "Artikel"
+    },
+    {
+      "name": "feed_sort_newest",
+      "value": "Neueste"
+    },
+    {
+      "name": "feed_sort_oldest",
+      "value": "Älteste"
+    },
+    {
+      "name": "home_add_feed_title",
+      "value": "Feed hinzufügen"
+    },
+    {
+      "name": "article_title",
+      "value": "Artikel"
+    },
+    {
+      "name": "article_open_link",
+      "value": "Originallink"
+    },
+    {
+      "name": "article_no_content",
+      "value": "Dieser Eintrag hat keinen Volltext. Öffne den Originallink, um weiterzulesen."
+    },
+    {
+      "name": "article_mode_web",
+      "value": "Originalseite"
+    },
+    {
+      "name": "article_mode_text",
+      "value": "Extrahierter Text"
+    },
+    {
+      "name": "article_mode_reader",
+      "value": "Lesemodus"
+    },
+    {
+      "name": "article_reader_failed",
+      "value": "Der Artikel konnte nicht extrahiert werden. Die Originalseite wird angezeigt."
+    },
+    {
+      "name": "article_prev",
+      "value": "Zurück"
+    },
+    {
+      "name": "article_next",
+      "value": "Weiter"
+    },
+    {
+      "name": "article_next_unread",
+      "value": "Nächster ungelesener"
+    },
+    {
+      "name": "err_empty_url",
+      "value": "Bitte eine Feed-URL eingeben"
+    },
+    {
+      "name": "err_duplicate_url",
+      "value": "Dieser Feed ist bereits abonniert"
+    },
+    {
+      "name": "subs_paste",
+      "value": "Einfügen"
+    },
+    {
+      "name": "subs_paste_denied",
+      "value": "Die Berechtigung zum Einfügen wurde nicht erteilt"
+    },
+    {
+      "name": "subs_preview_title",
+      "value": "Abonnement bestätigen"
+    },
+    {
+      "name": "subs_preview_latest",
+      "value": "Neueste Artikel"
+    },
+    {
+      "name": "subs_preview_no_items",
+      "value": "Dieser Feed enthält noch keine Artikel"
+    },
+    {
+      "name": "subs_confirm",
+      "value": "Abonnieren"
+    },
+    {
+      "name": "subs_batch_result",
+      "value": "%d hinzugefügt · %d doppelt · %d fehlgeschlagen"
+    },
+    {
+      "name": "subs_duplicate_site",
+      "value": "Sieht nach derselben Website aus wie „%s“"
+    },
+    {
+      "name": "subs_edit_url",
+      "value": "Feed-URL bearbeiten"
+    },
+    {
+      "name": "subs_edit_url_hint",
+      "value": "Neue Feed-URL"
+    },
+    {
+      "name": "subs_bulk_move",
+      "value": "In Gruppe verschieben"
+    },
+    {
+      "name": "subs_bulk_remove",
+      "value": "Entfernen"
+    },
+    {
+      "name": "subs_bulk_enter",
+      "value": "Auswählen"
+    },
+    {
+      "name": "subs_bulk_selected",
+      "value": "%d ausgewählt"
+    },
+    {
+      "name": "subs_bulk_remove_message",
+      "value": "%d ausgewählte Feeds und ihre Artikel entfernen?"
+    },
+    {
+      "name": "share_ability_desc",
+      "value": "Geteilten Link zu RSS hinzufügen"
+    },
+    {
+      "name": "share_page_title",
+      "value": "Zu RSS hinzufügen"
+    },
+    {
+      "name": "err_fetch_failed",
+      "value": "Der Feed konnte nicht geladen werden. Netzwerk oder URL prüfen."
+    },
+    {
+      "name": "err_timeout",
+      "value": "Zeitüberschreitung der Anfrage. Netzwerk prüfen und erneut versuchen."
+    },
+    {
+      "name": "err_network",
+      "value": "Netzwerkverbindung fehlgeschlagen. Netzwerk prüfen und erneut versuchen."
+    },
+    {
+      "name": "err_http",
+      "value": "Der Server hat einen Fehler zurückgegeben. Später erneut versuchen."
+    },
+    {
+      "name": "err_empty_response",
+      "value": "Der Server hat keinen Inhalt zurückgegeben. Diese Adresse ist möglicherweise kein gültiger Feed."
+    },
+    {
+      "name": "err_parse",
+      "value": "Diese Adresse konnte nicht als RSS-/Atom-Feed gelesen werden."
+    },
+    {
+      "name": "err_not_a_feed",
+      "value": "Diese Adresse ist kein Feed, und auf der Seite wurde kein Feed-Link gefunden."
+    },
+    {
+      "name": "row_point_light",
+      "value": "Punktlicht"
+    },
+    {
+      "name": "image_title",
+      "value": "Bilder"
+    },
+    {
+      "name": "image_hdr",
+      "value": "HDR"
+    },
+    {
+      "name": "image_animated",
+      "value": "Animiertes Format (GIF / WebP) erkannt"
+    },
+    {
+      "name": "image_static",
+      "value": "Standbild"
+    },
+    {
+      "name": "image_hint",
+      "value": "Animierte GIFs / WebP werden von der Image-Komponente des Systems automatisch abgespielt."
+    },
+    {
+      "name": "section_branding",
+      "value": "App-Symbol"
+    },
+    {
+      "name": "brand_name",
+      "value": "HarmonyRss"
+    },
+    {
+      "name": "logo_classic",
+      "value": "Klassisch"
+    },
+    {
+      "name": "logo_aurora",
+      "value": "Polarlicht"
+    },
+    {
+      "name": "logo_sunset",
+      "value": "Abendrot"
+    },
+    {
+      "name": "logo_mono",
+      "value": "Mono"
+    },
+    {
+      "name": "aux_logo_launcher_hint",
+      "value": "Das Logo erscheint in der App; das Symbol auf dem Startbildschirm wechselt erst, nachdem die App im AppGallery veröffentlicht wurde."
+    },
+    {
+      "name": "toast_logo_launcher_failed",
+      "value": "Startbildschirm-Symbol nicht gewechselt: Die App ist nicht veröffentlicht oder hat kein dynamisches Symbol."
+    },
+    {
+      "name": "effect_flow_title",
+      "value": "Zweiseitiges Fließlicht"
+    },
+    {
+      "name": "effect_flow_hint",
+      "value": "Zwei Lichtstreifen fließen entlang des Elementrands"
+    },
+    {
+      "name": "action_more",
+      "value": "Mehr"
+    },
+    {
+      "name": "action_star",
+      "value": "Favorit"
+    },
+    {
+      "name": "action_unstar",
+      "value": "Favorit entfernen"
+    },
+    {
+      "name": "action_mark_read",
+      "value": "Als gelesen markieren"
+    },
+    {
+      "name": "action_mark_unread",
+      "value": "Als ungelesen markieren"
+    },
+    {
+      "name": "snack_link_copied",
+      "value": "Link kopiert"
+    },
+    {
+      "name": "snack_dismiss",
+      "value": "Schließen"
+    },
+    {
+      "name": "row_notify_new",
+      "value": "Bei neuen Artikeln benachrichtigen"
+    },
+    {
+      "name": "notify_new_title",
+      "value": "%d neue Artikel"
+    },
+    {
+      "name": "notify_new_text",
+      "value": "%s: %s"
+    },
+    {
+      "name": "toast_notify_denied",
+      "value": "Benachrichtigungen sind für diese App nicht aktiviert"
+    },
+    {
+      "name": "row_effect_preview",
+      "value": "Lichteffekte ansehen"
+    },
+    {
+      "name": "widget_desc",
+      "value": "Neueste RSS-Artikel"
+    },
+    {
+      "name": "widget_title",
+      "value": "RSS-Reader"
+    },
+    {
+      "name": "widget_empty",
+      "value": "Noch keine Artikel"
+    },
+    {
+      "name": "retention_mode_forever",
+      "value": "Alles behalten"
+    },
+    {
+      "name": "retention_mode_days",
+      "value": "Zeitraum festlegen"
+    },
+    {
+      "name": "retention_mode_unread",
+      "value": "Nur ungelesene und gespeicherte behalten"
+    },
+    {
+      "name": "retention_days_30",
+      "value": "30 Tage"
+    },
+    {
+      "name": "retention_days_90",
+      "value": "90 Tage"
+    },
+    {
+      "name": "retention_days_365",
+      "value": "365 Tage"
+    },
+    {
+      "name": "retention_forever",
+      "value": "Unbegrenzt"
+    },
+    {
+      "name": "search_title",
+      "value": "Suchen"
+    },
+    {
+      "name": "search_hint",
+      "value": "Alle Artikel durchsuchen"
+    },
+    {
+      "name": "search_history",
+      "value": "Letzte Suchen"
+    },
+    {
+      "name": "search_clear_history",
+      "value": "Verlauf löschen"
+    },
+    {
+      "name": "search_syntax_hint",
+      "value": "Probiere from:Name is:unread after:2026-01-01 \"genauer Ausdruck\""
+    },
+    {
+      "name": "search_empty",
+      "value": "Stichwort eingeben, um die gesamte Bibliothek zu durchsuchen"
+    },
+    {
+      "name": "search_no_result",
+      "value": "Keine passenden Artikel"
+    },
+    {
+      "name": "search_result_count",
+      "value": "%d Ergebnisse"
+    },
+    {
+      "name": "search_filter_all",
+      "value": "Alle"
+    },
+    {
+      "name": "search_filter_unread",
+      "value": "Ungelesen"
+    },
+    {
+      "name": "search_filter_starred",
+      "value": "Markiert"
+    },
+    {
+      "name": "search_filter_saved",
+      "value": "Gespeichert"
+    },
+    {
+      "name": "search_searching",
+      "value": "Wird gesucht…"
+    },
+    {
+      "name": "search_error",
+      "value": "Suche fehlgeschlagen, bitte erneut versuchen"
+    },
+    {
+      "name": "search_index_building",
+      "value": "Index wird neu aufgebaut…"
+    },
+    {
+      "name": "search_diag_section",
+      "value": "Index-Diagnose"
+    },
+    {
+      "name": "search_diag_main_index",
+      "value": "Hauptindex"
+    },
+    {
+      "name": "search_diag_cjk_index",
+      "value": "Chinesischer Index"
+    },
+    {
+      "name": "search_diag_tokenizer",
+      "value": "Chinesische Worttrennung"
+    },
+    {
+      "name": "search_diag_state_ready",
+      "value": "Bereit"
+    },
+    {
+      "name": "search_diag_state_degraded",
+      "value": "Eingeschränkt"
+    },
+    {
+      "name": "search_diag_state_available",
+      "value": "Verfügbar"
+    },
+    {
+      "name": "search_diag_state_unavailable",
+      "value": "Nicht verfügbar"
+    },
+    {
+      "name": "search_diag_indexed",
+      "value": "%d Zeilen"
+    },
+    {
+      "name": "search_diag_last_search",
+      "value": "Letzte Suche"
+    },
+    {
+      "name": "search_diag_path_none",
+      "value": "Noch nicht ausgeführt"
+    },
+    {
+      "name": "search_diag_path_fts",
+      "value": "Hauptindex"
+    },
+    {
+      "name": "search_diag_path_cjk",
+      "value": "Chinesischer Index"
+    },
+    {
+      "name": "search_diag_path_like",
+      "value": "Vollständiger Scan"
+    },
+    {
+      "name": "storage_title",
+      "value": "Speicher & Aufbewahrung"
+    },
+    {
+      "name": "storage_section_retention",
+      "value": "Aufbewahrungsregel"
+    },
+    {
+      "name": "storage_section_usage",
+      "value": "Speicherbelegung"
+    },
+    {
+      "name": "storage_section_per_feed",
+      "value": "Belegung je Feed"
+    },
+    {
+      "name": "storage_section_trash",
+      "value": "Zuletzt gelöscht"
+    },
+    {
+      "name": "storage_section_index",
+      "value": "Suchindex"
+    },
+    {
+      "name": "storage_total",
+      "value": "%d Artikel gespeichert"
+    },
+    {
+      "name": "storage_text_size",
+      "value": "Textgröße: %s"
+    },
+    {
+      "name": "storage_cleanable",
+      "value": "%d Artikel können bereinigt werden"
+    },
+    {
+      "name": "storage_clean_now",
+      "value": "Jetzt bereinigen"
+    },
+    {
+      "name": "storage_clean_confirm_title",
+      "value": "Alte Artikel bereinigen?"
+    },
+    {
+      "name": "storage_clean_confirm_message",
+      "value": "%d Artikel werden nach „Zuletzt gelöscht“ verschoben und 7 Tage aufbewahrt."
+    },
+    {
+      "name": "storage_clean_done",
+      "value": "%d Artikel bereinigt"
+    },
+    {
+      "name": "storage_trash_count",
+      "value": "%d Artikel können wiederhergestellt werden"
+    },
+    {
+      "name": "storage_restore",
+      "value": "Alle wiederherstellen"
+    },
+    {
+      "name": "storage_restore_done",
+      "value": "%d Artikel wiederhergestellt"
+    },
+    {
+      "name": "storage_rebuild",
+      "value": "Index neu aufbauen"
+    },
+    {
+      "name": "storage_rebuilding",
+      "value": "Neuaufbau %d/%d"
+    },
+    {
+      "name": "storage_rebuild_done",
+      "value": "Index neu aufgebaut"
+    },
+    {
+      "name": "storage_empty",
+      "value": "Noch nichts gespeichert"
+    },
+    {
+      "name": "storage_retention_hint",
+      "value": "Markierte, gespeicherte und hervorgehobene Artikel sowie der geöffnete Artikel werden nie gelöscht."
+    },
+    {
+      "name": "feed_settings_title",
+      "value": "Feed-Einstellungen"
+    },
+    {
+      "name": "feed_settings_entry",
+      "value": "Feed-Einstellungen"
+    },
+    {
+      "name": "feed_settings_enabled",
+      "value": "Neue Artikel abrufen"
+    },
+    {
+      "name": "feed_settings_enabled_hint",
+      "value": "Deaktivierte Feeds behalten ihren Verlauf, werden aber nicht abgerufen und lösen keine Hinweise aus."
+    },
+    {
+      "name": "feed_settings_interval",
+      "value": "Abrufintervall"
+    },
+    {
+      "name": "feed_settings_fulltext",
+      "value": "Volltext"
+    },
+    {
+      "name": "feed_settings_retention",
+      "value": "Artikel behalten"
+    },
+    {
+      "name": "feed_settings_notify",
+      "value": "Bei neuen Artikeln benachrichtigen"
+    },
+    {
+      "name": "feed_settings_scroll_read",
+      "value": "Beim Scrollen als gelesen markieren"
+    },
+    {
+      "name": "feed_settings_scroll_read_hint",
+      "value": "Wenn aktiv, wird ein Artikel nach dem Scrollen bis zum Ende als gelesen markiert."
+    },
+    {
+      "name": "feed_settings_section_health",
+      "value": "Zustand"
+    },
+    {
+      "name": "feed_settings_follow_global",
+      "value": "Globaler Einstellung folgen"
+    },
+    {
+      "name": "feed_settings_on",
+      "value": "An"
+    },
+    {
+      "name": "feed_settings_off",
+      "value": "Aus"
+    },
+    {
+      "name": "feed_settings_interval_15",
+      "value": "Alle 15 Min."
+    },
+    {
+      "name": "feed_settings_interval_30",
+      "value": "Alle 30 Min."
+    },
+    {
+      "name": "feed_settings_interval_60",
+      "value": "Jede Stunde"
+    },
+    {
+      "name": "feed_settings_interval_180",
+      "value": "Alle 3 Stunden"
+    },
+    {
+      "name": "feed_settings_fulltext_auto",
+      "value": "Automatisch"
+    },
+    {
+      "name": "feed_settings_fulltext_always",
+      "value": "Immer Original abrufen"
+    },
+    {
+      "name": "feed_settings_fulltext_never",
+      "value": "Nie Original abrufen"
+    },
+    {
+      "name": "health_last_success",
+      "value": "Letzter Erfolg: %s"
+    },
+    {
+      "name": "health_failure_count",
+      "value": "%d Fehlschläge in Folge"
+    },
+    {
+      "name": "health_never",
+      "value": "Nie synchronisiert"
+    },
+    {
+      "name": "health_retry",
+      "value": "Jetzt wiederholen"
+    },
+    {
+      "name": "health_retrying",
+      "value": "Wird wiederholt…"
+    },
+    {
+      "name": "health_ok",
+      "value": "In Ordnung"
+    },
+    {
+      "name": "retention_days_label",
+      "value": "Behalten für"
+    },
+    {
+      "name": "storage_show_all",
+      "value": "Alle Feeds anzeigen"
+    },
+    {
+      "name": "storage_show_less",
+      "value": "Weniger anzeigen"
+    },
+    {
+      "name": "feed_settings_section_policy",
+      "value": "Abruf & Aufbewahrung"
+    },
+    {
+      "name": "feed_settings_disabled",
+      "value": "Abruf aus"
+    },
+    {
+      "name": "storage_retention_mode",
+      "value": "Aufbewahrung"
+    },
+    {
+      "name": "search_index_fallback",
+      "value": "Einfacher Abgleich (Index nicht verfügbar)"
+    },
+    {
+      "name": "tag_title",
+      "value": "Tags"
+    },
+    {
+      "name": "tag_entry",
+      "value": "Tags (%d)"
+    },
+    {
+      "name": "tag_empty",
+      "value": "Noch keine Tags"
+    },
+    {
+      "name": "tag_new_hint",
+      "value": "Neuer Tag-Name"
+    },
+    {
+      "name": "tag_new",
+      "value": "Neuer Tag"
+    },
+    {
+      "name": "tag_name_invalid",
+      "value": "Tag-Namen eingeben (max. 32 Zeichen)"
+    },
+    {
+      "name": "tag_limit_reached",
+      "value": "Tag-Limit erreicht (100)"
+    },
+    {
+      "name": "tag_rename",
+      "value": "Umbenennen"
+    },
+    {
+      "name": "tag_rename_hint",
+      "value": "Tag-Name"
+    },
+    {
+      "name": "tag_remove",
+      "value": "Tag löschen"
+    },
+    {
+      "name": "tag_remove_confirm_title",
+      "value": "Tag löschen?"
+    },
+    {
+      "name": "tag_remove_confirm_message",
+      "value": "Artikel behalten ihren Inhalt; nur der Tag wird entfernt."
+    },
+    {
+      "name": "tag_view_results",
+      "value": "Ergebnisse anzeigen"
+    },
+    {
+      "name": "tag_articles_title",
+      "value": "Getaggte Artikel"
+    },
+    {
+      "name": "tag_picker_title",
+      "value": "Tags"
+    },
+    {
+      "name": "tag_picker_empty",
+      "value": "Noch keine Tags — unten einen erstellen"
+    },
+    {
+      "name": "tag_apply",
+      "value": "Anwenden"
+    },
+    {
+      "name": "tag_select_hint",
+      "value": "Mindestens einen Tag auswählen"
+    },
+    {
+      "name": "tag_added",
+      "value": "Tag hinzugefügt"
+    },
+    {
+      "name": "tag_removed",
+      "value": "Tag entfernt"
+    },
+    {
+      "name": "tag_batch_done",
+      "value": "%d Artikel getaggt"
+    },
+    {
+      "name": "tag_action_failed",
+      "value": "Tag-Aktion fehlgeschlagen"
+    },
+    {
+      "name": "tag_manage_hint",
+      "value": "Tags auswählen, um Artikel zu sehen, die alle haben"
+    },
+    {
+      "name": "smart_folder_title",
+      "value": "Smarte Ordner"
+    },
+    {
+      "name": "smart_folder_entry",
+      "value": "Smarte Ordner (%d)"
+    },
+    {
+      "name": "smart_folder_empty",
+      "value": "Noch keine smarten Ordner"
+    },
+    {
+      "name": "smart_folder_new",
+      "value": "Neuer smarter Ordner"
+    },
+    {
+      "name": "smart_folder_name_hint",
+      "value": "Ordnername"
+    },
+    {
+      "name": "smart_folder_query_hint",
+      "value": "Abfrage, z. B. from:Feed is:unread KI"
+    },
+    {
+      "name": "smart_folder_query_label",
+      "value": "Abfrage"
+    },
+    {
+      "name": "smart_folder_save_current",
+      "value": "Als smarten Ordner speichern"
+    },
+    {
+      "name": "smart_folder_saved",
+      "value": "Smarter Ordner gespeichert"
+    },
+    {
+      "name": "smart_folder_query_empty",
+      "value": "Abfrage darf nicht leer sein"
+    },
+    {
+      "name": "smart_folder_name_invalid",
+      "value": "Namen eingeben (max. 32 Zeichen)"
+    },
+    {
+      "name": "smart_folder_limit_reached",
+      "value": "Limit smarter Ordner erreicht (50)"
+    },
+    {
+      "name": "smart_folder_query_too_long",
+      "value": "Abfrage ist zu lang (max. 512 Zeichen)"
+    },
+    {
+      "name": "smart_folder_edit",
+      "value": "Bearbeiten"
+    },
+    {
+      "name": "smart_folder_save",
+      "value": "Speichern"
+    },
+    {
+      "name": "smart_folder_remove",
+      "value": "Smarten Ordner löschen"
+    },
+    {
+      "name": "smart_folder_remove_confirm_title",
+      "value": "Smarten Ordner löschen?"
+    },
+    {
+      "name": "smart_folder_remove_confirm_message",
+      "value": "Nur die gespeicherte Abfrage wird entfernt; Artikel bleiben."
+    },
+    {
+      "name": "smart_folder_move_up",
+      "value": "Nach oben"
+    },
+    {
+      "name": "smart_folder_move_down",
+      "value": "Nach unten"
+    },
+    {
+      "name": "smart_folder_open_failed",
+      "value": "Dieser Ordner kann nicht geöffnet werden"
+    },
+    {
+      "name": "remote_entry_title",
+      "value": "Konto & Dienste"
+    },
+    {
+      "name": "remote_title",
+      "value": "Konto & Dienste"
+    },
+    {
+      "name": "remote_section_connect",
+      "value": "Dienst verbinden"
+    },
+    {
+      "name": "remote_field_base_url",
+      "value": "Serveradresse"
+    },
+    {
+      "name": "remote_field_base_url_hint",
+      "value": "https://rss.example.com"
+    },
+    {
+      "name": "remote_field_username",
+      "value": "Benutzername"
+    },
+    {
+      "name": "remote_field_password",
+      "value": "Passwort"
+    },
+    {
+      "name": "remote_allow_http",
+      "value": "Unsicheres HTTP erlauben"
+    },
+    {
+      "name": "remote_allow_http_hint",
+      "value": "Nur für vertrauenswürdige selbst gehostete Server. HTTP-Verkehr ist nicht verschlüsselt."
+    },
+    {
+      "name": "remote_connect",
+      "value": "Verbinden"
+    },
+    {
+      "name": "remote_connecting",
+      "value": "Verbindung wird hergestellt…"
+    },
+    {
+      "name": "remote_connected",
+      "value": "Verbunden"
+    },
+    {
+      "name": "remote_not_connected",
+      "value": "Nicht verbunden"
+    },
+    {
+      "name": "remote_section_status",
+      "value": "Synchronisierungsstatus"
+    },
+    {
+      "name": "remote_status_service",
+      "value": "Dienst"
+    },
+    {
+      "name": "remote_status_service_value",
+      "value": "Google Reader API"
+    },
+    {
+      "name": "remote_status_base_url",
+      "value": "Adresse"
+    },
+    {
+      "name": "remote_status_username",
+      "value": "Konto"
+    },
+    {
+      "name": "remote_status_last_sync",
+      "value": "Letzte Synchronisierung"
+    },
+    {
+      "name": "remote_status_never",
+      "value": "Nie synchronisiert"
+    },
+    {
+      "name": "remote_status_pending",
+      "value": "Ausstehende Änderungen"
+    },
+    {
+      "name": "remote_status_failures",
+      "value": "Fehlschläge in Folge"
+    },
+    {
+      "name": "remote_status_last_error",
+      "value": "Letzter Fehler"
+    },
+    {
+      "name": "remote_sync_now",
+      "value": "Jetzt synchronisieren"
+    },
+    {
+      "name": "remote_syncing",
+      "value": "Wird synchronisiert…"
+    },
+    {
+      "name": "remote_logout",
+      "value": "Abmelden"
+    },
+    {
+      "name": "remote_logout_confirm_title",
+      "value": "Abmelden?"
+    },
+    {
+      "name": "remote_logout_confirm_message",
+      "value": "Lokale Artikel und Lesestatus bleiben verfügbar. Du kannst auch Synchronisierungszuordnungen und die Warteschlange entfernen."
+    },
+    {
+      "name": "remote_logout_keep",
+      "value": "Lokale Daten behalten"
+    },
+    {
+      "name": "remote_logout_clear",
+      "value": "Synchronisierungsdaten entfernen"
+    },
+    {
+      "name": "remote_logout_done",
+      "value": "Abgemeldet"
+    },
+    {
+      "name": "remote_phase_feeds",
+      "value": "Abonnements werden abgerufen…"
+    },
+    {
+      "name": "remote_phase_articles",
+      "value": "Artikel werden abgerufen…"
+    },
+    {
+      "name": "remote_phase_push",
+      "value": "Lesestatus wird hochgeladen…"
+    },
+    {
+      "name": "remote_phase_pull",
+      "value": "Remote-Status wird angewendet…"
+    },
+    {
+      "name": "remote_phase_done",
+      "value": "Synchronisierung abgeschlossen"
+    },
+    {
+      "name": "remote_progress",
+      "value": "%d von %d Feeds synchronisiert"
+    },
+    {
+      "name": "remote_error_network",
+      "value": "Server nicht erreichbar. Adresse und Netzwerk prüfen."
+    },
+    {
+      "name": "remote_error_tls",
+      "value": "Das Zertifikat ist nicht vertrauenswürdig. Gültiges Zertifikat verwenden oder HTTP erlauben."
+    },
+    {
+      "name": "remote_error_auth",
+      "value": "Benutzername oder Passwort falsch."
+    },
+    {
+      "name": "remote_error_api",
+      "value": "Die Dienst-API ist unter dieser Adresse nicht verfügbar."
+    },
+    {
+      "name": "remote_error_rate",
+      "value": "Der Server begrenzt Anfragen. Später erneut versuchen."
+    },
+    {
+      "name": "remote_error_server",
+      "value": "Der Server hat einen Fehler zurückgegeben. Später erneut versuchen."
+    },
+    {
+      "name": "remote_error_parse",
+      "value": "Unerwartete Antwort vom Server."
+    },
+    {
+      "name": "remote_error_insecure",
+      "value": "HTTP ist deaktiviert. Aktiviere „Unsicheres HTTP erlauben“, um diese Adresse zu verwenden."
+    },
+    {
+      "name": "remote_error_empty",
+      "value": "Bitte die erforderlichen Felder ausfüllen."
+    },
+    {
+      "name": "remote_error_busy",
+      "value": "Eine Synchronisierung läuft bereits."
+    },
+    {
+      "name": "remote_error_not_connected",
+      "value": "Zuerst einen Dienst verbinden."
+    },
+    {
+      "name": "remote_sync_done",
+      "value": "Synchronisierung abgeschlossen"
+    },
+    {
+      "name": "remote_sync_summary",
+      "value": "%d Feeds · %d Artikel · %d Statusaktualisierungen"
+    },
+    {
+      "name": "remote_form_hint",
+      "value": "Funktioniert mit FreshRSS, Tiny Tiny RSS und Miniflux (Google Reader API)."
+    },
+    {
+      "name": "remote_aux_credentials",
+      "value": "Zugangsdaten werden im Asset Store des Systems gespeichert, nie im Klartext."
+    },
+    {
+      "name": "remote_empty_status",
+      "value": "Verbinde einen Dienst, um Abonnements und Lesestatus zu synchronisieren."
+    },
+    {
+      "name": "remote_status_feeds",
+      "value": "Remote-Abonnements"
+    },
+    {
+      "name": "remote_auto_sync",
+      "value": "Automatisch synchronisieren"
+    },
+    {
+      "name": "rule_title",
+      "value": "Regeln"
+    },
+    {
+      "name": "rule_entry",
+      "value": "Regeln (%d)"
+    },
+    {
+      "name": "rule_empty",
+      "value": "Noch keine Regeln. Neue Artikel werden automatisch verarbeitet, sobald eine Regel passt."
+    },
+    {
+      "name": "rule_new",
+      "value": "Neue Regel"
+    },
+    {
+      "name": "rule_edit_title",
+      "value": "Regel"
+    },
+    {
+      "name": "rule_manage_hint",
+      "value": "Regeln laufen auf neu abgerufenen und neu synchronisierten Artikeln in Prioritätsreihenfolge. Aktionen fügen nur Status hinzu (gelesen / markiert / Tags / verborgen) und machen ihn nie rückgängig."
+    },
+    {
+      "name": "rule_enabled",
+      "value": "Aktiviert"
+    },
+    {
+      "name": "rule_name_hint",
+      "value": "Regelname"
+    },
+    {
+      "name": "rule_keywords_label",
+      "value": "Stichwörter"
+    },
+    {
+      "name": "rule_keywords_hint",
+      "value": "Stichwörter, durch Kommas getrennt; alle müssen passen"
+    },
+    {
+      "name": "rule_fields_label",
+      "value": "Suchen in"
+    },
+    {
+      "name": "rule_field_title",
+      "value": "Titel"
+    },
+    {
+      "name": "rule_field_summary",
+      "value": "Zusammenfassung"
+    },
+    {
+      "name": "rule_field_content",
+      "value": "Inhalt"
+    },
+    {
+      "name": "rule_field_author",
+      "value": "Autor"
+    },
+    {
+      "name": "rule_source_label",
+      "value": "Quellen"
+    },
+    {
+      "name": "rule_source_all",
+      "value": "Alle Quellen"
+    },
+    {
+      "name": "rule_source_custom",
+      "value": "Ausgewählte Quellen"
+    },
+    {
+      "name": "rule_source_invalid",
+      "value": "Einige gewählte Quellen existieren nicht mehr. Bitte neu auswählen."
+    },
+    {
+      "name": "rule_actions_label",
+      "value": "Aktionen"
+    },
+    {
+      "name": "rule_action_read",
+      "value": "Als gelesen markieren"
+    },
+    {
+      "name": "rule_action_star",
+      "value": "Markieren"
+    },
+    {
+      "name": "rule_action_tag",
+      "value": "Tags hinzufügen"
+    },
+    {
+      "name": "rule_action_hide",
+      "value": "Verbergen"
+    },
+    {
+      "name": "rule_tags_label",
+      "value": "Tags"
+    },
+    {
+      "name": "rule_tags_empty",
+      "value": "Noch keine Tags. Auf der Tag-Seite erstellen."
+    },
+    {
+      "name": "rule_save",
+      "value": "Regel speichern"
+    },
+    {
+      "name": "rule_match_count",
+      "value": "%d Treffer"
+    },
+    {
+      "name": "rule_last_hit",
+      "value": "Letzter Treffer %s"
+    },
+    {
+      "name": "rule_never_hit",
+      "value": "Nie getroffen"
+    },
+    {
+      "name": "rule_test",
+      "value": "Testen"
+    },
+    {
+      "name": "rule_testing",
+      "value": "Wird getestet…"
+    },
+    {
+      "name": "rule_test_result",
+      "value": "Letzte %d Artikel · %d Treffer"
+    },
+    {
+      "name": "rule_edit",
+      "value": "Bearbeiten"
+    },
+    {
+      "name": "rule_move_up",
+      "value": "Nach oben"
+    },
+    {
+      "name": "rule_move_down",
+      "value": "Nach unten"
+    },
+    {
+      "name": "rule_remove",
+      "value": "Löschen"
+    },
+    {
+      "name": "rule_remove_confirm_title",
+      "value": "Regel löschen"
+    },
+    {
+      "name": "rule_remove_confirm_message",
+      "value": "Gelöschte Regeln verarbeiten keine neuen Artikel mehr. Bestehender Gelesen-/Markiert-/Tag-/Verborgen-Status bleibt."
+    },
+    {
+      "name": "rule_name_invalid",
+      "value": "Regelname ist erforderlich"
+    },
+    {
+      "name": "rule_keywords_invalid",
+      "value": "Mindestens ein Stichwort hinzufügen"
+    },
+    {
+      "name": "rule_keywords_too_many",
+      "value": "Zu viele Stichwörter (max. %d)"
+    },
+    {
+      "name": "rule_fields_empty",
+      "value": "Mindestens ein Feld zum Abgleichen auswählen"
+    },
+    {
+      "name": "rule_actions_empty",
+      "value": "Mindestens eine Aktion auswählen"
+    },
+    {
+      "name": "rule_tags_required",
+      "value": "Für die Tag-Aktion mindestens einen Tag auswählen"
+    },
+    {
+      "name": "rule_limit_reached",
+      "value": "Regel-Limit erreicht"
+    },
+    {
+      "name": "rule_action_failed",
+      "value": "Vorgang fehlgeschlagen"
+    },
+    {
+      "name": "rule_error_name_empty",
+      "value": "Regelname ist erforderlich"
+    },
+    {
+      "name": "rule_error_name_too_long",
+      "value": "Regelname ist zu lang (max. %d Zeichen)"
+    },
+    {
+      "name": "rule_error_keywords_empty",
+      "value": "Mindestens ein Stichwort hinzufügen"
+    },
+    {
+      "name": "rule_error_keywords_too_many",
+      "value": "Zu viele Stichwörter (max. %d)"
+    },
+    {
+      "name": "rule_error_fields_empty",
+      "value": "Mindestens ein Feld zum Abgleichen auswählen"
+    },
+    {
+      "name": "rule_error_actions_empty",
+      "value": "Mindestens eine Aktion auswählen"
+    },
+    {
+      "name": "rule_error_tags_empty",
+      "value": "Für die Tag-Aktion mindestens einen Tag auswählen"
+    },
+    {
+      "name": "rule_error_limit_reached",
+      "value": "Regel-Limit erreicht"
+    },
+    {
+      "name": "rule_keywords_limit_hint",
+      "value": "Bis zu %d Stichwörter, durch Kommas getrennt; alle müssen passen"
+    },
+    {
+      "name": "rule_hidden_entry",
+      "value": "Verborgen (%d)"
+    },
+    {
+      "name": "hidden_title",
+      "value": "Verborgene Artikel"
+    },
+    {
+      "name": "hidden_empty",
+      "value": "Keine verborgenen Artikel"
+    },
+    {
+      "name": "hidden_hint",
+      "value": "Verborgene Artikel erscheinen nicht in der Hauptliste oder bei ungelesenen Zählern, können aber weiterhin gesucht und gelesen werden."
+    },
+    {
+      "name": "hidden_unhide",
+      "value": "Einblenden"
+    },
+    {
+      "name": "hidden_unhide_done",
+      "value": "Artikel in die Hauptliste zurückgebracht"
+    },
+    {
+      "name": "dedupe_sources_count",
+      "value": "%d Quellen"
+    },
+    {
+      "name": "dedupe_sources_title",
+      "value": "Alle Quellen"
+    },
+    {
+      "name": "dedupe_source_label",
+      "value": "Quelle"
+    },
+    {
+      "name": "dedupe_merged_hint",
+      "value": "Dieser Artikel wird auch von %d weiteren Quellen gesammelt"
+    },
+    {
+      "name": "dedupe_group_empty",
+      "value": "Keine Quelleninformation"
+    },
+    {
+      "name": "dedupe_settings_title",
+      "value": "Quellenübergreifende Duplikate"
+    },
+    {
+      "name": "dedupe_settings_desc",
+      "value": "Wenn mehrere Feeds denselben Artikel führen, wird er einmal angezeigt und jede Quelle bleibt erhalten."
+    },
+    {
+      "name": "dedupe_toggle_on",
+      "value": "Quellenübergreifende Deduplizierung an"
+    },
+    {
+      "name": "dedupe_toggle_off",
+      "value": "Quellenübergreifende Deduplizierung aus"
+    },
+    {
+      "name": "dedupe_match_failed",
+      "value": "Duplikatprüfung fehlgeschlagen; der Artikel wurde einzeln gespeichert"
+    },
+    {
+      "name": "dedupe_open_failed",
+      "value": "Dieser Quellenlink kann nicht geöffnet werden"
+    },
+    {
+      "name": "dedupe_source_count",
+      "value": "%d Quellen"
+    },
+    {
+      "name": "dedupe_switch_desc",
+      "value": "Wenn mehrere Feeds denselben Artikel führen, wird er einmal angezeigt und jede Quelle bleibt erhalten."
+    },
+    {
+      "name": "dedupe_source_current",
+      "value": "Aktuell"
+    },
+    {
+      "name": "share_panel_title",
+      "value": "Teilen"
+    },
+    {
+      "name": "share_group_actions",
+      "value": "Aktionen"
+    },
+    {
+      "name": "share_group_targets",
+      "value": "Senden an"
+    },
+    {
+      "name": "share_group_templates",
+      "value": "Vorlagen"
+    },
+    {
+      "name": "share_group_export",
+      "value": "Markierungen exportieren"
+    },
+    {
+      "name": "share_action_system",
+      "value": "Systemfreigabe"
+    },
+    {
+      "name": "share_action_copy_link",
+      "value": "Link kopieren"
+    },
+    {
+      "name": "share_action_copy_body",
+      "value": "Text kopieren"
+    },
+    {
+      "name": "share_action_browser",
+      "value": "Im Browser öffnen"
+    },
+    {
+      "name": "share_action_saved",
+      "value": "Für später speichern"
+    },
+    {
+      "name": "share_target_pocket",
+      "value": "Pocket"
+    },
+    {
+      "name": "share_target_instapaper",
+      "value": "Instapaper"
+    },
+    {
+      "name": "share_target_flomo",
+      "value": "Flomo"
+    },
+    {
+      "name": "share_target_email",
+      "value": "E-Mail"
+    },
+    {
+      "name": "share_toast_shared",
+      "value": "Systemfreigabe geöffnet"
+    },
+    {
+      "name": "share_toast_copied",
+      "value": "Kopiert"
+    },
+    {
+      "name": "share_toast_copy_failed",
+      "value": "Kopieren nicht möglich"
+    },
+    {
+      "name": "share_toast_open_failed",
+      "value": "App konnte nicht geöffnet werden"
+    },
+    {
+      "name": "share_toast_fallback_copied",
+      "value": "App nicht verfügbar; Link stattdessen kopiert"
+    },
+    {
+      "name": "share_toast_share_failed",
+      "value": "Teilen ist nicht verfügbar"
+    },
+    {
+      "name": "share_toast_nothing_to_share",
+      "value": "Es gibt nichts zu teilen"
+    },
+    {
+      "name": "share_toast_busy",
+      "value": "Bitte warten…"
+    },
+    {
+      "name": "share_toast_saved",
+      "value": "Für später gespeichert"
+    },
+    {
+      "name": "share_disabled_no_url",
+      "value": "Dieses Element hat keinen Link"
+    },
+    {
+      "name": "share_disabled_no_highlights",
+      "value": "Dieser Artikel hat keine Markierungen"
+    },
+    {
+      "name": "share_export_article",
+      "value": "Markierungen dieses Artikels exportieren"
+    },
+    {
+      "name": "share_export_all",
+      "value": "Alle Markierungen exportieren"
+    },
+    {
+      "name": "share_export_empty",
+      "value": "Keine Markierungen zum Exportieren"
+    },
+    {
+      "name": "share_settings_title",
+      "value": "Teilen & Vorlagen"
+    },
+    {
+      "name": "tpl_section_title",
+      "value": "Vorlagen"
+    },
+    {
+      "name": "tpl_default_name",
+      "value": "Standard"
+    },
+    {
+      "name": "tpl_new",
+      "value": "Neue Vorlage"
+    },
+    {
+      "name": "tpl_edit",
+      "value": "Vorlage bearbeiten"
+    },
+    {
+      "name": "tpl_name_label",
+      "value": "Name"
+    },
+    {
+      "name": "tpl_content_label",
+      "value": "Inhalt"
+    },
+    {
+      "name": "tpl_placeholder_help",
+      "value": "Platzhalter: {title} {url} {summary} {author} {tags}"
+    },
+    {
+      "name": "tpl_save",
+      "value": "Speichern"
+    },
+    {
+      "name": "tpl_cancel",
+      "value": "Abbrechen"
+    },
+    {
+      "name": "tpl_delete",
+      "value": "Löschen"
+    },
+    {
+      "name": "tpl_delete_confirm",
+      "value": "Diese Vorlage löschen?"
+    },
+    {
+      "name": "tpl_move_up",
+      "value": "Nach oben"
+    },
+    {
+      "name": "tpl_move_down",
+      "value": "Nach unten"
+    },
+    {
+      "name": "tpl_copy",
+      "value": "Kopieren"
+    },
+    {
+      "name": "tpl_share",
+      "value": "Teilen"
+    },
+    {
+      "name": "tpl_empty",
+      "value": "Noch keine Vorlagen"
+    },
+    {
+      "name": "tpl_err_name_empty",
+      "value": "Vorlagennamen eingeben"
+    },
+    {
+      "name": "tpl_err_name_long",
+      "value": "Name ist zu lang"
+    },
+    {
+      "name": "tpl_err_content_empty",
+      "value": "Vorlageninhalt darf nicht leer sein"
+    },
+    {
+      "name": "tpl_err_content_long",
+      "value": "Vorlageninhalt ist zu lang"
+    },
+    {
+      "name": "tpl_err_max",
+      "value": "Du kannst bis zu 20 Vorlagen behalten"
+    },
+    {
+      "name": "tpl_limit_hint",
+      "value": "Bis zu 20 Vorlagen; die Reihenfolge hier ist die Reihenfolge im Freigabebereich."
+    },
+    {
+      "name": "share_action_unsave",
+      "value": "Aus „Später“ entfernen"
+    },
+    {
+      "name": "share_toast_unsaved",
+      "value": "Aus „Später“ entfernt"
+    },
+    {
+      "name": "tpl_name_hint",
+      "value": "z. B. Kurzer Beitrag"
+    },
+    {
+      "name": "tpl_content_hint",
+      "value": "{title} — {url}"
+    },
+    {
+      "name": "tpl_toast_saved",
+      "value": "Vorlage gespeichert"
+    },
+    {
+      "name": "tpl_toast_deleted",
+      "value": "Vorlage gelöscht"
+    },
+    {
+      "name": "tpl_err_save_failed",
+      "value": "Vorlage konnte nicht gespeichert werden"
+    },
+    {
+      "name": "tpl_default_hint",
+      "value": "Eingebaute Vorlage; erstelle eine eigene, um sie anzupassen."
+    },
+    {
+      "name": "tpl_delete_confirm_named",
+      "value": "„%s“ löschen?"
+    },
+    {
+      "name": "section_share",
+      "value": "Teilen"
+    },
+    {
+      "name": "backup_title",
+      "value": "Sicherung & Wiederherstellung"
+    },
+    {
+      "name": "backup_entry",
+      "value": "Sicherung & Wiederherstellung"
+    },
+    {
+      "name": "backup_intro",
+      "value": "Verschiebe Abonnements und Lesedaten auf ein neues Gerät oder halte eine lokale Sicherung."
+    },
+    {
+      "name": "backup_section_export",
+      "value": "Exportieren"
+    },
+    {
+      "name": "backup_export_action",
+      "value": "Sicherung exportieren"
+    },
+    {
+      "name": "backup_export_hint",
+      "value": "Speichert Abonnements, Lesestatus, Markierungen, Tags, Regeln und Vorlagen in einer JSON-Datei."
+    },
+    {
+      "name": "backup_export_cancelled",
+      "value": "Export abgebrochen"
+    },
+    {
+      "name": "backup_section_import",
+      "value": "Importieren"
+    },
+    {
+      "name": "backup_import_action",
+      "value": "Sicherung importieren"
+    },
+    {
+      "name": "backup_import_hint",
+      "value": "Vorhandene Daten werden zusammengeführt; nichts wird gelöscht."
+    },
+    {
+      "name": "backup_import_cancelled",
+      "value": "Import abgebrochen"
+    },
+    {
+      "name": "backup_restore_settings",
+      "value": "Auch Einstellungen wiederherstellen"
+    },
+    {
+      "name": "backup_restore_settings_hint",
+      "value": "Wendet Design-, Layout-, Listen- und Synchronisierungseinstellungen aus der Sicherung an. Standardmäßig aus."
+    },
+    {
+      "name": "backup_section_snapshots",
+      "value": "Automatische Snapshots"
+    },
+    {
+      "name": "backup_snapshot_now",
+      "value": "Jetzt sichern"
+    },
+    {
+      "name": "backup_snapshot_empty",
+      "value": "Noch keine Snapshots"
+    },
+    {
+      "name": "backup_snapshot_restore",
+      "value": "Wiederherstellen"
+    },
+    {
+      "name": "backup_snapshot_delete",
+      "value": "Löschen"
+    },
+    {
+      "name": "backup_snapshot_keep_hint",
+      "value": "Ein Snapshot pro Tag; die letzten 7 werden behalten."
+    },
+    {
+      "name": "backup_snapshot_created",
+      "value": "Erstellt %s"
+    },
+    {
+      "name": "backup_snapshot_size",
+      "value": "Größe %s"
+    },
+    {
+      "name": "backup_last_snapshot",
+      "value": "Letzter Snapshot: %s"
+    },
+    {
+      "name": "backup_never",
+      "value": "Nie"
+    },
+    {
+      "name": "backup_result_title",
+      "value": "Letztes Ergebnis"
+    },
+    {
+      "name": "backup_result_label_feeds",
+      "value": "Abonnements"
+    },
+    {
+      "name": "backup_result_label_articles",
+      "value": "Artikel"
+    },
+    {
+      "name": "backup_result_label_updated",
+      "value": "Aktualisiert"
+    },
+    {
+      "name": "backup_result_label_highlights",
+      "value": "Markierungen"
+    },
+    {
+      "name": "backup_result_label_tags",
+      "value": "Tags"
+    },
+    {
+      "name": "backup_result_label_skipped",
+      "value": "Übersprungen"
+    },
+    {
+      "name": "backup_result_label_failed",
+      "value": "Fehlgeschlagen"
+    },
+    {
+      "name": "backup_result_added",
+      "value": "Hinzugefügt: %d"
+    },
+    {
+      "name": "backup_result_updated",
+      "value": "Aktualisiert: %d"
+    },
+    {
+      "name": "backup_result_skipped",
+      "value": "Übersprungen: %d"
+    },
+    {
+      "name": "backup_result_failed",
+      "value": "Fehlgeschlagen: %d"
+    },
+    {
+      "name": "backup_privacy_notice",
+      "value": "Die Sicherung enthält deinen Leseverlauf. Bewahre die Datei sicher auf."
+    },
+    {
+      "name": "backup_error_parse",
+      "value": "Diese Datei ist keine gültige Sicherung."
+    },
+    {
+      "name": "backup_error_version",
+      "value": "Diese Sicherungsversion wird nicht unterstützt."
+    },
+    {
+      "name": "backup_error_empty",
+      "value": "Die Sicherungsdatei ist leer."
+    },
+    {
+      "name": "backup_error_read",
+      "value": "Die Datei konnte nicht gelesen werden."
+    },
+    {
+      "name": "backup_error_write",
+      "value": "Die Datei konnte nicht gespeichert werden."
+    },
+    {
+      "name": "backup_error_snapshot",
+      "value": "Snapshot konnte nicht erstellt werden."
+    },
+    {
+      "name": "backup_error_busy",
+      "value": "Eine andere Sicherungsaufgabe läuft noch. Bitte gleich erneut versuchen."
+    },
+    {
+      "name": "backup_toast_exported",
+      "value": "Sicherung exportiert"
+    },
+    {
+      "name": "backup_toast_imported",
+      "value": "Sicherung importiert"
+    },
+    {
+      "name": "backup_toast_restored",
+      "value": "Snapshot wiederhergestellt"
+    },
+    {
+      "name": "backup_toast_deleted",
+      "value": "Snapshot gelöscht"
+    },
+    {
+      "name": "backup_toast_snapshot_created",
+      "value": "Snapshot erstellt"
+    },
+    {
+      "name": "backup_confirm_restore_title",
+      "value": "Diesen Snapshot wiederherstellen?"
+    },
+    {
+      "name": "backup_confirm_restore_message",
+      "value": "Daten werden in die aktuelle Bibliothek zusammengeführt. Vorhandene Einträge werden nicht gelöscht."
+    },
+    {
+      "name": "backup_confirm_delete_title",
+      "value": "Diesen Snapshot löschen?"
+    },
+    {
+      "name": "backup_confirm_delete_message",
+      "value": "Diese Snapshot-Datei wird entfernt und kann nicht wiederhergestellt werden."
+    },
+    {
+      "name": "backup_working",
+      "value": "Wird verarbeitet…"
+    },
+    {
+      "name": "backup_section_about",
+      "value": "Über Sicherungen"
+    },
+    {
+      "name": "backup_content_list",
+      "value": "Abonnements · Lesestatus · Markierungen · Tags · smarte Ordner · Regeln · Templates · Einstellungen"
+    },
+    {
+      "name": "row_notify_settings",
+      "value": "Benachrichtigungseinstellungen"
+    },
+    {
+      "name": "notify_settings_title",
+      "value": "Benachrichtigungseinstellungen"
+    },
+    {
+      "name": "notify_settings_desc",
+      "value": "Lege fest, welche neuen Artikel dich wann benachrichtigen."
+    },
+    {
+      "name": "notify_settings_saved",
+      "value": "Benachrichtigungseinstellungen gespeichert"
+    },
+    {
+      "name": "notify_section_permission",
+      "value": "Berechtigung"
+    },
+    {
+      "name": "notify_permission_on",
+      "value": "Benachrichtigungen erlaubt"
+    },
+    {
+      "name": "notify_permission_off",
+      "value": "Benachrichtigungen nicht erlaubt"
+    },
+    {
+      "name": "notify_permission_grant",
+      "value": "Benachrichtigungen erlauben"
+    },
+    {
+      "name": "notify_permission_hint",
+      "value": "Wenn kein Dialog erscheint, aktiviere Benachrichtigungen für diese App in den Systemeinstellungen."
+    },
+    {
+      "name": "notify_status_off",
+      "value": "Benachrichtigungen sind aus. Neue Artikel werden nicht angekündigt."
+    },
+    {
+      "name": "notify_section_policy",
+      "value": "Welche Artikel"
+    },
+    {
+      "name": "notify_global_switch",
+      "value": "Bei neuen Artikeln benachrichtigen"
+    },
+    {
+      "name": "notify_global_switch_desc",
+      "value": "Einstellungen je Feed gelten weiterhin. Schalte einen Feed aus, um ihn stummzuschalten."
+    },
+    {
+      "name": "notify_keywords_title",
+      "value": "Stichwörter"
+    },
+    {
+      "name": "notify_keywords_desc",
+      "value": "Nur benachrichtigen, wenn Titel oder Zusammenfassung ein Stichwort enthält. Leer lassen, um alles zu benachrichtigen."
+    },
+    {
+      "name": "notify_keywords_empty",
+      "value": "Noch keine Stichwörter"
+    },
+    {
+      "name": "notify_keywords_placeholder",
+      "value": "Stichwort hinzufügen"
+    },
+    {
+      "name": "notify_keywords_add",
+      "value": "Hinzufügen"
+    },
+    {
+      "name": "notify_keywords_full",
+      "value": "Bis zu %d Stichwörter"
+    },
+    {
+      "name": "notify_section_dnd",
+      "value": "Nicht stören"
+    },
+    {
+      "name": "notify_dnd_title",
+      "value": "Nicht stören"
+    },
+    {
+      "name": "notify_dnd_desc",
+      "value": "Benachrichtigungen in diesem Zeitraum zurückhalten und danach gesammelt zustellen."
+    },
+    {
+      "name": "notify_dnd_start",
+      "value": "Beginn"
+    },
+    {
+      "name": "notify_dnd_end",
+      "value": "Ende"
+    },
+    {
+      "name": "notify_dnd_same",
+      "value": "Beginn und Ende sind gleich, daher ist „Nicht stören“ aus."
+    },
+    {
+      "name": "notify_section_digest",
+      "value": "Tagesübersicht"
+    },
+    {
+      "name": "notify_digest_title",
+      "value": "Tägliche Zusammenfassung"
+    },
+    {
+      "name": "notify_digest_desc",
+      "value": "Nach der eingestellten Stunde einmal täglich eine Zusammenfassung senden."
+    },
+    {
+      "name": "notify_digest_hour",
+      "value": "Uhrzeit"
+    },
+    {
+      "name": "notify_section_test",
+      "value": "Test"
+    },
+    {
+      "name": "notify_test_action",
+      "value": "Testbenachrichtigung senden"
+    },
+    {
+      "name": "notify_test_title",
+      "value": "Testbenachrichtigung"
+    },
+    {
+      "name": "notify_test_text",
+      "value": "Benachrichtigungen funktionieren."
+    },
+    {
+      "name": "notify_test_failed",
+      "value": "Testbenachrichtigung konnte nicht gesendet werden"
+    },
+    {
+      "name": "notify_aggregate_title",
+      "value": "Weitere Aktualisierungen"
+    },
+    {
+      "name": "notify_aggregate_text",
+      "value": "%s: %d weitere"
+    },
+    {
+      "name": "notify_aggregate_more",
+      "value": "%d weitere"
+    },
+    {
+      "name": "notify_dnd_flush_title",
+      "value": "%d neue Artikel während „Nicht stören“"
+    },
+    {
+      "name": "notify_dnd_flush_text",
+      "value": "%s"
+    },
+    {
+      "name": "notify_digest_notify_title",
+      "value": "Tägliche Zusammenfassung: %d neue Artikel"
+    },
+    {
+      "name": "notify_digest_notify_text",
+      "value": "%s"
+    },
+    {
+      "name": "notify_action_star",
+      "value": "Markieren"
+    },
+    {
+      "name": "notify_permission_check",
+      "value": "Erneut prüfen"
+    },
+    {
+      "name": "notify_keyword_exists",
+      "value": "Stichwort bereits hinzugefügt"
+    },
+    {
+      "name": "notify_keyword_remove",
+      "value": "%s entfernen"
+    },
+    {
+      "name": "notify_test_sent",
+      "value": "Testbenachrichtigung gesendet"
+    },
+    {
+      "name": "translate_settings_title",
+      "value": "Übersetzung"
+    },
+    {
+      "name": "translate_settings_desc",
+      "value": "Artikel mit einem Dienst deiner Wahl übersetzen. Standardmäßig aus; Ergebnisse werden auf dem Gerät zwischengespeichert."
+    },
+    {
+      "name": "translate_section_service",
+      "value": "Übersetzungsdienst"
+    },
+    {
+      "name": "translate_enable",
+      "value": "Online-Übersetzung erlauben"
+    },
+    {
+      "name": "translate_enable_desc",
+      "value": "Wenn aus, sendet der Reader niemals Artikeltext an einen Server."
+    },
+    {
+      "name": "translate_privacy",
+      "value": "Datenschutz: Nur der Artikeltext wird gesendet. Links, Bilder und Lesestatus sind nicht enthalten. Der API-Schlüssel liegt im Asset Store des Systems."
+    },
+    {
+      "name": "translate_provider",
+      "value": "Dienst"
+    },
+    {
+      "name": "translate_provider_deepl",
+      "value": "DeepL (API-Schlüssel erforderlich)"
+    },
+    {
+      "name": "translate_provider_libre",
+      "value": "LibreTranslate (selbst gehostet möglich)"
+    },
+    {
+      "name": "translate_endpoint",
+      "value": "Endpunkt"
+    },
+    {
+      "name": "translate_endpoint_hint",
+      "value": "Leer lassen, um den Standardendpunkt zu verwenden"
+    },
+    {
+      "name": "translate_api_key",
+      "value": "API-Schlüssel"
+    },
+    {
+      "name": "translate_api_key_hint",
+      "value": "Schlüssel einfügen; wird sicher auf diesem Gerät gespeichert"
+    },
+    {
+      "name": "translate_api_key_set",
+      "value": "Schlüssel konfiguriert"
+    },
+    {
+      "name": "translate_api_key_unset",
+      "value": "Kein API-Schlüssel konfiguriert"
+    },
+    {
+      "name": "translate_api_key_save",
+      "value": "Schlüssel speichern"
+    },
+    {
+      "name": "translate_api_key_clear",
+      "value": "Löschen"
+    },
+    {
+      "name": "translate_target_lang",
+      "value": "Zielsprache"
+    },
+    {
+      "name": "translate_target_auto",
+      "value": "Folgt der App-Sprache"
+    },
+    {
+      "name": "translate_test",
+      "value": "Übersetzung testen"
+    },
+    {
+      "name": "translate_test_ok",
+      "value": "Test bestanden: %s"
+    },
+    {
+      "name": "translate_test_failed",
+      "value": "Test fehlgeschlagen: %s"
+    },
+    {
+      "name": "translate_section_cache",
+      "value": "Cache"
+    },
+    {
+      "name": "translate_cache_count",
+      "value": "%d zwischengespeicherte Übersetzungen"
+    },
+    {
+      "name": "translate_cache_clear",
+      "value": "Übersetzungs-Cache leeren"
+    },
+    {
+      "name": "translate_cache_cleared",
+      "value": "%d zwischengespeicherte Übersetzungen gelöscht"
+    },
+    {
+      "name": "translate_action",
+      "value": "Übersetzen"
+    },
+    {
+      "name": "translate_action_full",
+      "value": "Artikel übersetzen"
+    },
+    {
+      "name": "translate_action_selection",
+      "value": "Auswahl übersetzen"
+    },
+    {
+      "name": "translate_sheet_title",
+      "value": "Zweisprachige Übersetzung"
+    },
+    {
+      "name": "translate_only_translation",
+      "value": "Nur Übersetzung"
+    },
+    {
+      "name": "translate_start",
+      "value": "Übersetzung starten"
+    },
+    {
+      "name": "translate_retry",
+      "value": "Erneut übersetzen"
+    },
+    {
+      "name": "translate_loading",
+      "value": "Wird übersetzt…"
+    },
+    {
+      "name": "translate_cached",
+      "value": "Aus dem Cache"
+    },
+    {
+      "name": "translate_truncated",
+      "value": "Der Artikel ist lang; nur die ersten 20.000 Zeichen wurden übersetzt."
+    },
+    {
+      "name": "translate_source_to_target",
+      "value": "%s → %s"
+    },
+    {
+      "name": "translate_selection_title",
+      "value": "Ausgewählter Text"
+    },
+    {
+      "name": "translate_error_disabled_title",
+      "value": "Online-Übersetzung ist aus"
+    },
+    {
+      "name": "translate_error_disabled_desc",
+      "value": "Aktiviere sie und konfiguriere einen Dienst unter Einstellungen → Übersetzung."
+    },
+    {
+      "name": "translate_error_not_configured",
+      "value": "Übersetzungsdienst unvollständig (API-Schlüssel oder Endpunkt fehlt)."
+    },
+    {
+      "name": "translate_error_empty",
+      "value": "Es gibt keinen Text zu übersetzen."
+    },
+    {
+      "name": "translate_error_same",
+      "value": "Der Artikel ist bereits in der Zielsprache."
+    },
+    {
+      "name": "translate_error_network",
+      "value": "Netzwerk nicht verfügbar oder Zeitüberschreitung. Verbindung prüfen und erneut versuchen."
+    },
+    {
+      "name": "translate_error_auth",
+      "value": "Der API-Schlüssel ist ungültig oder abgelaufen."
+    },
+    {
+      "name": "translate_error_rate",
+      "value": "Zu viele Anfragen. Später erneut versuchen."
+    },
+    {
+      "name": "translate_error_server",
+      "value": "Der Übersetzungsdienst ist vorübergehend nicht verfügbar."
+    },
+    {
+      "name": "translate_error_parse",
+      "value": "Der Übersetzungsdienst hat eine unlesbare Antwort zurückgegeben."
+    },
+    {
+      "name": "translate_open_settings",
+      "value": "Übersetzungseinstellungen öffnen"
+    },
+    {
+      "name": "translate_lang_zh",
+      "value": "Chinesisch"
+    },
+    {
+      "name": "translate_lang_en",
+      "value": "Englisch"
+    },
+    {
+      "name": "translate_lang_ja",
+      "value": "Japanisch"
+    },
+    {
+      "name": "translate_lang_ko",
+      "value": "Koreanisch"
+    },
+    {
+      "name": "translate_lang_ru",
+      "value": "Russisch"
+    },
+    {
+      "name": "translate_lang_ar",
+      "value": "Arabisch"
+    },
+    {
+      "name": "translate_lang_und",
+      "value": "Automatisch erkennen"
+    },
+    {
+      "name": "translate_endpoint_save",
+      "value": "Speichern"
+    },
+    {
+      "name": "translate_section_test",
+      "value": "Verbindungstest"
+    },
+    {
+      "name": "privacy_settings_title",
+      "value": "Datenschutz & Daten"
+    },
+    {
+      "name": "privacy_settings_desc",
+      "value": "Was auf dem Gerät bleibt, was es verlassen kann und alle Schalter dazu."
+    },
+    {
+      "name": "privacy_section_local",
+      "value": "Bleibt auf diesem Gerät"
+    },
+    {
+      "name": "privacy_local_subscriptions_title",
+      "value": "Abonnements und Artikel"
+    },
+    {
+      "name": "privacy_local_subscriptions_desc",
+      "value": "Feed-Liste, zwischengespeicherte Artikel und extrahierter Lesetext liegen im App-Sandbox."
+    },
+    {
+      "name": "privacy_local_reading_title",
+      "value": "Lesestatus"
+    },
+    {
+      "name": "privacy_local_reading_desc",
+      "value": "Gelesen / markiert / gespeichert / verborgen / Fortschritt und Markierungen sind standardmäßig lokal."
+    },
+    {
+      "name": "privacy_local_settings_title",
+      "value": "Einstellungen und Cache"
+    },
+    {
+      "name": "privacy_local_settings_desc",
+      "value": "Einstellungen, Regeln, Tags, smarte Ordner und Übersetzungs-Cache werden lokal gespeichert."
+    },
+    {
+      "name": "privacy_section_outbound",
+      "value": "Was das Gerät verlassen kann"
+    },
+    {
+      "name": "privacy_out_fetch_title",
+      "value": "Feed-Abruf, Volltext und Bilder"
+    },
+    {
+      "name": "privacy_out_fetch_desc",
+      "value": "Nur die Feed-/Artikel-/Bild-URL wird angefragt. Konto und Lesestatus werden nicht übermittelt."
+    },
+    {
+      "name": "privacy_out_remote_title",
+      "value": "Konto- und Dienstsynchronisierung"
+    },
+    {
+      "name": "privacy_out_remote_desc",
+      "value": "Wenn du FreshRSS / Tiny Tiny RSS / Miniflux verbindest, werden Abonnements und Lesestatus mit diesem Server synchronisiert."
+    },
+    {
+      "name": "privacy_out_translate_title",
+      "value": "Artikelübersetzung"
+    },
+    {
+      "name": "privacy_out_translate_desc",
+      "value": "Wenn aktiviert, wird Artikeltext an den gewählten Dienst (DeepL oder LibreTranslate) gesendet. Standardmäßig aus."
+    },
+    {
+      "name": "privacy_out_share_title",
+      "value": "Systemfreigabe und externe Ziele"
+    },
+    {
+      "name": "privacy_out_share_desc",
+      "value": "Läuft nur nach dem Tippen auf Teilen; im Hintergrund wird nichts gesendet."
+    },
+    {
+      "name": "privacy_out_backup_title",
+      "value": "Sicherungen und Export"
+    },
+    {
+      "name": "privacy_out_backup_desc",
+      "value": "Automatische Snapshots bleiben im App-Sandbox. Manueller Export speichert am gewählten Ort."
+    },
+    {
+      "name": "privacy_section_permission",
+      "value": "Berechtigungen und Autorisierungen"
+    },
+    {
+      "name": "privacy_perm_notification_title",
+      "value": "Benachrichtigungen"
+    },
+    {
+      "name": "privacy_perm_notification_desc",
+      "value": "Wird nur angefragt, wenn du Artikelbenachrichtigungen aktivierst."
+    },
+    {
+      "name": "privacy_perm_background_title",
+      "value": "Hintergrundaktualisierung"
+    },
+    {
+      "name": "privacy_perm_background_desc",
+      "value": "Wird vom WorkScheduler des Systems geplant; deaktiviere die automatische Aktualisierung oder entziehe sie in den Systemeinstellungen."
+    },
+    {
+      "name": "privacy_perm_network_title",
+      "value": "Netzwerkstatus"
+    },
+    {
+      "name": "privacy_perm_network_desc",
+      "value": "Wird nur gelesen, um auf dieser Seite online / offline anzuzeigen."
+    },
+    {
+      "name": "privacy_perm_files_title",
+      "value": "Dateien und Fotos"
+    },
+    {
+      "name": "privacy_perm_files_desc",
+      "value": "Zugriff nur über System-Picker oder den App-Sandbox; es wird keine Speicherberechtigung angefragt."
+    },
+    {
+      "name": "privacy_perm_clipboard_title",
+      "value": "Zwischenablage"
+    },
+    {
+      "name": "privacy_perm_clipboard_desc",
+      "value": "Wird nur gelesen, wenn du in der App auf die System-PasteButton tippst."
+    },
+    {
+      "name": "privacy_status_granted",
+      "value": "Erteilt"
+    },
+    {
+      "name": "privacy_status_denied",
+      "value": "Nicht erteilt"
+    },
+    {
+      "name": "privacy_network_online",
+      "value": "Online"
+    },
+    {
+      "name": "privacy_network_offline",
+      "value": "Offline"
+    },
+    {
+      "name": "privacy_translation_on",
+      "value": "Aktiviert"
+    },
+    {
+      "name": "privacy_translation_off",
+      "value": "Deaktiviert"
+    },
+    {
+      "name": "privacy_remote_connected",
+      "value": "Verbunden"
+    },
+    {
+      "name": "privacy_remote_disconnected",
+      "value": "Nicht verbunden"
+    },
+    {
+      "name": "privacy_remote_unknown",
+      "value": "Nicht konfiguriert"
+    },
+    {
+      "name": "privacy_section_control",
+      "value": "Datenkontrolle"
+    },
+    {
+      "name": "privacy_control_cache_title",
+      "value": "Übersetzungs-Cache"
+    },
+    {
+      "name": "privacy_control_cache_desc",
+      "value": "%d Artikel lokal zwischengespeichert"
+    },
+    {
+      "name": "privacy_control_clear_cache",
+      "value": "Übersetzungs-Cache leeren"
+    },
+    {
+      "name": "privacy_cache_cleared",
+      "value": "%d zwischengespeicherte Übersetzungen gelöscht"
+    },
+    {
+      "name": "privacy_control_remote_entry",
+      "value": "Konto & Dienst verwalten"
+    },
+    {
+      "name": "privacy_control_backup_entry",
+      "value": "Sicherung & Wiederherstellung"
+    },
+    {
+      "name": "privacy_control_translate_entry",
+      "value": "Übersetzungseinstellungen"
+    },
+    {
+      "name": "privacy_footer_no_tracking",
+      "value": "Diese App enthält keine Werbe-, Analyse- oder Verhaltens-Tracking-SDKs. Daten werden nur für die von dir aktivierten Funktionen gesendet."
+    },
+    {
+      "name": "privacy_version",
+      "value": "Datenschutzhinweis Version 2026-10"
+    },
+    {
+      "name": "privacy_out_cross_border_desc",
+      "value": "Von dir konfigurierte Drittanbieter-Endpunkte können Daten außerhalb deiner Region gemäß deren Datenschutzrichtlinie verarbeiten."
+    },
+    {
+      "name": "media_audio_label",
+      "value": "Podcast"
+    },
+    {
+      "name": "media_video_label",
+      "value": "Video"
+    },
+    {
+      "name": "media_audio_with_duration",
+      "value": "Podcast · %s"
+    },
+    {
+      "name": "media_play_audio_feed",
+      "value": "Podcast abspielen (dieser Feed)"
+    },
+    {
+      "name": "media_play_audio_all",
+      "value": "Alle ungespielten Podcasts abspielen"
+    },
+    {
+      "name": "media_open_video",
+      "value": "Video öffnen"
+    },
+    {
+      "name": "media_error",
+      "value": "Dieses Audio kann nicht abgespielt werden"
+    },
+    {
+      "name": "media_pause",
+      "value": "Pause"
+    },
+    {
+      "name": "media_resume",
+      "value": "Fortsetzen"
+    },
+    {
+      "name": "media_stop",
+      "value": "Stopp"
+    },
+    {
+      "name": "media_rewind",
+      "value": "15 Sekunden zurück"
+    },
+    {
+      "name": "media_forward",
+      "value": "15 Sekunden vor"
+    },
+    {
+      "name": "media_previous",
+      "value": "Zurück"
+    },
+    {
+      "name": "media_next",
+      "value": "Weiter"
+    },
+    {
+      "name": "media_speed",
+      "value": "Wiedergabegeschwindigkeit"
+    },
+    {
+      "name": "privacy_perm_media_title",
+      "value": "Hintergrundaudio"
+    },
+    {
+      "name": "privacy_perm_media_desc",
+      "value": "Die Podcast-Wiedergabe nutzt eine AUDIO_PLAYBACK-Dauertask und AVSession; sie endet, wenn die Wiedergabe stoppt."
+    },
+    {
+      "name": "discover_entry",
+      "value": "Entdecken"
+    },
+    {
+      "name": "discover_title",
+      "value": "Entdecken"
+    },
+    {
+      "name": "discover_desc",
+      "value": "Handverlesene Feeds, lokale Empfehlungen, RSSHub-Routen und Import aus der Zwischenablage. Nichts wird abgerufen, bis du auf Abonnieren tippst."
+    },
+    {
+      "name": "discover_search_hint",
+      "value": "Kuratierte Feeds durchsuchen"
+    },
+    {
+      "name": "discover_category_all",
+      "value": "Alle"
+    },
+    {
+      "name": "discover_cat_hot",
+      "value": "Beliebt"
+    },
+    {
+      "name": "discover_cat_tech",
+      "value": "Technik"
+    },
+    {
+      "name": "discover_cat_design",
+      "value": "Design"
+    },
+    {
+      "name": "discover_cat_business",
+      "value": "Wirtschaft"
+    },
+    {
+      "name": "discover_cat_science",
+      "value": "Wissenschaft"
+    },
+    {
+      "name": "discover_cat_indie",
+      "value": "Indie-Blogs"
+    },
+    {
+      "name": "discover_cat_cn",
+      "value": "Chinesisch"
+    },
+    {
+      "name": "discover_section_recommended",
+      "value": "Für dich empfohlen"
+    },
+    {
+      "name": "discover_recommend_hint",
+      "value": "Basierend auf Themen deiner abonnierten Feeds (lokal berechnet)."
+    },
+    {
+      "name": "discover_section_popular",
+      "value": "Beliebte Feeds"
+    },
+    {
+      "name": "discover_section_catalog",
+      "value": "Kuratierter Katalog"
+    },
+    {
+      "name": "discover_subscribe",
+      "value": "Abonnieren"
+    },
+    {
+      "name": "discover_subscribed",
+      "value": "Abonniert"
+    },
+    {
+      "name": "discover_subscribing",
+      "value": "Wird abonniert…"
+    },
+    {
+      "name": "discover_subscribe_ok",
+      "value": "Abonniert: %s"
+    },
+    {
+      "name": "discover_subscribe_success",
+      "value": "Abonniert"
+    },
+    {
+      "name": "discover_subscribe_duplicate",
+      "value": "Bereits abonniert"
+    },
+    {
+      "name": "discover_empty",
+      "value": "Keine passenden Feeds"
+    },
+    {
+      "name": "discover_section_import",
+      "value": "Aus Zwischenablage importieren"
+    },
+    {
+      "name": "discover_import_desc",
+      "value": "Lesezeichen oder eine Liste von Adressen einfügen. Jede URL wird als Feed geprüft, inklusive Feed-Autoerkennung in HTML."
+    },
+    {
+      "name": "discover_importing",
+      "value": "Wird importiert…"
+    },
+    {
+      "name": "discover_import_result",
+      "value": "%d hinzugefügt · %d doppelt · %d fehlgeschlagen"
+    },
+    {
+      "name": "discover_import_empty",
+      "value": "Keine URL in der Zwischenablage gefunden"
+    },
+    {
+      "name": "discover_section_rsshub",
+      "value": "RSSHub-Routenhelfer"
+    },
+    {
+      "name": "discover_rsshub_desc",
+      "value": "Website- oder Profil-URL einfügen, um mögliche RSSHub-Routen zu erzeugen. Du kannst auf eine selbst gehostete Instanz wechseln; nichts wird abgerufen, bis du abonnierst."
+    },
+    {
+      "name": "discover_rsshub_base",
+      "value": "RSSHub-Instanz"
+    },
+    {
+      "name": "discover_rsshub_input_hint",
+      "value": "https://github.com/user/repo"
+    },
+    {
+      "name": "discover_rsshub_generate",
+      "value": "Routen erzeugen"
+    },
+    {
+      "name": "discover_rsshub_empty",
+      "value": "Keine passende Route. Versuche eine unterstützte Website-URL oder prüfe die RSSHub-Doku."
+    },
+    {
+      "name": "discover_rsshub_kind_commits",
+      "value": "Repository-Commits"
+    },
+    {
+      "name": "discover_rsshub_kind_releases",
+      "value": "Releases"
+    },
+    {
+      "name": "discover_rsshub_kind_issues",
+      "value": "Issues"
+    },
+    {
+      "name": "discover_rsshub_kind_video",
+      "value": "Video"
+    },
+    {
+      "name": "discover_rsshub_kind_user_video",
+      "value": "Videos des Nutzers"
+    },
+    {
+      "name": "discover_rsshub_kind_channel",
+      "value": "Kanal"
+    },
+    {
+      "name": "discover_rsshub_kind_user",
+      "value": "Nutzer"
+    },
+    {
+      "name": "discover_rsshub_kind_timeline",
+      "value": "Timeline des Nutzers"
+    },
+    {
+      "name": "discover_rsshub_kind_activity",
+      "value": "Aktivität des Nutzers"
+    },
+    {
+      "name": "discover_rsshub_kind_articles",
+      "value": "Artikel des Nutzers"
+    },
+    {
+      "name": "discover_rsshub_kind_posts",
+      "value": "Beiträge des Nutzers"
+    },
+    {
+      "name": "discover_rsshub_kind_route",
+      "value": "Route"
+    },
+    {
+      "name": "diagnostics_entry",
+      "value": "Diagnose"
+    },
+    {
+      "name": "diagnostics_title",
+      "value": "Diagnose & Leistung"
+    },
+    {
+      "name": "diagnostics_desc",
+      "value": "Nur lokale Start- und Abrufmetriken, Fehlerklassifizierung, Quellenzustand und Grund des letzten Beendens. Nichts wird hochgeladen."
+    },
+    {
+      "name": "diagnostics_section_startup",
+      "value": "Start & letztes Beenden"
+    },
+    {
+      "name": "diagnostics_first_screen",
+      "value": "Zeit bis zum ersten Bildschirm"
+    },
+    {
+      "name": "diagnostics_started_at",
+      "value": "Startzeit"
+    },
+    {
+      "name": "diagnostics_last_exit",
+      "value": "Grund des letzten Beendens"
+    },
+    {
+      "name": "diagnostics_last_exit_detail",
+      "value": "Details des letzten Beendens"
+    },
+    {
+      "name": "diagnostics_exit_unknown",
+      "value": "Unbekannt"
+    },
+    {
+      "name": "diagnostics_exit_normal",
+      "value": "Normales Beenden"
+    },
+    {
+      "name": "diagnostics_exit_js",
+      "value": "JS-Fehler"
+    },
+    {
+      "name": "diagnostics_exit_cpp",
+      "value": "Nativer Absturz"
+    },
+    {
+      "name": "diagnostics_exit_freeze",
+      "value": "App-Einfrieren"
+    },
+    {
+      "name": "diagnostics_exit_resource",
+      "value": "Ressourcenkontrolle"
+    },
+    {
+      "name": "diagnostics_exit_upgrade",
+      "value": "App-Upgrade"
+    },
+    {
+      "name": "diagnostics_exit_user",
+      "value": "Nutzer- oder Systemanfrage"
+    },
+    {
+      "name": "diagnostics_exit_other",
+      "value": "Sonstiges"
+    },
+    {
+      "name": "diagnostics_no_data",
+      "value": "Kein Eintrag"
+    },
+    {
+      "name": "diagnostics_section_fetch",
+      "value": "Abrufleistung"
+    },
+    {
+      "name": "diagnostics_fetch_last",
+      "value": "Letzter Abruf"
+    },
+    {
+      "name": "diagnostics_fetch_duration",
+      "value": "Gesamtdauer"
+    },
+    {
+      "name": "diagnostics_fetch_sources",
+      "value": "Quellen"
+    },
+    {
+      "name": "diagnostics_fetch_ok",
+      "value": "Erfolgreich"
+    },
+    {
+      "name": "diagnostics_fetch_failed",
+      "value": "Fehlgeschlagen"
+    },
+    {
+      "name": "diagnostics_fetch_avg",
+      "value": "Durchschnitt je Quelle"
+    },
+    {
+      "name": "diagnostics_session_runs",
+      "value": "Abrufe in dieser Sitzung"
+    },
+    {
+      "name": "diagnostics_section_failure",
+      "value": "Fehleraufschlüsselung"
+    },
+    {
+      "name": "diagnostics_fail_timeout",
+      "value": "Zeitüberschreitung"
+    },
+    {
+      "name": "diagnostics_fail_network",
+      "value": "Netzwerk"
+    },
+    {
+      "name": "diagnostics_fail_http",
+      "value": "HTTP-Status"
+    },
+    {
+      "name": "diagnostics_fail_content",
+      "value": "Inhalt oder Parsen"
+    },
+    {
+      "name": "diagnostics_fail_other",
+      "value": "Sonstiges"
+    },
+    {
+      "name": "diagnostics_section_slow",
+      "value": "Langsamste Quellen"
+    },
+    {
+      "name": "diagnostics_section_health",
+      "value": "Quellenzustand"
+    },
+    {
+      "name": "diagnostics_health_ok",
+      "value": "Alle Quellen sind in Ordnung."
+    },
+    {
+      "name": "diagnostics_health_failures",
+      "value": "%d Fehlschläge in Folge"
+    },
+    {
+      "name": "diagnostics_retry",
+      "value": "Alle Quellen wiederholen"
+    },
+    {
+      "name": "diagnostics_retrying",
+      "value": "Wird wiederholt…"
+    },
+    {
+      "name": "diagnostics_retry_done",
+      "value": "%d Quellen wiederholt, %d fehlgeschlagen"
+    },
+    {
+      "name": "diagnostics_section_runtime",
+      "value": "Laufzeit"
+    },
+    {
+      "name": "diagnostics_runtime_articles",
+      "value": "Lokale Artikel"
+    },
+    {
+      "name": "diagnostics_runtime_cached",
+      "value": "Zwischengespeicherter Inhalt"
+    },
+    {
+      "name": "diagnostics_runtime_cached_value",
+      "value": "%d Artikel · %d Zeichen"
+    },
+    {
+      "name": "diagnostics_runtime_virtualization",
+      "value": "Listenvirtualisierung"
+    },
+    {
+      "name": "diagnostics_runtime_virtualization_value",
+      "value": "LazyForEach · %d pro Seite"
+    },
+    {
+      "name": "diagnostics_runtime_fps",
+      "value": "Bildrate beim Scrollen"
+    },
+    {
+      "name": "diagnostics_runtime_fps_value",
+      "value": "%d fps · schlechteste %d ms"
+    },
+    {
+      "name": "diagnostics_runtime_indexes",
+      "value": "Datenbankindizes"
+    },
+    {
+      "name": "diagnostics_runtime_indexes_value",
+      "value": "feed_id + published_at, is_read, is_starred, highlights.article_id"
+    },
+    {
+      "name": "diagnostics_section_record",
+      "value": "Diagnoseaufzeichnung"
+    },
+    {
+      "name": "diagnostics_toggle",
+      "value": "Lokale Diagnose aufzeichnen"
+    },
+    {
+      "name": "diagnostics_toggle_desc",
+      "value": "Wenn aus, werden Start- und Abrufzeiten nicht aufgezeichnet. Der Grund des letzten Beendens kommt weiterhin vom System."
+    },
+    {
+      "name": "diagnostics_clear",
+      "value": "Diagnose löschen"
+    },
+    {
+      "name": "diagnostics_cleared",
+      "value": "Diagnose gelöscht"
+    },
+    {
+      "name": "diagnostics_privacy",
+      "value": "Alles hier bleibt in den privaten Einstellungen der App. Es ist kein Analyse-Upload implementiert."
+    },
+    {
+      "name": "remote_field_service",
+      "value": "Dienst"
+    },
+    {
+      "name": "remote_service_greader",
+      "value": "FreshRSS / TTRSS / Miniflux"
+    },
+    {
+      "name": "remote_service_feedbin",
+      "value": "Feedbin"
+    },
+    {
+      "name": "remote_status_service_value_feedbin",
+      "value": "Feedbin"
+    },
+    {
+      "name": "remote_field_username_email",
+      "value": "E-Mail"
+    },
+    {
+      "name": "remote_feedbin_base_hint",
+      "value": "https://api.feedbin.com"
+    },
+    {
+      "name": "remote_feedbin_hint",
+      "value": "Feedbin nutzt HTTP Basic Auth über HTTPS. Verwende E-Mail und Passwort deines Feedbin-Kontos."
+    },
+    {
+      "name": "remote_status_mode",
+      "value": "Abonnementmodus"
+    },
+    {
+      "name": "remote_mode_unset",
+      "value": "Nicht festgelegt"
+    },
+    {
+      "name": "remote_mode_merge",
+      "value": "Zusammenführen (nur lokale behalten)"
+    },
+    {
+      "name": "remote_mode_migrated",
+      "value": "Auf Remote migriert"
+    },
+    {
+      "name": "remote_mode_remote_only",
+      "value": "Nur Remote"
+    },
+    {
+      "name": "remote_migration_title",
+      "value": "Abonnement-Migration"
+    },
+    {
+      "name": "remote_migration_entry",
+      "value": "Abonnement-Migration"
+    },
+    {
+      "name": "remote_migration_desc",
+      "value": "Wähle, wie lokale Abonnements und der Remote-Dienst koexistieren. Spätere Synchronisierungen folgen dem gewählten Modus."
+    },
+    {
+      "name": "remote_migration_loading",
+      "value": "Remote-Abonnements werden geladen…"
+    },
+    {
+      "name": "remote_migration_section_preview",
+      "value": "Übersicht"
+    },
+    {
+      "name": "remote_migration_local_total",
+      "value": "Lokale Abonnements"
+    },
+    {
+      "name": "remote_migration_remote_total",
+      "value": "Remote-Abonnements"
+    },
+    {
+      "name": "remote_migration_overlap",
+      "value": "Beide Seiten"
+    },
+    {
+      "name": "remote_migration_local_only",
+      "value": "Nur lokal"
+    },
+    {
+      "name": "remote_migration_section_mode",
+      "value": "Modus"
+    },
+    {
+      "name": "remote_migration_mode_merge",
+      "value": "Zusammenführen"
+    },
+    {
+      "name": "remote_migration_mode_merge_desc",
+      "value": "Remote-Feeds lokal hinzufügen und nur lokale Feeds behalten."
+    },
+    {
+      "name": "remote_migration_mode_migrated",
+      "value": "Lokale Feeds migrieren"
+    },
+    {
+      "name": "remote_migration_mode_migrated_desc",
+      "value": "Jeden nur lokalen Feed beim Remote-Dienst abonnieren. Lokal wird nichts gelöscht."
+    },
+    {
+      "name": "remote_migration_mode_remote_only",
+      "value": "Nur Remote"
+    },
+    {
+      "name": "remote_migration_mode_remote_only_desc",
+      "value": "Remote ist maßgeblich. Nur lokale Feeds werden deaktiviert, ihr Verlauf bleibt; zurück zu Zusammenführen reaktiviert sie."
+    },
+    {
+      "name": "remote_migration_note",
+      "value": "Der Modus wird pro Konto gespeichert und gilt auch für künftige Synchronisierungen."
+    },
+    {
+      "name": "remote_migration_apply",
+      "value": "Modus anwenden"
+    },
+    {
+      "name": "remote_migration_applying",
+      "value": "Wird angewendet…"
+    },
+    {
+      "name": "remote_migration_done_merge",
+      "value": "Modus auf Zusammenführen gesetzt"
+    },
+    {
+      "name": "remote_migration_done_migrated",
+      "value": "%d lokale Feeds migriert"
+    },
+    {
+      "name": "remote_migration_done_remote_only",
+      "value": "%d nur lokale Feeds deaktiviert"
+    },
+    {
+      "name": "remote_migration_partial",
+      "value": "%d Feeds konnten nicht migriert werden; der Modus wurde nicht geändert."
+    },
+    {
+      "name": "remote_migration_retry",
+      "value": "Wiederholen"
+    },
+    {
+      "name": "remote_migration_prompt_title",
+      "value": "Lokale Abonnements gefunden"
+    },
+    {
+      "name": "remote_migration_prompt_message",
+      "value": "%d nur lokale Feeds können auf den Remote-Dienst migriert werden."
+    },
+    {
+      "name": "remote_migration_later",
+      "value": "Später"
+    },
+    {
+      "name": "remote_migration_go",
+      "value": "Migrieren"
+    },
+    {
+      "name": "remote_error_subscription",
+      "value": "Der Remote-Dienst konnte diesen Feed nicht abonnieren."
+    },
+    {
+      "name": "a11y_article_read",
+      "value": "Gelesen"
+    },
+    {
+      "name": "a11y_article_unread",
+      "value": "Ungelesen"
+    },
+    {
+      "name": "a11y_article_starred",
+      "value": "Markiert"
+    },
+    {
+      "name": "shortcut_hint",
+      "value": "Tastatur: j/k zurück/weiter · m gelesen · s markieren · / suchen · Esc zurück"
+    },
+    {
+      "name": "a11y_find_prev",
+      "value": "Vorheriger Treffer"
+    },
+    {
+      "name": "a11y_find_next",
+      "value": "Nächster Treffer"
+    },
+    {
+      "name": "a11y_find_close",
+      "value": "Suche schließen"
+    },
+    {
+      "name": "a11y_clear_scope",
+      "value": "Quellenfilter aufheben"
+    },
+    {
+      "name": "a11y_row_selected",
+      "value": "Ausgewählt"
+    },
+    {
+      "name": "a11y_row_not_selected",
+      "value": "Nicht ausgewählt"
+    }
+  ]
+}

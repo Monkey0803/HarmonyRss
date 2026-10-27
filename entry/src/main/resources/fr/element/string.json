@@ -1,0 +1,4088 @@
+{
+  "string": [
+    {
+      "name": "module_desc",
+      "value": "Module d'entrée de l'application HDS"
+    },
+    {
+      "name": "work_scheduler_desc",
+      "value": "Actualisation des flux en arrière-plan"
+    },
+    {
+      "name": "EntryAbility_desc",
+      "value": "Application HDS"
+    },
+    {
+      "name": "EntryAbility_label",
+      "value": "HarmonyRss"
+    },
+    {
+      "name": "tab_home",
+      "value": "Lire"
+    },
+    {
+      "name": "tab_settings",
+      "value": "Réglages"
+    },
+    {
+      "name": "tab_images",
+      "value": "Images"
+    },
+    {
+      "name": "tab_subs",
+      "value": "Flux"
+    },
+    {
+      "name": "home_title",
+      "value": "Lire"
+    },
+    {
+      "name": "settings_title",
+      "value": "Réglages"
+    },
+    {
+      "name": "settings_entry_look",
+      "value": "Apparence et langue"
+    },
+    {
+      "name": "settings_entry_material",
+      "value": "Matériaux et mouvement"
+    },
+    {
+      "name": "settings_entry_reading",
+      "value": "Lecture et listes"
+    },
+    {
+      "name": "settings_entry_feed",
+      "value": "Flux et alertes"
+    },
+    {
+      "name": "settings_entry_system",
+      "value": "Système et confidentialité"
+    },
+    {
+      "name": "settings_entry_storage",
+      "value": "Stockage et sauvegarde"
+    },
+    {
+      "name": "section_appearance",
+      "value": "Apparence"
+    },
+    {
+      "name": "section_language",
+      "value": "Langue"
+    },
+    {
+      "name": "section_system",
+      "value": "Fonctions système"
+    },
+    {
+      "name": "section_navigation",
+      "value": "Navigation"
+    },
+    {
+      "name": "section_feed",
+      "value": "Flux"
+    },
+    {
+      "name": "section_reading",
+      "value": "Lecture"
+    },
+    {
+      "name": "row_reader_font",
+      "value": "Taille du texte"
+    },
+    {
+      "name": "row_reader_line",
+      "value": "Interligne"
+    },
+    {
+      "name": "row_reader_family",
+      "value": "Police"
+    },
+    {
+      "name": "row_reader_width",
+      "value": "Largeur de colonne"
+    },
+    {
+      "name": "row_reader_align",
+      "value": "Alignement du texte"
+    },
+    {
+      "name": "row_reader_theme",
+      "value": "Thème de lecture"
+    },
+    {
+      "name": "opt_family_system",
+      "value": "Par défaut"
+    },
+    {
+      "name": "opt_family_serif",
+      "value": "Serif"
+    },
+    {
+      "name": "opt_family_sans",
+      "value": "Sans-serif"
+    },
+    {
+      "name": "opt_width_narrow",
+      "value": "Étroite"
+    },
+    {
+      "name": "opt_width_standard",
+      "value": "Standard"
+    },
+    {
+      "name": "opt_width_wide",
+      "value": "Large"
+    },
+    {
+      "name": "opt_align_left",
+      "value": "Gauche"
+    },
+    {
+      "name": "opt_align_justify",
+      "value": "Justifié"
+    },
+    {
+      "name": "opt_reader_theme_system",
+      "value": "Suivre le système"
+    },
+    {
+      "name": "opt_reader_theme_light",
+      "value": "Clair"
+    },
+    {
+      "name": "opt_reader_theme_sepia",
+      "value": "Sépia"
+    },
+    {
+      "name": "opt_reader_theme_dark",
+      "value": "Sombre"
+    },
+    {
+      "name": "opt_font_small",
+      "value": "Petit"
+    },
+    {
+      "name": "opt_font_medium",
+      "value": "Moyen"
+    },
+    {
+      "name": "opt_font_large",
+      "value": "Grand"
+    },
+    {
+      "name": "opt_line_compact",
+      "value": "Serré"
+    },
+    {
+      "name": "opt_line_normal",
+      "value": "Normal"
+    },
+    {
+      "name": "opt_line_loose",
+      "value": "Aéré"
+    },
+    {
+      "name": "row_title_bar_scroll",
+      "value": "Masquer la barre de titre au défilement"
+    },
+    {
+      "name": "action_find_in_article",
+      "value": "Rechercher dans l'article"
+    },
+    {
+      "name": "find_hint",
+      "value": "Rechercher dans l'article"
+    },
+    {
+      "name": "find_count",
+      "value": "%d/%d"
+    },
+    {
+      "name": "find_none",
+      "value": "Aucun résultat"
+    },
+    {
+      "name": "action_start_speech",
+      "value": "Lire à voix haute"
+    },
+    {
+      "name": "action_stop_speech",
+      "value": "Arrêter la lecture"
+    },
+    {
+      "name": "speech_running",
+      "value": "Lecture en cours…"
+    },
+    {
+      "name": "speech_paused",
+      "value": "En pause"
+    },
+    {
+      "name": "action_pause_speech",
+      "value": "Pause"
+    },
+    {
+      "name": "action_resume_speech",
+      "value": "Reprendre"
+    },
+    {
+      "name": "toast_speech_unsupported",
+      "value": "La lecture à voix haute n'est pas prise en charge sur cet appareil"
+    },
+    {
+      "name": "action_copy",
+      "value": "Copier"
+    },
+    {
+      "name": "action_share_selection",
+      "value": "Partager la sélection"
+    },
+    {
+      "name": "action_copy_body",
+      "value": "Copier le texte de l'article"
+    },
+    {
+      "name": "action_share_body",
+      "value": "Partager le texte de l'article"
+    },
+    {
+      "name": "snack_body_copied",
+      "value": "Texte de l'article copié"
+    },
+    {
+      "name": "snack_selection_copied",
+      "value": "Sélection copiée"
+    },
+    {
+      "name": "row_reader_keep_on",
+      "value": "Garder l'écran allumé pendant la lecture"
+    },
+    {
+      "name": "section_storage",
+      "value": "Stockage"
+    },
+    {
+      "name": "row_reader_cache",
+      "value": "Vider le cache des articles"
+    },
+    {
+      "name": "cache_summary",
+      "value": "%d articles · %s"
+    },
+    {
+      "name": "aux_reader_cache",
+      "value": "Supprime le texte et les images en cache des articles non favoris ; l'état de lecture et la liste sont conservés."
+    },
+    {
+      "name": "dialog_clear_cache_title",
+      "value": "Vider le cache des articles ?"
+    },
+    {
+      "name": "dialog_clear_cache_message",
+      "value": "Le texte en cache et les images intégrées seront supprimés. Les articles non favoris auront besoin du réseau pour s'ouvrir à nouveau."
+    },
+    {
+      "name": "snack_cache_cleared",
+      "value": "%d articles supprimés"
+    },
+    {
+      "name": "list_load_more",
+      "value": "Chargement…"
+    },
+    {
+      "name": "list_sort_toggle",
+      "value": "Changer l'ordre de tri"
+    },
+    {
+      "name": "list_group_unread",
+      "value": "%d non lus"
+    },
+    {
+      "name": "sort_newest",
+      "value": "Plus récents d'abord"
+    },
+    {
+      "name": "sort_oldest",
+      "value": "Plus anciens d'abord"
+    },
+    {
+      "name": "group_none",
+      "value": "Liste simple"
+    },
+    {
+      "name": "group_by_feed",
+      "value": "Grouper par flux"
+    },
+    {
+      "name": "group_by_date",
+      "value": "Grouper par date"
+    },
+    {
+      "name": "group_today",
+      "value": "Aujourd'hui"
+    },
+    {
+      "name": "group_yesterday",
+      "value": "Hier"
+    },
+    {
+      "name": "group_this_week",
+      "value": "Cette semaine"
+    },
+    {
+      "name": "group_earlier",
+      "value": "Plus tôt"
+    },
+    {
+      "name": "filter_saved",
+      "value": "Plus tard"
+    },
+    {
+      "name": "filter_archived",
+      "value": "Archives"
+    },
+    {
+      "name": "action_save",
+      "value": "Enregistrer pour plus tard"
+    },
+    {
+      "name": "action_unsave",
+      "value": "Retirer de « Plus tard »"
+    },
+    {
+      "name": "action_mark_above_read",
+      "value": "Tout lire au-dessus"
+    },
+    {
+      "name": "action_delete",
+      "value": "Supprimer"
+    },
+    {
+      "name": "select_count",
+      "value": "%d sélectionnés"
+    },
+    {
+      "name": "select_all",
+      "value": "Tout sélectionner"
+    },
+    {
+      "name": "select_done",
+      "value": "Terminé"
+    },
+    {
+      "name": "delete_selected_confirm_title",
+      "value": "Supprimer les articles sélectionnés ?"
+    },
+    {
+      "name": "delete_selected_confirm_message",
+      "value": "Les %d articles sélectionnés seront retirés du cache local."
+    },
+    {
+      "name": "row_archive_rule",
+      "value": "Règle d'archivage"
+    },
+    {
+      "name": "opt_archive_off",
+      "value": "Jamais"
+    },
+    {
+      "name": "opt_archive_7",
+      "value": "Lu depuis plus de 7 jours"
+    },
+    {
+      "name": "opt_archive_14",
+      "value": "Lu depuis plus de 14 jours"
+    },
+    {
+      "name": "opt_archive_30",
+      "value": "Lu depuis plus de 30 jours"
+    },
+    {
+      "name": "opt_archive_90",
+      "value": "Lu depuis plus de 90 jours"
+    },
+    {
+      "name": "home_last_sync",
+      "value": "Synchronisé %s"
+    },
+    {
+      "name": "home_never_synced",
+      "value": "Pas encore synchronisé"
+    },
+    {
+      "name": "row_refresh_now",
+      "value": "Actualiser maintenant"
+    },
+    {
+      "name": "action_retry",
+      "value": "Réessayer"
+    },
+    {
+      "name": "action_scope_feed",
+      "value": "Ce flux uniquement"
+    },
+    {
+      "name": "toast_refreshing",
+      "value": "Actualisation…"
+    },
+    {
+      "name": "snack_refreshed",
+      "value": "Flux actualisés"
+    },
+    {
+      "name": "section_list",
+      "value": "Liste"
+    },
+    {
+      "name": "row_list_layout",
+      "value": "Disposition des lignes"
+    },
+    {
+      "name": "row_summary_lines",
+      "value": "Lignes du résumé"
+    },
+    {
+      "name": "row_list_density",
+      "value": "Densité"
+    },
+    {
+      "name": "opt_layout_text",
+      "value": "Texte seul"
+    },
+    {
+      "name": "opt_layout_thumb",
+      "value": "Vignette"
+    },
+    {
+      "name": "opt_layout_card",
+      "value": "Grande carte image"
+    },
+    {
+      "name": "opt_lines_1",
+      "value": "1 ligne"
+    },
+    {
+      "name": "opt_lines_2",
+      "value": "2 lignes"
+    },
+    {
+      "name": "opt_lines_3",
+      "value": "3 lignes"
+    },
+    {
+      "name": "opt_density_compact",
+      "value": "Compacte"
+    },
+    {
+      "name": "opt_density_standard",
+      "value": "Standard"
+    },
+    {
+      "name": "opt_density_relaxed",
+      "value": "Confortable"
+    },
+    {
+      "name": "widget_refresh",
+      "value": "Actualiser les données de la carte"
+    },
+    {
+      "name": "notify_action_mark_read",
+      "value": "Marquer comme lu"
+    },
+    {
+      "name": "action_highlight",
+      "value": "Surligner"
+    },
+    {
+      "name": "hl_panel_entry",
+      "value": "Surlignages"
+    },
+    {
+      "name": "hl_panel_title",
+      "value": "%d surlignages"
+    },
+    {
+      "name": "hl_panel_empty",
+      "value": "Aucun surlignage pour l'instant. Sélectionnez du texte dans l'article pour en ajouter un."
+    },
+    {
+      "name": "hl_editor_title",
+      "value": "Modifier le surlignage"
+    },
+    {
+      "name": "hl_note_hint",
+      "value": "Note (facultative)"
+    },
+    {
+      "name": "hl_action_goto",
+      "value": "Aller"
+    },
+    {
+      "name": "hl_action_note",
+      "value": "Note"
+    },
+    {
+      "name": "hl_action_color",
+      "value": "Couleur"
+    },
+    {
+      "name": "snack_highlight_added",
+      "value": "Surlignage enregistré"
+    },
+    {
+      "name": "snack_highlight_removed",
+      "value": "Surlignage supprimé"
+    },
+    {
+      "name": "hl_library_title",
+      "value": "Surlignages"
+    },
+    {
+      "name": "hl_export_md",
+      "value": "Markdown"
+    },
+    {
+      "name": "hl_export_json",
+      "value": "JSON"
+    },
+    {
+      "name": "hl_export_empty",
+      "value": "Rien à exporter pour l'instant"
+    },
+    {
+      "name": "hl_article_gone",
+      "value": "L'article n'est plus dans le cache local"
+    },
+    {
+      "name": "read_panel_title",
+      "value": "Mise en page de lecture"
+    },
+    {
+      "name": "read_panel_preview_text",
+      "value": "Aperçu : faites glisser les curseurs ci-dessous ; l'article se recompose avec la nouvelle typographie."
+    },
+    {
+      "name": "read_panel_font_value",
+      "value": "Taille %s px"
+    },
+    {
+      "name": "read_panel_line_value",
+      "value": "Interligne %s"
+    },
+    {
+      "name": "read_panel_reset",
+      "value": "Réinitialiser"
+    },
+    {
+      "name": "read_panel_web_hint",
+      "value": "En mode page d'origine, la largeur de colonne, l'alignement, le thème et la police ne s'appliquent pas : la mise en page du site prime."
+    },
+    {
+      "name": "row_status_bar_scroll",
+      "value": "Masquer la barre d'état au défilement"
+    },
+    {
+      "name": "row_theme",
+      "value": "Thème"
+    },
+    {
+      "name": "row_global_background",
+      "value": "Fond global"
+    },
+    {
+      "name": "opt_bg_default",
+      "value": "Par défaut"
+    },
+    {
+      "name": "opt_bg_aurora",
+      "value": "Aurore"
+    },
+    {
+      "name": "opt_bg_sunset",
+      "value": "Crépuscule"
+    },
+    {
+      "name": "opt_bg_custom",
+      "value": "Image personnalisée"
+    },
+    {
+      "name": "opt_bg_none",
+      "value": "Aucun"
+    },
+    {
+      "name": "row_language",
+      "value": "Langue"
+    },
+    {
+      "name": "row_immersive",
+      "value": "Lumière immersive"
+    },
+    {
+      "name": "row_material_type",
+      "value": "Type de matériau"
+    },
+    {
+      "name": "row_material_level",
+      "value": "Matériau immersif"
+    },
+    {
+      "name": "row_grip",
+      "value": "Prise en main intelligente"
+    },
+    {
+      "name": "row_antipeep",
+      "value": "Anti-regard"
+    },
+    {
+      "name": "opt_follow_system",
+      "value": "Suivre le système"
+    },
+    {
+      "name": "opt_light",
+      "value": "Clair"
+    },
+    {
+      "name": "opt_dark",
+      "value": "Sombre"
+    },
+    {
+      "name": "opt_chinese",
+      "value": "简体中文"
+    },
+    {
+      "name": "opt_chinese_traditional",
+      "value": "繁體中文"
+    },
+    {
+      "name": "opt_english",
+      "value": "English"
+    },
+    {
+      "name": "opt_japanese",
+      "value": "日本語"
+    },
+    {
+      "name": "opt_german",
+      "value": "Deutsch"
+    },
+    {
+      "name": "opt_french",
+      "value": "Français"
+    },
+    {
+      "name": "opt_spanish",
+      "value": "Español"
+    },
+    {
+      "name": "opt_material_adaptive",
+      "value": "Adaptatif"
+    },
+    {
+      "name": "opt_material_immersive",
+      "value": "Immersif"
+    },
+    {
+      "name": "opt_material_none",
+      "value": "Aucun"
+    },
+    {
+      "name": "opt_level_exquisite",
+      "value": "Raffiné"
+    },
+    {
+      "name": "opt_level_gentle",
+      "value": "Doux"
+    },
+    {
+      "name": "opt_level_smooth",
+      "value": "Fluide"
+    },
+    {
+      "name": "opt_level_adaptive",
+      "value": "Adaptatif"
+    },
+    {
+      "name": "aux_global_immersive_on",
+      "value": "Immersion globale : activée"
+    },
+    {
+      "name": "aux_global_immersive_off",
+      "value": "Immersion globale : désactivée"
+    },
+    {
+      "name": "aux_antipeep_unsupported",
+      "value": "Non pris en charge sur cet appareil"
+    },
+    {
+      "name": "veil_message",
+      "value": "Contenu masqué pour la confidentialité"
+    },
+    {
+      "name": "veil_dismiss",
+      "value": "Touchez pour continuer"
+    },
+    {
+      "name": "home_refresh",
+      "value": "Actualiser"
+    },
+    {
+      "name": "home_feed_count",
+      "value": "%d flux"
+    },
+    {
+      "name": "home_unread_count",
+      "value": "%d non lus"
+    },
+    {
+      "name": "filter_all",
+      "value": "Tout"
+    },
+    {
+      "name": "filter_unread",
+      "value": "Non lus"
+    },
+    {
+      "name": "filter_starred",
+      "value": "Favoris"
+    },
+    {
+      "name": "home_mark_all_read",
+      "value": "Tout marquer comme lu"
+    },
+    {
+      "name": "mark_all_read_confirm_title",
+      "value": "Tout marquer comme lu"
+    },
+    {
+      "name": "mark_all_read_confirm_message",
+      "value": "Marquer tous les articles comme lus ?"
+    },
+    {
+      "name": "dialog_confirm",
+      "value": "Confirmer"
+    },
+    {
+      "name": "filter_empty_unread",
+      "value": "Aucun article non lu"
+    },
+    {
+      "name": "filter_empty_starred",
+      "value": "Aucun article favori"
+    },
+    {
+      "name": "filter_empty_search",
+      "value": "Aucun article correspondant"
+    },
+    {
+      "name": "home_search_hint",
+      "value": "Rechercher un titre ou un texte"
+    },
+    {
+      "name": "home_scope_prefix",
+      "value": "De : %s"
+    },
+    {
+      "name": "action_reader_retry",
+      "value": "Réextraire l'article"
+    },
+    {
+      "name": "action_copy_link",
+      "value": "Copier le lien"
+    },
+    {
+      "name": "action_open_browser",
+      "value": "Ouvrir dans le navigateur"
+    },
+    {
+      "name": "action_share",
+      "value": "Partager"
+    },
+    {
+      "name": "action_reload",
+      "value": "Recharger la page"
+    },
+    {
+      "name": "toast_action_failed",
+      "value": "Action non prise en charge sur cet appareil"
+    },
+    {
+      "name": "subs_rename",
+      "value": "Renommer"
+    },
+    {
+      "name": "subs_rename_hint",
+      "value": "Nom du flux"
+    },
+    {
+      "name": "dialog_save",
+      "value": "Enregistrer"
+    },
+    {
+      "name": "group_ungrouped",
+      "value": "Sans groupe"
+    },
+    {
+      "name": "group_move_to",
+      "value": "Déplacer vers « %s »"
+    },
+    {
+      "name": "group_clear",
+      "value": "Retirer du groupe"
+    },
+    {
+      "name": "group_new",
+      "value": "Nouveau groupe…"
+    },
+    {
+      "name": "group_hint",
+      "value": "Nom du groupe (vide = aucun)"
+    },
+    {
+      "name": "feed_move_up",
+      "value": "Monter"
+    },
+    {
+      "name": "feed_move_down",
+      "value": "Descendre"
+    },
+    {
+      "name": "row_auto_refresh",
+      "value": "Actualisation automatique"
+    },
+    {
+      "name": "opt_refresh_off",
+      "value": "Désactivée"
+    },
+    {
+      "name": "opt_refresh_15",
+      "value": "Toutes les 15 min"
+    },
+    {
+      "name": "opt_refresh_30",
+      "value": "Toutes les 30 min"
+    },
+    {
+      "name": "opt_refresh_60",
+      "value": "Toutes les heures"
+    },
+    {
+      "name": "home_manage_subs",
+      "value": "Flux"
+    },
+    {
+      "name": "effect_title",
+      "value": "Effets de lumière"
+    },
+    {
+      "name": "effect_hint",
+      "value": "Maintenez la source appuyée — les composants voisins s'illuminent"
+    },
+    {
+      "name": "effect_source",
+      "value": "Source lumineuse"
+    },
+    {
+      "name": "effect_target",
+      "value": "Éclairé"
+    },
+    {
+      "name": "home_empty_title",
+      "value": "Aucun article pour l'instant"
+    },
+    {
+      "name": "home_empty_hint",
+      "value": "Tirez vers le bas pour actualiser, ou ajoutez d'abord un flux RSS."
+    },
+    {
+      "name": "home_empty_action",
+      "value": "Ajouter un flux"
+    },
+    {
+      "name": "home_loading",
+      "value": "Chargement…"
+    },
+    {
+      "name": "subs_title",
+      "value": "Flux"
+    },
+    {
+      "name": "subs_url_hint",
+      "value": "Saisissez l'URL d'un flux RSS / Atom"
+    },
+    {
+      "name": "subs_add",
+      "value": "Ajouter"
+    },
+    {
+      "name": "subs_adding",
+      "value": "Ajout…"
+    },
+    {
+      "name": "subs_remove",
+      "value": "Supprimer"
+    },
+    {
+      "name": "subs_remove_confirm_title",
+      "value": "Supprimer ce flux ?"
+    },
+    {
+      "name": "subs_remove_confirm_message",
+      "value": "Supprimer « %s » et tous ses articles ?"
+    },
+    {
+      "name": "dialog_cancel",
+      "value": "Annuler"
+    },
+    {
+      "name": "subs_empty",
+      "value": "Aucun flux pour l'instant"
+    },
+    {
+      "name": "subs_import_opml",
+      "value": "Importer OPML"
+    },
+    {
+      "name": "subs_export_opml",
+      "value": "Exporter OPML"
+    },
+    {
+      "name": "subs_import_result",
+      "value": "%d flux importés"
+    },
+    {
+      "name": "subs_import_empty",
+      "value": "Aucun flux trouvé dans ce fichier"
+    },
+    {
+      "name": "subs_import_duplicate",
+      "value": "Tous les flux sont déjà abonnés"
+    },
+    {
+      "name": "subs_export_success",
+      "value": "OPML exporté"
+    },
+    {
+      "name": "subs_export_empty",
+      "value": "Rien à exporter"
+    },
+    {
+      "name": "subs_article_count",
+      "value": "%d articles"
+    },
+    {
+      "name": "subs_error_prefix",
+      "value": "Dernière erreur : "
+    },
+    {
+      "name": "feed_articles_title",
+      "value": "Articles"
+    },
+    {
+      "name": "feed_sort_newest",
+      "value": "Plus récents"
+    },
+    {
+      "name": "feed_sort_oldest",
+      "value": "Plus anciens"
+    },
+    {
+      "name": "home_add_feed_title",
+      "value": "Ajouter un flux"
+    },
+    {
+      "name": "article_title",
+      "value": "Article"
+    },
+    {
+      "name": "article_open_link",
+      "value": "Lien d'origine"
+    },
+    {
+      "name": "article_no_content",
+      "value": "Cette entrée n'a pas de texte intégral. Ouvrez le lien d'origine pour en lire plus."
+    },
+    {
+      "name": "article_mode_web",
+      "value": "Page d'origine"
+    },
+    {
+      "name": "article_mode_text",
+      "value": "Texte extrait"
+    },
+    {
+      "name": "article_mode_reader",
+      "value": "Mode lecture"
+    },
+    {
+      "name": "article_reader_failed",
+      "value": "Impossible d'extraire l'article. Affichage de la page d'origine."
+    },
+    {
+      "name": "article_prev",
+      "value": "Précédent"
+    },
+    {
+      "name": "article_next",
+      "value": "Suivant"
+    },
+    {
+      "name": "article_next_unread",
+      "value": "Non lu suivant"
+    },
+    {
+      "name": "err_empty_url",
+      "value": "Veuillez saisir l'URL d'un flux"
+    },
+    {
+      "name": "err_duplicate_url",
+      "value": "Ce flux est déjà abonné"
+    },
+    {
+      "name": "subs_paste",
+      "value": "Coller"
+    },
+    {
+      "name": "subs_paste_denied",
+      "value": "L'autorisation de collage n'a pas été accordée"
+    },
+    {
+      "name": "subs_preview_title",
+      "value": "Confirmer l'abonnement"
+    },
+    {
+      "name": "subs_preview_latest",
+      "value": "Derniers articles"
+    },
+    {
+      "name": "subs_preview_no_items",
+      "value": "Ce flux ne contient pas encore d'articles"
+    },
+    {
+      "name": "subs_confirm",
+      "value": "S'abonner"
+    },
+    {
+      "name": "subs_batch_result",
+      "value": "%d ajoutés · %d doublons · %d échecs"
+    },
+    {
+      "name": "subs_duplicate_site",
+      "value": "Semble être le même site que « %s »"
+    },
+    {
+      "name": "subs_edit_url",
+      "value": "Modifier l'URL du flux"
+    },
+    {
+      "name": "subs_edit_url_hint",
+      "value": "Nouvelle URL du flux"
+    },
+    {
+      "name": "subs_bulk_move",
+      "value": "Déplacer vers un groupe"
+    },
+    {
+      "name": "subs_bulk_remove",
+      "value": "Supprimer"
+    },
+    {
+      "name": "subs_bulk_enter",
+      "value": "Sélectionner"
+    },
+    {
+      "name": "subs_bulk_selected",
+      "value": "%d sélectionnés"
+    },
+    {
+      "name": "subs_bulk_remove_message",
+      "value": "Supprimer les %d flux sélectionnés et leurs articles ?"
+    },
+    {
+      "name": "share_ability_desc",
+      "value": "Ajouter un lien partagé à RSS"
+    },
+    {
+      "name": "share_page_title",
+      "value": "Ajouter à RSS"
+    },
+    {
+      "name": "err_fetch_failed",
+      "value": "Impossible de charger le flux. Vérifiez le réseau ou l'URL."
+    },
+    {
+      "name": "err_timeout",
+      "value": "La requête a expiré. Vérifiez votre réseau et réessayez."
+    },
+    {
+      "name": "err_network",
+      "value": "Connexion réseau échouée. Vérifiez votre réseau et réessayez."
+    },
+    {
+      "name": "err_http",
+      "value": "Le serveur a renvoyé une erreur. Réessayez plus tard."
+    },
+    {
+      "name": "err_empty_response",
+      "value": "Le serveur n'a renvoyé aucun contenu. Cette adresse n'est peut-être pas un flux valide."
+    },
+    {
+      "name": "err_parse",
+      "value": "Impossible d'analyser cette adresse comme un flux RSS / Atom."
+    },
+    {
+      "name": "err_not_a_feed",
+      "value": "Cette adresse n'est pas un flux, et aucun lien de flux n'a été trouvé sur la page."
+    },
+    {
+      "name": "row_point_light",
+      "value": "Lumière ponctuelle"
+    },
+    {
+      "name": "image_title",
+      "value": "Images"
+    },
+    {
+      "name": "image_hdr",
+      "value": "HDR"
+    },
+    {
+      "name": "image_animated",
+      "value": "Format animé (GIF / WebP) détecté"
+    },
+    {
+      "name": "image_static",
+      "value": "Image fixe"
+    },
+    {
+      "name": "image_hint",
+      "value": "Les GIF / WebP animés sont lus automatiquement par le composant Image du système."
+    },
+    {
+      "name": "section_branding",
+      "value": "Icône de l'application"
+    },
+    {
+      "name": "brand_name",
+      "value": "HarmonyRss"
+    },
+    {
+      "name": "logo_classic",
+      "value": "Classique"
+    },
+    {
+      "name": "logo_aurora",
+      "value": "Aurore"
+    },
+    {
+      "name": "logo_sunset",
+      "value": "Crépuscule"
+    },
+    {
+      "name": "logo_mono",
+      "value": "Mono"
+    },
+    {
+      "name": "aux_logo_launcher_hint",
+      "value": "Le logo s'affiche dans l'application ; l'icône de l'écran d'accueil ne change qu'après publication sur AppGallery."
+    },
+    {
+      "name": "toast_logo_launcher_failed",
+      "value": "Icône de l'écran d'accueil non modifiée : l'application n'est pas publiée ou n'a pas d'icône dynamique."
+    },
+    {
+      "name": "effect_flow_title",
+      "value": "Flux lumineux à double bord"
+    },
+    {
+      "name": "effect_flow_hint",
+      "value": "Deux flux de lumière parcourent le bord du composant"
+    },
+    {
+      "name": "action_more",
+      "value": "Plus"
+    },
+    {
+      "name": "action_star",
+      "value": "Favori"
+    },
+    {
+      "name": "action_unstar",
+      "value": "Retirer des favoris"
+    },
+    {
+      "name": "action_mark_read",
+      "value": "Marquer comme lu"
+    },
+    {
+      "name": "action_mark_unread",
+      "value": "Marquer comme non lu"
+    },
+    {
+      "name": "snack_link_copied",
+      "value": "Lien copié"
+    },
+    {
+      "name": "snack_dismiss",
+      "value": "Fermer"
+    },
+    {
+      "name": "row_notify_new",
+      "value": "Notifier les nouveaux articles"
+    },
+    {
+      "name": "notify_new_title",
+      "value": "%d nouveaux articles"
+    },
+    {
+      "name": "notify_new_text",
+      "value": "%s : %s"
+    },
+    {
+      "name": "toast_notify_denied",
+      "value": "Les notifications ne sont pas activées pour cette application"
+    },
+    {
+      "name": "row_effect_preview",
+      "value": "Aperçu des effets de lumière"
+    },
+    {
+      "name": "widget_desc",
+      "value": "Derniers articles RSS"
+    },
+    {
+      "name": "widget_title",
+      "value": "Lecteur RSS"
+    },
+    {
+      "name": "widget_empty",
+      "value": "Aucun article pour l'instant"
+    },
+    {
+      "name": "retention_mode_forever",
+      "value": "Tout conserver"
+    },
+    {
+      "name": "retention_mode_days",
+      "value": "Conserver une durée"
+    },
+    {
+      "name": "retention_mode_unread",
+      "value": "Conserver non lus et enregistrés"
+    },
+    {
+      "name": "retention_days_30",
+      "value": "30 jours"
+    },
+    {
+      "name": "retention_days_90",
+      "value": "90 jours"
+    },
+    {
+      "name": "retention_days_365",
+      "value": "365 jours"
+    },
+    {
+      "name": "retention_forever",
+      "value": "Toujours"
+    },
+    {
+      "name": "search_title",
+      "value": "Rechercher"
+    },
+    {
+      "name": "search_hint",
+      "value": "Rechercher dans tous les articles"
+    },
+    {
+      "name": "search_history",
+      "value": "Recherches récentes"
+    },
+    {
+      "name": "search_clear_history",
+      "value": "Effacer l'historique"
+    },
+    {
+      "name": "search_syntax_hint",
+      "value": "Essayez from:nom is:unread after:2026-01-01 \"expression exacte\""
+    },
+    {
+      "name": "search_empty",
+      "value": "Saisissez un mot-clé pour rechercher dans toute la bibliothèque"
+    },
+    {
+      "name": "search_no_result",
+      "value": "Aucun article correspondant"
+    },
+    {
+      "name": "search_result_count",
+      "value": "%d résultats"
+    },
+    {
+      "name": "search_filter_all",
+      "value": "Tout"
+    },
+    {
+      "name": "search_filter_unread",
+      "value": "Non lus"
+    },
+    {
+      "name": "search_filter_starred",
+      "value": "Favoris"
+    },
+    {
+      "name": "search_filter_saved",
+      "value": "Enregistrés"
+    },
+    {
+      "name": "search_searching",
+      "value": "Recherche…"
+    },
+    {
+      "name": "search_error",
+      "value": "Échec de la recherche, veuillez réessayer"
+    },
+    {
+      "name": "search_index_building",
+      "value": "Reconstruction de l'index…"
+    },
+    {
+      "name": "search_diag_section",
+      "value": "Diagnostic de l'index"
+    },
+    {
+      "name": "search_diag_main_index",
+      "value": "Index principal"
+    },
+    {
+      "name": "search_diag_cjk_index",
+      "value": "Index chinois"
+    },
+    {
+      "name": "search_diag_tokenizer",
+      "value": "Segmentation chinoise"
+    },
+    {
+      "name": "search_diag_state_ready",
+      "value": "Prêt"
+    },
+    {
+      "name": "search_diag_state_degraded",
+      "value": "Dégradé"
+    },
+    {
+      "name": "search_diag_state_available",
+      "value": "Disponible"
+    },
+    {
+      "name": "search_diag_state_unavailable",
+      "value": "Indisponible"
+    },
+    {
+      "name": "search_diag_indexed",
+      "value": "%d lignes"
+    },
+    {
+      "name": "search_diag_last_search",
+      "value": "Dernière recherche"
+    },
+    {
+      "name": "search_diag_path_none",
+      "value": "Pas encore exécuté"
+    },
+    {
+      "name": "search_diag_path_fts",
+      "value": "Index principal"
+    },
+    {
+      "name": "search_diag_path_cjk",
+      "value": "Index chinois"
+    },
+    {
+      "name": "search_diag_path_like",
+      "value": "Analyse complète"
+    },
+    {
+      "name": "storage_title",
+      "value": "Stockage et rétention"
+    },
+    {
+      "name": "storage_section_retention",
+      "value": "Politique de rétention"
+    },
+    {
+      "name": "storage_section_usage",
+      "value": "Utilisation du stockage"
+    },
+    {
+      "name": "storage_section_per_feed",
+      "value": "Utilisation par flux"
+    },
+    {
+      "name": "storage_section_trash",
+      "value": "Récemment supprimés"
+    },
+    {
+      "name": "storage_section_index",
+      "value": "Index de recherche"
+    },
+    {
+      "name": "storage_total",
+      "value": "%d articles stockés"
+    },
+    {
+      "name": "storage_text_size",
+      "value": "Taille du texte : %s"
+    },
+    {
+      "name": "storage_cleanable",
+      "value": "%d articles peuvent être nettoyés"
+    },
+    {
+      "name": "storage_clean_now",
+      "value": "Nettoyer maintenant"
+    },
+    {
+      "name": "storage_clean_confirm_title",
+      "value": "Nettoyer les anciens articles ?"
+    },
+    {
+      "name": "storage_clean_confirm_message",
+      "value": "%d articles seront déplacés vers « Récemment supprimés » et conservés 7 jours."
+    },
+    {
+      "name": "storage_clean_done",
+      "value": "%d articles nettoyés"
+    },
+    {
+      "name": "storage_trash_count",
+      "value": "%d articles peuvent être restaurés"
+    },
+    {
+      "name": "storage_restore",
+      "value": "Tout restaurer"
+    },
+    {
+      "name": "storage_restore_done",
+      "value": "%d articles restaurés"
+    },
+    {
+      "name": "storage_rebuild",
+      "value": "Reconstruire l'index"
+    },
+    {
+      "name": "storage_rebuilding",
+      "value": "Reconstruction %d/%d"
+    },
+    {
+      "name": "storage_rebuild_done",
+      "value": "Index reconstruit"
+    },
+    {
+      "name": "storage_empty",
+      "value": "Rien n'est encore stocké"
+    },
+    {
+      "name": "storage_retention_hint",
+      "value": "Les articles favoris, enregistrés, surlignés et l'article ouvert ne sont jamais supprimés."
+    },
+    {
+      "name": "feed_settings_title",
+      "value": "Réglages du flux"
+    },
+    {
+      "name": "feed_settings_entry",
+      "value": "Réglages du flux"
+    },
+    {
+      "name": "feed_settings_enabled",
+      "value": "Récupérer les nouveaux articles"
+    },
+    {
+      "name": "feed_settings_enabled_hint",
+      "value": "Les flux désactivés conservent leur historique mais ne sont ni récupérés ni notifiés."
+    },
+    {
+      "name": "feed_settings_interval",
+      "value": "Intervalle de récupération"
+    },
+    {
+      "name": "feed_settings_fulltext",
+      "value": "Texte intégral"
+    },
+    {
+      "name": "feed_settings_retention",
+      "value": "Conserver les articles"
+    },
+    {
+      "name": "feed_settings_notify",
+      "value": "Notifier les nouveaux articles"
+    },
+    {
+      "name": "feed_settings_scroll_read",
+      "value": "Marquer comme lu au défilement"
+    },
+    {
+      "name": "feed_settings_scroll_read_hint",
+      "value": "Si activé, un article est marqué comme lu après avoir défilé jusqu'à la fin."
+    },
+    {
+      "name": "feed_settings_section_health",
+      "value": "État"
+    },
+    {
+      "name": "feed_settings_follow_global",
+      "value": "Suivre le réglage global"
+    },
+    {
+      "name": "feed_settings_on",
+      "value": "Activé"
+    },
+    {
+      "name": "feed_settings_off",
+      "value": "Désactivé"
+    },
+    {
+      "name": "feed_settings_interval_15",
+      "value": "Toutes les 15 min"
+    },
+    {
+      "name": "feed_settings_interval_30",
+      "value": "Toutes les 30 min"
+    },
+    {
+      "name": "feed_settings_interval_60",
+      "value": "Toutes les heures"
+    },
+    {
+      "name": "feed_settings_interval_180",
+      "value": "Toutes les 3 heures"
+    },
+    {
+      "name": "feed_settings_fulltext_auto",
+      "value": "Automatique"
+    },
+    {
+      "name": "feed_settings_fulltext_always",
+      "value": "Toujours récupérer l'original"
+    },
+    {
+      "name": "feed_settings_fulltext_never",
+      "value": "Ne jamais récupérer l'original"
+    },
+    {
+      "name": "health_last_success",
+      "value": "Dernier succès : %s"
+    },
+    {
+      "name": "health_failure_count",
+      "value": "%d échecs consécutifs"
+    },
+    {
+      "name": "health_never",
+      "value": "Jamais synchronisé"
+    },
+    {
+      "name": "health_retry",
+      "value": "Réessayer maintenant"
+    },
+    {
+      "name": "health_retrying",
+      "value": "Nouvelle tentative…"
+    },
+    {
+      "name": "health_ok",
+      "value": "Sain"
+    },
+    {
+      "name": "retention_days_label",
+      "value": "Conserver pendant"
+    },
+    {
+      "name": "storage_show_all",
+      "value": "Afficher tous les flux"
+    },
+    {
+      "name": "storage_show_less",
+      "value": "Afficher moins"
+    },
+    {
+      "name": "feed_settings_section_policy",
+      "value": "Récupération et rétention"
+    },
+    {
+      "name": "feed_settings_disabled",
+      "value": "Récupération désactivée"
+    },
+    {
+      "name": "storage_retention_mode",
+      "value": "Rétention"
+    },
+    {
+      "name": "search_index_fallback",
+      "value": "Correspondance de base (index indisponible)"
+    },
+    {
+      "name": "tag_title",
+      "value": "Étiquettes"
+    },
+    {
+      "name": "tag_entry",
+      "value": "Étiquettes (%d)"
+    },
+    {
+      "name": "tag_empty",
+      "value": "Aucune étiquette"
+    },
+    {
+      "name": "tag_new_hint",
+      "value": "Nom de la nouvelle étiquette"
+    },
+    {
+      "name": "tag_new",
+      "value": "Nouvelle étiquette"
+    },
+    {
+      "name": "tag_name_invalid",
+      "value": "Saisissez un nom d'étiquette (32 caractères max.)"
+    },
+    {
+      "name": "tag_limit_reached",
+      "value": "Limite d'étiquettes atteinte (100)"
+    },
+    {
+      "name": "tag_rename",
+      "value": "Renommer"
+    },
+    {
+      "name": "tag_rename_hint",
+      "value": "Nom de l'étiquette"
+    },
+    {
+      "name": "tag_remove",
+      "value": "Supprimer l'étiquette"
+    },
+    {
+      "name": "tag_remove_confirm_title",
+      "value": "Supprimer l'étiquette ?"
+    },
+    {
+      "name": "tag_remove_confirm_message",
+      "value": "Les articles conservent leur contenu ; seule l'étiquette est retirée."
+    },
+    {
+      "name": "tag_view_results",
+      "value": "Voir les résultats"
+    },
+    {
+      "name": "tag_articles_title",
+      "value": "Articles étiquetés"
+    },
+    {
+      "name": "tag_picker_title",
+      "value": "Étiquettes"
+    },
+    {
+      "name": "tag_picker_empty",
+      "value": "Aucune étiquette — créez-en une ci-dessous"
+    },
+    {
+      "name": "tag_apply",
+      "value": "Appliquer"
+    },
+    {
+      "name": "tag_select_hint",
+      "value": "Sélectionnez au moins une étiquette"
+    },
+    {
+      "name": "tag_added",
+      "value": "Étiquette ajoutée"
+    },
+    {
+      "name": "tag_removed",
+      "value": "Étiquette supprimée"
+    },
+    {
+      "name": "tag_batch_done",
+      "value": "%d articles étiquetés"
+    },
+    {
+      "name": "tag_action_failed",
+      "value": "Échec de l'action sur l'étiquette"
+    },
+    {
+      "name": "tag_manage_hint",
+      "value": "Sélectionnez des étiquettes pour voir les articles qui les ont toutes"
+    },
+    {
+      "name": "smart_folder_title",
+      "value": "Dossiers intelligents"
+    },
+    {
+      "name": "smart_folder_entry",
+      "value": "Dossiers intelligents (%d)"
+    },
+    {
+      "name": "smart_folder_empty",
+      "value": "Aucun dossier intelligent"
+    },
+    {
+      "name": "smart_folder_new",
+      "value": "Nouveau dossier intelligent"
+    },
+    {
+      "name": "smart_folder_name_hint",
+      "value": "Nom du dossier"
+    },
+    {
+      "name": "smart_folder_query_hint",
+      "value": "Requête, par ex. from:Flux is:unread IA"
+    },
+    {
+      "name": "smart_folder_query_label",
+      "value": "Requête"
+    },
+    {
+      "name": "smart_folder_save_current",
+      "value": "Enregistrer comme dossier intelligent"
+    },
+    {
+      "name": "smart_folder_saved",
+      "value": "Dossier intelligent enregistré"
+    },
+    {
+      "name": "smart_folder_query_empty",
+      "value": "La requête ne peut pas être vide"
+    },
+    {
+      "name": "smart_folder_name_invalid",
+      "value": "Saisissez un nom (32 caractères max.)"
+    },
+    {
+      "name": "smart_folder_limit_reached",
+      "value": "Limite de dossiers intelligents atteinte (50)"
+    },
+    {
+      "name": "smart_folder_query_too_long",
+      "value": "Requête trop longue (512 caractères max.)"
+    },
+    {
+      "name": "smart_folder_edit",
+      "value": "Modifier"
+    },
+    {
+      "name": "smart_folder_save",
+      "value": "Enregistrer"
+    },
+    {
+      "name": "smart_folder_remove",
+      "value": "Supprimer le dossier intelligent"
+    },
+    {
+      "name": "smart_folder_remove_confirm_title",
+      "value": "Supprimer le dossier intelligent ?"
+    },
+    {
+      "name": "smart_folder_remove_confirm_message",
+      "value": "Seule la requête enregistrée est supprimée ; les articles restent."
+    },
+    {
+      "name": "smart_folder_move_up",
+      "value": "Monter"
+    },
+    {
+      "name": "smart_folder_move_down",
+      "value": "Descendre"
+    },
+    {
+      "name": "smart_folder_open_failed",
+      "value": "Impossible d'ouvrir ce dossier"
+    },
+    {
+      "name": "remote_entry_title",
+      "value": "Compte et services"
+    },
+    {
+      "name": "remote_title",
+      "value": "Compte et services"
+    },
+    {
+      "name": "remote_section_connect",
+      "value": "Connecter un service"
+    },
+    {
+      "name": "remote_field_base_url",
+      "value": "Adresse du serveur"
+    },
+    {
+      "name": "remote_field_base_url_hint",
+      "value": "https://rss.example.com"
+    },
+    {
+      "name": "remote_field_username",
+      "value": "Nom d'utilisateur"
+    },
+    {
+      "name": "remote_field_password",
+      "value": "Mot de passe"
+    },
+    {
+      "name": "remote_allow_http",
+      "value": "Autoriser HTTP non sécurisé"
+    },
+    {
+      "name": "remote_allow_http_hint",
+      "value": "Uniquement pour un serveur auto-hébergé de confiance. Le trafic HTTP n'est pas chiffré."
+    },
+    {
+      "name": "remote_connect",
+      "value": "Connecter"
+    },
+    {
+      "name": "remote_connecting",
+      "value": "Connexion…"
+    },
+    {
+      "name": "remote_connected",
+      "value": "Connecté"
+    },
+    {
+      "name": "remote_not_connected",
+      "value": "Non connecté"
+    },
+    {
+      "name": "remote_section_status",
+      "value": "État de synchronisation"
+    },
+    {
+      "name": "remote_status_service",
+      "value": "Service"
+    },
+    {
+      "name": "remote_status_service_value",
+      "value": "Google Reader API"
+    },
+    {
+      "name": "remote_status_base_url",
+      "value": "Adresse"
+    },
+    {
+      "name": "remote_status_username",
+      "value": "Compte"
+    },
+    {
+      "name": "remote_status_last_sync",
+      "value": "Dernière synchronisation"
+    },
+    {
+      "name": "remote_status_never",
+      "value": "Jamais synchronisé"
+    },
+    {
+      "name": "remote_status_pending",
+      "value": "Modifications en attente"
+    },
+    {
+      "name": "remote_status_failures",
+      "value": "Échecs consécutifs"
+    },
+    {
+      "name": "remote_status_last_error",
+      "value": "Dernière erreur"
+    },
+    {
+      "name": "remote_sync_now",
+      "value": "Synchroniser maintenant"
+    },
+    {
+      "name": "remote_syncing",
+      "value": "Synchronisation…"
+    },
+    {
+      "name": "remote_logout",
+      "value": "Se déconnecter"
+    },
+    {
+      "name": "remote_logout_confirm_title",
+      "value": "Se déconnecter ?"
+    },
+    {
+      "name": "remote_logout_confirm_message",
+      "value": "Les articles locaux et l'état de lecture restent disponibles. Vous pouvez aussi supprimer les correspondances de synchronisation et la file d'attente."
+    },
+    {
+      "name": "remote_logout_keep",
+      "value": "Conserver les données locales"
+    },
+    {
+      "name": "remote_logout_clear",
+      "value": "Supprimer les données de synchronisation"
+    },
+    {
+      "name": "remote_logout_done",
+      "value": "Déconnecté"
+    },
+    {
+      "name": "remote_phase_feeds",
+      "value": "Récupération des abonnements…"
+    },
+    {
+      "name": "remote_phase_articles",
+      "value": "Récupération des articles…"
+    },
+    {
+      "name": "remote_phase_push",
+      "value": "Envoi de l'état de lecture…"
+    },
+    {
+      "name": "remote_phase_pull",
+      "value": "Application de l'état distant…"
+    },
+    {
+      "name": "remote_phase_done",
+      "value": "Synchronisation terminée"
+    },
+    {
+      "name": "remote_progress",
+      "value": "%d flux sur %d synchronisés"
+    },
+    {
+      "name": "remote_error_network",
+      "value": "Serveur injoignable. Vérifiez l'adresse et votre réseau."
+    },
+    {
+      "name": "remote_error_tls",
+      "value": "Le certificat n'est pas approuvé. Utilisez un certificat valide ou autorisez HTTP."
+    },
+    {
+      "name": "remote_error_auth",
+      "value": "Nom d'utilisateur ou mot de passe incorrect."
+    },
+    {
+      "name": "remote_error_api",
+      "value": "L'API du service n'est pas disponible à cette adresse."
+    },
+    {
+      "name": "remote_error_rate",
+      "value": "Le serveur limite les requêtes. Réessayez plus tard."
+    },
+    {
+      "name": "remote_error_server",
+      "value": "Le serveur a renvoyé une erreur. Réessayez plus tard."
+    },
+    {
+      "name": "remote_error_parse",
+      "value": "Réponse inattendue du serveur."
+    },
+    {
+      "name": "remote_error_insecure",
+      "value": "HTTP est désactivé. Activez « Autoriser HTTP non sécurisé » pour utiliser cette adresse."
+    },
+    {
+      "name": "remote_error_empty",
+      "value": "Veuillez remplir les champs obligatoires."
+    },
+    {
+      "name": "remote_error_busy",
+      "value": "Une synchronisation est déjà en cours."
+    },
+    {
+      "name": "remote_error_not_connected",
+      "value": "Connectez d'abord un service."
+    },
+    {
+      "name": "remote_sync_done",
+      "value": "Synchronisation terminée"
+    },
+    {
+      "name": "remote_sync_summary",
+      "value": "%d flux · %d articles · %d mises à jour d'état"
+    },
+    {
+      "name": "remote_form_hint",
+      "value": "Fonctionne avec FreshRSS, Tiny Tiny RSS et Miniflux (Google Reader API)."
+    },
+    {
+      "name": "remote_aux_credentials",
+      "value": "Les identifiants sont stockés dans l'Asset Store du système, jamais en clair."
+    },
+    {
+      "name": "remote_empty_status",
+      "value": "Connectez un service pour synchroniser les abonnements et l'état de lecture."
+    },
+    {
+      "name": "remote_status_feeds",
+      "value": "Abonnements distants"
+    },
+    {
+      "name": "remote_auto_sync",
+      "value": "Synchronisation automatique"
+    },
+    {
+      "name": "rule_title",
+      "value": "Règles"
+    },
+    {
+      "name": "rule_entry",
+      "value": "Règles (%d)"
+    },
+    {
+      "name": "rule_empty",
+      "value": "Aucune règle. Les nouveaux articles sont traités automatiquement dès qu'une règle correspond."
+    },
+    {
+      "name": "rule_new",
+      "value": "Nouvelle règle"
+    },
+    {
+      "name": "rule_edit_title",
+      "value": "Règle"
+    },
+    {
+      "name": "rule_manage_hint",
+      "value": "Les règles s'appliquent aux articles nouvellement récupérés et synchronisés, par ordre de priorité. Les actions ne font qu'ajouter un état (lu / favori / étiquettes / masqué) et ne l'annulent jamais."
+    },
+    {
+      "name": "rule_enabled",
+      "value": "Activée"
+    },
+    {
+      "name": "rule_name_hint",
+      "value": "Nom de la règle"
+    },
+    {
+      "name": "rule_keywords_label",
+      "value": "Mots-clés"
+    },
+    {
+      "name": "rule_keywords_hint",
+      "value": "Mots-clés séparés par des virgules ; tous doivent correspondre"
+    },
+    {
+      "name": "rule_fields_label",
+      "value": "Chercher dans"
+    },
+    {
+      "name": "rule_field_title",
+      "value": "Titre"
+    },
+    {
+      "name": "rule_field_summary",
+      "value": "Résumé"
+    },
+    {
+      "name": "rule_field_content",
+      "value": "Contenu"
+    },
+    {
+      "name": "rule_field_author",
+      "value": "Auteur"
+    },
+    {
+      "name": "rule_source_label",
+      "value": "Sources"
+    },
+    {
+      "name": "rule_source_all",
+      "value": "Toutes les sources"
+    },
+    {
+      "name": "rule_source_custom",
+      "value": "Sources sélectionnées"
+    },
+    {
+      "name": "rule_source_invalid",
+      "value": "Certaines sources sélectionnées n'existent plus. Veuillez les resélectionner."
+    },
+    {
+      "name": "rule_actions_label",
+      "value": "Actions"
+    },
+    {
+      "name": "rule_action_read",
+      "value": "Marquer comme lu"
+    },
+    {
+      "name": "rule_action_star",
+      "value": "Mettre en favori"
+    },
+    {
+      "name": "rule_action_tag",
+      "value": "Ajouter des étiquettes"
+    },
+    {
+      "name": "rule_action_hide",
+      "value": "Masquer"
+    },
+    {
+      "name": "rule_tags_label",
+      "value": "Étiquettes"
+    },
+    {
+      "name": "rule_tags_empty",
+      "value": "Aucune étiquette. Créez-en sur la page Étiquettes."
+    },
+    {
+      "name": "rule_save",
+      "value": "Enregistrer la règle"
+    },
+    {
+      "name": "rule_match_count",
+      "value": "%d correspondances"
+    },
+    {
+      "name": "rule_last_hit",
+      "value": "Dernière correspondance %s"
+    },
+    {
+      "name": "rule_never_hit",
+      "value": "Jamais déclenchée"
+    },
+    {
+      "name": "rule_test",
+      "value": "Tester"
+    },
+    {
+      "name": "rule_testing",
+      "value": "Test…"
+    },
+    {
+      "name": "rule_test_result",
+      "value": "%d derniers articles · %d correspondances"
+    },
+    {
+      "name": "rule_edit",
+      "value": "Modifier"
+    },
+    {
+      "name": "rule_move_up",
+      "value": "Monter"
+    },
+    {
+      "name": "rule_move_down",
+      "value": "Descendre"
+    },
+    {
+      "name": "rule_remove",
+      "value": "Supprimer"
+    },
+    {
+      "name": "rule_remove_confirm_title",
+      "value": "Supprimer la règle"
+    },
+    {
+      "name": "rule_remove_confirm_message",
+      "value": "Les règles supprimées ne traitent plus les nouveaux articles. L'état lu / favori / étiquette / masqué existant est conservé."
+    },
+    {
+      "name": "rule_name_invalid",
+      "value": "Le nom de la règle est obligatoire"
+    },
+    {
+      "name": "rule_keywords_invalid",
+      "value": "Ajoutez au moins un mot-clé"
+    },
+    {
+      "name": "rule_keywords_too_many",
+      "value": "Trop de mots-clés (%d max.)"
+    },
+    {
+      "name": "rule_fields_empty",
+      "value": "Sélectionnez au moins un champ à comparer"
+    },
+    {
+      "name": "rule_actions_empty",
+      "value": "Sélectionnez au moins une action"
+    },
+    {
+      "name": "rule_tags_required",
+      "value": "Sélectionnez au moins une étiquette pour l'action d'étiquetage"
+    },
+    {
+      "name": "rule_limit_reached",
+      "value": "Limite de règles atteinte"
+    },
+    {
+      "name": "rule_action_failed",
+      "value": "Échec de l'opération"
+    },
+    {
+      "name": "rule_error_name_empty",
+      "value": "Le nom de la règle est obligatoire"
+    },
+    {
+      "name": "rule_error_name_too_long",
+      "value": "Le nom de la règle est trop long (%d caractères max.)"
+    },
+    {
+      "name": "rule_error_keywords_empty",
+      "value": "Ajoutez au moins un mot-clé"
+    },
+    {
+      "name": "rule_error_keywords_too_many",
+      "value": "Trop de mots-clés (%d max.)"
+    },
+    {
+      "name": "rule_error_fields_empty",
+      "value": "Sélectionnez au moins un champ à comparer"
+    },
+    {
+      "name": "rule_error_actions_empty",
+      "value": "Sélectionnez au moins une action"
+    },
+    {
+      "name": "rule_error_tags_empty",
+      "value": "Sélectionnez au moins une étiquette pour l'action d'étiquetage"
+    },
+    {
+      "name": "rule_error_limit_reached",
+      "value": "Limite de règles atteinte"
+    },
+    {
+      "name": "rule_keywords_limit_hint",
+      "value": "Jusqu'à %d mots-clés, séparés par des virgules ; tous doivent correspondre"
+    },
+    {
+      "name": "rule_hidden_entry",
+      "value": "Masqués (%d)"
+    },
+    {
+      "name": "hidden_title",
+      "value": "Articles masqués"
+    },
+    {
+      "name": "hidden_empty",
+      "value": "Aucun article masqué"
+    },
+    {
+      "name": "hidden_hint",
+      "value": "Les articles masqués n'apparaissent pas dans la liste principale ni dans les compteurs de non lus, mais restent consultables et lisibles."
+    },
+    {
+      "name": "hidden_unhide",
+      "value": "Réafficher"
+    },
+    {
+      "name": "hidden_unhide_done",
+      "value": "Article replacé dans la liste principale"
+    },
+    {
+      "name": "dedupe_sources_count",
+      "value": "%d sources"
+    },
+    {
+      "name": "dedupe_sources_title",
+      "value": "Toutes les sources"
+    },
+    {
+      "name": "dedupe_source_label",
+      "value": "Source"
+    },
+    {
+      "name": "dedupe_merged_hint",
+      "value": "Cet article est aussi collecté par %d autres sources"
+    },
+    {
+      "name": "dedupe_group_empty",
+      "value": "Aucune information de source"
+    },
+    {
+      "name": "dedupe_settings_title",
+      "value": "Dédoublonnage entre sources"
+    },
+    {
+      "name": "dedupe_settings_desc",
+      "value": "Quand plusieurs flux diffusent le même article, il est affiché une fois et toutes les sources sont conservées."
+    },
+    {
+      "name": "dedupe_toggle_on",
+      "value": "Dédoublonnage entre sources activé"
+    },
+    {
+      "name": "dedupe_toggle_off",
+      "value": "Dédoublonnage entre sources désactivé"
+    },
+    {
+      "name": "dedupe_match_failed",
+      "value": "Échec de la vérification des doublons ; l'article a été enregistré séparément"
+    },
+    {
+      "name": "dedupe_open_failed",
+      "value": "Impossible d'ouvrir ce lien de source"
+    },
+    {
+      "name": "dedupe_source_count",
+      "value": "%d sources"
+    },
+    {
+      "name": "dedupe_switch_desc",
+      "value": "Quand plusieurs flux diffusent le même article, il est affiché une fois et toutes les sources sont conservées."
+    },
+    {
+      "name": "dedupe_source_current",
+      "value": "Actuelle"
+    },
+    {
+      "name": "share_panel_title",
+      "value": "Partager"
+    },
+    {
+      "name": "share_group_actions",
+      "value": "Actions"
+    },
+    {
+      "name": "share_group_targets",
+      "value": "Envoyer à"
+    },
+    {
+      "name": "share_group_templates",
+      "value": "Modèles"
+    },
+    {
+      "name": "share_group_export",
+      "value": "Exporter les surlignages"
+    },
+    {
+      "name": "share_action_system",
+      "value": "Partage système"
+    },
+    {
+      "name": "share_action_copy_link",
+      "value": "Copier le lien"
+    },
+    {
+      "name": "share_action_copy_body",
+      "value": "Copier le texte"
+    },
+    {
+      "name": "share_action_browser",
+      "value": "Ouvrir dans le navigateur"
+    },
+    {
+      "name": "share_action_saved",
+      "value": "Enregistrer pour plus tard"
+    },
+    {
+      "name": "share_target_pocket",
+      "value": "Pocket"
+    },
+    {
+      "name": "share_target_instapaper",
+      "value": "Instapaper"
+    },
+    {
+      "name": "share_target_flomo",
+      "value": "Flomo"
+    },
+    {
+      "name": "share_target_email",
+      "value": "E-mail"
+    },
+    {
+      "name": "share_toast_shared",
+      "value": "Feuille de partage système ouverte"
+    },
+    {
+      "name": "share_toast_copied",
+      "value": "Copié"
+    },
+    {
+      "name": "share_toast_copy_failed",
+      "value": "Impossible de copier"
+    },
+    {
+      "name": "share_toast_open_failed",
+      "value": "Impossible d'ouvrir l'application"
+    },
+    {
+      "name": "share_toast_fallback_copied",
+      "value": "Application indisponible ; lien copié à la place"
+    },
+    {
+      "name": "share_toast_share_failed",
+      "value": "Le partage n'est pas disponible"
+    },
+    {
+      "name": "share_toast_nothing_to_share",
+      "value": "Il n'y a rien à partager"
+    },
+    {
+      "name": "share_toast_busy",
+      "value": "Veuillez patienter…"
+    },
+    {
+      "name": "share_toast_saved",
+      "value": "Enregistré pour plus tard"
+    },
+    {
+      "name": "share_disabled_no_url",
+      "value": "Cet élément n'a pas de lien"
+    },
+    {
+      "name": "share_disabled_no_highlights",
+      "value": "Cet article n'a pas de surlignages"
+    },
+    {
+      "name": "share_export_article",
+      "value": "Exporter les surlignages de cet article"
+    },
+    {
+      "name": "share_export_all",
+      "value": "Exporter tous les surlignages"
+    },
+    {
+      "name": "share_export_empty",
+      "value": "Aucun surlignage à exporter"
+    },
+    {
+      "name": "share_settings_title",
+      "value": "Partage et modèles"
+    },
+    {
+      "name": "tpl_section_title",
+      "value": "Modèles"
+    },
+    {
+      "name": "tpl_default_name",
+      "value": "Par défaut"
+    },
+    {
+      "name": "tpl_new",
+      "value": "Nouveau modèle"
+    },
+    {
+      "name": "tpl_edit",
+      "value": "Modifier le modèle"
+    },
+    {
+      "name": "tpl_name_label",
+      "value": "Nom"
+    },
+    {
+      "name": "tpl_content_label",
+      "value": "Contenu"
+    },
+    {
+      "name": "tpl_placeholder_help",
+      "value": "Variables : {title} {url} {summary} {author} {tags}"
+    },
+    {
+      "name": "tpl_save",
+      "value": "Enregistrer"
+    },
+    {
+      "name": "tpl_cancel",
+      "value": "Annuler"
+    },
+    {
+      "name": "tpl_delete",
+      "value": "Supprimer"
+    },
+    {
+      "name": "tpl_delete_confirm",
+      "value": "Supprimer ce modèle ?"
+    },
+    {
+      "name": "tpl_move_up",
+      "value": "Monter"
+    },
+    {
+      "name": "tpl_move_down",
+      "value": "Descendre"
+    },
+    {
+      "name": "tpl_copy",
+      "value": "Copier"
+    },
+    {
+      "name": "tpl_share",
+      "value": "Partager"
+    },
+    {
+      "name": "tpl_empty",
+      "value": "Aucun modèle"
+    },
+    {
+      "name": "tpl_err_name_empty",
+      "value": "Saisissez un nom de modèle"
+    },
+    {
+      "name": "tpl_err_name_long",
+      "value": "Le nom est trop long"
+    },
+    {
+      "name": "tpl_err_content_empty",
+      "value": "Le contenu du modèle ne peut pas être vide"
+    },
+    {
+      "name": "tpl_err_content_long",
+      "value": "Le contenu du modèle est trop long"
+    },
+    {
+      "name": "tpl_err_max",
+      "value": "Vous pouvez conserver jusqu'à 20 modèles"
+    },
+    {
+      "name": "tpl_limit_hint",
+      "value": "Jusqu'à 20 modèles ; l'ordre ici est celui du panneau de partage."
+    },
+    {
+      "name": "share_action_unsave",
+      "value": "Retirer de « Plus tard »"
+    },
+    {
+      "name": "share_toast_unsaved",
+      "value": "Retiré de « Plus tard »"
+    },
+    {
+      "name": "tpl_name_hint",
+      "value": "par ex. Publication courte"
+    },
+    {
+      "name": "tpl_content_hint",
+      "value": "{title} — {url}"
+    },
+    {
+      "name": "tpl_toast_saved",
+      "value": "Modèle enregistré"
+    },
+    {
+      "name": "tpl_toast_deleted",
+      "value": "Modèle supprimé"
+    },
+    {
+      "name": "tpl_err_save_failed",
+      "value": "Impossible d'enregistrer le modèle"
+    },
+    {
+      "name": "tpl_default_hint",
+      "value": "Modèle intégré ; créez le vôtre pour le personnaliser."
+    },
+    {
+      "name": "tpl_delete_confirm_named",
+      "value": "Supprimer « %s » ?"
+    },
+    {
+      "name": "section_share",
+      "value": "Partage"
+    },
+    {
+      "name": "backup_title",
+      "value": "Sauvegarde et restauration"
+    },
+    {
+      "name": "backup_entry",
+      "value": "Sauvegarde et restauration"
+    },
+    {
+      "name": "backup_intro",
+      "value": "Transférez vos abonnements et données de lecture vers un nouvel appareil, ou gardez une copie locale."
+    },
+    {
+      "name": "backup_section_export",
+      "value": "Exporter"
+    },
+    {
+      "name": "backup_export_action",
+      "value": "Exporter la sauvegarde"
+    },
+    {
+      "name": "backup_export_hint",
+      "value": "Enregistre abonnements, états de lecture, surlignages, étiquettes, règles et modèles dans un fichier JSON."
+    },
+    {
+      "name": "backup_export_cancelled",
+      "value": "Export annulé"
+    },
+    {
+      "name": "backup_section_import",
+      "value": "Importer"
+    },
+    {
+      "name": "backup_import_action",
+      "value": "Importer une sauvegarde"
+    },
+    {
+      "name": "backup_import_hint",
+      "value": "Les données existantes sont fusionnées ; rien n'est supprimé."
+    },
+    {
+      "name": "backup_import_cancelled",
+      "value": "Import annulé"
+    },
+    {
+      "name": "backup_restore_settings",
+      "value": "Restaurer aussi les réglages"
+    },
+    {
+      "name": "backup_restore_settings_hint",
+      "value": "Applique le thème, la mise en page, la liste et la synchronisation depuis la sauvegarde. Désactivé par défaut."
+    },
+    {
+      "name": "backup_section_snapshots",
+      "value": "Instantanés automatiques"
+    },
+    {
+      "name": "backup_snapshot_now",
+      "value": "Sauvegarder maintenant"
+    },
+    {
+      "name": "backup_snapshot_empty",
+      "value": "Aucun instantané"
+    },
+    {
+      "name": "backup_snapshot_restore",
+      "value": "Restaurer"
+    },
+    {
+      "name": "backup_snapshot_delete",
+      "value": "Supprimer"
+    },
+    {
+      "name": "backup_snapshot_keep_hint",
+      "value": "Un instantané par jour ; les 7 derniers sont conservés."
+    },
+    {
+      "name": "backup_snapshot_created",
+      "value": "Créé %s"
+    },
+    {
+      "name": "backup_snapshot_size",
+      "value": "Taille %s"
+    },
+    {
+      "name": "backup_last_snapshot",
+      "value": "Dernier instantané : %s"
+    },
+    {
+      "name": "backup_never",
+      "value": "Jamais"
+    },
+    {
+      "name": "backup_result_title",
+      "value": "Dernier résultat"
+    },
+    {
+      "name": "backup_result_label_feeds",
+      "value": "Abonnements"
+    },
+    {
+      "name": "backup_result_label_articles",
+      "value": "Articles"
+    },
+    {
+      "name": "backup_result_label_updated",
+      "value": "Mis à jour"
+    },
+    {
+      "name": "backup_result_label_highlights",
+      "value": "Surlignages"
+    },
+    {
+      "name": "backup_result_label_tags",
+      "value": "Étiquettes"
+    },
+    {
+      "name": "backup_result_label_skipped",
+      "value": "Ignorés"
+    },
+    {
+      "name": "backup_result_label_failed",
+      "value": "Échecs"
+    },
+    {
+      "name": "backup_result_added",
+      "value": "Ajoutés : %d"
+    },
+    {
+      "name": "backup_result_updated",
+      "value": "Mis à jour : %d"
+    },
+    {
+      "name": "backup_result_skipped",
+      "value": "Ignorés : %d"
+    },
+    {
+      "name": "backup_result_failed",
+      "value": "Échecs : %d"
+    },
+    {
+      "name": "backup_privacy_notice",
+      "value": "La sauvegarde contient votre historique de lecture. Conservez le fichier en sécurité."
+    },
+    {
+      "name": "backup_error_parse",
+      "value": "Ce fichier n'est pas une sauvegarde valide."
+    },
+    {
+      "name": "backup_error_version",
+      "value": "Cette version de sauvegarde n'est pas prise en charge."
+    },
+    {
+      "name": "backup_error_empty",
+      "value": "Le fichier de sauvegarde est vide."
+    },
+    {
+      "name": "backup_error_read",
+      "value": "Impossible de lire le fichier."
+    },
+    {
+      "name": "backup_error_write",
+      "value": "Impossible d'enregistrer le fichier."
+    },
+    {
+      "name": "backup_error_snapshot",
+      "value": "Impossible de créer l'instantané."
+    },
+    {
+      "name": "backup_error_busy",
+      "value": "Une autre tâche de sauvegarde est en cours. Réessayez dans un instant."
+    },
+    {
+      "name": "backup_toast_exported",
+      "value": "Sauvegarde exportée"
+    },
+    {
+      "name": "backup_toast_imported",
+      "value": "Sauvegarde importée"
+    },
+    {
+      "name": "backup_toast_restored",
+      "value": "Instantané restauré"
+    },
+    {
+      "name": "backup_toast_deleted",
+      "value": "Instantané supprimé"
+    },
+    {
+      "name": "backup_toast_snapshot_created",
+      "value": "Instantané créé"
+    },
+    {
+      "name": "backup_confirm_restore_title",
+      "value": "Restaurer cet instantané ?"
+    },
+    {
+      "name": "backup_confirm_restore_message",
+      "value": "Les données sont fusionnées dans la bibliothèque actuelle. Les éléments existants ne sont pas supprimés."
+    },
+    {
+      "name": "backup_confirm_delete_title",
+      "value": "Supprimer cet instantané ?"
+    },
+    {
+      "name": "backup_confirm_delete_message",
+      "value": "Ce fichier d'instantané sera supprimé et ne pourra pas être récupéré."
+    },
+    {
+      "name": "backup_working",
+      "value": "Traitement…"
+    },
+    {
+      "name": "backup_section_about",
+      "value": "À propos des sauvegardes"
+    },
+    {
+      "name": "backup_content_list",
+      "value": "Abonnements · états de lecture · surlignages · étiquettes · dossiers intelligents · règles · modèles · réglages"
+    },
+    {
+      "name": "row_notify_settings",
+      "value": "Réglages des notifications"
+    },
+    {
+      "name": "notify_settings_title",
+      "value": "Réglages des notifications"
+    },
+    {
+      "name": "notify_settings_desc",
+      "value": "Choisissez quels nouveaux articles vous notifient, et quand."
+    },
+    {
+      "name": "notify_settings_saved",
+      "value": "Réglages des notifications enregistrés"
+    },
+    {
+      "name": "notify_section_permission",
+      "value": "Autorisation"
+    },
+    {
+      "name": "notify_permission_on",
+      "value": "Notifications autorisées"
+    },
+    {
+      "name": "notify_permission_off",
+      "value": "Notifications non autorisées"
+    },
+    {
+      "name": "notify_permission_grant",
+      "value": "Autoriser les notifications"
+    },
+    {
+      "name": "notify_permission_hint",
+      "value": "Si aucune boîte de dialogue n'apparaît, activez les notifications pour cette application dans les réglages système."
+    },
+    {
+      "name": "notify_status_off",
+      "value": "Les notifications sont désactivées. Les nouveaux articles ne seront pas annoncés."
+    },
+    {
+      "name": "notify_section_policy",
+      "value": "Quels articles"
+    },
+    {
+      "name": "notify_global_switch",
+      "value": "Notifier les nouveaux articles"
+    },
+    {
+      "name": "notify_global_switch_desc",
+      "value": "Les réglages par flux s'appliquent toujours. Désactivez un flux pour le rendre silencieux."
+    },
+    {
+      "name": "notify_keywords_title",
+      "value": "Mots-clés"
+    },
+    {
+      "name": "notify_keywords_desc",
+      "value": "Notifier uniquement si le titre ou le résumé contient un mot-clé. Laissez vide pour tout notifier."
+    },
+    {
+      "name": "notify_keywords_empty",
+      "value": "Aucun mot-clé"
+    },
+    {
+      "name": "notify_keywords_placeholder",
+      "value": "Ajouter un mot-clé"
+    },
+    {
+      "name": "notify_keywords_add",
+      "value": "Ajouter"
+    },
+    {
+      "name": "notify_keywords_full",
+      "value": "Jusqu'à %d mots-clés"
+    },
+    {
+      "name": "notify_section_dnd",
+      "value": "Ne pas déranger"
+    },
+    {
+      "name": "notify_dnd_title",
+      "value": "Ne pas déranger"
+    },
+    {
+      "name": "notify_dnd_desc",
+      "value": "Retient les notifications pendant cette période et les remet ensuite ensemble."
+    },
+    {
+      "name": "notify_dnd_start",
+      "value": "Début"
+    },
+    {
+      "name": "notify_dnd_end",
+      "value": "Fin"
+    },
+    {
+      "name": "notify_dnd_same",
+      "value": "Le début et la fin sont identiques, donc « Ne pas déranger » est désactivé."
+    },
+    {
+      "name": "notify_section_digest",
+      "value": "Résumé quotidien"
+    },
+    {
+      "name": "notify_digest_title",
+      "value": "Résumé quotidien"
+    },
+    {
+      "name": "notify_digest_desc",
+      "value": "Envoyer un résumé une fois par jour après l'heure définie."
+    },
+    {
+      "name": "notify_digest_hour",
+      "value": "Heure"
+    },
+    {
+      "name": "notify_section_test",
+      "value": "Test"
+    },
+    {
+      "name": "notify_test_action",
+      "value": "Envoyer une notification de test"
+    },
+    {
+      "name": "notify_test_title",
+      "value": "Notification de test"
+    },
+    {
+      "name": "notify_test_text",
+      "value": "Les notifications fonctionnent."
+    },
+    {
+      "name": "notify_test_failed",
+      "value": "Impossible d'envoyer la notification de test"
+    },
+    {
+      "name": "notify_aggregate_title",
+      "value": "Plus de mises à jour"
+    },
+    {
+      "name": "notify_aggregate_text",
+      "value": "%s : %d de plus"
+    },
+    {
+      "name": "notify_aggregate_more",
+      "value": "%d de plus"
+    },
+    {
+      "name": "notify_dnd_flush_title",
+      "value": "%d nouveaux articles pendant « Ne pas déranger »"
+    },
+    {
+      "name": "notify_dnd_flush_text",
+      "value": "%s"
+    },
+    {
+      "name": "notify_digest_notify_title",
+      "value": "Résumé quotidien : %d nouveaux articles"
+    },
+    {
+      "name": "notify_digest_notify_text",
+      "value": "%s"
+    },
+    {
+      "name": "notify_action_star",
+      "value": "Favori"
+    },
+    {
+      "name": "notify_permission_check",
+      "value": "Revérifier"
+    },
+    {
+      "name": "notify_keyword_exists",
+      "value": "Mot-clé déjà ajouté"
+    },
+    {
+      "name": "notify_keyword_remove",
+      "value": "Supprimer %s"
+    },
+    {
+      "name": "notify_test_sent",
+      "value": "Notification de test envoyée"
+    },
+    {
+      "name": "translate_settings_title",
+      "value": "Traduction"
+    },
+    {
+      "name": "translate_settings_desc",
+      "value": "Traduisez les articles avec le service de votre choix. Désactivé par défaut ; les résultats sont mis en cache sur l'appareil."
+    },
+    {
+      "name": "translate_section_service",
+      "value": "Service de traduction"
+    },
+    {
+      "name": "translate_enable",
+      "value": "Autoriser la traduction en ligne"
+    },
+    {
+      "name": "translate_enable_desc",
+      "value": "Si désactivé, le lecteur n'envoie jamais le texte de l'article à un serveur."
+    },
+    {
+      "name": "translate_privacy",
+      "value": "Confidentialité : seul le texte de l'article est envoyé. Les liens, images et l'état de lecture ne sont pas inclus. La clé API est stockée dans l'Asset Store du système."
+    },
+    {
+      "name": "translate_provider",
+      "value": "Service"
+    },
+    {
+      "name": "translate_provider_deepl",
+      "value": "DeepL (clé API requise)"
+    },
+    {
+      "name": "translate_provider_libre",
+      "value": "LibreTranslate (auto-hébergement possible)"
+    },
+    {
+      "name": "translate_endpoint",
+      "value": "Point de terminaison"
+    },
+    {
+      "name": "translate_endpoint_hint",
+      "value": "Laissez vide pour utiliser le point de terminaison par défaut"
+    },
+    {
+      "name": "translate_api_key",
+      "value": "Clé API"
+    },
+    {
+      "name": "translate_api_key_hint",
+      "value": "Collez la clé ; stockée en sécurité sur cet appareil"
+    },
+    {
+      "name": "translate_api_key_set",
+      "value": "Clé configurée"
+    },
+    {
+      "name": "translate_api_key_unset",
+      "value": "Aucune clé API configurée"
+    },
+    {
+      "name": "translate_api_key_save",
+      "value": "Enregistrer la clé"
+    },
+    {
+      "name": "translate_api_key_clear",
+      "value": "Effacer"
+    },
+    {
+      "name": "translate_target_lang",
+      "value": "Langue cible"
+    },
+    {
+      "name": "translate_target_auto",
+      "value": "Suit la langue de l'application"
+    },
+    {
+      "name": "translate_test",
+      "value": "Tester la traduction"
+    },
+    {
+      "name": "translate_test_ok",
+      "value": "Test réussi : %s"
+    },
+    {
+      "name": "translate_test_failed",
+      "value": "Test échoué : %s"
+    },
+    {
+      "name": "translate_section_cache",
+      "value": "Cache"
+    },
+    {
+      "name": "translate_cache_count",
+      "value": "%d traductions en cache"
+    },
+    {
+      "name": "translate_cache_clear",
+      "value": "Vider le cache de traduction"
+    },
+    {
+      "name": "translate_cache_cleared",
+      "value": "%d traductions en cache supprimées"
+    },
+    {
+      "name": "translate_action",
+      "value": "Traduire"
+    },
+    {
+      "name": "translate_action_full",
+      "value": "Traduire l'article"
+    },
+    {
+      "name": "translate_action_selection",
+      "value": "Traduire la sélection"
+    },
+    {
+      "name": "translate_sheet_title",
+      "value": "Traduction bilingue"
+    },
+    {
+      "name": "translate_only_translation",
+      "value": "Traduction seule"
+    },
+    {
+      "name": "translate_start",
+      "value": "Commencer la traduction"
+    },
+    {
+      "name": "translate_retry",
+      "value": "Traduire à nouveau"
+    },
+    {
+      "name": "translate_loading",
+      "value": "Traduction…"
+    },
+    {
+      "name": "translate_cached",
+      "value": "Depuis le cache"
+    },
+    {
+      "name": "translate_truncated",
+      "value": "L'article est long ; seuls les 20 000 premiers caractères ont été traduits."
+    },
+    {
+      "name": "translate_source_to_target",
+      "value": "%s → %s"
+    },
+    {
+      "name": "translate_selection_title",
+      "value": "Texte sélectionné"
+    },
+    {
+      "name": "translate_error_disabled_title",
+      "value": "La traduction en ligne est désactivée"
+    },
+    {
+      "name": "translate_error_disabled_desc",
+      "value": "Activez-la et configurez un service dans Réglages → Traduction."
+    },
+    {
+      "name": "translate_error_not_configured",
+      "value": "Service de traduction incomplet (clé API ou point de terminaison manquant)."
+    },
+    {
+      "name": "translate_error_empty",
+      "value": "Il n'y a pas de texte à traduire."
+    },
+    {
+      "name": "translate_error_same",
+      "value": "L'article est déjà dans la langue cible."
+    },
+    {
+      "name": "translate_error_network",
+      "value": "Réseau indisponible ou délai dépassé. Vérifiez votre connexion et réessayez."
+    },
+    {
+      "name": "translate_error_auth",
+      "value": "La clé API est invalide ou expirée."
+    },
+    {
+      "name": "translate_error_rate",
+      "value": "Trop de requêtes. Réessayez plus tard."
+    },
+    {
+      "name": "translate_error_server",
+      "value": "Le service de traduction est temporairement indisponible."
+    },
+    {
+      "name": "translate_error_parse",
+      "value": "Le service de traduction a renvoyé une réponse illisible."
+    },
+    {
+      "name": "translate_open_settings",
+      "value": "Ouvrir les réglages de traduction"
+    },
+    {
+      "name": "translate_lang_zh",
+      "value": "Chinois"
+    },
+    {
+      "name": "translate_lang_en",
+      "value": "Anglais"
+    },
+    {
+      "name": "translate_lang_ja",
+      "value": "Japonais"
+    },
+    {
+      "name": "translate_lang_ko",
+      "value": "Coréen"
+    },
+    {
+      "name": "translate_lang_ru",
+      "value": "Russe"
+    },
+    {
+      "name": "translate_lang_ar",
+      "value": "Arabe"
+    },
+    {
+      "name": "translate_lang_und",
+      "value": "Détection automatique"
+    },
+    {
+      "name": "translate_endpoint_save",
+      "value": "Enregistrer"
+    },
+    {
+      "name": "translate_section_test",
+      "value": "Test de connexion"
+    },
+    {
+      "name": "privacy_settings_title",
+      "value": "Confidentialité et données"
+    },
+    {
+      "name": "privacy_settings_desc",
+      "value": "Ce qui reste sur l'appareil, ce qui peut en sortir, et chaque interrupteur qui le contrôle."
+    },
+    {
+      "name": "privacy_section_local",
+      "value": "Reste sur cet appareil"
+    },
+    {
+      "name": "privacy_local_subscriptions_title",
+      "value": "Abonnements et articles"
+    },
+    {
+      "name": "privacy_local_subscriptions_desc",
+      "value": "La liste des flux, les articles en cache et le texte extrait résident dans la sandbox de l'application."
+    },
+    {
+      "name": "privacy_local_reading_title",
+      "value": "État de lecture"
+    },
+    {
+      "name": "privacy_local_reading_desc",
+      "value": "Lu / favori / enregistré / masqué / progression et surlignages sont locaux par défaut."
+    },
+    {
+      "name": "privacy_local_settings_title",
+      "value": "Réglages et cache"
+    },
+    {
+      "name": "privacy_local_settings_desc",
+      "value": "Préférences, règles, étiquettes, dossiers intelligents et cache de traduction sont stockés localement."
+    },
+    {
+      "name": "privacy_section_outbound",
+      "value": "Ce qui peut quitter l'appareil"
+    },
+    {
+      "name": "privacy_out_fetch_title",
+      "value": "Récupération des flux, texte intégral et images"
+    },
+    {
+      "name": "privacy_out_fetch_desc",
+      "value": "Seule l'URL du flux / de l'article / de l'image est demandée. Le compte et l'état de lecture ne sont pas joints."
+    },
+    {
+      "name": "privacy_out_remote_title",
+      "value": "Synchronisation du compte et du service"
+    },
+    {
+      "name": "privacy_out_remote_desc",
+      "value": "Lorsque vous connectez FreshRSS / Tiny Tiny RSS / Miniflux, les abonnements et l'état de lecture se synchronisent avec ce serveur."
+    },
+    {
+      "name": "privacy_out_translate_title",
+      "value": "Traduction des articles"
+    },
+    {
+      "name": "privacy_out_translate_desc",
+      "value": "Si activée, le texte de l'article est envoyé au service choisi (DeepL ou LibreTranslate). Désactivé par défaut."
+    },
+    {
+      "name": "privacy_out_share_title",
+      "value": "Partage système et cibles externes"
+    },
+    {
+      "name": "privacy_out_share_desc",
+      "value": "Ne s'exécute qu'après avoir touché Partager ; rien n'est envoyé en arrière-plan."
+    },
+    {
+      "name": "privacy_out_backup_title",
+      "value": "Sauvegardes et export"
+    },
+    {
+      "name": "privacy_out_backup_desc",
+      "value": "Les instantanés automatiques restent dans la sandbox. L'export manuel enregistre à l'emplacement choisi."
+    },
+    {
+      "name": "privacy_section_permission",
+      "value": "Autorisations"
+    },
+    {
+      "name": "privacy_perm_notification_title",
+      "value": "Notifications"
+    },
+    {
+      "name": "privacy_perm_notification_desc",
+      "value": "Demandées uniquement quand vous activez les notifications d'articles."
+    },
+    {
+      "name": "privacy_perm_background_title",
+      "value": "Actualisation en arrière-plan"
+    },
+    {
+      "name": "privacy_perm_background_desc",
+      "value": "Planifiée par le WorkScheduler du système ; désactivez l'actualisation automatique ou révoquez-la dans les réglages système."
+    },
+    {
+      "name": "privacy_perm_network_title",
+      "value": "État du réseau"
+    },
+    {
+      "name": "privacy_perm_network_desc",
+      "value": "Lu uniquement pour afficher en ligne / hors ligne sur cette page."
+    },
+    {
+      "name": "privacy_perm_files_title",
+      "value": "Fichiers et photos"
+    },
+    {
+      "name": "privacy_perm_files_desc",
+      "value": "Accessibles uniquement via les sélecteurs système ou la sandbox de l'application ; aucune autorisation de stockage n'est demandée."
+    },
+    {
+      "name": "privacy_perm_clipboard_title",
+      "value": "Presse-papiers"
+    },
+    {
+      "name": "privacy_perm_clipboard_desc",
+      "value": "Lu uniquement lorsque vous touchez le PasteButton système dans l'application."
+    },
+    {
+      "name": "privacy_status_granted",
+      "value": "Accordée"
+    },
+    {
+      "name": "privacy_status_denied",
+      "value": "Non accordée"
+    },
+    {
+      "name": "privacy_network_online",
+      "value": "En ligne"
+    },
+    {
+      "name": "privacy_network_offline",
+      "value": "Hors ligne"
+    },
+    {
+      "name": "privacy_translation_on",
+      "value": "Activée"
+    },
+    {
+      "name": "privacy_translation_off",
+      "value": "Désactivée"
+    },
+    {
+      "name": "privacy_remote_connected",
+      "value": "Connecté"
+    },
+    {
+      "name": "privacy_remote_disconnected",
+      "value": "Non connecté"
+    },
+    {
+      "name": "privacy_remote_unknown",
+      "value": "Non configuré"
+    },
+    {
+      "name": "privacy_section_control",
+      "value": "Contrôle des données"
+    },
+    {
+      "name": "privacy_control_cache_title",
+      "value": "Cache de traduction"
+    },
+    {
+      "name": "privacy_control_cache_desc",
+      "value": "%d articles mis en cache localement"
+    },
+    {
+      "name": "privacy_control_clear_cache",
+      "value": "Vider le cache de traduction"
+    },
+    {
+      "name": "privacy_cache_cleared",
+      "value": "%d traductions en cache supprimées"
+    },
+    {
+      "name": "privacy_control_remote_entry",
+      "value": "Gérer le compte et le service"
+    },
+    {
+      "name": "privacy_control_backup_entry",
+      "value": "Sauvegarde et restauration"
+    },
+    {
+      "name": "privacy_control_translate_entry",
+      "value": "Réglages de traduction"
+    },
+    {
+      "name": "privacy_footer_no_tracking",
+      "value": "Cette application ne contient aucun SDK publicitaire, d'analyse ou de suivi comportemental. Les données ne sont envoyées que pour les fonctions que vous activez."
+    },
+    {
+      "name": "privacy_version",
+      "value": "Version de l'avis de confidentialité 2026-10"
+    },
+    {
+      "name": "privacy_out_cross_border_desc",
+      "value": "Les points de terminaison tiers que vous configurez peuvent traiter des données hors de votre région, selon la politique de confidentialité de ce service."
+    },
+    {
+      "name": "media_audio_label",
+      "value": "Podcast"
+    },
+    {
+      "name": "media_video_label",
+      "value": "Vidéo"
+    },
+    {
+      "name": "media_audio_with_duration",
+      "value": "Podcast · %s"
+    },
+    {
+      "name": "media_play_audio_feed",
+      "value": "Lire le podcast (ce flux)"
+    },
+    {
+      "name": "media_play_audio_all",
+      "value": "Lire tous les podcasts non lus"
+    },
+    {
+      "name": "media_open_video",
+      "value": "Ouvrir la vidéo"
+    },
+    {
+      "name": "media_error",
+      "value": "Impossible de lire cet audio"
+    },
+    {
+      "name": "media_pause",
+      "value": "Pause"
+    },
+    {
+      "name": "media_resume",
+      "value": "Reprendre"
+    },
+    {
+      "name": "media_stop",
+      "value": "Arrêter"
+    },
+    {
+      "name": "media_rewind",
+      "value": "Reculer de 15 secondes"
+    },
+    {
+      "name": "media_forward",
+      "value": "Avancer de 15 secondes"
+    },
+    {
+      "name": "media_previous",
+      "value": "Précédent"
+    },
+    {
+      "name": "media_next",
+      "value": "Suivant"
+    },
+    {
+      "name": "media_speed",
+      "value": "Vitesse de lecture"
+    },
+    {
+      "name": "privacy_perm_media_title",
+      "value": "Audio en arrière-plan"
+    },
+    {
+      "name": "privacy_perm_media_desc",
+      "value": "La lecture de podcast utilise une tâche continue AUDIO_PLAYBACK et AVSession ; elle se termine à l'arrêt de la lecture."
+    },
+    {
+      "name": "discover_entry",
+      "value": "Découvrir"
+    },
+    {
+      "name": "discover_title",
+      "value": "Découvrir"
+    },
+    {
+      "name": "discover_desc",
+      "value": "Flux sélectionnés, recommandations locales, routes RSSHub et import depuis le presse-papiers. Rien n'est récupéré avant d'appuyer sur S'abonner."
+    },
+    {
+      "name": "discover_search_hint",
+      "value": "Rechercher dans les flux sélectionnés"
+    },
+    {
+      "name": "discover_category_all",
+      "value": "Tout"
+    },
+    {
+      "name": "discover_cat_hot",
+      "value": "Populaires"
+    },
+    {
+      "name": "discover_cat_tech",
+      "value": "Technologie"
+    },
+    {
+      "name": "discover_cat_design",
+      "value": "Design"
+    },
+    {
+      "name": "discover_cat_business",
+      "value": "Économie"
+    },
+    {
+      "name": "discover_cat_science",
+      "value": "Science"
+    },
+    {
+      "name": "discover_cat_indie",
+      "value": "Blogs indépendants"
+    },
+    {
+      "name": "discover_cat_cn",
+      "value": "Chinois"
+    },
+    {
+      "name": "discover_section_recommended",
+      "value": "Recommandé pour vous"
+    },
+    {
+      "name": "discover_recommend_hint",
+      "value": "Basé sur les thèmes de vos flux suivis (calcul local)."
+    },
+    {
+      "name": "discover_section_popular",
+      "value": "Flux populaires"
+    },
+    {
+      "name": "discover_section_catalog",
+      "value": "Catalogue sélectionné"
+    },
+    {
+      "name": "discover_subscribe",
+      "value": "S'abonner"
+    },
+    {
+      "name": "discover_subscribed",
+      "value": "Abonné"
+    },
+    {
+      "name": "discover_subscribing",
+      "value": "Abonnement…"
+    },
+    {
+      "name": "discover_subscribe_ok",
+      "value": "Abonné : %s"
+    },
+    {
+      "name": "discover_subscribe_success",
+      "value": "Abonné"
+    },
+    {
+      "name": "discover_subscribe_duplicate",
+      "value": "Déjà abonné"
+    },
+    {
+      "name": "discover_empty",
+      "value": "Aucun flux correspondant"
+    },
+    {
+      "name": "discover_section_import",
+      "value": "Importer depuis le presse-papiers"
+    },
+    {
+      "name": "discover_import_desc",
+      "value": "Collez des favoris ou une liste d'adresses. Chaque URL est validée comme flux, y compris la découverte automatique dans le HTML."
+    },
+    {
+      "name": "discover_importing",
+      "value": "Import…"
+    },
+    {
+      "name": "discover_import_result",
+      "value": "%d ajoutés · %d doublons · %d échecs"
+    },
+    {
+      "name": "discover_import_empty",
+      "value": "Aucune URL trouvée dans le presse-papiers"
+    },
+    {
+      "name": "discover_section_rsshub",
+      "value": "Assistant de routes RSSHub"
+    },
+    {
+      "name": "discover_rsshub_desc",
+      "value": "Collez l'URL d'un site ou d'un profil pour générer des routes RSSHub candidates. Vous pouvez utiliser une instance auto-hébergée ; rien n'est récupéré avant l'abonnement."
+    },
+    {
+      "name": "discover_rsshub_base",
+      "value": "Instance RSSHub"
+    },
+    {
+      "name": "discover_rsshub_input_hint",
+      "value": "https://github.com/user/repo"
+    },
+    {
+      "name": "discover_rsshub_generate",
+      "value": "Générer les routes"
+    },
+    {
+      "name": "discover_rsshub_empty",
+      "value": "Aucune route correspondante. Essayez une URL de site prise en charge ou consultez la doc RSSHub."
+    },
+    {
+      "name": "discover_rsshub_kind_commits",
+      "value": "Commits du dépôt"
+    },
+    {
+      "name": "discover_rsshub_kind_releases",
+      "value": "Versions"
+    },
+    {
+      "name": "discover_rsshub_kind_issues",
+      "value": "Tickets"
+    },
+    {
+      "name": "discover_rsshub_kind_video",
+      "value": "Vidéo"
+    },
+    {
+      "name": "discover_rsshub_kind_user_video",
+      "value": "Vidéos de l'utilisateur"
+    },
+    {
+      "name": "discover_rsshub_kind_channel",
+      "value": "Chaîne"
+    },
+    {
+      "name": "discover_rsshub_kind_user",
+      "value": "Utilisateur"
+    },
+    {
+      "name": "discover_rsshub_kind_timeline",
+      "value": "Fil de l'utilisateur"
+    },
+    {
+      "name": "discover_rsshub_kind_activity",
+      "value": "Activité de l'utilisateur"
+    },
+    {
+      "name": "discover_rsshub_kind_articles",
+      "value": "Articles de l'utilisateur"
+    },
+    {
+      "name": "discover_rsshub_kind_posts",
+      "value": "Publications de l'utilisateur"
+    },
+    {
+      "name": "discover_rsshub_kind_route",
+      "value": "Route"
+    },
+    {
+      "name": "diagnostics_entry",
+      "value": "Diagnostic"
+    },
+    {
+      "name": "diagnostics_title",
+      "value": "Diagnostic et performances"
+    },
+    {
+      "name": "diagnostics_desc",
+      "value": "Mesures de démarrage et de récupération, classification des échecs, état des sources et raison de la dernière fermeture, uniquement en local. Rien n'est envoyé."
+    },
+    {
+      "name": "diagnostics_section_startup",
+      "value": "Démarrage et dernière fermeture"
+    },
+    {
+      "name": "diagnostics_first_screen",
+      "value": "Délai avant le premier écran"
+    },
+    {
+      "name": "diagnostics_started_at",
+      "value": "Heure de lancement"
+    },
+    {
+      "name": "diagnostics_last_exit",
+      "value": "Raison de la dernière fermeture"
+    },
+    {
+      "name": "diagnostics_last_exit_detail",
+      "value": "Détail de la dernière fermeture"
+    },
+    {
+      "name": "diagnostics_exit_unknown",
+      "value": "Inconnue"
+    },
+    {
+      "name": "diagnostics_exit_normal",
+      "value": "Fermeture normale"
+    },
+    {
+      "name": "diagnostics_exit_js",
+      "value": "Erreur JS"
+    },
+    {
+      "name": "diagnostics_exit_cpp",
+      "value": "Plantage natif"
+    },
+    {
+      "name": "diagnostics_exit_freeze",
+      "value": "Blocage de l'application"
+    },
+    {
+      "name": "diagnostics_exit_resource",
+      "value": "Contrôle des ressources"
+    },
+    {
+      "name": "diagnostics_exit_upgrade",
+      "value": "Mise à jour de l'application"
+    },
+    {
+      "name": "diagnostics_exit_user",
+      "value": "Demande de l'utilisateur ou du système"
+    },
+    {
+      "name": "diagnostics_exit_other",
+      "value": "Autre"
+    },
+    {
+      "name": "diagnostics_no_data",
+      "value": "Aucun enregistrement"
+    },
+    {
+      "name": "diagnostics_section_fetch",
+      "value": "Performances de récupération"
+    },
+    {
+      "name": "diagnostics_fetch_last",
+      "value": "Dernière récupération"
+    },
+    {
+      "name": "diagnostics_fetch_duration",
+      "value": "Durée totale"
+    },
+    {
+      "name": "diagnostics_fetch_sources",
+      "value": "Sources"
+    },
+    {
+      "name": "diagnostics_fetch_ok",
+      "value": "Réussies"
+    },
+    {
+      "name": "diagnostics_fetch_failed",
+      "value": "Échecs"
+    },
+    {
+      "name": "diagnostics_fetch_avg",
+      "value": "Moyenne par source"
+    },
+    {
+      "name": "diagnostics_session_runs",
+      "value": "Récupérations de cette session"
+    },
+    {
+      "name": "diagnostics_section_failure",
+      "value": "Répartition des échecs"
+    },
+    {
+      "name": "diagnostics_fail_timeout",
+      "value": "Délai dépassé"
+    },
+    {
+      "name": "diagnostics_fail_network",
+      "value": "Réseau"
+    },
+    {
+      "name": "diagnostics_fail_http",
+      "value": "Statut HTTP"
+    },
+    {
+      "name": "diagnostics_fail_content",
+      "value": "Contenu ou analyse"
+    },
+    {
+      "name": "diagnostics_fail_other",
+      "value": "Autre"
+    },
+    {
+      "name": "diagnostics_section_slow",
+      "value": "Sources les plus lentes"
+    },
+    {
+      "name": "diagnostics_section_health",
+      "value": "État des sources"
+    },
+    {
+      "name": "diagnostics_health_ok",
+      "value": "Toutes les sources sont saines."
+    },
+    {
+      "name": "diagnostics_health_failures",
+      "value": "%d échecs consécutifs"
+    },
+    {
+      "name": "diagnostics_retry",
+      "value": "Réessayer toutes les sources"
+    },
+    {
+      "name": "diagnostics_retrying",
+      "value": "Nouvelle tentative…"
+    },
+    {
+      "name": "diagnostics_retry_done",
+      "value": "%d sources réessayées, %d échecs"
+    },
+    {
+      "name": "diagnostics_section_runtime",
+      "value": "Exécution"
+    },
+    {
+      "name": "diagnostics_runtime_articles",
+      "value": "Articles locaux"
+    },
+    {
+      "name": "diagnostics_runtime_cached",
+      "value": "Contenu en cache"
+    },
+    {
+      "name": "diagnostics_runtime_cached_value",
+      "value": "%d articles · %d caractères"
+    },
+    {
+      "name": "diagnostics_runtime_virtualization",
+      "value": "Virtualisation de liste"
+    },
+    {
+      "name": "diagnostics_runtime_virtualization_value",
+      "value": "LazyForEach · %d par page"
+    },
+    {
+      "name": "diagnostics_runtime_fps",
+      "value": "Fréquence d'images au défilement"
+    },
+    {
+      "name": "diagnostics_runtime_fps_value",
+      "value": "%d fps · pire %d ms"
+    },
+    {
+      "name": "diagnostics_runtime_indexes",
+      "value": "Index de base de données"
+    },
+    {
+      "name": "diagnostics_runtime_indexes_value",
+      "value": "feed_id + published_at, is_read, is_starred, highlights.article_id"
+    },
+    {
+      "name": "diagnostics_section_record",
+      "value": "Enregistrement du diagnostic"
+    },
+    {
+      "name": "diagnostics_toggle",
+      "value": "Enregistrer le diagnostic local"
+    },
+    {
+      "name": "diagnostics_toggle_desc",
+      "value": "Si désactivé, les durées de démarrage et de récupération ne sont pas enregistrées. La raison de la dernière fermeture vient toujours du système."
+    },
+    {
+      "name": "diagnostics_clear",
+      "value": "Effacer le diagnostic"
+    },
+    {
+      "name": "diagnostics_cleared",
+      "value": "Diagnostic effacé"
+    },
+    {
+      "name": "diagnostics_privacy",
+      "value": "Tout ici reste dans les préférences privées de l'application. Aucun envoi d'analyse n'est implémenté."
+    },
+    {
+      "name": "remote_field_service",
+      "value": "Service"
+    },
+    {
+      "name": "remote_service_greader",
+      "value": "FreshRSS / TTRSS / Miniflux"
+    },
+    {
+      "name": "remote_service_feedbin",
+      "value": "Feedbin"
+    },
+    {
+      "name": "remote_status_service_value_feedbin",
+      "value": "Feedbin"
+    },
+    {
+      "name": "remote_field_username_email",
+      "value": "E-mail"
+    },
+    {
+      "name": "remote_feedbin_base_hint",
+      "value": "https://api.feedbin.com"
+    },
+    {
+      "name": "remote_feedbin_hint",
+      "value": "Feedbin utilise HTTP Basic auth sur HTTPS. Utilisez l'e-mail et le mot de passe de votre compte Feedbin."
+    },
+    {
+      "name": "remote_status_mode",
+      "value": "Mode d'abonnement"
+    },
+    {
+      "name": "remote_mode_unset",
+      "value": "Non défini"
+    },
+    {
+      "name": "remote_mode_merge",
+      "value": "Fusionner (garder le local)"
+    },
+    {
+      "name": "remote_mode_migrated",
+      "value": "Migré vers le distant"
+    },
+    {
+      "name": "remote_mode_remote_only",
+      "value": "Distant uniquement"
+    },
+    {
+      "name": "remote_migration_title",
+      "value": "Migration des abonnements"
+    },
+    {
+      "name": "remote_migration_entry",
+      "value": "Migration des abonnements"
+    },
+    {
+      "name": "remote_migration_desc",
+      "value": "Choisissez comment les abonnements locaux et le service distant coexistent. Les synchronisations suivantes suivent le mode choisi."
+    },
+    {
+      "name": "remote_migration_loading",
+      "value": "Chargement des abonnements distants…"
+    },
+    {
+      "name": "remote_migration_section_preview",
+      "value": "Aperçu"
+    },
+    {
+      "name": "remote_migration_local_total",
+      "value": "Abonnements locaux"
+    },
+    {
+      "name": "remote_migration_remote_total",
+      "value": "Abonnements distants"
+    },
+    {
+      "name": "remote_migration_overlap",
+      "value": "Des deux côtés"
+    },
+    {
+      "name": "remote_migration_local_only",
+      "value": "Local uniquement"
+    },
+    {
+      "name": "remote_migration_section_mode",
+      "value": "Mode"
+    },
+    {
+      "name": "remote_migration_mode_merge",
+      "value": "Fusionner"
+    },
+    {
+      "name": "remote_migration_mode_merge_desc",
+      "value": "Ajouter les flux distants localement et conserver les flux locaux uniquement."
+    },
+    {
+      "name": "remote_migration_mode_migrated",
+      "value": "Migrer les flux locaux"
+    },
+    {
+      "name": "remote_migration_mode_migrated_desc",
+      "value": "Abonner chaque flux local uniquement sur le service distant. Rien n'est supprimé localement."
+    },
+    {
+      "name": "remote_migration_mode_remote_only",
+      "value": "Distant uniquement"
+    },
+    {
+      "name": "remote_migration_mode_remote_only_desc",
+      "value": "Le distant fait foi. Les flux locaux uniquement sont désactivés mais leur historique est conservé ; revenez à Fusionner pour les réactiver."
+    },
+    {
+      "name": "remote_migration_note",
+      "value": "Le mode est stocké par compte et s'applique aussi aux synchronisations futures."
+    },
+    {
+      "name": "remote_migration_apply",
+      "value": "Appliquer le mode"
+    },
+    {
+      "name": "remote_migration_applying",
+      "value": "Application…"
+    },
+    {
+      "name": "remote_migration_done_merge",
+      "value": "Mode défini sur Fusionner"
+    },
+    {
+      "name": "remote_migration_done_migrated",
+      "value": "%d flux locaux migrés"
+    },
+    {
+      "name": "remote_migration_done_remote_only",
+      "value": "%d flux locaux uniquement désactivés"
+    },
+    {
+      "name": "remote_migration_partial",
+      "value": "%d flux n'ont pas pu être migrés ; le mode n'a pas été modifié."
+    },
+    {
+      "name": "remote_migration_retry",
+      "value": "Réessayer"
+    },
+    {
+      "name": "remote_migration_prompt_title",
+      "value": "Abonnements locaux détectés"
+    },
+    {
+      "name": "remote_migration_prompt_message",
+      "value": "%d flux locaux uniquement peuvent être migrés vers le service distant."
+    },
+    {
+      "name": "remote_migration_later",
+      "value": "Plus tard"
+    },
+    {
+      "name": "remote_migration_go",
+      "value": "Migrer"
+    },
+    {
+      "name": "remote_error_subscription",
+      "value": "Le service distant n'a pas pu s'abonner à ce flux."
+    },
+    {
+      "name": "a11y_article_read",
+      "value": "Lu"
+    },
+    {
+      "name": "a11y_article_unread",
+      "value": "Non lu"
+    },
+    {
+      "name": "a11y_article_starred",
+      "value": "Favori"
+    },
+    {
+      "name": "shortcut_hint",
+      "value": "Clavier : j/k précédent/suivant · m lu · s favori · / rechercher · Échap retour"
+    },
+    {
+      "name": "a11y_find_prev",
+      "value": "Correspondance précédente"
+    },
+    {
+      "name": "a11y_find_next",
+      "value": "Correspondance suivante"
+    },
+    {
+      "name": "a11y_find_close",
+      "value": "Fermer la recherche"
+    },
+    {
+      "name": "a11y_clear_scope",
+      "value": "Effacer le filtre de source"
+    },
+    {
+      "name": "a11y_row_selected",
+      "value": "Sélectionné"
+    },
+    {
+      "name": "a11y_row_not_selected",
+      "value": "Non sélectionné"
+    }
+  ]
+}

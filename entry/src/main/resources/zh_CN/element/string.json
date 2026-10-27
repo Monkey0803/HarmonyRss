@@ -661,6 +661,22 @@
       "value": "English"
     },
     {
+      "name": "opt_japanese",
+      "value": "日本語"
+    },
+    {
+      "name": "opt_german",
+      "value": "Deutsch"
+    },
+    {
+      "name": "opt_french",
+      "value": "Français"
+    },
+    {
+      "name": "opt_spanish",
+      "value": "Español"
+    },
+    {
       "name": "opt_material_adaptive",
       "value": "自适应"
     },

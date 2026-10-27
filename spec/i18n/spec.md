@@ -1,7 +1,7 @@
 # Feature Specification: 多语言扩展（繁體中文首批）
 
 **Created**: 2026-10-27
-**Status**: In progress
+**Status**: Done（繁體中文首批 + 日 / 德 / 法 / 西全量）
 **Input**: `TODO.md` P2-4 语言扩展。
 
 ## Overview
@@ -13,7 +13,8 @@
 - 资源目录使用 `zh_Hant`（script 限定词），系统语言为繁体 / 手动选择时均可匹配；
 - 其余 1000+ 条文案随 zh_CN 同步生成，避免只翻菜单造成中英混排。
 
-日 / 德 / 法 / 西仍待补，设置项结构已支持继续扩展。
+日 / 德 / 法 / 西已按同一流程补齐：`ja` / `de` / `fr` / `es` 各 1021 条，
+与 base 同 key、占位符一致，由 `tools/check-i18n.mjs` 校验。
 
 ## Requirements
 

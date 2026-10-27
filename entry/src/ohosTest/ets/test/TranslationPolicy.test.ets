@@ -38,7 +38,13 @@ export default function translationPolicyTest() {
       expect(targetLanguageOf(AppLanguage.EN, 'zh-Hans')).assertEqual('en');
       expect(targetLanguageOf(AppLanguage.SYSTEM, 'zh-Hans')).assertEqual('zh');
       expect(targetLanguageOf(AppLanguage.SYSTEM, 'zh-Hant')).assertEqual('zh');
-      expect(targetLanguageOf(AppLanguage.SYSTEM, 'ja-JP')).assertEqual('en');
+      expect(targetLanguageOf(AppLanguage.SYSTEM, 'ja-JP')).assertEqual('ja');
+      expect(targetLanguageOf(AppLanguage.SYSTEM, 'de-AT')).assertEqual('de');
+      expect(targetLanguageOf(AppLanguage.SYSTEM, 'fr-CA')).assertEqual('fr');
+      expect(targetLanguageOf(AppLanguage.SYSTEM, 'es-MX')).assertEqual('es');
+      expect(targetLanguageOf(AppLanguage.SYSTEM, 'ko-KR')).assertEqual('en');
+      expect(targetLanguageOf(AppLanguage.JA, 'zh-Hans')).assertEqual('ja');
+      expect(targetLanguageOf(AppLanguage.ZH_TW, 'en-US')).assertEqual('zh-hant');
       expect(targetLanguageOf(AppLanguage.SYSTEM, 'en-GB')).assertEqual('en');
     });
 

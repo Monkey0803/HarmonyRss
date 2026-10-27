@@ -67,11 +67,15 @@ export const THEME_OPTIONS: ChoiceSet = new ChoiceSet([
   new ChoiceOption(ThemeMode.DARK, $r('app.string.opt_dark'))
 ], ThemeMode.SYSTEM);
 
-/** 语言：跟随系统 / 简体中文 / 英语。 */
+/** 语言：跟随系统 / 简体中文 / 繁體中文 / 日本語 / Deutsch / Français / Español / English。 */
 export const LANGUAGE_OPTIONS: ChoiceSet = new ChoiceSet([
   new ChoiceOption(AppLanguage.SYSTEM, $r('app.string.opt_follow_system')),
   new ChoiceOption(AppLanguage.ZH, $r('app.string.opt_chinese')),
   new ChoiceOption(AppLanguage.ZH_TW, $r('app.string.opt_chinese_traditional')),
+  new ChoiceOption(AppLanguage.JA, $r('app.string.opt_japanese')),
+  new ChoiceOption(AppLanguage.DE, $r('app.string.opt_german')),
+  new ChoiceOption(AppLanguage.FR, $r('app.string.opt_french')),
+  new ChoiceOption(AppLanguage.ES, $r('app.string.opt_spanish')),
   new ChoiceOption(AppLanguage.EN, $r('app.string.opt_english'))
 ], AppLanguage.SYSTEM);
 
