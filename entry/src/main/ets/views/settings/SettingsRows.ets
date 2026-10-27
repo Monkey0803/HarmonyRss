@@ -52,10 +52,15 @@ export struct SettingIconTitle {
       SymbolGlyph(this.icon)
         .fontSize($r('app.float.icon_size'))
         .fontColor([$r('app.color.hm_brand')])
+      // 多语言长文案（德语尤其长）：标题让出空间并省略，避免把右侧取值 / 开关 / 箭头挤出屏幕。
       Text(this.title)
         .fontSize($r('app.float.font_size_body'))
         .fontColor($r('app.color.hm_text_primary'))
+        .maxLines(1)
+        .textOverflow({ overflow: TextOverflow.Ellipsis })
+        .layoutWeight(1)
     }
+    .width('100%')
   }
 }
 
@@ -180,18 +185,26 @@ export struct OptionSelectRow {
   }
 
   build() {
-    Row() {
-      SettingIconTitle({ icon: this.icon, title: this.title })
-      Blank()
+    Row({ space: $r('app.float.space_s') }) {
+      Row() {
+        SettingIconTitle({ icon: this.icon, title: this.title })
+      }
+      .layoutWeight(1)
       // 当前值做成「胶囊底 + 实心倒三角」的取值控件（与系统设置页一致）。
+      // 长文案（如德语「Systemeinstellung folgen」）限宽并省略，避免把左侧标题挤没。
       Row({ space: $r('app.float.space_xs') }) {
         Text(this.choice.labelOf(this.currentId()))
           .fontSize($r('app.float.font_size_body'))
           .fontColor($r('app.color.hm_text_primary'))
+          .maxLines(1)
+          .textOverflow({ overflow: TextOverflow.Ellipsis })
         SymbolGlyph($r('sys.symbol.arrowtriangle_down_fill'))
           .fontSize($r('app.float.icon_size_tiny'))
           .fontColor([$r('app.color.hm_text_primary')])
+          .flexShrink(0)
       }
+      .constraintSize({ maxWidth: '58%' })
+      .flexShrink(0)
       .height($r('app.float.value_chip_height'))
       .padding({ left: $r('app.float.space_l'), right: $r('app.float.space_l') })
       .backgroundColor($r('app.color.hm_value_chip_background'))
@@ -239,9 +252,11 @@ export struct SwitchSettingRow {
 
   build() {
     Row() {
-      Row() {
-        SettingIconTitle({ icon: this.icon, title: this.title })
-        Blank()
+      Row({ space: $r('app.float.space_s') }) {
+        Row() {
+          SettingIconTitle({ icon: this.icon, title: this.title })
+        }
+        .layoutWeight(1)
         Toggle({ type: ToggleType.Switch, isOn: this.isOn() })
           .selectedColor($r('app.color.hm_brand'))
           .onChange((value: boolean) => {
@@ -274,8 +289,10 @@ export struct NavSettingRow {
 
   build() {
     Row() {
-      SettingIconTitle({ icon: this.icon, title: this.title })
-      Blank()
+      Row() {
+        SettingIconTitle({ icon: this.icon, title: this.title })
+      }
+      .layoutWeight(1)
       if (this.detail !== '') {
         Text(this.detail)
           .fontSize($r('app.float.font_size_caption'))
@@ -308,8 +325,10 @@ export struct ActionSettingRow {
 
   build() {
     Row() {
-      SettingIconTitle({ icon: this.icon, title: this.title })
-      Blank()
+      Row() {
+        SettingIconTitle({ icon: this.icon, title: this.title })
+      }
+      .layoutWeight(1)
       if (this.detail !== '') {
         Text(this.detail)
           .fontSize($r('app.float.font_size_caption'))
