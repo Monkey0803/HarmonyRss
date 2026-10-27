@@ -52,6 +52,11 @@ import { AddFeedPanel } from '../views/AddFeedPanel';
 import { FilterSegmentBar } from '../views/FilterSegmentBar';
 import { BrandTitle } from '../views/BrandTitle';
 import { SettingsTabView } from '../views/SettingsTabView';
+import { SettingsLookView } from '../views/settings/SettingsLookView';
+import { SettingsMaterialView } from '../views/settings/SettingsMaterialView';
+import { SettingsReadingView } from '../views/settings/SettingsReadingView';
+import { SettingsFeedView } from '../views/settings/SettingsFeedView';
+import { SettingsSystemView } from '../views/settings/SettingsSystemView';
 import { ImageTabView } from '../views/ImageTabView';
 import { PrivacyVeil } from '../views/PrivacyVeil';
 import { ArticleDetailView } from '../views/ArticleDetailView';
@@ -107,6 +112,11 @@ struct Index {
   private articleScroller: Scroller = new Scroller();
   private searchScroller: Scroller = new Scroller();
   private storageScroller: Scroller = new Scroller();
+  private settingsLookScroller: Scroller = new Scroller();
+  private settingsMaterialScroller: Scroller = new Scroller();
+  private settingsReadingScroller: Scroller = new Scroller();
+  private settingsFeedScroller: Scroller = new Scroller();
+  private settingsSystemScroller: Scroller = new Scroller();
   private backupScroller: Scroller = new Scroller();
   private feedSettingsScroller: Scroller = new Scroller();
   private tagsScroller: Scroller = new Scroller();
@@ -710,6 +720,46 @@ struct Index {
       .titleMode(HdsNavDestinationTitleMode.MINI)
       .backgroundColor($r('app.color.hm_web_surface'))
       .bindToScrollable([this.storageScroller])
+    } else if (name === RouterConstants.PAGE_SETTINGS_LOOK) {
+      HdsNavDestination() {
+        SettingsLookView({ navPathStack: this.navPathStack, scroller: this.settingsLookScroller })
+      }
+      .titleBar(this.titleOptions($r('app.string.settings_entry_look')))
+      .titleMode(HdsNavDestinationTitleMode.MINI)
+      .backgroundColor($r('app.color.hm_web_surface'))
+      .bindToScrollable([this.settingsLookScroller])
+    } else if (name === RouterConstants.PAGE_SETTINGS_MATERIAL) {
+      HdsNavDestination() {
+        SettingsMaterialView({ navPathStack: this.navPathStack, scroller: this.settingsMaterialScroller })
+      }
+      .titleBar(this.titleOptions($r('app.string.settings_entry_material')))
+      .titleMode(HdsNavDestinationTitleMode.MINI)
+      .backgroundColor($r('app.color.hm_web_surface'))
+      .bindToScrollable([this.settingsMaterialScroller])
+    } else if (name === RouterConstants.PAGE_SETTINGS_READING) {
+      HdsNavDestination() {
+        SettingsReadingView({ navPathStack: this.navPathStack, scroller: this.settingsReadingScroller })
+      }
+      .titleBar(this.titleOptions($r('app.string.settings_entry_reading')))
+      .titleMode(HdsNavDestinationTitleMode.MINI)
+      .backgroundColor($r('app.color.hm_web_surface'))
+      .bindToScrollable([this.settingsReadingScroller])
+    } else if (name === RouterConstants.PAGE_SETTINGS_FEED) {
+      HdsNavDestination() {
+        SettingsFeedView({ navPathStack: this.navPathStack, scroller: this.settingsFeedScroller })
+      }
+      .titleBar(this.titleOptions($r('app.string.settings_entry_feed')))
+      .titleMode(HdsNavDestinationTitleMode.MINI)
+      .backgroundColor($r('app.color.hm_web_surface'))
+      .bindToScrollable([this.settingsFeedScroller])
+    } else if (name === RouterConstants.PAGE_SETTINGS_SYSTEM) {
+      HdsNavDestination() {
+        SettingsSystemView({ navPathStack: this.navPathStack, scroller: this.settingsSystemScroller })
+      }
+      .titleBar(this.titleOptions($r('app.string.settings_entry_system')))
+      .titleMode(HdsNavDestinationTitleMode.MINI)
+      .backgroundColor($r('app.color.hm_web_surface'))
+      .bindToScrollable([this.settingsSystemScroller])
     } else if (name === RouterConstants.PAGE_BACKUP) {
       HdsNavDestination() {
         BackupView({ navPathStack: this.navPathStack, scroller: this.backupScroller })

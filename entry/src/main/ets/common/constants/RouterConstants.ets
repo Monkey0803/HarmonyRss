@@ -17,6 +17,16 @@ export class RouterConstants {
   static readonly PAGE_SEARCH: string = 'search';
   /** 存储与保留页。 */
   static readonly PAGE_STORAGE: string = 'storage';
+  /** 设置二级页：外观与语言。 */
+  static readonly PAGE_SETTINGS_LOOK: string = 'settingsLook';
+  /** 设置二级页：材质与动效。 */
+  static readonly PAGE_SETTINGS_MATERIAL: string = 'settingsMaterial';
+  /** 设置二级页：阅读与列表。 */
+  static readonly PAGE_SETTINGS_READING: string = 'settingsReading';
+  /** 设置二级页：订阅与通知。 */
+  static readonly PAGE_SETTINGS_FEED: string = 'settingsFeed';
+  /** 设置二级页：系统与隐私。 */
+  static readonly PAGE_SETTINGS_SYSTEM: string = 'settingsSystem';
   /** 单源设置页。 */
   static readonly PAGE_FEED_SETTINGS: string = 'feedSettings';
   /** 标签管理页（多选 AND 筛选）。 */
