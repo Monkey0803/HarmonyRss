@@ -48,7 +48,8 @@ struct FeedOptionRow {
     .backgroundColor(option.id === this.currentId
       ? $r('app.color.hm_menu_item_selected')
       : $r('app.color.hm_page_transparent'))
-    .borderRadius($r('app.float.radius_menu_item'))
+    // 与菜单容器圆角一致，避免内外圆角不一致。
+    .borderRadius($r('app.float.radius_card'))
     .onClick(() => {
       this.onPick(option.id);
     })
