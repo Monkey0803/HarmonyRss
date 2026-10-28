@@ -236,6 +236,7 @@ export struct BackupView {
         }
       }, SNAPSHOT_RETRY_MS);
     });
+    backupViewModel.refreshCloud(context);
   }
 
   aboutToDisappear(): void {
@@ -304,6 +305,58 @@ export struct BackupView {
     backupViewModel.snapshotNow(context).then((ok: boolean) => {
       ToastUtil.show(this.getUIContext(), ok
         ? $r('app.string.backup_toast_snapshot_created')
+        : this.errorText());
+    });
+  }
+
+  /** 备份到云空间：成功提示已写入（系统随后自动上云）。 */
+  private runCloudBackup(): void {
+    const context: common.Context | undefined = this.hostContext();
+    if (context === undefined) {
+      return;
+    }
+    backupViewModel.backupToCloud(context).then((ok: boolean) => {
+      ToastUtil.show(this.getUIContext(), ok
+        ? $r('app.string.backup_toast_cloud_saved')
+        : this.errorText());
+    });
+  }
+
+  /** 从云空间恢复前二次确认：同样是合并语义，不会删除本地数据。 */
+  private confirmCloudRestore(): void {
+    if (backupViewModel.busy() || !backupViewModel.cloudExists) {
+      return;
+    }
+    const cancelButton: AlertDialogButtonBaseOptions = {
+      value: $r('app.string.dialog_cancel'),
+      action: () => {
+      }
+    };
+    const confirmButton: AlertDialogButtonBaseOptions = {
+      value: $r('app.string.backup_cloud_restore_action'),
+      fontColor: $r('app.color.hm_brand'),
+      action: () => {
+        this.runCloudRestore();
+      }
+    };
+    const params: AlertDialogParamWithButtons = {
+      title: $r('app.string.backup_confirm_restore_title'),
+      message: $r('app.string.backup_confirm_restore_message'),
+      autoCancel: true,
+      primaryButton: cancelButton,
+      secondaryButton: confirmButton
+    };
+    this.getUIContext().showAlertDialog(MaterialController.dialogParams(params, appSettings.immersiveOn));
+  }
+
+  private runCloudRestore(): void {
+    const context: common.Context | undefined = this.hostContext();
+    if (context === undefined) {
+      return;
+    }
+    backupViewModel.restoreFromCloud(context).then((summary: BackupSummary | undefined) => {
+      ToastUtil.show(this.getUIContext(), summary !== undefined
+        ? $r('app.string.backup_toast_restored')
         : this.errorText());
     });
   }
@@ -483,6 +536,62 @@ export struct BackupView {
     .alignItems(HorizontalAlign.Start)
   }
 
+  /** 云空间备份卡片：说明 + 上次备份时间 + 备份 / 恢复按钮。 */
+  @Builder
+  CloudCard() {
+    Column({ space: $r('app.float.space_s') }) {
+      Text($r('app.string.backup_cloud_hint'))
+        .fontSize($r('app.float.font_size_caption'))
+        .fontColor($r('app.color.hm_text_secondary'))
+        .width('100%')
+
+      // 云目录不可用（系统 / 云空间版本过低）：只说明原因，不提供按钮。
+      if (!backupViewModel.cloudAvailable) {
+        Text($r('app.string.backup_cloud_unavailable'))
+          .fontSize($r('app.float.font_size_caption'))
+          .fontColor($r('app.color.hm_danger'))
+          .width('100%')
+      } else {
+        Text(backupViewModel.cloudExists
+          ? $r('app.string.backup_cloud_last', DateUtil.format(backupViewModel.cloudAt))
+          : $r('app.string.backup_cloud_empty'))
+          .fontSize($r('app.float.font_size_caption'))
+          .fontColor($r('app.color.hm_text_secondary'))
+          .width('100%')
+
+        BackupPrimaryButton({
+          label: backupViewModel.exporting
+            ? $r('app.string.backup_working')
+            : $r('app.string.backup_cloud_save_action'),
+          buttonEnabled: !backupViewModel.busy(),
+          onTap: () => {
+            this.runCloudBackup();
+          }
+        })
+
+        BackupPrimaryButton({
+          label: backupViewModel.importing
+            ? $r('app.string.backup_working')
+            : $r('app.string.backup_cloud_restore_action'),
+          buttonEnabled: !backupViewModel.busy() && backupViewModel.cloudExists,
+          onTap: () => {
+            this.confirmCloudRestore();
+          }
+        })
+      }
+
+      Text($r('app.string.backup_cloud_privacy'))
+        .fontSize($r('app.float.font_size_caption'))
+        .fontColor($r('app.color.hm_text_secondary'))
+        .width('100%')
+    }
+    .width('100%')
+    .padding($r('app.float.space_m'))
+    .backgroundColor($r('app.color.hm_card_background'))
+    .borderRadius($r('app.float.radius_card'))
+    .alignItems(HorizontalAlign.Start)
+  }
+
   /** 快照卡片：保留说明 + 立即备份 + 列表（时间 / 大小 / 恢复 / 删除）。 */
   @Builder
   SnapshotCard() {
@@ -570,6 +679,10 @@ export struct BackupView {
 
         this.SectionTitle($r('app.string.backup_section_import'))
         this.ImportCard()
+
+        // 云空间：走端云文件协同，数据存在用户自己的云空间，不需要开发者服务端。
+        this.SectionTitle($r('app.string.backup_section_cloud'))
+        this.CloudCard()
 
         if (backupViewModel.summary !== undefined) {
           // 统计卡自带上标题行，不再额外画分区标题（避免「最近一次结果」重复两次）。

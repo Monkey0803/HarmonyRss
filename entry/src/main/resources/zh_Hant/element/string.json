@@ -2597,6 +2597,42 @@
       "value": "匯入"
     },
     {
+      "name": "backup_section_cloud",
+      "value": "雲端空間備份"
+    },
+    {
+      "name": "backup_cloud_hint",
+      "value": "把訂閱、閱讀狀態、螢光標記、標籤、規則與設定備份到你的華為雲端空間，同帳號的其他裝置可一鍵還原。不需要開發者自建伺服器。"
+    },
+    {
+      "name": "backup_cloud_unavailable",
+      "value": "目前裝置不可用：需 HarmonyOS 6.0.0.115 以上、雲端空間 6.0.0.300 以上，並登入華為帳號。"
+    },
+    {
+      "name": "backup_cloud_empty",
+      "value": "尚無雲端空間備份"
+    },
+    {
+      "name": "backup_cloud_last",
+      "value": "上次雲端備份：%s"
+    },
+    {
+      "name": "backup_cloud_save_action",
+      "value": "備份到雲端空間"
+    },
+    {
+      "name": "backup_cloud_restore_action",
+      "value": "從雲端空間還原"
+    },
+    {
+      "name": "backup_cloud_privacy",
+      "value": "只保留最新一份；檔案存放在你自己的雲端空間，僅本應用可讀。"
+    },
+    {
+      "name": "backup_toast_cloud_saved",
+      "value": "已寫入雲端空間，系統將自動開始同步"
+    },
+    {
       "name": "backup_import_action",
       "value": "匯入備份"
     },

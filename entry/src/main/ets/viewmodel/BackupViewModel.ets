@@ -13,6 +13,7 @@
 import { common } from '@kit.AbilityKit';
 import { BackupSummary, SnapshotInfo } from '../model/Backup';
 import { BackupImportResult, BackupRunStatus, backupService } from '../service/BackupService';
+import { CloudBackupInfo } from '../service/BackupFiles';
 import { feedViewModel } from './FeedViewModel';
 import { tagViewModel } from './TagViewModel';
 import { ruleViewModel } from './RuleViewModel';
@@ -51,6 +52,12 @@ export class BackupViewModel {
   @Trace lastActionAt: number = 0;
   /** 导入 / 恢复时是否同时应用备份里的设置（默认关，避免覆盖本机偏好）。 */
   @Trace restoreSettings: boolean = false;
+  /** 是否有可用的云空间目录（系统版本 / 云空间版本过低时为 false）。 */
+  @Trace cloudAvailable: boolean = false;
+  /** 云空间备份是否存在。 */
+  @Trace cloudExists: boolean = false;
+  /** 云空间备份的最后修改时间（毫秒）；0 = 不存在。 */
+  @Trace cloudAt: number = 0;
 
   /** 是否有任何长任务在跑（页面据此禁用全部按钮）。 */
   busy(): boolean {
@@ -123,6 +130,78 @@ export class BackupViewModel {
       }
       if (result.cancelled()) {
         this.lastCancelled = true;
+        return undefined;
+      }
+      if (!result.ok() || result.summary === undefined) {
+        this.lastError = BackupError.IMPORT;
+        return undefined;
+      }
+      this.summary = result.summary;
+      this.lastActionAt = Date.now();
+      await this.refreshAfterImport(context);
+      return result.summary;
+    } catch (err) {
+      this.lastError = BackupError.IMPORT;
+      return undefined;
+    } finally {
+      this.importing = false;
+    }
+  }
+
+  /** 刷新云空间备份状态（页面进入时调用）。 */
+  refreshCloud(context: common.Context): void {
+    const info: CloudBackupInfo = backupService.cloudInfo(context);
+    this.cloudAvailable = info.available;
+    this.cloudExists = info.exists;
+    this.cloudAt = info.at;
+  }
+
+  /**
+   * 备份到用户云空间（端云文件协同，固定文件名只保留最新一份）。
+   * 返回 true 表示已写入云目录，系统随后自动上云并同步到同账号设备。
+   */
+  async backupToCloud(context: common.Context): Promise<boolean> {
+    if (this.busy()) {
+      return false;
+    }
+    this.exporting = true;
+    this.lastError = BackupError.NONE;
+    this.lastCancelled = false;
+    try {
+      const status: BackupRunStatus = await backupService.backupToCloud(context);
+      if (status === BackupRunStatus.BUSY) {
+        this.lastError = BackupError.BUSY;
+        return false;
+      }
+      if (status !== BackupRunStatus.DONE) {
+        this.lastError = BackupError.EXPORT;
+        this.refreshCloud(context);
+        return false;
+      }
+      this.lastActionAt = Date.now();
+      this.refreshCloud(context);
+      return true;
+    } catch (err) {
+      this.lastError = BackupError.EXPORT;
+      return false;
+    } finally {
+      this.exporting = false;
+    }
+  }
+
+  /** 从云空间备份恢复（合并，不删除本地数据）；成功后刷新订阅与各计数。 */
+  async restoreFromCloud(context: common.Context): Promise<BackupSummary | undefined> {
+    if (this.busy()) {
+      return undefined;
+    }
+    this.importing = true;
+    this.lastError = BackupError.NONE;
+    this.lastCancelled = false;
+    try {
+      const result: BackupImportResult =
+        await backupService.restoreFromCloud(context, this.restoreSettings);
+      if (result.busy()) {
+        this.lastError = BackupError.BUSY;
         return undefined;
       }
       if (!result.ok() || result.summary === undefined) {

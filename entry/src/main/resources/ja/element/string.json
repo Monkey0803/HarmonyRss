@@ -2597,6 +2597,42 @@
       "value": "読み込み"
     },
     {
+      "name": "backup_section_cloud",
+      "value": "クラウドバックアップ"
+    },
+    {
+      "name": "backup_cloud_hint",
+      "value": "購読・既読状態・ハイライト・タグ・ルール・設定を HUAWEI クラウドスペースに保存し、同じ HUAWEI ID の他の端末から復元できます。開発者サーバーは不要です。"
+    },
+    {
+      "name": "backup_cloud_unavailable",
+      "value": "この端末ではクラウドスペースを利用できません。HarmonyOS 6.0.0.115 以降、クラウド 6.0.0.300 以降、かつ HUAWEI ID へのサインインが必要です。"
+    },
+    {
+      "name": "backup_cloud_empty",
+      "value": "クラウドバックアップはまだありません"
+    },
+    {
+      "name": "backup_cloud_last",
+      "value": "前回のクラウドバックアップ：%s"
+    },
+    {
+      "name": "backup_cloud_save_action",
+      "value": "クラウドにバックアップ"
+    },
+    {
+      "name": "backup_cloud_restore_action",
+      "value": "クラウドから復元"
+    },
+    {
+      "name": "backup_cloud_privacy",
+      "value": "最新の 1 件のみ保持します。ファイルはご自身のクラウドスペースに保存され、本アプリだけが読み取れます。"
+    },
+    {
+      "name": "backup_toast_cloud_saved",
+      "value": "クラウドに書き込みました。まもなく自動で同期されます"
+    },
+    {
       "name": "backup_import_action",
       "value": "バックアップを読み込む"
     },

@@ -2597,6 +2597,42 @@
       "value": "Importer"
     },
     {
+      "name": "backup_section_cloud",
+      "value": "Sauvegarde cloud"
+    },
+    {
+      "name": "backup_cloud_hint",
+      "value": "Sauvegarde les abonnements, l’état de lecture, les surlignages, les tags, les règles et les réglages dans votre espace cloud HUAWEI ; les autres appareils du même HUAWEI ID peuvent les restaurer. Aucun serveur développeur n’est nécessaire."
+    },
+    {
+      "name": "backup_cloud_unavailable",
+      "value": "L’espace cloud n’est pas disponible sur cet appareil. Nécessite HarmonyOS 6.0.0.115+, Cloud 6.0.0.300+ et une connexion à un HUAWEI ID."
+    },
+    {
+      "name": "backup_cloud_empty",
+      "value": "Aucune sauvegarde cloud pour l’instant"
+    },
+    {
+      "name": "backup_cloud_last",
+      "value": "Dernière sauvegarde cloud : %s"
+    },
+    {
+      "name": "backup_cloud_save_action",
+      "value": "Sauvegarder dans le cloud"
+    },
+    {
+      "name": "backup_cloud_restore_action",
+      "value": "Restaurer depuis le cloud"
+    },
+    {
+      "name": "backup_cloud_privacy",
+      "value": "Seule la sauvegarde la plus récente est conservée. Le fichier reste dans votre propre espace cloud et seule cette application peut le lire."
+    },
+    {
+      "name": "backup_toast_cloud_saved",
+      "value": "Sauvegarde écrite dans le cloud ; la synchronisation démarre automatiquement"
+    },
+    {
       "name": "backup_import_action",
       "value": "Importer une sauvegarde"
     },

@@ -2597,6 +2597,42 @@
       "value": "导入"
     },
     {
+      "name": "backup_section_cloud",
+      "value": "云空间备份"
+    },
+    {
+      "name": "backup_cloud_hint",
+      "value": "把订阅、阅读状态、高亮、标签、规则与设置备份到你的华为云空间，同账号的其他设备可一键恢复。不需要开发者自建服务器。"
+    },
+    {
+      "name": "backup_cloud_unavailable",
+      "value": "当前设备不可用：需 HarmonyOS 6.0.0.115 及以上、云空间 6.0.0.300 及以上，并登录华为账号。"
+    },
+    {
+      "name": "backup_cloud_empty",
+      "value": "暂无云空间备份"
+    },
+    {
+      "name": "backup_cloud_last",
+      "value": "上次云备份：%s"
+    },
+    {
+      "name": "backup_cloud_save_action",
+      "value": "备份到云空间"
+    },
+    {
+      "name": "backup_cloud_restore_action",
+      "value": "从云空间恢复"
+    },
+    {
+      "name": "backup_cloud_privacy",
+      "value": "只保留最新一份；文件存放在你自己的云空间，仅本应用可读。"
+    },
+    {
+      "name": "backup_toast_cloud_saved",
+      "value": "已写入云空间，系统将自动开始同步"
+    },
+    {
       "name": "backup_import_action",
       "value": "导入备份"
     },

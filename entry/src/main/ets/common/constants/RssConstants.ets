@@ -37,6 +37,8 @@ export class RssConstants {
   static readonly BACKUP_SNAPSHOT_KEEP: number = 7;
   /** 备份文件后缀过滤（系统文件选择器用）。 */
   static readonly BACKUP_SUFFIX_FILTER: string = '.json';
+  /** 云空间备份文件名（写在 context.cloudFileDir，固定名字，只保留最新一份）。 */
+  static readonly CLOUD_BACKUP_FILE: string = 'harmonyrss-cloud-backup.json';
 }
 
 /** 订阅源操作的结果码（视图据此映射到文案）。 */

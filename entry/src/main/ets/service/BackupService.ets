@@ -31,14 +31,18 @@ import { ShareTemplate } from '../model/Share';
 import { parse, sanitizeFeed, serialize } from './BackupCodec';
 import {
   backupFileName,
+  CloudBackupInfo,
+  cloudBackupInfo,
   deleteSnapshot as deleteSnapshotFile,
   listSnapshots as listSnapshotFiles,
   PickerOutput,
   PickerStatus,
   prune,
+  readCloudBackup,
   readSnapshot,
   saveViaPicker,
   selectViaPicker,
+  writeCloudBackup,
   writeSnapshot
 } from './BackupFiles';
 import { articleStore, BackupMergeCount } from './ArticleStore';
@@ -170,6 +174,69 @@ export class BackupService {
       return new BackupImportResult(BackupRunStatus.DONE, summary);
     } catch (err) {
       logFailure('importFromFile', err as Object);
+      return new BackupImportResult(BackupRunStatus.FAILED);
+    } finally {
+      this.busy = false;
+    }
+  }
+
+  // ---- 云空间备份（端云文件协同，不依赖开发者服务端） ----
+
+  /** 云空间备份状态：目录是否可用、是否已有备份、最后修改时间。 */
+  cloudInfo(context: common.Context): CloudBackupInfo {
+    return cloudBackupInfo(context);
+  }
+
+  /**
+   * 备份到用户云空间：写 `context.cloudFileDir` 下的固定文件，
+   * 端云协同服务会在写入完成后自动上云，并同步到同一华为账号的其他设备。
+   */
+  async backupToCloud(context: common.Context): Promise<BackupRunStatus> {
+    if (this.busy) {
+      return BackupRunStatus.BUSY;
+    }
+    this.busy = true;
+    try {
+      const doc: BackupDocument = await this.collect(context);
+      const text: string = serialize(doc);
+      if (text.length === 0) {
+        hilog.warn(DOMAIN, TAG, 'cloud backup aborted: serialize produced empty text');
+        return BackupRunStatus.FAILED;
+      }
+      return writeCloudBackup(context, text) ? BackupRunStatus.DONE : BackupRunStatus.FAILED;
+    } catch (err) {
+      logFailure('backupToCloud', err as Object);
+      return BackupRunStatus.FAILED;
+    } finally {
+      this.busy = false;
+    }
+  }
+
+  /**
+   * 从云空间备份恢复并合并（不删除本地数据）。
+   * 没有云备份 / 解析失败 / 版本不匹配 / 锁被占用都返回失败，且不改动任何现有数据。
+   */
+  async restoreFromCloud(context: common.Context,
+    restoreSettings: boolean): Promise<BackupImportResult> {
+    if (this.busy) {
+      return new BackupImportResult(BackupRunStatus.BUSY);
+    }
+    this.busy = true;
+    try {
+      const text: string = readCloudBackup(context);
+      if (text.length === 0) {
+        hilog.info(DOMAIN, TAG, 'cloud restore skipped: no backup file');
+        return new BackupImportResult(BackupRunStatus.FAILED);
+      }
+      const doc: BackupDocument | undefined = parse(text);
+      if (doc === undefined) {
+        hilog.warn(DOMAIN, TAG, 'cloud restore aborted: unparsable or version mismatch');
+        return new BackupImportResult(BackupRunStatus.FAILED);
+      }
+      const summary: BackupSummary = await this.applyDocument(context, doc, restoreSettings);
+      return new BackupImportResult(BackupRunStatus.DONE, summary);
+    } catch (err) {
+      logFailure('restoreFromCloud', err as Object);
       return new BackupImportResult(BackupRunStatus.FAILED);
     } finally {
       this.busy = false;

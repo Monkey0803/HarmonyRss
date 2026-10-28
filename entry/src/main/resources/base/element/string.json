@@ -2597,6 +2597,42 @@
       "value": "Import"
     },
     {
+      "name": "backup_section_cloud",
+      "value": "Cloud backup"
+    },
+    {
+      "name": "backup_cloud_hint",
+      "value": "Backs up subscriptions, reading state, highlights, tags, rules and settings into your HUAWEI Cloud space, so your other devices with the same HUAWEI ID can restore them. No developer server is involved."
+    },
+    {
+      "name": "backup_cloud_unavailable",
+      "value": "Cloud space is unavailable on this device. Requires HarmonyOS 6.0.0.115+ with Cloud 6.0.0.300+ and a signed-in HUAWEI ID."
+    },
+    {
+      "name": "backup_cloud_empty",
+      "value": "No cloud backup yet"
+    },
+    {
+      "name": "backup_cloud_last",
+      "value": "Last cloud backup: %s"
+    },
+    {
+      "name": "backup_cloud_save_action",
+      "value": "Back up to Cloud"
+    },
+    {
+      "name": "backup_cloud_restore_action",
+      "value": "Restore from Cloud"
+    },
+    {
+      "name": "backup_cloud_privacy",
+      "value": "Only the latest backup is kept. The file stays in your own cloud space and only this app can read it."
+    },
+    {
+      "name": "backup_toast_cloud_saved",
+      "value": "Backup written to Cloud; sync starts automatically"
+    },
+    {
       "name": "backup_import_action",
       "value": "Import backup"
     },

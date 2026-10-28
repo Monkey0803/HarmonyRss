@@ -51,6 +51,7 @@ import syncEngineTest from './SyncEngine.test';
 import syncCollectorTest from './SyncCollector.test';
 import syncContentTest from './SyncContent.test';
 import autoSyncPolicyTest from './AutoSyncPolicy.test';
+import cloudBackupTest from './CloudBackup.test';
 
 export default function testsuite() {
   htmlDomTest();
@@ -96,4 +97,5 @@ export default function testsuite() {
   syncCollectorTest();
   syncContentTest();
   autoSyncPolicyTest();
+  cloudBackupTest();
 }
