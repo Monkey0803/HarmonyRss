@@ -121,7 +121,7 @@ HarmonyOS（ArkTS）RSS 阅读器。基于 **UI Design Kit（HDS）** 组件与 
 - **桌面服务卡片**：`entry/src/main/ets/form`。
 - **外观**：主题、全局背景图、沉浸光感材质、App logo、防窥保护、智感握姿。
   应用图标走**分层图标静态更换**（前景 / 背景 1024×1024 + `layered_image.json`）；
-  启动图由分层图标合成圆角 logo（320×320，仅图形、无文字）。
+  启动图由分层图标合成圆角 logo（256×256，仅图形、无文字）。
   两者都随新版本发布生效；**不接入** AppGallery Kit 动态图标服务，因此不需要邮件申请、也没有新增权限。
 
 ## 目录结构
@@ -132,7 +132,7 @@ entry/src/main/ets/
   model/       领域模型（@ObservedV2）与设置项
   service/     平台能力与纯逻辑（网络 / 存储 / 解析 / 提取 / 渲染 / 检索 / 保留策略）
   service/remote/  远端服务（RemoteBackend 抽象 / GReader / Feedbin / 凭据 / 同步编排）
-  service/sync/    云同步内核（SyncBackend 抽象 / Mock 后端 / 记录表 / 差量采集 / 编排）
+  service/sync/    云同步内核（SyncBackend 抽象 / Mock 与端云后端 / 记录表 / 差量采集 / 编排）
   viewmodel/   FeedViewModel / RuleViewModel / SettingsViewModel / SearchViewModel / StorageViewModel
   views/       页面与组件（纯展示）
   form/        桌面卡片

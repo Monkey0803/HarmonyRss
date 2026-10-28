@@ -10,7 +10,8 @@ HarmonyOS (ArkTS) RSS 阅读器，使用 UI Design Kit（HDS）组件 + ArkUI �
 
 ### 允许（V2）
 `@ComponentV2`、`@ObservedV2` + `@Trace`、`@Local`、`@Param`、`@Once`、`@Event`、
-`@Monitor`、`@Computed`、`@Require`、`@Provider` / `@Consumer`、`@Builder`、`@BuilderParam`(仅在 V2 组件内传 builder)。
+`@Monitor`、`@Computed`、`@Require`、`@Provider` / `@Consumer`、`@Builder`、`@BuilderParam`(仅在 V2 组件内传 builder)、
+`@ReusableV2`（列表项复用；禁止 V1 的 `@Reusable`）。
 
 ### 禁止（V1）
 `@Component`、`@State`、`@Prop`、`@Link`、`@Provide`、`@Consume`、`@Observed`、`@ObjectLink`、
@@ -30,6 +31,7 @@ HarmonyOS (ArkTS) RSS 阅读器，使用 UI Design Kit（HDS）组件 + ArkUI �
 | `AppStorage` | `AppStorageV2` |
 | `PersistentStorage` | `PersistenceV2` |
 | `LocalStorage` | `@ObservedV2` / `@Trace`（或 V2 状态容器） |
+| `@Reusable` | `@ReusableV2`（配合 `.reuse({ reuseId })`） |
 | 无 | `@Computed`（计算属性） |
 
 ### 第三方 / 系统组件的 V1 陷阱
@@ -49,7 +51,7 @@ HarmonyOS (ArkTS) RSS 阅读器，使用 UI Design Kit（HDS）组件 + ArkUI �
 ### 自查命令
 ```sh
 rg -n --glob '!**/build/**' --glob '*.ets' \
-  "^\s*@Component\s*$|@State\b|@Prop\s|@Link\b|@Provide\b|@Consume\b|@Observed\b|@ObjectLink|@Watch\(|@Track\b|@BuilderParam|@StorageLink|@StorageProp|@LocalStorageLink|@LocalStorageProp|@Entry\(|AppStorage\.|LocalStorage|PersistentStorage|HdsListItem" \
+  "^\s*@Component\s*$|@State\b|@Prop\s|@Link\b|@Provide\b|@Consume\b|@Observed\b|@ObjectLink|@Watch\(|@Track\b|@Reusable\b|@BuilderParam|@StorageLink|@StorageProp|@LocalStorageLink|@LocalStorageProp|@Entry\(|AppStorage\.|LocalStorage|PersistentStorage|HdsListItem" \
   entry/src/main/ets AppScope
 ```
 输出为空即符合纯 V2 要求。
@@ -61,6 +63,9 @@ rg -n --glob '!**/build/**' --glob '*.ets' \
 - 截图确认 UI：`devecocli ui screenshot --device "<device>" --path <file.png>`
   （`verify_ui` 在未配置多模态模型时不可用，改用截图 + 人工读图）
 - 设备日志 / 崩溃：`devecocli log --device "<device>" --crash`
+- CodeLinter（项目配置 `code-linter.json5`）：
+  `node /Applications/DevEco-Studio.app/Contents/plugins/codelinter/run/index.js -c code-linter.json5 -f json -o /tmp/lint.json .`
+  说明：`hp-arkui-use-reusable-component` 已在配置里关闭 —— 该规则只认 V1 `@Reusable`，本工程用 `@ReusableV2`。
 
 ## 单元测试（ohosTest）
 测试放在 `entry/src/ohosTest/ets/test/`，由 `entry/src/ohosTest/ets/test/List.test.ets` 聚合；
@@ -89,6 +94,6 @@ hdc shell aa test -b com.xiaohuihu.rss -m entry_test -s unittest OpenHarmonyTest
 hdc -t <device> install -r entry/build/default/outputs/default/entry-default-signed.hap
 ```
 
-**已知环境问题**：本仓库目录名 `解析` 含非 ASCII，hvigor CLI 报
-`00306003 Invalid project path`。`build_project` / `start_app` 在此目录不可用；
-需将工程软/硬拷贝到纯 ASCII 路径后再跑 hvigor（或改用 DevEco Studio 构建）。
+**路径约束**：hvigor CLI 拒绝含非 ASCII 的工程路径（报 `00306003 Invalid project path`）。
+当前工作目录为 `HarmonyRss`（ASCII）可直接构建；若把仓库检出到含中文的目录（例如旧名 `解析`），
+需软/硬拷贝到纯 ASCII 路径后再跑 hvigor（或改用 DevEco Studio 构建）。
