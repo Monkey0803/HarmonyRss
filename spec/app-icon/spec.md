@@ -15,7 +15,9 @@
       `background`（背景图）与 `foreground`（前景图），两层均 1024×1024 PNG。
 - **FR-002**: `AppScope/app.json5` 的 `icon` 与 `entry/src/main/module.json5` 入口 UIAbility 的
       `icon` 都指向 `$media:layered_image`；同名资源以 AppScope 为准（构建时覆盖模块内同名文件）。
-- **FR-003**: 启动图 `startWindowIcon` 使用 `$media:startIcon`（1024×1024），与桌面图标保持同一视觉。
+- **FR-003**: 启动页 `startWindowIcon` 使用 `$media:startIcon`：**由分层图标合成**的圆角 logo
+      （背景渐变 + 白色 RSS 前景），320×320 px（系统按图片实际大小居中展示，3x 屏约 107vp），
+      只展示 logo，**不含任何文字**。
 - **FR-004**: 两份 `background` / `foreground`（AppScope 与 entry）内容保持一致，避免不同入口取到不同版本。
 - **FR-005**: 不引入 `@kit.AppGalleryKit` 的 `appInfoManager`，不申请图标管理服务，不申请任何新权限。
       既有 `service/AppIconService.ets`（动态图标）已移除，应用内不存在任何 `appInfoManager` 调用。
