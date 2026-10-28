@@ -266,5 +266,7 @@ export const syncStore: SyncStore = new SyncStore();
 export function isSyncableKind(kind: string): boolean {
   return kind === SyncKinds.FEED || kind === SyncKinds.ARTICLE_STATE ||
     kind === SyncKinds.HIGHLIGHT || kind === SyncKinds.TAG ||
-    kind === SyncKinds.ARTICLE_TAG || kind === SyncKinds.SETTINGS;
+    kind === SyncKinds.ARTICLE_TAG || kind === SyncKinds.SETTINGS ||
+    kind === SyncKinds.SMART_FOLDER || kind === SyncKinds.RULE ||
+    kind === SyncKinds.TEMPLATE;
 }

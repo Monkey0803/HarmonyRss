@@ -21,6 +21,12 @@ export class SyncKinds {
   static readonly ARTICLE_TAG: string = 'articleTag';
   /** 应用设置（白名单键的扁平 JSON，单条记录整体后写胜出）。 */
   static readonly SETTINGS: string = 'settings';
+  /** 智能文件夹（保存的检索条件）。 */
+  static readonly SMART_FOLDER: string = 'smartFolder';
+  /** 本地规则引擎的规则。 */
+  static readonly RULE: string = 'rule';
+  /** 分享模板。 */
+  static readonly TEMPLATE: string = 'template';
 }
 
 /** 实体键前缀（key = 前缀 + 稳定 id）。 */
@@ -30,8 +36,17 @@ export class SyncKeys {
   static readonly HIGHLIGHT: string = 'highlight:';
   static readonly TAG: string = 'tag:';
   static readonly ARTICLE_TAG: string = 'articleTag:';
+  /** 智能文件夹 / 规则 / 分享模板（按名称做键，两端同名收敛）。 */
+  static readonly SMART_FOLDER: string = 'smartFolder:';
+  static readonly RULE: string = 'rule:';
+  static readonly TEMPLATE: string = 'template:';
   /** 设置只有一份，用固定键。 */
   static readonly SETTINGS: string = 'setting:app';
+
+  /** 名称类实体的键：去首尾空白 + 小写（改名 = 删旧键 + 建新键）。 */
+  static nameKey(raw: string): string {
+    return raw.trim().toLowerCase();
+  }
 
   /** 订阅源键：用归一化后的订阅地址，同址不同写法不会分裂成两条。 */
   static feedKey(normalizedUrl: string): string {
@@ -56,6 +71,18 @@ export class SyncKeys {
   /** 文章 ↔ 标签关联键：标签 + 文章，两边都是稳定标识。 */
   static articleTagKey(nameKey: string, articleId: string): string {
     return SyncKeys.ARTICLE_TAG + nameKey + '|' + articleId;
+  }
+
+  static smartFolderKey(nameKey: string): string {
+    return SyncKeys.SMART_FOLDER + nameKey;
+  }
+
+  static ruleKey(nameKey: string): string {
+    return SyncKeys.RULE + nameKey;
+  }
+
+  static templateKey(nameKey: string): string {
+    return SyncKeys.TEMPLATE + nameKey;
   }
 }
 
@@ -175,6 +202,55 @@ export class ArticleTagPayload {
     this.articleId = articleId;
     this.nameKey = nameKey;
     this.name = name;
+  }
+}
+
+/** 智能文件夹载荷：名称 + 检索语法（排序位是设备本地偏好，不同步）。 */
+export class SmartFolderPayload {
+  readonly name: string;
+  readonly query: string;
+
+  constructor(name: string, query: string) {
+    this.name = name;
+    this.query = query;
+  }
+}
+
+/**
+ * 规则载荷：名称 / 开关 / 关键词 / 字段 / 动作 + 订阅源与标签引用。
+ *
+ * 引用按**稳定标识**同步：订阅源用归一化 URL，标签用归一化名称 —— 本地 id 跨设备不可用。
+ * 优先级与命中统计（priority / matchCount / lastHitAt）是本机执行状态，不进载荷，避免每轮都判脏。
+ */
+export class RulePayload {
+  readonly name: string;
+  readonly enabled: boolean;
+  readonly keywords: string[];
+  readonly fields: string[];
+  readonly actions: string[];
+  readonly feedKeys: string[];
+  readonly tagNames: string[];
+
+  constructor(name: string, enabled: boolean, keywords: string[], fields: string[],
+    actions: string[], feedKeys: string[], tagNames: string[]) {
+    this.name = name;
+    this.enabled = enabled;
+    this.keywords = keywords;
+    this.fields = fields;
+    this.actions = actions;
+    this.feedKeys = feedKeys;
+    this.tagNames = tagNames;
+  }
+}
+
+/** 分享模板载荷：名称 + 正文（排序位不同步）。 */
+export class TemplatePayload {
+  readonly name: string;
+  readonly content: string;
+
+  constructor(name: string, content: string) {
+    this.name = name;
+    this.content = content;
   }
 }
 
@@ -408,6 +484,86 @@ export function decodeArticleTagPayload(text: string): ArticleTagPayload | undef
       return undefined;
     }
     return new ArticleTagPayload(articleId, nameKey, name);
+  } catch (err) {
+    return undefined;
+  }
+}
+
+function stringArrayOf(value: string[] | undefined): string[] {
+  const result: string[] = [];
+  if (value === undefined || value === null) {
+    return result;
+  }
+  for (let i = 0; i < value.length; i += 1) {
+    const item: string = value[i];
+    if (typeof item === 'string' && item.length > 0) {
+      result.push(item);
+    }
+  }
+  return result;
+}
+
+/** 智能文件夹载荷编解码。 */
+export function encodeSmartFolderPayload(payload: SmartFolderPayload): string {
+  return JSON.stringify(payload);
+}
+
+export function decodeSmartFolderPayload(text: string): SmartFolderPayload | undefined {
+  if (text.length === 0) {
+    return undefined;
+  }
+  try {
+    const payload: SmartFolderPayload = JSON.parse(text) as SmartFolderPayload;
+    const name: string = textOf(payload.name);
+    if (name.length === 0) {
+      return undefined;
+    }
+    return new SmartFolderPayload(name, textOf(payload.query));
+  } catch (err) {
+    return undefined;
+  }
+}
+
+/** 规则载荷编解码（数组字段逐项过滤，脏值直接丢弃）。 */
+export function encodeRulePayload(payload: RulePayload): string {
+  return JSON.stringify(payload);
+}
+
+export function decodeRulePayload(text: string): RulePayload | undefined {
+  if (text.length === 0) {
+    return undefined;
+  }
+  try {
+    const payload: RulePayload = JSON.parse(text) as RulePayload;
+    const name: string = textOf(payload.name);
+    if (name.length === 0) {
+      return undefined;
+    }
+    return new RulePayload(name, payload.enabled === true,
+      stringArrayOf(payload.keywords), stringArrayOf(payload.fields),
+      stringArrayOf(payload.actions), stringArrayOf(payload.feedKeys),
+      stringArrayOf(payload.tagNames));
+  } catch (err) {
+    return undefined;
+  }
+}
+
+/** 分享模板载荷编解码。 */
+export function encodeTemplatePayload(payload: TemplatePayload): string {
+  return JSON.stringify(payload);
+}
+
+export function decodeTemplatePayload(text: string): TemplatePayload | undefined {
+  if (text.length === 0) {
+    return undefined;
+  }
+  try {
+    const payload: TemplatePayload = JSON.parse(text) as TemplatePayload;
+    const name: string = textOf(payload.name);
+    if (name.length === 0) {
+      return undefined;
+    }
+    return new TemplatePayload(name, textOf(payload.content));
   } catch (err) {
     return undefined;
   }

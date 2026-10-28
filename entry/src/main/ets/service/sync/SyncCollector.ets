@@ -15,34 +15,48 @@ import { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { FeedSource } from '../../model/Feed';
 import { Highlight } from '../../model/Highlight';
-import { TagWithCount } from '../../model/Tag';
+import { SmartFolder, TagWithCount } from '../../model/Tag';
+import { Rule, RuleDraft } from '../../model/Rule';
+import { ShareTemplate } from '../../model/Share';
 import { BackupArticleTag, BackupHighlight, BackupScalar, BackupSettings, BackupTag } from '../../model/Backup';
 import {
   ArticleStatePayload,
   ArticleTagPayload,
   FeedPayload,
   HighlightPayload,
+  RulePayload,
+  SmartFolderPayload,
   SyncField,
   SyncKinds,
   SyncKeys,
   SyncRecord,
   TagPayload,
+  TemplatePayload,
   decodeArticleStatePayload,
   decodeArticleTagPayload,
   decodeFeedPayload,
   decodeHighlightPayload,
+  decodeRulePayload,
+  decodeSmartFolderPayload,
   decodeTagPayload,
+  decodeTemplatePayload,
   encodeArticleStatePayload,
   encodeArticleTagPayload,
   encodeFeedPayload,
   encodeHighlightPayload,
+  encodeRulePayload,
+  encodeSmartFolderPayload,
   encodeTagPayload,
+  encodeTemplatePayload,
   latestFieldAt
 } from '../../model/Sync';
 import { ArticleDbConstants } from '../../common/constants/RssConstants';
 import { articleStore } from '../ArticleStore';
 import { feedMergeKey, feedStore } from '../FeedStore';
 import { normalizeTagName, tagNameKey, tagStore } from '../TagStore';
+import { smartFolderStore } from '../SmartFolderStore';
+import { ruleStore } from '../RuleStore';
+import { shareTemplates } from '../ShareTemplates';
 import { settingsStore } from '../SettingsStore';
 import { isSettingsKeyAllowed, settingsWhitelist } from '../BackupCodec';
 import { appSettings } from '../../model/AppSettings';
@@ -52,6 +66,41 @@ import { SyncStore } from './SyncStore';
 
 const DOMAIN: number = 0x0000;
 const TAG: string = 'SyncCollector';
+
+/** 内置默认分享模板 id（与 ShareTemplates 内部常量一致；该模板未落库，不参与同步）。 */
+const DEFAULT_TEMPLATE_ID: string = 'tpl_default';
+
+/** 数组排序副本：规则里的引用顺序不影响语义，排序后两端编码一致。 */
+function sortedCopy(values: string[]): string[] {
+  const copy: string[] = values.slice();
+  copy.sort();
+  return copy;
+}
+
+/** 两个字符串集合是否相同（忽略顺序）。 */
+function sameStringSet(left: string[], right: string[]): boolean {
+  const a: string[] = sortedCopy(left);
+  const b: string[] = sortedCopy(right);
+  if (a.length !== b.length) {
+    return false;
+  }
+  for (let i = 0; i < a.length; i += 1) {
+    if (a[i] !== b[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/** 规则内容是否一致（忽略顺序；命中统计与优先级不参与比较）。 */
+function sameRulePayload(left: RulePayload, right: RulePayload): boolean {
+  return left.name.trim() === right.name.trim() && left.enabled === right.enabled &&
+    sameStringSet(left.keywords, right.keywords) &&
+    sameStringSet(left.fields, right.fields) &&
+    sameStringSet(left.actions, right.actions) &&
+    sameStringSet(left.feedKeys, right.feedKeys) &&
+    sameStringSet(left.tagNames, right.tagNames);
+}
 
 /** 文章状态的本地快照行（只取同步需要的列）。 */
 class ArticleSyncRow {
@@ -164,6 +213,9 @@ export class SyncCollector {
     changed += await this.collectTags(now);
     changed += await this.collectArticleTags(now);
     changed += await this.collectSettings(now);
+    changed += await this.collectSmartFolders(now);
+    changed += await this.collectRules(context, now);
+    changed += await this.collectTemplates(context, now);
     return changed;
   }
 
@@ -331,6 +383,112 @@ export class SyncCollector {
     return this.collectSnapshots(SyncKinds.SETTINGS, current, now, false);
   }
 
+  /** 智能文件夹：名称 + 检索语法（排序位是设备本地偏好，不同步）。 */
+  private async collectSmartFolders(now: number): Promise<number> {
+    const current: Map<string, string> = new Map<string, string>();
+    const rows: SmartFolder[] = await smartFolderStore.list();
+    for (let i = 0; i < rows.length; i += 1) {
+      const row: SmartFolder = rows[i];
+      const nameKey: string = SyncKeys.nameKey(row.name);
+      if (nameKey.length === 0) {
+        continue;
+      }
+      const payload: SmartFolderPayload = new SmartFolderPayload(row.name.trim(), row.query);
+      current.set(SyncKeys.smartFolderKey(nameKey), encodeSmartFolderPayload(payload));
+    }
+    return this.collectSnapshots(SyncKinds.SMART_FOLDER, current, now, true);
+  }
+
+  /** 规则：订阅源 / 标签引用换成稳定标识（归一化 URL / 归一化名称）。 */
+  private async collectRules(context: common.Context, now: number): Promise<number> {
+    const current: Map<string, string> = new Map<string, string>();
+    const feedKeyById: Map<string, string> = await this.feedKeyById(context);
+    const tagNameById: Map<string, string> = await this.tagNameById();
+    const rows: Rule[] = await ruleStore.list();
+    for (let i = 0; i < rows.length; i += 1) {
+      const rule: Rule = rows[i];
+      const nameKey: string = SyncKeys.nameKey(rule.name);
+      if (nameKey.length === 0) {
+        continue;
+      }
+      const payload: RulePayload = this.rulePayloadOf(rule, feedKeyById, tagNameById);
+      current.set(SyncKeys.ruleKey(nameKey), encodeRulePayload(payload));
+    }
+    return this.collectSnapshots(SyncKinds.RULE, current, now, true);
+  }
+
+  /** 分享模板：名称 + 正文（排序位不同步）；内置默认模板未落库，不参与同步。 */
+  private async collectTemplates(context: common.Context, now: number): Promise<number> {
+    await shareTemplates.open(context);
+    const current: Map<string, string> = new Map<string, string>();
+    const items: ShareTemplate[] = await shareTemplates.list();
+    for (let i = 0; i < items.length; i += 1) {
+      const item: ShareTemplate = items[i];
+      // 内置默认模板只在内存里存在，同步它会让对端凭空多出一个模板。
+      if (item.id === DEFAULT_TEMPLATE_ID) {
+        continue;
+      }
+      const nameKey: string = SyncKeys.nameKey(item.name);
+      if (nameKey.length === 0) {
+        continue;
+      }
+      const payload: TemplatePayload = new TemplatePayload(item.name.trim(), item.content);
+      current.set(SyncKeys.templateKey(nameKey), encodeTemplatePayload(payload));
+    }
+    return this.collectSnapshots(SyncKinds.TEMPLATE, current, now, true);
+  }
+
+  /** 本地 feed id → 订阅源归一化键。 */
+  private async feedKeyById(context: common.Context): Promise<Map<string, string>> {
+    const result: Map<string, string> = new Map<string, string>();
+    const feeds: FeedSource[] = await feedStore.load(context, false);
+    for (let i = 0; i < feeds.length; i += 1) {
+      const key: string = feedMergeKey(feeds[i].url, feeds[i].id);
+      if (key.length > 0) {
+        result.set(feeds[i].id, key);
+      }
+    }
+    return result;
+  }
+
+  /** 标签 id → 归一化名称。 */
+  private async tagNameById(): Promise<Map<string, string>> {
+    const result: Map<string, string> = new Map<string, string>();
+    const tags: BackupTag[] = await tagStore.allForBackup();
+    for (let i = 0; i < tags.length; i += 1) {
+      const name: string = normalizeTagName(tags[i].name);
+      if (name.length > 0) {
+        result.set(tags[i].id, name);
+      }
+    }
+    return result;
+  }
+
+  /**
+   * 规则的同步载荷：引用换成稳定标识，数组排序后再编码
+   * （顺序不影响语义，排序后两端编码一致，避免无意义的来回覆盖）。
+   */
+  private rulePayloadOf(rule: Rule, feedKeyById: Map<string, string>,
+    tagNameById: Map<string, string>): RulePayload {
+    const feedKeys: string[] = [];
+    for (let i = 0; i < rule.feedIds.length; i += 1) {
+      const key: string | undefined = feedKeyById.get(rule.feedIds[i]);
+      if (key !== undefined) {
+        feedKeys.push(key);
+      }
+    }
+    const tagNames: string[] = [];
+    for (let i = 0; i < rule.tagIds.length; i += 1) {
+      const name: string | undefined = tagNameById.get(rule.tagIds[i]);
+      if (name !== undefined) {
+        tagNames.push(name);
+      }
+    }
+    return new RulePayload(rule.name.trim(), rule.enabled,
+      sortedCopy(rule.keywords), sortedCopy(rule.fields), sortedCopy(rule.actions),
+      sortedCopy(feedKeys), sortedCopy(tagNames));
+  }
+
   /** 全表读高亮（复用备份导出，避免再写一份 SQL）。 */
   private async loadHighlights(): Promise<Highlight[]> {
     const rows: BackupHighlight[] = await articleStore.allHighlightsForBackup();
@@ -383,6 +541,9 @@ export class SyncCollector {
     applied += await this.applyTags();
     applied += await this.applyArticleTags();
     applied += await this.applySettings(context);
+    applied += await this.applySmartFolders();
+    applied += await this.applyRules(context);
+    applied += await this.applyTemplates(context);
     return applied;
   }
 
@@ -690,6 +851,200 @@ export class SyncCollector {
     ThemeController.apply(context, appSettings.themeMode);
     LocaleController.apply(appSettings.languageMode);
     return 1;
+  }
+
+  /** 智能文件夹：同名复用，查询串不同则更新；墓碑删除。 */
+  private async applySmartFolders(): Promise<number> {
+    const records: SyncRecord[] = await this.store.listByKind(SyncKinds.SMART_FOLDER);
+    if (records.length === 0) {
+      return 0;
+    }
+    const locals: SmartFolder[] = await smartFolderStore.list();
+    const byKey: Map<string, SmartFolder> = new Map<string, SmartFolder>();
+    for (let i = 0; i < locals.length; i += 1) {
+      byKey.set(SyncKeys.nameKey(locals[i].name), locals[i]);
+    }
+    let applied: number = 0;
+    for (let i = 0; i < records.length; i += 1) {
+      const record: SyncRecord = records[i];
+      if (!record.key.startsWith(SyncKeys.SMART_FOLDER)) {
+        continue;
+      }
+      const nameKey: string = record.key.substring(SyncKeys.SMART_FOLDER.length);
+      const existing: SmartFolder | undefined = byKey.get(nameKey);
+      if (record.deleted) {
+        if (existing !== undefined) {
+          await smartFolderStore.remove(existing.id);
+          applied += 1;
+        }
+        continue;
+      }
+      const payload: SmartFolderPayload | undefined = decodeSmartFolderPayload(record.payload);
+      if (payload === undefined) {
+        continue;
+      }
+      const display: string = payload.name.trim();
+      if (existing === undefined) {
+        const created: SmartFolder | undefined =
+          await smartFolderStore.create(payload.name, payload.query);
+        if (created !== undefined) {
+          applied += 1;
+        }
+        continue;
+      }
+      if (existing.query !== payload.query || existing.name !== display) {
+        const updated: boolean = await smartFolderStore.update(existing.id, payload.name, payload.query);
+        if (updated) {
+          applied += 1;
+        }
+      }
+    }
+    return applied;
+  }
+
+  /** 规则：引用按稳定标识解析回本地 id；内容一致就不重写。 */
+  private async applyRules(context: common.Context): Promise<number> {
+    const records: SyncRecord[] = await this.store.listByKind(SyncKinds.RULE);
+    if (records.length === 0) {
+      return 0;
+    }
+    const feeds: FeedSource[] = await feedStore.load(context, false);
+    const idByFeedKey: Map<string, string> = new Map<string, string>();
+    for (let i = 0; i < feeds.length; i += 1) {
+      const key: string = feedMergeKey(feeds[i].url, feeds[i].id);
+      if (key.length > 0) {
+        idByFeedKey.set(key, feeds[i].id);
+      }
+    }
+    const tags: BackupTag[] = await tagStore.allForBackup();
+    const idByTagName: Map<string, string> = new Map<string, string>();
+    for (let i = 0; i < tags.length; i += 1) {
+      const nameKey: string = tagNameKey(tags[i].name);
+      if (nameKey.length > 0) {
+        idByTagName.set(nameKey, tags[i].id);
+      }
+    }
+    const feedKeyById: Map<string, string> = await this.feedKeyById(context);
+    const tagNameById: Map<string, string> = await this.tagNameById();
+    const locals: Rule[] = await ruleStore.list();
+    const byKey: Map<string, Rule> = new Map<string, Rule>();
+    for (let i = 0; i < locals.length; i += 1) {
+      byKey.set(SyncKeys.nameKey(locals[i].name), locals[i]);
+    }
+    let applied: number = 0;
+    for (let i = 0; i < records.length; i += 1) {
+      const record: SyncRecord = records[i];
+      if (!record.key.startsWith(SyncKeys.RULE)) {
+        continue;
+      }
+      const nameKey: string = record.key.substring(SyncKeys.RULE.length);
+      const existing: Rule | undefined = byKey.get(nameKey);
+      if (record.deleted) {
+        if (existing !== undefined) {
+          await ruleStore.remove(existing.id);
+          applied += 1;
+        }
+        continue;
+      }
+      const payload: RulePayload | undefined = decodeRulePayload(record.payload);
+      if (payload === undefined) {
+        continue;
+      }
+      if (existing !== undefined) {
+        const localPayload: RulePayload = this.rulePayloadOf(existing, feedKeyById, tagNameById);
+        if (!sameRulePayload(localPayload, payload)) {
+          const updated: boolean =
+            await ruleStore.update(existing.id, this.ruleDraftOf(payload, idByFeedKey, idByTagName));
+          if (updated) {
+            applied += 1;
+          }
+        }
+        continue;
+      }
+      const created: Rule | undefined =
+        await ruleStore.create(this.ruleDraftOf(payload, idByFeedKey, idByTagName));
+      if (created !== undefined) {
+        applied += 1;
+      }
+    }
+    return applied;
+  }
+
+  /** 规则载荷 → 草稿：引用反查本地 id，找不到的引用直接丢弃。 */
+  private ruleDraftOf(payload: RulePayload, idByFeedKey: Map<string, string>,
+    idByTagName: Map<string, string>): RuleDraft {
+    const feedIds: string[] = [];
+    for (let i = 0; i < payload.feedKeys.length; i += 1) {
+      const id: string | undefined = idByFeedKey.get(payload.feedKeys[i]);
+      if (id !== undefined) {
+        feedIds.push(id);
+      }
+    }
+    const tagIds: string[] = [];
+    for (let i = 0; i < payload.tagNames.length; i += 1) {
+      const id: string | undefined = idByTagName.get(tagNameKey(payload.tagNames[i]));
+      if (id !== undefined) {
+        tagIds.push(id);
+      }
+    }
+    return new RuleDraft(payload.name.trim(), payload.enabled, payload.keywords.slice(),
+      payload.fields.slice(), feedIds, payload.actions.slice(), tagIds);
+  }
+
+  /** 分享模板：同名复用，正文不同则更新；墓碑删除。 */
+  private async applyTemplates(context: common.Context): Promise<number> {
+    const records: SyncRecord[] = await this.store.listByKind(SyncKinds.TEMPLATE);
+    if (records.length === 0) {
+      return 0;
+    }
+    await shareTemplates.open(context);
+    const locals: ShareTemplate[] = await shareTemplates.list();
+    const byKey: Map<string, ShareTemplate> = new Map<string, ShareTemplate>();
+    for (let i = 0; i < locals.length; i += 1) {
+      const item: ShareTemplate = locals[i];
+      if (item.id === DEFAULT_TEMPLATE_ID) {
+        continue;
+      }
+      byKey.set(SyncKeys.nameKey(item.name), item);
+    }
+    let applied: number = 0;
+    for (let i = 0; i < records.length; i += 1) {
+      const record: SyncRecord = records[i];
+      if (!record.key.startsWith(SyncKeys.TEMPLATE)) {
+        continue;
+      }
+      const nameKey: string = record.key.substring(SyncKeys.TEMPLATE.length);
+      const existing: ShareTemplate | undefined = byKey.get(nameKey);
+      if (record.deleted) {
+        if (existing !== undefined) {
+          const removed: boolean = await shareTemplates.remove(existing.id);
+          if (removed) {
+            applied += 1;
+          }
+        }
+        continue;
+      }
+      const payload: TemplatePayload | undefined = decodeTemplatePayload(record.payload);
+      if (payload === undefined) {
+        continue;
+      }
+      const display: string = payload.name.trim();
+      if (existing === undefined) {
+        const created: ShareTemplate | undefined =
+          await shareTemplates.create(payload.name, payload.content);
+        if (created !== undefined) {
+          applied += 1;
+        }
+        continue;
+      }
+      if (existing.content !== payload.content || existing.name !== display) {
+        const updated: boolean = await shareTemplates.update(existing.id, payload.name, payload.content);
+        if (updated) {
+          applied += 1;
+        }
+      }
+    }
+    return applied;
   }
 
   private async loadRowsByIds(ids: string[]): Promise<Map<string, ArticleSyncRow>> {

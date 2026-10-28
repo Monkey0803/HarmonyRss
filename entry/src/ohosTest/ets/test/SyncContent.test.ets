@@ -9,16 +9,25 @@ import { describe, it, expect } from '@ohos/hypium';
 import {
   ArticleTagPayload,
   HighlightPayload,
+  RulePayload,
+  SmartFolderPayload,
   SyncKeys,
   SyncKinds,
   SyncRecord,
   TagPayload,
+  TemplatePayload,
   decodeArticleTagPayload,
   decodeHighlightPayload,
+  decodeRulePayload,
+  decodeSmartFolderPayload,
   decodeTagPayload,
+  decodeTemplatePayload,
   encodeArticleTagPayload,
   encodeHighlightPayload,
+  encodeRulePayload,
+  encodeSmartFolderPayload,
   encodeTagPayload,
+  encodeTemplatePayload,
   mergeRecord
 } from '../../../main/ets/model/Sync';
 
@@ -112,6 +121,70 @@ export default function syncContentTest() {
       expect(decodeArticleTagPayload('{"articleId":"a1","nameKey":"ai"}') === undefined).assertTrue();
       expect(decodeArticleTagPayload('{"articleId":"a1","name":"AI"}') === undefined).assertTrue();
       expect(decodeArticleTagPayload('{"nameKey":"ai","name":"AI"}') === undefined).assertTrue();
+    });
+
+    // ---------- 智能文件夹 / 规则 / 模板 ----------
+
+    it('smart_folder_roundtrip', 0, () => {
+      const restored: SmartFolderPayload | undefined = decodeSmartFolderPayload(
+        encodeSmartFolderPayload(new SmartFolderPayload('AI 日报', 'is:unread after:2026-01-01')));
+      expect(restored !== undefined).assertTrue();
+      if (restored === undefined) {
+        return;
+      }
+      expect(restored.name).assertEqual('AI 日报');
+      expect(restored.query).assertEqual('is:unread after:2026-01-01');
+      expect(decodeSmartFolderPayload('{"name":""}') === undefined).assertTrue();
+    });
+
+    it('template_roundtrip', 0, () => {
+      const restored: TemplatePayload | undefined = decodeTemplatePayload(
+        encodeTemplatePayload(new TemplatePayload('Flomo', '{title} {url}')));
+      expect(restored !== undefined).assertTrue();
+      if (restored === undefined) {
+        return;
+      }
+      expect(restored.name).assertEqual('Flomo');
+      expect(restored.content).assertEqual('{title} {url}');
+      expect(decodeTemplatePayload('{"name":""}') === undefined).assertTrue();
+    });
+
+    it('rule_roundtrip_keeps_references', 0, () => {
+      const restored: RulePayload | undefined = decodeRulePayload(encodeRulePayload(
+        new RulePayload('AI 规则', true, ['ai', 'gpt'], ['title'], ['star'],
+          ['https://a.com/feed'], ['AI'])));
+      expect(restored !== undefined).assertTrue();
+      if (restored === undefined) {
+        return;
+      }
+      expect(restored.name).assertEqual('AI 规则');
+      expect(restored.enabled).assertTrue();
+      expect(restored.keywords.length).assertEqual(2);
+      expect(restored.fields[0]).assertEqual('title');
+      expect(restored.actions[0]).assertEqual('star');
+      expect(restored.feedKeys[0]).assertEqual('https://a.com/feed');
+      expect(restored.tagNames[0]).assertEqual('AI');
+    });
+
+    it('rule_rejects_missing_name_and_filters_bad_arrays', 0, () => {
+      expect(decodeRulePayload('{"name":""}') === undefined).assertTrue();
+      // 数组里混入非字符串项：只保留合法项，不整体丢弃。
+      const restored: RulePayload | undefined = decodeRulePayload(
+        '{"name":"r","enabled":true,"keywords":["a","",3],"fields":null}');
+      expect(restored !== undefined).assertTrue();
+      if (restored === undefined) {
+        return;
+      }
+      expect(restored.keywords.length).assertEqual(1);
+      expect(restored.fields.length).assertEqual(0);
+      expect(restored.actions.length).assertEqual(0);
+    });
+
+    it('name_keys_normalize', 0, () => {
+      expect(SyncKeys.nameKey('  AI 日报 ')).assertEqual('ai 日报');
+      expect(SyncKeys.smartFolderKey('ai')).assertEqual('smartFolder:ai');
+      expect(SyncKeys.ruleKey('ai')).assertEqual('rule:ai');
+      expect(SyncKeys.templateKey('ai')).assertEqual('template:ai');
     });
 
     // ---------- 整条记录后写胜出 ----------
