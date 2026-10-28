@@ -118,6 +118,8 @@ export class DiscoverCatalog {
       'https://www.ruanyifeng.com', DiscoverCategory.CN, ['cn', 'dev', 'indie'], 85),
     new DiscoverFeed('V2EX', 'https://www.v2ex.com/index.xml',
       'https://www.v2ex.com', DiscoverCategory.CN, ['cn', 'tech', 'community'], 72),
+    new DiscoverFeed('Hacker News 中文', 'https://hn.buzzing.cc/feed.xml',
+      'https://hn.buzzing.cc', DiscoverCategory.CN, ['cn', 'tech', 'community'], 74),
     new DiscoverFeed('酷 壳', 'https://coolshell.cn/feed',
       'https://coolshell.cn', DiscoverCategory.CN, ['cn', 'dev', 'indie'], 70),
     new DiscoverFeed('爱范儿', 'https://www.ifanr.com/feed',
