@@ -85,6 +85,7 @@ import { DiscoverView } from '../views/DiscoverView';
 import { DiagnosticsView } from '../views/DiagnosticsView';
 import { SyncView } from '../views/SyncView';
 import { remoteSyncService } from '../service/remote/RemoteSyncService';
+import { syncService } from '../service/SyncService';
 import { notifyService } from '../service/NotifyService';
 import { backupService } from '../service/BackupService';
 import { deepLink, DEEP_LINK_EVENT, DeepLinkParams } from '../service/DeepLink';
@@ -267,6 +268,15 @@ struct Index {
     const context: common.Context | undefined = this.getUIContext().getHostContext();
     if (context !== undefined) {
       backupService.maybeAutoSnapshot(context);
+      // 云同步：冷启动 / 回前台共用；内部按开关、仅 Wi-Fi 与最小间隔静默跳过。
+      // 拉到新订阅或状态变化后刷新列表（失败静默，由 SyncService 自己退避重试）。
+      syncService.autoSync(context, 'foreground').then((applied: boolean) => {
+        if (applied) {
+          feedViewModel.reloadAfterBackup(context).catch(() => {
+          });
+        }
+      }).catch(() => {
+      });
       // 免打扰期间入队的新文章在离开时段后补发；每日摘要只在这里/后台任务检查（不依赖精准定时器）。
       notifyService.flushQueueIfDue(context).catch(() => {
       });

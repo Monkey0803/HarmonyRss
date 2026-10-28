@@ -4093,6 +4093,10 @@
       "value": "Enable cloud sync"
     },
     {
+      "name": "sync_row_wifi_only",
+      "value": "Sync on Wi-Fi only"
+    },
+    {
       "name": "sync_row_backend",
       "value": "Sync target"
     },

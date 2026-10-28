@@ -30,6 +30,7 @@ export struct SyncView {
   @Param navPathStack: NavPathStack = new NavPathStack();
   @Param scroller: Scroller = new Scroller();
   @Local syncOn: boolean = false;
+  @Local wifiOnly: boolean = true;
   @Local lastSyncAt: number = 0;
   @Local pending: number = 0;
   @Local records: number = 0;
@@ -52,6 +53,7 @@ export struct SyncView {
     }
     syncService.status(context).then((status: SyncStatus) => {
       this.syncOn = status.enabled;
+      this.wifiOnly = status.wifiOnly;
       this.lastSyncAt = status.lastSyncAt;
       this.pending = status.pending;
       this.records = status.records;
@@ -89,6 +91,18 @@ export struct SyncView {
     // 关闭同步只改开关，不动本地数据；重新打开后下一次同步继续合并。
     this.syncOn = value;
     syncService.setEnabled(context, value).then(() => {
+      this.refresh();
+    });
+  }
+
+  private toggleWifiOnly(value: boolean): void {
+    const context: common.Context | undefined = this.hostContext();
+    if (context === undefined) {
+      return;
+    }
+    // 只约束自动同步；关闭后蜂窝网络下也会静默同步。
+    this.wifiOnly = value;
+    syncService.setWifiOnly(context, value).then(() => {
       this.refresh();
     });
   }
@@ -161,6 +175,24 @@ export struct SyncView {
               .selectedColor($r('app.color.hm_brand'))
               .onChange((value: boolean) => {
                 this.toggle(value);
+              })
+          }
+          .width('100%')
+          .height($r('app.float.row_height'))
+          .padding({ left: $r('app.float.space_m'), right: $r('app.float.space_m') })
+
+          Divider().color($r('app.color.hm_divider'))
+
+          Row() {
+            Row() {
+              SettingIconTitle({ icon: $r('sys.symbol.wifi'),
+                title: $r('app.string.sync_row_wifi_only') })
+            }
+            .layoutWeight(1)
+            Toggle({ type: ToggleType.Switch, isOn: this.wifiOnly })
+              .selectedColor($r('app.color.hm_brand'))
+              .onChange((value: boolean) => {
+                this.toggleWifiOnly(value);
               })
           }
           .width('100%')

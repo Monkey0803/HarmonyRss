@@ -4093,6 +4093,10 @@
       "value": "クラウド同期を有効にする"
     },
     {
+      "name": "sync_row_wifi_only",
+      "value": "Wi-Fi 接続時のみ同期"
+    },
+    {
       "name": "sync_row_backend",
       "value": "同期先"
     },

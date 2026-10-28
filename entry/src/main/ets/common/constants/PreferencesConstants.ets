@@ -115,6 +115,8 @@ export class PreferencesConstants {
   static readonly KEY_CLOUD_SYNC_NODE_ID: string = 'cloudSyncNodeId';
   /** 上次同步完成时间（毫秒；0 = 从未同步）。 */
   static readonly KEY_CLOUD_SYNC_LAST_AT: string = 'cloudSyncLastAt';
+  /** 仅 Wi-Fi 同步（默认开：自动同步不走蜂窝流量）。 */
+  static readonly KEY_CLOUD_SYNC_WIFI_ONLY: string = 'cloudSyncWifiOnly';
   /** Mock 后端库（模拟远端记录；只在开启同步后读写）。 */
   static readonly KEY_CLOUD_SYNC_MOCK_DB: string = 'cloudSyncMockDb';
 }

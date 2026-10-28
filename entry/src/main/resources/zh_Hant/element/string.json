@@ -4093,6 +4093,10 @@
       "value": "啟用雲端同步"
     },
     {
+      "name": "sync_row_wifi_only",
+      "value": "僅 Wi-Fi 同步"
+    },
+    {
       "name": "sync_row_backend",
       "value": "同步目標"
     },

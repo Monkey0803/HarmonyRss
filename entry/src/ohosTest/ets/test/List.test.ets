@@ -49,6 +49,7 @@ import feedbinModelsTest from './FeedbinModels.test';
 import syncMergeTest from './SyncMerge.test';
 import syncEngineTest from './SyncEngine.test';
 import syncCollectorTest from './SyncCollector.test';
+import autoSyncPolicyTest from './AutoSyncPolicy.test';
 
 export default function testsuite() {
   htmlDomTest();
@@ -92,4 +93,5 @@ export default function testsuite() {
   syncMergeTest();
   syncEngineTest();
   syncCollectorTest();
+  autoSyncPolicyTest();
 }

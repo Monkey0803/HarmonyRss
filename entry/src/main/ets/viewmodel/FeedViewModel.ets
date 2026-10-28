@@ -35,6 +35,7 @@ import { settingsStore } from '../service/SettingsStore';
 import { settingsViewModel } from './SettingsViewModel';
 import { retentionService } from '../service/RetentionService';
 import { remoteSyncService } from '../service/remote/RemoteSyncService';
+import { syncService } from '../service/SyncService';
 import { notifyService } from '../service/NotifyService';
 import { ruleService } from '../service/RuleService';
 import { RuleApplyResult } from '../model/Rule';
@@ -470,6 +471,26 @@ export class FeedViewModel {
     }
     // 抓取提交后异步执行保留清理（6 小时节流）：绝不 await，不阻塞界面刷新。
     this.applyRetentionIfDue();
+    // 抓取完成也是云同步的触发点：开关 / 仅 Wi-Fi / 最小间隔都由 SyncService 判定。
+    this.autoSyncAfterFetch();
+  }
+
+  /**
+   * 抓取完成后触发一次云同步（默认关闭、仅 Wi-Fi、60 秒最小间隔）。
+   * 同步可能带回远端状态，成功后重读列表；失败静默，交给 SyncService 退避重试。
+   */
+  private autoSyncAfterFetch(): void {
+    const context: common.Context | undefined = this.context;
+    if (context === undefined) {
+      return;
+    }
+    syncService.autoSync(context, 'fetch').then((applied: boolean) => {
+      if (applied) {
+        this.reloadAfterBackup(context).catch(() => {
+        });
+      }
+    }).catch(() => {
+    });
   }
 
   /**

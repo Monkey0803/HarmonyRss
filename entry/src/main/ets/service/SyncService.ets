@@ -2,12 +2,13 @@
  * SyncService.ets — 云同步的门面（单例）。
  *
  * 职责：
- *   1. 维护开关、节点 id、上次同步时间（偏好库，默认关闭）；
+ *   1. 维护开关、仅 Wi-Fi、节点 id、上次同步时间（偏好库，默认关闭）；
  *   2. 组装 Backend（第一批是本机 Mock）+ 同步表 + 采集器；
- *   3. 对外只暴露「状态查询 / 立即同步 / 重置模拟远端」三个动作。
+ *   3. 对外暴露「状态查询 / 立即同步 / 自动同步 / 重置模拟远端」。
  *
- * 自动触发（冷启动 / 回前台 / 抓取完成）留到接入真实服务端的批次：
- * 那批才有网络开销与「仅 Wi-Fi」这类设置。
+ * 自动同步由三个时机触发（冷启动 / 回前台 / 抓取完成），共用 `autoSync`：
+ * 60 秒内只跑一次；失败按 30s / 60s / 120s 退避重试三次，用尽后等下一次触发。
+ * 开关关闭、正在同步、仅 Wi-Fi 模式下不是 Wi-Fi 时一律静默跳过。
  */
 
 import { common } from '@kit.AbilityKit';
@@ -17,6 +18,8 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import { PreferencesConstants } from '../common/constants/PreferencesConstants';
 import { SyncSummary } from '../model/Sync';
 import { articleStore } from './ArticleStore';
+import { NetworkStatus } from './NetworkStatus';
+import { AutoSyncPolicy } from './sync/AutoSyncPolicy';
 import { SyncCollector } from './sync/SyncCollector';
 import { SyncEngine } from './sync/SyncEngine';
 import { syncStore } from './sync/SyncStore';
@@ -28,13 +31,16 @@ const TAG: string = 'SyncService';
 /** 设置页展示用的同步状态快照。 */
 export class SyncStatus {
   readonly enabled: boolean;
+  readonly wifiOnly: boolean;
   readonly lastSyncAt: number;
   readonly pending: number;
   readonly records: number;
   readonly backend: string;
 
-  constructor(enabled: boolean, lastAt: number, pending: number, records: number, backend: string) {
+  constructor(enabled: boolean, wifiOnly: boolean, lastAt: number, pending: number, records: number,
+    backend: string) {
     this.enabled = enabled;
+    this.wifiOnly = wifiOnly;
     this.lastSyncAt = lastAt;
     this.pending = pending;
     this.records = records;
@@ -47,6 +53,11 @@ export class SyncService {
   readonly backendName: string = 'Mock';
   private store: preferences.Preferences | undefined = undefined;
   private syncingFlag: boolean = false;
+  /** 上次自动同步尝试时间（只存内存：进程重启后允许立刻同步一次）。 */
+  private lastAttemptAt: number = 0;
+  /** 失败重试定时器与已重试次数。 */
+  private retryTimer: number = -1;
+  private retryAttempt: number = 0;
 
   private async open(context: common.Context): Promise<preferences.Preferences | undefined> {
     const opened: preferences.Preferences | undefined = this.store;
@@ -115,6 +126,42 @@ export class SyncService {
       const error: BusinessError = err as BusinessError;
       hilog.warn(DOMAIN, TAG, 'persist switch failed: %{public}d', error.code);
     }
+    if (!enabled) {
+      // 关掉同步后不再重试：定时器留在那里只会在后台空转。
+      this.retryAttempt = 0;
+      this.clearRetryTimer();
+    }
+  }
+
+  /** 仅 Wi-Fi 同步（默认开；只约束自动同步，手动「立即同步」由用户自己决定）。 */
+  private readWifiOnly(store: preferences.Preferences): boolean {
+    const raw: preferences.ValueType =
+      store.getSync(PreferencesConstants.KEY_CLOUD_SYNC_WIFI_ONLY, true);
+    return typeof raw === 'boolean' ? raw : true;
+  }
+
+  async isWifiOnly(context: common.Context): Promise<boolean> {
+    const store: preferences.Preferences | undefined = await this.open(context);
+    return store !== undefined ? this.readWifiOnly(store) : true;
+  }
+
+  async setWifiOnly(context: common.Context, value: boolean): Promise<void> {
+    const store: preferences.Preferences | undefined = await this.open(context);
+    if (store === undefined) {
+      return;
+    }
+    try {
+      store.putSync(PreferencesConstants.KEY_CLOUD_SYNC_WIFI_ONLY, value);
+      await store.flush();
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.warn(DOMAIN, TAG, 'persist wifi only failed: %{public}d', error.code);
+    }
+  }
+
+  private async lastSyncAt(context: common.Context): Promise<number> {
+    const store: preferences.Preferences | undefined = await this.open(context);
+    return store !== undefined ? this.readNumber(store, PreferencesConstants.KEY_CLOUD_SYNC_LAST_AT) : 0;
   }
 
   /** 当前状态快照（设置页进入时读一次）。 */
@@ -124,10 +171,11 @@ export class SyncService {
       ? this.readBoolean(store, PreferencesConstants.KEY_CLOUD_SYNC_ENABLED) : false;
     const lastAt: number = store !== undefined
       ? this.readNumber(store, PreferencesConstants.KEY_CLOUD_SYNC_LAST_AT) : 0;
+    const wifiOnly: boolean = store !== undefined ? this.readWifiOnly(store) : true;
     await articleStore.whenReady();
     const pending: number = await syncStore.pendingCount();
     const records: number = await syncStore.recordCount();
-    return new SyncStatus(enabled, lastAt, pending, records, this.backendName);
+    return new SyncStatus(enabled, wifiOnly, lastAt, pending, records, this.backendName);
   }
 
   /** 立即同步：采集 → 拉取 / 合并 / 推送 → 回写。失败不抛，返回带 error 的摘要。 */
@@ -147,6 +195,9 @@ export class SyncService {
       if (summary.error.length === 0) {
         await collector.apply(context);
         await this.rememberLastSync(context, summary.at);
+        // 这一轮成功了：清掉失败重试，避免继续在后台补试。
+        this.retryAttempt = 0;
+        this.clearRetryTimer();
       }
       return summary;
     } catch (err) {
@@ -158,8 +209,72 @@ export class SyncService {
     }
   }
 
+  /**
+   * 自动同步：冷启动 / 回前台 / 抓取完成共用。
+   *
+   * 静默跳过的情况：开关关闭、正在同步、仅 Wi-Fi 模式下当前不是 Wi-Fi、
+   * 距上次成功同步 / 上次尝试不足最小间隔（除非是失败重试）。
+   *
+   * @param throttle false = 失败重试，绕过最小间隔
+   * @returns 是否真正跑完并成功（调用方据此决定要不要刷新列表）
+   */
+  async autoSync(context: common.Context, trigger: string, throttle: boolean = true): Promise<boolean> {
+    if (this.syncingFlag) {
+      return false;
+    }
+    if (!(await this.isEnabled(context))) {
+      return false;
+    }
+    if (await this.isWifiOnly(context) && !NetworkStatus.isUnmetered()) {
+      hilog.info(DOMAIN, TAG, 'auto sync skipped (%{public}s): not on unmetered network', trigger);
+      return false;
+    }
+    const now: number = Date.now();
+    const last: number = Math.max(this.lastAttemptAt, await this.lastSyncAt(context));
+    if (!AutoSyncPolicy.isDue(last, now, throttle)) {
+      return false;
+    }
+    this.lastAttemptAt = now;
+    const summary: SyncSummary = await this.syncNow(context);
+    if (summary.error.length === 0) {
+      hilog.info(DOMAIN, TAG, 'auto sync done (%{public}s): pushed %{public}d, pulled %{public}d',
+        trigger, summary.pushed, summary.pulled);
+      return true;
+    }
+    if (summary.error === 'busy') {
+      return false;
+    }
+    hilog.info(DOMAIN, TAG, 'auto sync failed (%{public}s): %{public}s', trigger, summary.error);
+    this.scheduleRetry(context);
+    return false;
+  }
+
+  /** 失败退避重试：30s / 60s / 120s，最多三次；次数用尽交给下一次自动触发。 */
+  private scheduleRetry(context: common.Context): void {
+    if (this.retryTimer >= 0 || !AutoSyncPolicy.canRetry(this.retryAttempt)) {
+      return;
+    }
+    const delay: number = AutoSyncPolicy.retryDelay(this.retryAttempt);
+    this.retryAttempt += 1;
+    this.retryTimer = setTimeout(() => {
+      this.retryTimer = -1;
+      this.autoSync(context, 'retry', false).catch((err: Error) => {
+        hilog.info(DOMAIN, TAG, 'sync retry failed: %{public}s', err.message);
+      });
+    }, delay);
+  }
+
+  private clearRetryTimer(): void {
+    if (this.retryTimer >= 0) {
+      clearTimeout(this.retryTimer);
+      this.retryTimer = -1;
+    }
+  }
+
   /** 重置模拟远端（同时清空本地同步副本与游标，下次同步重新建立基线）。 */
   async resetRemote(context: common.Context): Promise<void> {
+    this.retryAttempt = 0;
+    this.clearRetryTimer();
     const backend: MockSyncBackend = new MockSyncBackend(context);
     await backend.reset();
     syncStore.clearAll();

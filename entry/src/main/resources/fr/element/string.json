@@ -4093,6 +4093,10 @@
       "value": "Activer la synchronisation cloud"
     },
     {
+      "name": "sync_row_wifi_only",
+      "value": "Synchroniser uniquement en Wi-Fi"
+    },
+    {
       "name": "sync_row_backend",
       "value": "Cible de synchronisation"
     },
