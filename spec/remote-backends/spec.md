@@ -8,7 +8,7 @@
 
 把原先直接写在 `RemoteSyncService` 里的 Google Reader 协议细节抽成 `RemoteBackend` 适配层，
 并新增 **Feedbin**（REST + HTTP Basic Auth）后端。同步编排、本地库、outbox / 映射 / 游标保持共用，
-GReader 行为不变。Inoreader 待 OAuth2 客户端注册后按同一接口补。
+GReader 行为不变。Inoreader / Feedly 需要 OAuth 客户端与官方授权，暂不提供。
 
 ## Requirements
 

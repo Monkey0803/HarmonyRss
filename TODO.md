@@ -6,7 +6,7 @@
 >
 > 进度（2026-10-23）：P0-3、P1-1、P1-3 已完成；**P1-2 全部完成**（标签 + 智能文件夹 + 规则引擎 + 跨源去重）。
 > P0-2 第二批（Feedbin）已完成：新增 `RemoteBackend` 适配层，Feedbin 走 REST + Basic Auth，
-> 订阅 / 文章 / 未读 / 收藏 / 批量回写全链路接入；Inoreader（OAuth2）待注册客户端后再补。
+> 订阅 / 文章 / 未读 / 收藏 / 批量回写全链路接入。
 > P0-2 收尾已完成：连接后提示本地独有源，迁移页支持合并 / 迁入远端 / 仅远端三种模式，
 > 模式按账号持久化并在后续同步中生效；仅远端会停用本地独有源（历史保留，可切回恢复）。
 > P0-1 第一批已完成：同步内核（`spec/sync-core/`：记录模型 / `SyncBackend` / Mock 后端 /
@@ -106,15 +106,14 @@ P2-1 通知增强已完成：策略化通知（源开关 / 关键词 / 免打扰
 
 ### P0-2 第三方 RSS 服务接入
 
-**现状**：支持直接订阅 URL、FreshRSS / Tiny Tiny RSS / Miniflux（Google Reader API）与 Feedbin；
-Inoreader / Feedly 尚未接入。
+**现状**：支持直接订阅 URL、FreshRSS / Tiny Tiny RSS / Miniflux（Google Reader API）与 Feedbin。
+Inoreader / Feedly 需要 OAuth 客户端与官方授权，暂不提供，也不在界面上展示。
 
 **任务**
 
 - [x] 定义 `RemoteBackend` 适配层（认证、订阅、文章分页、未读 / 收藏、状态回写、游标语义）。
 - [x] 第一批实现 Google Reader API 兼容服务：**FreshRSS + Tiny Tiny RSS + Miniflux**（一套协议覆盖三家）。
 - [x] 第二批：**Feedbin**（REST + Basic Auth：订阅 / 条目分页 / 未读与收藏 / 批量回写）。
-- [ ] 第二批：**Inoreader**（OAuth2 + REST，待注册客户端与回调地址）。
 - [x] 设置页新增「账号与服务」入口：服务类型选择、账密连接、失效提示。
 - [x] 服务模式与本地模式互斥：连接后提示本地独有源，迁移页支持
       **合并（保留本地独有）/ 迁入远端 / 仅远端**；仅远端模式停用本地独有源但保留历史，切回合并可恢复。
