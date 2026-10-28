@@ -4083,6 +4083,54 @@
     {
       "name": "a11y_row_not_selected",
       "value": "未选中"
+    },
+    {
+      "name": "sync_entry_title",
+      "value": "云同步"
+    },
+    {
+      "name": "sync_row_enable",
+      "value": "启用云同步"
+    },
+    {
+      "name": "sync_row_backend",
+      "value": "同步目标"
+    },
+    {
+      "name": "sync_backend_mock",
+      "value": "本机模拟"
+    },
+    {
+      "name": "sync_row_pending",
+      "value": "待推送"
+    },
+    {
+      "name": "sync_row_records",
+      "value": "已同步条目"
+    },
+    {
+      "name": "sync_aux_mock",
+      "value": "模拟目标只在本机保存一份副本，不会上传任何数据。关闭同步后所有数据保持纯本地。"
+    },
+    {
+      "name": "sync_reset",
+      "value": "重置模拟远端"
+    },
+    {
+      "name": "sync_done",
+      "value": "同步完成：推送 %1$d 条，拉取 %2$d 条"
+    },
+    {
+      "name": "sync_failed",
+      "value": "同步失败：%s"
+    },
+    {
+      "name": "sync_reset_title",
+      "value": "重置模拟数据？"
+    },
+    {
+      "name": "sync_reset_body",
+      "value": "会清空本机模拟远端并重置同步状态；文章、订阅与阅读状态都保留在本机。"
     }
   ]
 }

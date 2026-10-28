@@ -1,0 +1,188 @@
+/*
+ * SyncService.ets — 云同步的门面（单例）。
+ *
+ * 职责：
+ *   1. 维护开关、节点 id、上次同步时间（偏好库，默认关闭）；
+ *   2. 组装 Backend（第一批是本机 Mock）+ 同步表 + 采集器；
+ *   3. 对外只暴露「状态查询 / 立即同步 / 重置模拟远端」三个动作。
+ *
+ * 自动触发（冷启动 / 回前台 / 抓取完成）留到接入真实服务端的批次：
+ * 那批才有网络开销与「仅 Wi-Fi」这类设置。
+ */
+
+import { common } from '@kit.AbilityKit';
+import { preferences } from '@kit.ArkData';
+import { BusinessError } from '@kit.BasicServicesKit';
+import { hilog } from '@kit.PerformanceAnalysisKit';
+import { PreferencesConstants } from '../common/constants/PreferencesConstants';
+import { SyncSummary } from '../model/Sync';
+import { articleStore } from './ArticleStore';
+import { SyncCollector } from './sync/SyncCollector';
+import { SyncEngine } from './sync/SyncEngine';
+import { syncStore } from './sync/SyncStore';
+import { MockSyncBackend } from './sync/MockSyncBackend';
+
+const DOMAIN: number = 0x0000;
+const TAG: string = 'SyncService';
+
+/** 设置页展示用的同步状态快照。 */
+export class SyncStatus {
+  readonly enabled: boolean;
+  readonly lastSyncAt: number;
+  readonly pending: number;
+  readonly records: number;
+  readonly backend: string;
+
+  constructor(enabled: boolean, lastAt: number, pending: number, records: number, backend: string) {
+    this.enabled = enabled;
+    this.lastSyncAt = lastAt;
+    this.pending = pending;
+    this.records = records;
+    this.backend = backend;
+  }
+}
+
+export class SyncService {
+  /** 当前同步目标名称（第一批只有本机模拟）。 */
+  readonly backendName: string = 'Mock';
+  private store: preferences.Preferences | undefined = undefined;
+  private syncingFlag: boolean = false;
+
+  private async open(context: common.Context): Promise<preferences.Preferences | undefined> {
+    const opened: preferences.Preferences | undefined = this.store;
+    if (opened !== undefined) {
+      return opened;
+    }
+    try {
+      const store: preferences.Preferences =
+        await preferences.getPreferences(context, PreferencesConstants.STORE_NAME);
+      this.store = store;
+      return store;
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.error(DOMAIN, TAG, 'open preferences failed: %{public}d', error.code);
+      return undefined;
+    }
+  }
+
+  private readBoolean(store: preferences.Preferences, key: string): boolean {
+    const raw: preferences.ValueType = store.getSync(key, false);
+    return typeof raw === 'boolean' ? raw : false;
+  }
+
+  private readNumber(store: preferences.Preferences, key: string): number {
+    const raw: preferences.ValueType = store.getSync(key, 0);
+    return typeof raw === 'number' && Number.isFinite(raw) && raw > 0 ? raw : 0;
+  }
+
+  /** 节点 id：首次使用时生成，用于冲突平局时收敛（不进同步数据本身）。 */
+  private async nodeId(context: common.Context): Promise<string> {
+    const store: preferences.Preferences | undefined = await this.open(context);
+    if (store === undefined) {
+      return 'local';
+    }
+    const raw: preferences.ValueType = store.getSync(PreferencesConstants.KEY_CLOUD_SYNC_NODE_ID, '');
+    const existing: string = typeof raw === 'string' ? raw : '';
+    if (existing.length > 0) {
+      return existing;
+    }
+    const generated: string = Date.now().toString(36) + '-' +
+      Math.floor(Math.random() * 0xFFFFFF).toString(36);
+    try {
+      store.putSync(PreferencesConstants.KEY_CLOUD_SYNC_NODE_ID, generated);
+      await store.flush();
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.warn(DOMAIN, TAG, 'persist node id failed: %{public}d', error.code);
+    }
+    return generated;
+  }
+
+  async isEnabled(context: common.Context): Promise<boolean> {
+    const store: preferences.Preferences | undefined = await this.open(context);
+    return store !== undefined && this.readBoolean(store, PreferencesConstants.KEY_CLOUD_SYNC_ENABLED);
+  }
+
+  async setEnabled(context: common.Context, enabled: boolean): Promise<void> {
+    const store: preferences.Preferences | undefined = await this.open(context);
+    if (store === undefined) {
+      return;
+    }
+    try {
+      store.putSync(PreferencesConstants.KEY_CLOUD_SYNC_ENABLED, enabled);
+      await store.flush();
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.warn(DOMAIN, TAG, 'persist switch failed: %{public}d', error.code);
+    }
+  }
+
+  /** 当前状态快照（设置页进入时读一次）。 */
+  async status(context: common.Context): Promise<SyncStatus> {
+    const store: preferences.Preferences | undefined = await this.open(context);
+    const enabled: boolean = store !== undefined
+      ? this.readBoolean(store, PreferencesConstants.KEY_CLOUD_SYNC_ENABLED) : false;
+    const lastAt: number = store !== undefined
+      ? this.readNumber(store, PreferencesConstants.KEY_CLOUD_SYNC_LAST_AT) : 0;
+    await articleStore.whenReady();
+    const pending: number = await syncStore.pendingCount();
+    const records: number = await syncStore.recordCount();
+    return new SyncStatus(enabled, lastAt, pending, records, this.backendName);
+  }
+
+  /** 立即同步：采集 → 拉取 / 合并 / 推送 → 回写。失败不抛，返回带 error 的摘要。 */
+  async syncNow(context: common.Context): Promise<SyncSummary> {
+    if (this.syncingFlag) {
+      return new SyncSummary(0, 0, 0, 0, 0, 'busy');
+    }
+    this.syncingFlag = true;
+    try {
+      await articleStore.whenReady();
+      const origin: string = await this.nodeId(context);
+      const collector: SyncCollector = new SyncCollector(syncStore, origin);
+      await collector.collect(context, Date.now());
+      const engine: SyncEngine =
+        new SyncEngine(new MockSyncBackend(context), syncStore, origin);
+      const summary: SyncSummary = await engine.run();
+      if (summary.error.length === 0) {
+        await collector.apply(context);
+        await this.rememberLastSync(context, summary.at);
+      }
+      return summary;
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.error(DOMAIN, TAG, 'sync failed: %{public}d', error.code);
+      return new SyncSummary(0, 0, 0, await syncStore.pendingCount(), 0, 'unknown');
+    } finally {
+      this.syncingFlag = false;
+    }
+  }
+
+  /** 重置模拟远端（同时清空本地同步副本与游标，下次同步重新建立基线）。 */
+  async resetRemote(context: common.Context): Promise<void> {
+    const backend: MockSyncBackend = new MockSyncBackend(context);
+    await backend.reset();
+    syncStore.clearAll();
+    await this.rememberLastSync(context, 0);
+  }
+
+  syncing(): boolean {
+    return this.syncingFlag;
+  }
+
+  private async rememberLastSync(context: common.Context, at: number): Promise<void> {
+    const store: preferences.Preferences | undefined = await this.open(context);
+    if (store === undefined) {
+      return;
+    }
+    try {
+      store.putSync(PreferencesConstants.KEY_CLOUD_SYNC_LAST_AT, at);
+      await store.flush();
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.warn(DOMAIN, TAG, 'persist last sync failed: %{public}d', error.code);
+    }
+  }
+}
+
+export const syncService: SyncService = new SyncService();

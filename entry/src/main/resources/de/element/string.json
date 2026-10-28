@@ -4083,6 +4083,54 @@
     {
       "name": "a11y_row_not_selected",
       "value": "Nicht ausgewählt"
+    },
+    {
+      "name": "sync_entry_title",
+      "value": "Cloud-Synchronisierung"
+    },
+    {
+      "name": "sync_row_enable",
+      "value": "Cloud-Synchronisierung aktivieren"
+    },
+    {
+      "name": "sync_row_backend",
+      "value": "Synchronisierungsziel"
+    },
+    {
+      "name": "sync_backend_mock",
+      "value": "Lokale Simulation"
+    },
+    {
+      "name": "sync_row_pending",
+      "value": "Ausstehend"
+    },
+    {
+      "name": "sync_row_records",
+      "value": "Synchronisierte Einträge"
+    },
+    {
+      "name": "sync_aux_mock",
+      "value": "Das simulierte Ziel speichert nur eine Kopie auf diesem Gerät. Es wird nichts hochgeladen. Ohne Synchronisierung bleiben alle Daten lokal."
+    },
+    {
+      "name": "sync_reset",
+      "value": "Simuliertes Ziel zurücksetzen"
+    },
+    {
+      "name": "sync_done",
+      "value": "Synchronisiert: %1$d gesendet, %2$d empfangen"
+    },
+    {
+      "name": "sync_failed",
+      "value": "Synchronisierung fehlgeschlagen: %s"
+    },
+    {
+      "name": "sync_reset_title",
+      "value": "Simulierte Daten zurücksetzen?"
+    },
+    {
+      "name": "sync_reset_body",
+      "value": "Leert das simulierte Ziel und setzt den Synchronisierungsstatus zurück. Artikel, Abonnements und Lesestatus bleiben auf diesem Gerät."
     }
   ]
 }

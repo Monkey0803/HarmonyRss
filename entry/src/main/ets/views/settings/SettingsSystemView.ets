@@ -56,6 +56,15 @@ export struct SettingsSystemView {
             }
           })
           Divider().color($r('app.color.hm_divider'))
+          // 云同步：第一批只接本机模拟后端，先打通同步链路。
+          NavSettingRow({
+            icon: $r('sys.symbol.icloud'),
+            title: $r('app.string.sync_entry_title'),
+            onOpen: () => {
+              this.navPathStack.pushPath(new NavPathInfo(RouterConstants.PAGE_SYNC, ''));
+            }
+          })
+          Divider().color($r('app.color.hm_divider'))
           // 外发数据说明 / 权限状态 / 数据控制集中在一页。
           NavSettingRow({
             icon: $r('sys.symbol.lock'),

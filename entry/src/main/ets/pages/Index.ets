@@ -83,6 +83,7 @@ import { TranslateSettingsView } from '../views/TranslateSettingsView';
 import { PrivacyView } from '../views/PrivacyView';
 import { DiscoverView } from '../views/DiscoverView';
 import { DiagnosticsView } from '../views/DiagnosticsView';
+import { SyncView } from '../views/SyncView';
 import { remoteSyncService } from '../service/remote/RemoteSyncService';
 import { notifyService } from '../service/NotifyService';
 import { backupService } from '../service/BackupService';
@@ -125,6 +126,7 @@ struct Index {
   private rulesScroller: Scroller = new Scroller();
   private ruleEditScroller: Scroller = new Scroller();
   private hiddenScroller: Scroller = new Scroller();
+  private syncScroller: Scroller = new Scroller();
   private remoteScroller: Scroller = new Scroller();
   private remoteMigrationScroller: Scroller = new Scroller();
   private shareSettingsScroller: Scroller = new Scroller();
@@ -824,6 +826,14 @@ struct Index {
       .titleMode(HdsNavDestinationTitleMode.MINI)
       .backgroundColor($r('app.color.hm_web_surface'))
       .bindToScrollable([this.hiddenScroller])
+    } else if (name === RouterConstants.PAGE_SYNC) {
+      HdsNavDestination() {
+        SyncView({ navPathStack: this.navPathStack, scroller: this.syncScroller })
+      }
+      .titleBar(this.titleOptions($r('app.string.sync_entry_title')))
+      .titleMode(HdsNavDestinationTitleMode.MINI)
+      .backgroundColor($r('app.color.hm_web_surface'))
+      .bindToScrollable([this.syncScroller])
     } else if (name === RouterConstants.PAGE_REMOTE) {
       HdsNavDestination() {
         RemoteServiceView({ navPathStack: this.navPathStack, scroller: this.remoteScroller })

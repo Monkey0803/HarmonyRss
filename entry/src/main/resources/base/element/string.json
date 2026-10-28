@@ -4083,6 +4083,54 @@
     {
       "name": "a11y_row_not_selected",
       "value": "Not selected"
+    },
+    {
+      "name": "sync_entry_title",
+      "value": "Cloud sync"
+    },
+    {
+      "name": "sync_row_enable",
+      "value": "Enable cloud sync"
+    },
+    {
+      "name": "sync_row_backend",
+      "value": "Sync target"
+    },
+    {
+      "name": "sync_backend_mock",
+      "value": "On-device mock"
+    },
+    {
+      "name": "sync_row_pending",
+      "value": "Pending upload"
+    },
+    {
+      "name": "sync_row_records",
+      "value": "Synced items"
+    },
+    {
+      "name": "sync_aux_mock",
+      "value": "The mock target stores a copy on this device only. Nothing is uploaded. Turn sync off to keep all data local."
+    },
+    {
+      "name": "sync_reset",
+      "value": "Reset simulated server"
+    },
+    {
+      "name": "sync_done",
+      "value": "Synced: %1$d uploaded, %2$d downloaded"
+    },
+    {
+      "name": "sync_failed",
+      "value": "Sync failed: %s"
+    },
+    {
+      "name": "sync_reset_title",
+      "value": "Reset simulated data?"
+    },
+    {
+      "name": "sync_reset_body",
+      "value": "Clears the local simulated server and resets sync state. Your articles, subscriptions and reading status stay on this device."
     }
   ]
 }

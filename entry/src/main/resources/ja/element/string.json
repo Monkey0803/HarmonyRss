@@ -4083,6 +4083,54 @@
     {
       "name": "a11y_row_not_selected",
       "value": "未選択"
+    },
+    {
+      "name": "sync_entry_title",
+      "value": "クラウド同期"
+    },
+    {
+      "name": "sync_row_enable",
+      "value": "クラウド同期を有効にする"
+    },
+    {
+      "name": "sync_row_backend",
+      "value": "同期先"
+    },
+    {
+      "name": "sync_backend_mock",
+      "value": "端末内のモック"
+    },
+    {
+      "name": "sync_row_pending",
+      "value": "未送信"
+    },
+    {
+      "name": "sync_row_records",
+      "value": "同期済み項目"
+    },
+    {
+      "name": "sync_aux_mock",
+      "value": "モックの同期先は本端末に複製を保存するだけで、何もアップロードしません。同期をオフにすると全データは端末内に留まります。"
+    },
+    {
+      "name": "sync_reset",
+      "value": "モックの同期先をリセット"
+    },
+    {
+      "name": "sync_done",
+      "value": "同期完了：送信 %1$d 件、受信 %2$d 件"
+    },
+    {
+      "name": "sync_failed",
+      "value": "同期に失敗しました：%s"
+    },
+    {
+      "name": "sync_reset_title",
+      "value": "モックデータをリセットしますか？"
+    },
+    {
+      "name": "sync_reset_body",
+      "value": "端末内のモック同期先を消去し、同期状態を初期化します。記事・購読・既読状態は端末に残ります。"
     }
   ]
 }

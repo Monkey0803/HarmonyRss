@@ -147,6 +147,8 @@ export class ArticleDbConstants {
   static readonly TABLE_REMOTE_ARTICLE_MAP: string = 'remote_article_map';
   /** 本地已读 / 收藏变更的待同步队列（同篇聚合）。 */
   static readonly TABLE_SYNC_OUTBOX: string = 'sync_outbox';
+  /** 云同步记录（订阅源 / 文章状态）：本地副本 + 脏标记 + 远端 rev。 */
+  static readonly TABLE_SYNC_RECORDS: string = 'sync_records';
   /** 规则表（本地规则引擎：名称 / 关键词 / 字段 / 动作 / 命中统计）。 */
   static readonly TABLE_RULES: string = 'rules';
   /**
@@ -154,9 +156,10 @@ export class ArticleDbConstants {
    * （v1 = 初始表；v2 = 索引 + FTS + 回收站；v3 = 中文检索索引；v4 = 标签 + 智能文件夹；
    *   v5 = 远端账号 / 游标 / 映射 / 待同步队列；v6 = 规则表 + articles.is_hidden；
    *   v7 = 跨源去重：articles.link_key / title_key / canonical_id + 3 个索引；
-   *   v8 = 媒体附件 articles.enclosures + 音频进度 articles.media_progress）。
+   *   v8 = 媒体附件 articles.enclosures + 音频进度 articles.media_progress；
+   *   v9 = 云同步记录 sync_records）。
    */
-  static readonly SCHEMA_VERSION: number = 8;
+  static readonly SCHEMA_VERSION: number = 9;
 }
 
 /**

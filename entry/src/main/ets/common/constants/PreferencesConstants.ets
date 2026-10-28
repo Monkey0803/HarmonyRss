@@ -108,4 +108,13 @@ export class PreferencesConstants {
   static readonly KEY_RSSHUB_BASE: string = 'rsshubBase';
   /** 本地诊断记录开关（启动 / 抓取耗时；默认开）。 */
   static readonly KEY_DIAGNOSTICS_ENABLED: string = 'diagnosticsEnabled';
+  // ---- 云同步（第一批：本机 Mock 后端，不联网） ----
+  /** 云同步开关（默认关：关闭时所有数据只在本机）。 */
+  static readonly KEY_CLOUD_SYNC_ENABLED: string = 'cloudSyncEnabled';
+  /** 本机节点 id（冲突平局时用来收敛，首次使用时生成）。 */
+  static readonly KEY_CLOUD_SYNC_NODE_ID: string = 'cloudSyncNodeId';
+  /** 上次同步完成时间（毫秒；0 = 从未同步）。 */
+  static readonly KEY_CLOUD_SYNC_LAST_AT: string = 'cloudSyncLastAt';
+  /** Mock 后端库（模拟远端记录；只在开启同步后读写）。 */
+  static readonly KEY_CLOUD_SYNC_MOCK_DB: string = 'cloudSyncMockDb';
 }

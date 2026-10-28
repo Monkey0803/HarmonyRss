@@ -4083,6 +4083,54 @@
     {
       "name": "a11y_row_not_selected",
       "value": "Non sélectionné"
+    },
+    {
+      "name": "sync_entry_title",
+      "value": "Synchronisation cloud"
+    },
+    {
+      "name": "sync_row_enable",
+      "value": "Activer la synchronisation cloud"
+    },
+    {
+      "name": "sync_row_backend",
+      "value": "Cible de synchronisation"
+    },
+    {
+      "name": "sync_backend_mock",
+      "value": "Simulation locale"
+    },
+    {
+      "name": "sync_row_pending",
+      "value": "En attente"
+    },
+    {
+      "name": "sync_row_records",
+      "value": "Éléments synchronisés"
+    },
+    {
+      "name": "sync_aux_mock",
+      "value": "La cible simulée ne conserve une copie que sur cet appareil. Rien n’est envoyé. Sans synchronisation, toutes les données restent locales."
+    },
+    {
+      "name": "sync_reset",
+      "value": "Réinitialiser la cible simulée"
+    },
+    {
+      "name": "sync_done",
+      "value": "Synchronisé : %1$d envoyés, %2$d reçus"
+    },
+    {
+      "name": "sync_failed",
+      "value": "Échec de la synchronisation : %s"
+    },
+    {
+      "name": "sync_reset_title",
+      "value": "Réinitialiser les données simulées ?"
+    },
+    {
+      "name": "sync_reset_body",
+      "value": "Vide la cible simulée et réinitialise l’état de synchronisation. Articles, abonnements et états de lecture restent sur cet appareil."
     }
   ]
 }

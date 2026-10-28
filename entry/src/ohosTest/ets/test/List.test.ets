@@ -46,6 +46,9 @@ import enclosureTest from './Enclosure.test';
 import discoverTest from './Discover.test';
 import diagnosticsTest from './Diagnostics.test';
 import feedbinModelsTest from './FeedbinModels.test';
+import syncMergeTest from './SyncMerge.test';
+import syncEngineTest from './SyncEngine.test';
+import syncCollectorTest from './SyncCollector.test';
 
 export default function testsuite() {
   htmlDomTest();
@@ -86,4 +89,7 @@ export default function testsuite() {
   discoverTest();
   diagnosticsTest();
   feedbinModelsTest();
+  syncMergeTest();
+  syncEngineTest();
+  syncCollectorTest();
 }

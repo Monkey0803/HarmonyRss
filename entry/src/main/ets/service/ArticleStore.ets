@@ -361,6 +361,25 @@ const SQL_CREATE_SYNC_OUTBOX: string =
   'retries INTEGER NOT NULL DEFAULT 0, ' +
   'last_error TEXT NOT NULL DEFAULT \'\')';
 
+/** v9 云同步记录：key 为实体稳定键；dirty = 1 表示还待推送；rev 为已拉到的远端版本。 */
+const SQL_CREATE_SYNC_RECORDS: string =
+  'CREATE TABLE IF NOT EXISTS ' + ArticleDbConstants.TABLE_SYNC_RECORDS + ' (' +
+  'key TEXT PRIMARY KEY, ' +
+  'kind TEXT NOT NULL DEFAULT \'\', ' +
+  'payload TEXT NOT NULL DEFAULT \'\', ' +
+  'updated_at INTEGER NOT NULL DEFAULT 0, ' +
+  'deleted INTEGER NOT NULL DEFAULT 0, ' +
+  'dirty INTEGER NOT NULL DEFAULT 0, ' +
+  'origin TEXT NOT NULL DEFAULT \'\', ' +
+  'rev TEXT NOT NULL DEFAULT \'\')';
+
+const SQL_INDEXES_V9: string[] = [
+  'CREATE INDEX IF NOT EXISTS idx_sync_records_dirty ON ' +
+    ArticleDbConstants.TABLE_SYNC_RECORDS + '(dirty, updated_at)',
+  'CREATE INDEX IF NOT EXISTS idx_sync_records_kind ON ' +
+    ArticleDbConstants.TABLE_SYNC_RECORDS + '(kind)'
+];
+
 /** v5 索引：按本地文章反查远端 id（回写状态 / 拉回状态都要用）。 */
 const SQL_INDEXES_V5: string[] = [
   'CREATE INDEX IF NOT EXISTS idx_remote_map_article ON ' +
@@ -716,7 +735,7 @@ export class ArticleStore {
   private createRemoteTables(): void {
     const statements: string[] = [
       SQL_CREATE_REMOTE_ACCOUNTS, SQL_CREATE_SYNC_STATE,
-      SQL_CREATE_REMOTE_MAP, SQL_CREATE_SYNC_OUTBOX
+      SQL_CREATE_REMOTE_MAP, SQL_CREATE_SYNC_OUTBOX, SQL_CREATE_SYNC_RECORDS
     ];
     for (let i = 0; i < statements.length; i += 1) {
       try {
@@ -732,6 +751,14 @@ export class ArticleStore {
       } catch (err) {
         const error: BusinessError = err as BusinessError;
         hilog.warn(DOMAIN, TAG, 'create remote index failed: %{public}d', error.code);
+      }
+    }
+    for (let i = 0; i < SQL_INDEXES_V9.length; i += 1) {
+      try {
+        this.store?.executeSync(SQL_INDEXES_V9[i]);
+      } catch (err) {
+        const error: BusinessError = err as BusinessError;
+        hilog.warn(DOMAIN, TAG, 'create sync record index failed: %{public}d', error.code);
       }
     }
   }

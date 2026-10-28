@@ -4083,6 +4083,54 @@
     {
       "name": "a11y_row_not_selected",
       "value": "No seleccionado"
+    },
+    {
+      "name": "sync_entry_title",
+      "value": "Sincronización en la nube"
+    },
+    {
+      "name": "sync_row_enable",
+      "value": "Activar sincronización en la nube"
+    },
+    {
+      "name": "sync_row_backend",
+      "value": "Destino de sincronización"
+    },
+    {
+      "name": "sync_backend_mock",
+      "value": "Simulación local"
+    },
+    {
+      "name": "sync_row_pending",
+      "value": "Pendiente de envío"
+    },
+    {
+      "name": "sync_row_records",
+      "value": "Elementos sincronizados"
+    },
+    {
+      "name": "sync_aux_mock",
+      "value": "El destino simulado solo guarda una copia en este dispositivo. No se envía nada. Sin sincronización, todos los datos permanecen locales."
+    },
+    {
+      "name": "sync_reset",
+      "value": "Restablecer destino simulado"
+    },
+    {
+      "name": "sync_done",
+      "value": "Sincronizado: %1$d enviados, %2$d recibidos"
+    },
+    {
+      "name": "sync_failed",
+      "value": "Error de sincronización: %s"
+    },
+    {
+      "name": "sync_reset_title",
+      "value": "¿Restablecer los datos simulados?"
+    },
+    {
+      "name": "sync_reset_body",
+      "value": "Vacía el destino simulado y reinicia el estado de sincronización. Los artículos, las suscripciones y los estados de lectura permanecen en este dispositivo."
     }
   ]
 }
