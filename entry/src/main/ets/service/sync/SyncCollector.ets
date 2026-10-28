@@ -14,22 +14,40 @@ import { relationalStore } from '@kit.ArkData';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { FeedSource } from '../../model/Feed';
+import { Highlight } from '../../model/Highlight';
+import { TagWithCount } from '../../model/Tag';
+import { BackupArticleTag, BackupHighlight, BackupScalar, BackupSettings, BackupTag } from '../../model/Backup';
 import {
   ArticleStatePayload,
+  ArticleTagPayload,
   FeedPayload,
+  HighlightPayload,
   SyncField,
   SyncKinds,
   SyncKeys,
   SyncRecord,
+  TagPayload,
   decodeArticleStatePayload,
+  decodeArticleTagPayload,
   decodeFeedPayload,
+  decodeHighlightPayload,
+  decodeTagPayload,
   encodeArticleStatePayload,
+  encodeArticleTagPayload,
   encodeFeedPayload,
+  encodeHighlightPayload,
+  encodeTagPayload,
   latestFieldAt
 } from '../../model/Sync';
 import { ArticleDbConstants } from '../../common/constants/RssConstants';
 import { articleStore } from '../ArticleStore';
 import { feedMergeKey, feedStore } from '../FeedStore';
+import { normalizeTagName, tagNameKey, tagStore } from '../TagStore';
+import { settingsStore } from '../SettingsStore';
+import { isSettingsKeyAllowed, settingsWhitelist } from '../BackupCodec';
+import { appSettings } from '../../model/AppSettings';
+import { ThemeController } from '../ThemeController';
+import { LocaleController } from '../LocaleController';
 import { SyncStore } from './SyncStore';
 
 const DOMAIN: number = 0x0000;
@@ -91,6 +109,43 @@ function pickField(prior: SyncField, current: SyncField): SyncField {
   return prior.value === current.value ? prior : current;
 }
 
+/** 设置载荷解码：只接受白名单键与合法标量，其余静默丢弃。 */
+function decodeSettings(text: string): BackupSettings | undefined {
+  if (text.length === 0) {
+    return undefined;
+  }
+  try {
+    const raw: Record<string, BackupScalar> = JSON.parse(text) as Record<string, BackupScalar>;
+    const values: Record<string, BackupScalar> = {};
+    const keys: string[] = Object.keys(raw);
+    for (let i = 0; i < keys.length; i += 1) {
+      const key: string = keys[i];
+      if (!isSettingsKeyAllowed(key)) {
+        continue;
+      }
+      const value: BackupScalar = raw[key];
+      if (typeof value === 'string' || typeof value === 'boolean' ||
+        (typeof value === 'number' && Number.isFinite(value))) {
+        values[key] = value;
+      }
+    }
+    return new BackupSettings(values);
+  } catch (err) {
+    return undefined;
+  }
+}
+
+/** 白名单键逐个比较：任一不同就需要写回。 */
+function sameSettings(left: BackupSettings, right: BackupSettings): boolean {
+  const keys: string[] = settingsWhitelist();
+  for (let i = 0; i < keys.length; i += 1) {
+    if (left.get(keys[i]) !== right.get(keys[i])) {
+      return false;
+    }
+  }
+  return true;
+}
+
 export class SyncCollector {
   private readonly store: SyncStore;
   private readonly origin: string;
@@ -105,6 +160,10 @@ export class SyncCollector {
     let changed: number = 0;
     changed += await this.collectFeeds(context, now);
     changed += await this.collectArticleStates(now);
+    changed += await this.collectHighlights(now);
+    changed += await this.collectTags(now);
+    changed += await this.collectArticleTags(now);
+    changed += await this.collectSettings(now);
     return changed;
   }
 
@@ -174,6 +233,116 @@ export class SyncCollector {
     return changed;
   }
 
+  /**
+   * 通用差量采集：把「当前快照（key → payload）」与同步表比对，只把变化的项标脏。
+   * @param tombstones 本地已消失的记录是否留墓碑（订阅 / 高亮 / 标签 / 关联要；设置不需要）
+   */
+  private async collectSnapshots(kind: string, current: Map<string, string>, now: number,
+    tombstones: boolean): Promise<number> {
+    const existing: SyncRecord[] = await this.store.listByKind(kind);
+    const known: Map<string, SyncRecord> = new Map<string, SyncRecord>();
+    for (let i = 0; i < existing.length; i += 1) {
+      known.set(existing[i].key, existing[i]);
+    }
+    let changed: number = 0;
+    current.forEach((payload: string, key: string) => {
+      const prior: SyncRecord | undefined = known.get(key);
+      if (prior !== undefined && !prior.deleted && prior.payload === payload) {
+        return;
+      }
+      this.store.upsert(new SyncRecord(key, kind, now, false, payload, this.origin), true);
+      changed += 1;
+    });
+    if (!tombstones) {
+      return changed;
+    }
+    for (let i = 0; i < existing.length; i += 1) {
+      const prior: SyncRecord = existing[i];
+      if (prior.deleted || current.has(prior.key)) {
+        continue;
+      }
+      this.store.upsert(new SyncRecord(prior.key, kind, now, true, '', this.origin), true);
+      changed += 1;
+    }
+    return changed;
+  }
+
+  /** 高亮：改备注 / 改配色 / 删除都会体现在载荷或墓碑上。 */
+  private async collectHighlights(now: number): Promise<number> {
+    const current: Map<string, string> = new Map<string, string>();
+    const rows: Highlight[] = await this.loadHighlights();
+    for (let i = 0; i < rows.length; i += 1) {
+      const row: Highlight = rows[i];
+      const payload: HighlightPayload = new HighlightPayload(row.id, row.articleId, row.quote,
+        row.note, row.color, row.createdAt, row.anchorText, row.anchorRatio);
+      current.set(SyncKeys.highlightKey(row.id), encodeHighlightPayload(payload));
+    }
+    return this.collectSnapshots(SyncKinds.HIGHLIGHT, current, now, true);
+  }
+
+  /** 标签：键用归一化名称，两端同名标签自然收敛成一条。 */
+  private async collectTags(now: number): Promise<number> {
+    const current: Map<string, string> = new Map<string, string>();
+    const rows: BackupTag[] = await tagStore.allForBackup();
+    for (let i = 0; i < rows.length; i += 1) {
+      const nameKey: string = tagNameKey(rows[i].name);
+      if (nameKey.length === 0) {
+        continue;
+      }
+      const payload: TagPayload = new TagPayload(normalizeTagName(rows[i].name));
+      current.set(SyncKeys.tagKey(nameKey), encodeTagPayload(payload));
+    }
+    return this.collectSnapshots(SyncKinds.TAG, current, now, true);
+  }
+
+  /** 文章 ↔ 标签关联：键 = 标签归一化名 + 文章 id。 */
+  private async collectArticleTags(now: number): Promise<number> {
+    const current: Map<string, string> = new Map<string, string>();
+    const tags: BackupTag[] = await tagStore.allForBackup();
+    const nameKeyById: Map<string, string> = new Map<string, string>();
+    const nameById: Map<string, string> = new Map<string, string>();
+    for (let i = 0; i < tags.length; i += 1) {
+      const nameKey: string = tagNameKey(tags[i].name);
+      if (nameKey.length > 0) {
+        nameKeyById.set(tags[i].id, nameKey);
+        nameById.set(tags[i].id, normalizeTagName(tags[i].name));
+      }
+    }
+    const links: BackupArticleTag[] = await articleStore.allArticleTagsForBackup();
+    for (let i = 0; i < links.length; i += 1) {
+      const link: BackupArticleTag = links[i];
+      const nameKey: string | undefined = nameKeyById.get(link.tagId);
+      const display: string | undefined = nameById.get(link.tagId);
+      if (nameKey === undefined || display === undefined) {
+        continue;
+      }
+      const payload: ArticleTagPayload = new ArticleTagPayload(link.articleId, nameKey, display);
+      current.set(SyncKeys.articleTagKey(nameKey, link.articleId),
+        encodeArticleTagPayload(payload));
+    }
+    return this.collectSnapshots(SyncKinds.ARTICLE_TAG, current, now, true);
+  }
+
+  /** 设置：白名单键的扁平 JSON，单条记录整体后写胜出。 */
+  private async collectSettings(now: number): Promise<number> {
+    const current: Map<string, string> = new Map<string, string>();
+    const settings: BackupSettings = settingsStore.exportWhitelisted();
+    current.set(SyncKeys.SETTINGS, JSON.stringify(settings.values));
+    return this.collectSnapshots(SyncKinds.SETTINGS, current, now, false);
+  }
+
+  /** 全表读高亮（复用备份导出，避免再写一份 SQL）。 */
+  private async loadHighlights(): Promise<Highlight[]> {
+    const rows: BackupHighlight[] = await articleStore.allHighlightsForBackup();
+    const result: Highlight[] = [];
+    for (let i = 0; i < rows.length; i += 1) {
+      const row: BackupHighlight = rows[i];
+      result.push(new Highlight(row.id, row.articleId, row.quote, row.note, row.color,
+        row.createdAt, row.anchorText, row.anchorRatio));
+    }
+    return result;
+  }
+
   /** 全表读文章状态（含重复项：它们的状态同样要同步出去）。 */
   private async loadArticleRows(): Promise<ArticleSyncRow[]> {
     const rows: ArticleSyncRow[] = [];
@@ -210,6 +379,10 @@ export class SyncCollector {
     let applied: number = 0;
     applied += await this.applyFeeds(context);
     applied += await this.applyArticleStates();
+    applied += await this.applyHighlights();
+    applied += await this.applyTags();
+    applied += await this.applyArticleTags();
+    applied += await this.applySettings(context);
     return applied;
   }
 
@@ -337,6 +510,186 @@ export class SyncCollector {
       }
     }
     return applied;
+  }
+
+  /** 把合并后的高亮写回本地：文章不存在的先跳过，等文章入库后下次同步再补。 */
+  private async applyHighlights(): Promise<number> {
+    const records: SyncRecord[] = await this.store.listByKind(SyncKinds.HIGHLIGHT);
+    if (records.length === 0) {
+      return 0;
+    }
+    const locals: Highlight[] = await this.loadHighlights();
+    const localById: Map<string, string> = new Map<string, string>();
+    for (let i = 0; i < locals.length; i += 1) {
+      const row: Highlight = locals[i];
+      localById.set(row.id, encodeHighlightPayload(new HighlightPayload(row.id, row.articleId,
+        row.quote, row.note, row.color, row.createdAt, row.anchorText, row.anchorRatio)));
+    }
+    const payloads: HighlightPayload[] = [];
+    const articleIds: string[] = [];
+    let applied: number = 0;
+    for (let i = 0; i < records.length; i += 1) {
+      const record: SyncRecord = records[i];
+      if (!record.key.startsWith(SyncKeys.HIGHLIGHT)) {
+        continue;
+      }
+      const id: string = record.key.substring(SyncKeys.HIGHLIGHT.length);
+      if (record.deleted) {
+        if (localById.has(id)) {
+          articleStore.deleteHighlight(id);
+          applied += 1;
+        }
+        continue;
+      }
+      const payload: HighlightPayload | undefined = decodeHighlightPayload(record.payload);
+      if (payload === undefined) {
+        continue;
+      }
+      payloads.push(payload);
+      articleIds.push(payload.articleId);
+    }
+    const articles: Map<string, ArticleSyncRow> = await this.loadRowsByIds(articleIds);
+    for (let i = 0; i < payloads.length; i += 1) {
+      const payload: HighlightPayload = payloads[i];
+      if (!articles.has(payload.articleId)) {
+        continue;
+      }
+      if (localById.get(payload.id) === encodeHighlightPayload(payload)) {
+        continue;
+      }
+      articleStore.addHighlight(new Highlight(payload.id, payload.articleId, payload.quote,
+        payload.note, payload.color, payload.createdAt, payload.anchorText, payload.anchorRatio));
+      applied += 1;
+    }
+    return applied;
+  }
+
+  /** 把合并后的标签写回本地：同名标签直接复用，不再新建。 */
+  private async applyTags(): Promise<number> {
+    const records: SyncRecord[] = await this.store.listByKind(SyncKinds.TAG);
+    if (records.length === 0) {
+      return 0;
+    }
+    const locals: BackupTag[] = await tagStore.allForBackup();
+    const byKey: Map<string, BackupTag> = new Map<string, BackupTag>();
+    for (let i = 0; i < locals.length; i += 1) {
+      const nameKey: string = tagNameKey(locals[i].name);
+      if (nameKey.length > 0) {
+        byKey.set(nameKey, locals[i]);
+      }
+    }
+    let applied: number = 0;
+    for (let i = 0; i < records.length; i += 1) {
+      const record: SyncRecord = records[i];
+      if (!record.key.startsWith(SyncKeys.TAG)) {
+        continue;
+      }
+      const nameKey: string = record.key.substring(SyncKeys.TAG.length);
+      if (record.deleted) {
+        const existing: BackupTag | undefined = byKey.get(nameKey);
+        if (existing !== undefined) {
+          await tagStore.remove(existing.id);
+          applied += 1;
+        }
+        continue;
+      }
+      const payload: TagPayload | undefined = decodeTagPayload(record.payload);
+      if (payload === undefined) {
+        continue;
+      }
+      const display: string = normalizeTagName(payload.name);
+      const current: BackupTag | undefined = byKey.get(tagNameKey(payload.name));
+      if (current !== undefined) {
+        // 同名标签已存在：只在展示形式不同时改名（大小写 / 空白差异）。
+        if (current.name !== display) {
+          const renamed: boolean = await tagStore.rename(current.id, display);
+          if (renamed) {
+            applied += 1;
+          }
+        }
+        continue;
+      }
+      const created: TagWithCount | undefined = await tagStore.create(display);
+      if (created !== undefined) {
+        applied += 1;
+      }
+    }
+    return applied;
+  }
+
+  /** 把合并后的文章 ↔ 标签关联写回本地（标签记录尚未落地的先跳过）。 */
+  private async applyArticleTags(): Promise<number> {
+    const records: SyncRecord[] = await this.store.listByKind(SyncKinds.ARTICLE_TAG);
+    if (records.length === 0) {
+      return 0;
+    }
+    const tags: BackupTag[] = await tagStore.allForBackup();
+    const idByKey: Map<string, string> = new Map<string, string>();
+    for (let i = 0; i < tags.length; i += 1) {
+      const nameKey: string = tagNameKey(tags[i].name);
+      if (nameKey.length > 0) {
+        idByKey.set(nameKey, tags[i].id);
+      }
+    }
+    const articleIds: string[] = [];
+    for (let i = 0; i < records.length; i += 1) {
+      const record: SyncRecord = records[i];
+      if (record.deleted || !record.key.startsWith(SyncKeys.ARTICLE_TAG)) {
+        continue;
+      }
+      const payload: ArticleTagPayload | undefined = decodeArticleTagPayload(record.payload);
+      if (payload !== undefined) {
+        articleIds.push(payload.articleId);
+      }
+    }
+    const articles: Map<string, ArticleSyncRow> = await this.loadRowsByIds(articleIds);
+    let applied: number = 0;
+    for (let i = 0; i < records.length; i += 1) {
+      const record: SyncRecord = records[i];
+      if (!record.key.startsWith(SyncKeys.ARTICLE_TAG)) {
+        continue;
+      }
+      const body: string = record.key.substring(SyncKeys.ARTICLE_TAG.length);
+      const split: number = body.indexOf('|');
+      if (split <= 0 || split >= body.length - 1) {
+        continue;
+      }
+      const nameKey: string = body.substring(0, split);
+      const articleId: string = body.substring(split + 1);
+      const tagId: string | undefined = idByKey.get(nameKey);
+      if (tagId === undefined) {
+        continue;
+      }
+      if (record.deleted) {
+        await tagStore.removeFromArticle(tagId, articleId);
+        applied += 1;
+        continue;
+      }
+      if (!articles.has(articleId)) {
+        continue;
+      }
+      applied += await tagStore.addToArticles(tagId, [articleId]);
+    }
+    return applied;
+  }
+
+  /** 设置：只在白名单键真的变化时才写回，避免每次同步都保存一遍偏好。 */
+  private async applySettings(context: common.Context): Promise<number> {
+    const record: SyncRecord | undefined = await this.store.find(SyncKeys.SETTINGS);
+    if (record === undefined || record.deleted) {
+      return 0;
+    }
+    const incoming: BackupSettings | undefined = decodeSettings(record.payload);
+    if (incoming === undefined) {
+      return 0;
+    }
+    if (sameSettings(settingsStore.exportWhitelisted(), incoming)) {
+      return 0;
+    }
+    settingsStore.applyWhitelisted(incoming);
+    ThemeController.apply(context, appSettings.themeMode);
+    LocaleController.apply(appSettings.languageMode);
+    return 1;
   }
 
   private async loadRowsByIds(ids: string[]): Promise<Map<string, ArticleSyncRow>> {

@@ -13,12 +13,25 @@
 export class SyncKinds {
   static readonly FEED: string = 'feed';
   static readonly ARTICLE_STATE: string = 'articleState';
+  /** 正文标注（引文 + 备注 + 配色）。 */
+  static readonly HIGHLIGHT: string = 'highlight';
+  /** 标签定义（按归一化名称做键）。 */
+  static readonly TAG: string = 'tag';
+  /** 文章 ↔ 标签关联。 */
+  static readonly ARTICLE_TAG: string = 'articleTag';
+  /** 应用设置（白名单键的扁平 JSON，单条记录整体后写胜出）。 */
+  static readonly SETTINGS: string = 'settings';
 }
 
 /** 实体键前缀（key = 前缀 + 稳定 id）。 */
 export class SyncKeys {
   static readonly FEED: string = 'feed:';
   static readonly ARTICLE_STATE: string = 'article:';
+  static readonly HIGHLIGHT: string = 'highlight:';
+  static readonly TAG: string = 'tag:';
+  static readonly ARTICLE_TAG: string = 'articleTag:';
+  /** 设置只有一份，用固定键。 */
+  static readonly SETTINGS: string = 'setting:app';
 
   /** 订阅源键：用归一化后的订阅地址，同址不同写法不会分裂成两条。 */
   static feedKey(normalizedUrl: string): string {
@@ -28,6 +41,21 @@ export class SyncKeys {
   /** 文章状态键：用本地文章 id（由订阅地址 + 链接生成，天然稳定）。 */
   static articleStateKey(articleId: string): string {
     return SyncKeys.ARTICLE_STATE + articleId;
+  }
+
+  /** 高亮键：高亮 id 在本机生成，跨设备不会重复。 */
+  static highlightKey(id: string): string {
+    return SyncKeys.HIGHLIGHT + id;
+  }
+
+  /** 标签键：用归一化名称（小写），两端同名标签会自动收敛成一条。 */
+  static tagKey(nameKey: string): string {
+    return SyncKeys.TAG + nameKey;
+  }
+
+  /** 文章 ↔ 标签关联键：标签 + 文章，两边都是稳定标识。 */
+  static articleTagKey(nameKey: string, articleId: string): string {
+    return SyncKeys.ARTICLE_TAG + nameKey + '|' + articleId;
   }
 }
 
@@ -96,6 +124,57 @@ export class ArticleStatePayload {
     this.starred = starred;
     this.saved = saved;
     this.progress = progress;
+  }
+}
+
+/** 高亮载荷：整条记录后写胜出（改备注 / 改配色都算一次修改）。 */
+export class HighlightPayload {
+  readonly id: string;
+  readonly articleId: string;
+  readonly quote: string;
+  readonly note: string;
+  readonly color: string;
+  readonly createdAt: number;
+  readonly anchorText: string;
+  readonly anchorRatio: number;
+
+  constructor(id: string, articleId: string, quote: string, note: string, color: string,
+    createdAt: number, anchorText: string, anchorRatio: number) {
+    this.id = id;
+    this.articleId = articleId;
+    this.quote = quote;
+    this.note = note;
+    this.color = color;
+    this.createdAt = createdAt;
+    this.anchorText = anchorText;
+    this.anchorRatio = anchorRatio;
+  }
+}
+
+/**
+ * 标签载荷：只有展示名。
+ *
+ * 刻意不带创建时间 / 本地 id —— 它们各端不同，放进载荷会让差量采集每轮都判定「有变化」，
+ * 两端来回覆盖（createdAt 在本地表里保留原值即可）。
+ */
+export class TagPayload {
+  readonly name: string;
+
+  constructor(name: string) {
+    this.name = name;
+  }
+}
+
+/** 文章 ↔ 标签关联载荷：带上标签展示名，应用时不必依赖标签记录先到。 */
+export class ArticleTagPayload {
+  readonly articleId: string;
+  readonly nameKey: string;
+  readonly name: string;
+
+  constructor(articleId: string, nameKey: string, name: string) {
+    this.articleId = articleId;
+    this.nameKey = nameKey;
+    this.name = name;
   }
 }
 
@@ -253,6 +332,82 @@ export function decodeArticleStatePayload(text: string): ArticleStatePayload | u
       normalizeField(payload.starred, '0'),
       normalizeField(payload.saved, '0'),
       normalizeField(payload.progress, '0'));
+  } catch (err) {
+    return undefined;
+  }
+}
+
+function textOf(value: string | undefined): string {
+  return typeof value === 'string' ? value : '';
+}
+
+function numberOf(value: number | undefined): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0;
+}
+
+/** 高亮载荷编解码（纯函数；缺 id / articleId 视为无效，不参与应用）。 */
+export function encodeHighlightPayload(payload: HighlightPayload): string {
+  return JSON.stringify(payload);
+}
+
+export function decodeHighlightPayload(text: string): HighlightPayload | undefined {
+  if (text.length === 0) {
+    return undefined;
+  }
+  try {
+    const payload: HighlightPayload = JSON.parse(text) as HighlightPayload;
+    const id: string = textOf(payload.id);
+    const articleId: string = textOf(payload.articleId);
+    if (id.length === 0 || articleId.length === 0) {
+      return undefined;
+    }
+    return new HighlightPayload(id, articleId, textOf(payload.quote), textOf(payload.note),
+      textOf(payload.color), numberOf(payload.createdAt), textOf(payload.anchorText),
+      numberOf(payload.anchorRatio));
+  } catch (err) {
+    return undefined;
+  }
+}
+
+/** 标签载荷编解码（纯函数）。 */
+export function encodeTagPayload(payload: TagPayload): string {
+  return JSON.stringify(payload);
+}
+
+export function decodeTagPayload(text: string): TagPayload | undefined {
+  if (text.length === 0) {
+    return undefined;
+  }
+  try {
+    const payload: TagPayload = JSON.parse(text) as TagPayload;
+    const name: string = textOf(payload.name);
+    if (name.length === 0) {
+      return undefined;
+    }
+    return new TagPayload(name);
+  } catch (err) {
+    return undefined;
+  }
+}
+
+/** 文章 ↔ 标签关联载荷编解码（纯函数）。 */
+export function encodeArticleTagPayload(payload: ArticleTagPayload): string {
+  return JSON.stringify(payload);
+}
+
+export function decodeArticleTagPayload(text: string): ArticleTagPayload | undefined {
+  if (text.length === 0) {
+    return undefined;
+  }
+  try {
+    const payload: ArticleTagPayload = JSON.parse(text) as ArticleTagPayload;
+    const articleId: string = textOf(payload.articleId);
+    const nameKey: string = textOf(payload.nameKey);
+    const name: string = textOf(payload.name);
+    if (articleId.length === 0 || nameKey.length === 0 || name.length === 0) {
+      return undefined;
+    }
+    return new ArticleTagPayload(articleId, nameKey, name);
   } catch (err) {
     return undefined;
   }

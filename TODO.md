@@ -12,6 +12,7 @@
 > P0-1 第一批已完成：同步内核（`spec/sync-core/`：记录模型 / `SyncBackend` / Mock 后端 /
 > 字段级合并 / 先拉后推）、`sync_records` 表与设置页「云同步（实验）」入口；
 > 第二批已接自动触发（冷启动 / 回前台 / 抓取完成，60s 节流 + 指数退避重试）与仅 Wi-Fi 开关。
+> 第三批已把高亮 / 标签 / 文章↔标签关联 / 白名单设置纳入同步（标签按归一化名称收敛）。
 > 默认关闭、数据不出本机。真实后端 / 账号体系待续。
 P0-2 第一批（Google Reader API：FreshRSS / TTRSS / Miniflux）已完成：账密连接、订阅合并、文章增量、
 已读/收藏双向同步、Asset Store 凭据、自动同步（默认关）。
@@ -70,12 +71,12 @@ P2-1 通知增强已完成：策略化通知（源开关 / 关键词 / 免打扰
 `model/Sync` 记录模型与字段级合并、`SyncBackend` 传输抽象、本机 Mock 后端、`sync_records` 表
 （`SCHEMA_VERSION` 9）、差量采集 / 回写与编排引擎，设置页「云同步（实验）」入口；
 自动同步已接冷启动 / 回前台 / 抓取完成（60 秒节流、失败 30s / 60s / 120s 退避重试三次）与仅 Wi-Fi 开关。
-真实后端、账号体系与高亮 / 标签 / 设置同步留待后续批次。
+高亮、标签、文章↔标签关联与白名单设置也已纳入同步。真实后端、账号体系与冲突提示留待后续批次。
 
 **任务**
 
-- [X] 设计同步模型：`Feed` / `ArticleState(read/starred/saved/progress)` 已落地（字段级时间戳）；
-      `Highlight` / `Settings` / `Tag` 留待后续批次。
+- [X] 设计同步模型：`Feed` / `ArticleState(read/starred/saved/progress)` / `Highlight` / `Tag` /
+      `ArticleTag` / `Settings`（白名单键）全部纳入 `SyncRecord`。
 - [X] 抽象 `SyncBackend` 接口（`pull` / `push` / `betterCursor` / `reset`），先落地本地 Mock 实现，再接真实后端。
 - [X] 增量同步：基于 `updated_at` + 游标；冲突按「最近修改优先 + 状态可合并」处理
       （已读、收藏、稍后读、进度均可合并，正文内容不覆盖）。编排为**先拉后推**，

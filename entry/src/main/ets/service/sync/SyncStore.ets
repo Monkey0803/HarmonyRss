@@ -262,7 +262,9 @@ export class SyncStore implements SyncRecordStore {
 
 export const syncStore: SyncStore = new SyncStore();
 
-/** 实体类型是否受支持（差量采集与合并都只处理这两类）。 */
+/** 实体类型是否受支持（差量采集与合并只处理这些类型）。 */
 export function isSyncableKind(kind: string): boolean {
-  return kind === SyncKinds.FEED || kind === SyncKinds.ARTICLE_STATE;
+  return kind === SyncKinds.FEED || kind === SyncKinds.ARTICLE_STATE ||
+    kind === SyncKinds.HIGHLIGHT || kind === SyncKinds.TAG ||
+    kind === SyncKinds.ARTICLE_TAG || kind === SyncKinds.SETTINGS;
 }
