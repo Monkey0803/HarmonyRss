@@ -39,8 +39,18 @@ export struct SyncView {
   @Local backend: string = '';
   @Local syncing: boolean = false;
 
+  /** 状态变化回调：自动同步 / 云端变更完成后，页面上的时间与条数实时刷新。 */
+  private onStatusChanged: () => void = () => {
+    this.refresh();
+  };
+
   aboutToAppear(): void {
     this.refresh();
+    syncService.subscribeStatus(this.onStatusChanged);
+  }
+
+  aboutToDisappear(): void {
+    syncService.unsubscribeStatus(this.onStatusChanged);
   }
 
   private hostContext(): common.Context | undefined {

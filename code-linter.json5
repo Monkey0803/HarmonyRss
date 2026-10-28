@@ -16,6 +16,8 @@
     "plugin:@typescript-eslint/recommended"
   ],
   "rules": {
+    // 本工程只允许状态管理 V2；该规则只认 V1 的 @Reusable，对 @ReusableV2 仍会报警，故关闭。
+    "@performance/hp-arkui-use-reusable-component": "off",
     "@security/no-unsafe-aes": "error",
     "@security/no-unsafe-hash": "error",
     "@security/no-unsafe-mac": "warn",

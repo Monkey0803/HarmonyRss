@@ -66,6 +66,8 @@ export class SyncService {
   private retryAttempt: number = 0;
   /** 云端变更监听是否已绑定（同账号其他设备写入时触发一次自动同步）。 */
   private cloudListenerBound: boolean = false;
+  /** 状态变化订阅者（设置页实时刷新用；只存内存）。 */
+  private statusListeners: Array<() => void> = [];
 
   private async open(context: common.Context): Promise<preferences.Preferences | undefined> {
     const opened: preferences.Preferences | undefined = this.store;
@@ -170,6 +172,31 @@ export class SyncService {
   private async lastSyncAt(context: common.Context): Promise<number> {
     const store: preferences.Preferences | undefined = await this.open(context);
     return store !== undefined ? this.readNumber(store, PreferencesConstants.KEY_CLOUD_SYNC_LAST_AT) : 0;
+  }
+
+  /** 订阅同步状态变化（设置页据此实时刷新时间 / 条数）。 */
+  subscribeStatus(listener: () => void): void {
+    if (this.statusListeners.indexOf(listener) < 0) {
+      this.statusListeners.push(listener);
+    }
+  }
+
+  unsubscribeStatus(listener: () => void): void {
+    const index: number = this.statusListeners.indexOf(listener);
+    if (index >= 0) {
+      this.statusListeners.splice(index, 1);
+    }
+  }
+
+  private notifyStatus(): void {
+    for (let i = 0; i < this.statusListeners.length; i += 1) {
+      try {
+        this.statusListeners[i]();
+      } catch (err) {
+        const error: BusinessError = err as BusinessError;
+        hilog.warn(DOMAIN, TAG, 'status listener failed: %{public}d', error.code);
+      }
+    }
   }
 
   /** 同步目标：'mock'（本机模拟，默认）或 'cloud'（华为云空间）。 */
@@ -278,6 +305,7 @@ export class SyncService {
         await collector.apply(context);
         await this.rememberLastSync(context, summary.at);
         await this.rememberConflicts(context, summary.conflicts);
+        this.notifyStatus();
         // 这一轮成功了：清掉失败重试，避免继续在后台补试。
         this.retryAttempt = 0;
         this.clearRetryTimer();
