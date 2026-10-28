@@ -22,7 +22,16 @@ import { common, wantAgent, Want, WantAgent } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { CommonConstants } from '../common/constants/CommonConstants';
-import * as NotifyRule from './NotifyPolicy';
+import {
+  digestDue,
+  filter as filterArticles,
+  groupNameOf,
+  inDnd,
+  localDateKey,
+  minutesOfDay,
+  plan as planNotifications,
+  stableNotificationId
+} from './NotifyPolicy';
 import { notifyStore } from './NotifyStore';
 import { articleStore } from './ArticleStore';
 import { feedStore } from './FeedStore';
@@ -48,7 +57,8 @@ export class NotifyService {
   private groupSupported: boolean = true;
 
   /** 偏好库懒打开：后台任务可能没走设置页初始化，这里保证第一次发布前可用。 */
-  private storeReady: Promise<void> | undefined = undefined;
+  private storeReady: Promise<void> = Promise.resolve();
+  private storeOpened: boolean = false;
 
   /** 是否已获得通知授权。 */
   isEnabled(): boolean {
@@ -76,7 +86,8 @@ export class NotifyService {
 
   /** 确保通知偏好库已打开（只打开一次；失败内部已降级，不抛错）。 */
   private async ensureStore(context: common.Context): Promise<void> {
-    if (this.storeReady === undefined) {
+    if (!this.storeOpened) {
+      this.storeOpened = true;
       this.storeReady = notifyStore.open(context);
     }
     await this.storeReady;
@@ -97,12 +108,12 @@ export class NotifyService {
     try {
       await this.ensureStore(context);
       const policy: NotifyPolicy = notifyStore.loadPolicy();
-      const filtered: Article[] = NotifyRule.filter(added, feeds, policy);
+      const filtered: Article[] = filterArticles(added, feeds, policy);
       if (filtered.length === 0) {
         return;
       }
       const now: number = Date.now();
-      if (NotifyRule.inDnd(policy, NotifyRule.minutesOfDay(now))) {
+      if (inDnd(policy, minutesOfDay(now))) {
         this.enqueue(filtered, now);
         return;
       }
@@ -111,7 +122,7 @@ export class NotifyService {
         await this.publishAggregatesByFeed(context, filtered);
         return;
       }
-      const planned = NotifyRule.plan(
+      const planned = planNotifications(
         filtered, CommonConstants.NOTIFY_MAX_PER_FEED, CommonConstants.NOTIFY_MAX_TOTAL);
       for (let i = 0; i < planned.items.length; i += 1) {
         const ok: boolean = await this.publishItem(context, planned.items[i], true);
@@ -231,7 +242,7 @@ export class NotifyService {
       const text: string = context.resourceManager.getStringSync(
         $r('app.string.notify_aggregate_text').id, feedTitle, remaining);
       return await this.publishNotification(context,
-        NotifyRule.stableNotificationId(feedId + ':more'), NotifyRule.groupNameOf(feedId),
+        stableNotificationId(feedId + ':more'), groupNameOf(feedId),
         title, text, firstArticleId, false);
     } catch (err) {
       hilog.error(DOMAIN, TAG, 'publishAggregate failed: %{public}s', describeError(err));
@@ -251,7 +262,7 @@ export class NotifyService {
       await this.ensureStore(context);
       const policy: NotifyPolicy = notifyStore.loadPolicy();
       const now: number = Date.now();
-      if (NotifyRule.inDnd(policy, NotifyRule.minutesOfDay(now))) {
+      if (inDnd(policy, minutesOfDay(now))) {
         return;
       }
       const queue: NotifyQueueItem[] = notifyStore.loadQueue();
@@ -270,7 +281,7 @@ export class NotifyService {
           $r('app.string.notify_aggregate_more').id, queue.length);
       }
       const ok: boolean = await this.publishNotification(context,
-        NotifyRule.stableNotificationId('queue:' + NotifyRule.localDateKey(now)), '',
+        stableNotificationId('queue:' + localDateKey(now)), '',
         title, text, queue[0].articleId, false);
       if (ok) {
         notifyStore.saveQueue([]);
@@ -292,7 +303,7 @@ export class NotifyService {
       await this.ensureStore(context);
       const policy: NotifyPolicy = notifyStore.loadPolicy();
       const now: number = Date.now();
-      if (!NotifyRule.digestDue(policy, now, notifyStore.lastDigestDate())) {
+      if (!digestDue(policy, now, notifyStore.lastDigestDate())) {
         return;
       }
       const dayStart: Date = new Date(now);
@@ -302,7 +313,7 @@ export class NotifyService {
         return;
       }
       const feeds: FeedSource[] = await feedStore.load(context, false);
-      const filtered: Article[] = NotifyRule.filter(articles, feeds, policy);
+      const filtered: Article[] = filterArticles(articles, feeds, policy);
       if (filtered.length === 0) {
         return;
       }
@@ -315,9 +326,9 @@ export class NotifyService {
       }
       const text: string = context.resourceManager.getStringSync(
         $r('app.string.notify_digest_notify_text').id, summary);
-      const dateKey: string = NotifyRule.localDateKey(now);
+      const dateKey: string = localDateKey(now);
       const ok: boolean = await this.publishNotification(context,
-        NotifyRule.stableNotificationId('digest:' + dateKey), '',
+        stableNotificationId('digest:' + dateKey), '',
         title, text, filtered[0].id, false);
       if (ok) {
         notifyStore.setLastDigestDate(dateKey);
@@ -338,7 +349,7 @@ export class NotifyService {
       const text: string =
         context.resourceManager.getStringSync($r('app.string.notify_test_text').id);
       return await this.publishNotification(context,
-        NotifyRule.stableNotificationId('notify:test'), '', title, text, '', false);
+        stableNotificationId('notify:test'), '', title, text, '', false);
     } catch (err) {
       hilog.error(DOMAIN, TAG, 'testNotification failed: %{public}s', describeError(err));
       return false;
@@ -394,7 +405,7 @@ export class NotifyService {
     const buttons: Array<notificationManager.NotificationActionButton> = [];
     const markRead: WantAgent | undefined = await this.buildWantAgent(context, articleId,
       DeepLinkParams.ACTION_MARK_READ,
-      NotifyRule.stableNotificationId(articleId + ':' + DeepLinkParams.ACTION_MARK_READ));
+      stableNotificationId(articleId + ':' + DeepLinkParams.ACTION_MARK_READ));
     if (markRead !== undefined) {
       const label: string =
         context.resourceManager.getStringSync($r('app.string.notify_action_mark_read').id);
@@ -402,7 +413,7 @@ export class NotifyService {
     }
     const star: WantAgent | undefined = await this.buildWantAgent(context, articleId,
       DeepLinkParams.ACTION_STAR,
-      NotifyRule.stableNotificationId(articleId + ':' + DeepLinkParams.ACTION_STAR));
+      stableNotificationId(articleId + ':' + DeepLinkParams.ACTION_STAR));
     if (star !== undefined) {
       const label: string =
         context.resourceManager.getStringSync($r('app.string.notify_action_star').id);

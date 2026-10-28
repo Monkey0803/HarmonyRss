@@ -35,7 +35,7 @@ export class NotifyViewModel {
   @Trace saving: boolean = false;
 
   /** 首次装配完成的信号（设置页可 await，避免闪一下默认值）。 */
-  private ready: Promise<void> | undefined = undefined;
+  private ready: Promise<void> = Promise.resolve();
 
   /** 打开通知偏好库 + 设置库，读出策略与系统授权状态。 */
   init(context: common.Context): void {
@@ -44,11 +44,7 @@ export class NotifyViewModel {
 
   /** 等待首次装配完成（未 init 时立即返回）。 */
   async whenReady(): Promise<void> {
-    const pending: Promise<void> | undefined = this.ready;
-    if (pending === undefined) {
-      return;
-    }
-    await pending;
+    await this.ready;
   }
 
   private async load(context: common.Context): Promise<void> {

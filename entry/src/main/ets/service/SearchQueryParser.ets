@@ -12,6 +12,9 @@
 
 import { SearchQuery, SearchState, normalizeSearchState } from '../model/Search';
 
+/** 复用一个 Date 实例（解析在检索热路径上，避免每次查询都分配对象）。 */
+const SCRATCH_DATE: Date = new Date();
+
 /** 日期字符串解析：YYYY-MM-DD / YYYY/MM/DD；返回当天 00:00（endOfDay 时返回次日 00:00）。 */
 function parseDate(value: string, endOfDay: boolean): number {
   const text: string = value.trim();
@@ -29,11 +32,12 @@ function parseDate(value: string, endOfDay: boolean): number {
   if (month < 1 || month > 12 || day < 1 || day > 31) {
     return 0;
   }
-  const date: Date = new Date(year, month - 1, day, 0, 0, 0, 0);
+  SCRATCH_DATE.setFullYear(year, month - 1, day);
+  SCRATCH_DATE.setHours(0, 0, 0, 0);
   if (endOfDay) {
-    date.setDate(date.getDate() + 1);
+    SCRATCH_DATE.setDate(SCRATCH_DATE.getDate() + 1);
   }
-  return date.getTime();
+  return SCRATCH_DATE.getTime();
 }
 
 /** 按空白切分，但双引号内的空白不切（保留短语）。 */

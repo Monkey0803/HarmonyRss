@@ -41,6 +41,9 @@ import { ruleService } from '../service/RuleService';
 import { RuleApplyResult } from '../model/Rule';
 import { diagnostics } from '../service/DiagnosticsService';
 
+/** 复用一个 Date 实例：日期分桶在列表滚动时会被频繁调用，避免每次都分配对象。 */
+const SCRATCH_DATE: Date = new Date();
+
 const MINUTE_MS: number = 60 * 1000;
 
 /** 分组头行的占位订阅源（永不渲染）。 */
@@ -2003,7 +2006,8 @@ export class FeedViewModel {
     if (ts >= today - FeedViewModel.DAY_MS) {
       return 'yesterday';
     }
-    const weekday: number = (new Date(today).getDay() + 6) % 7;
+    SCRATCH_DATE.setTime(today);
+    const weekday: number = (SCRATCH_DATE.getDay() + 6) % 7;
     if (ts >= today - weekday * FeedViewModel.DAY_MS) {
       return 'this_week';
     }
@@ -2012,9 +2016,9 @@ export class FeedViewModel {
 
   /** 时间戳所在自然日的 00:00。 */
   private static startOfDay(ts: number): number {
-    const d: Date = new Date(ts);
-    d.setHours(0, 0, 0, 0);
-    return d.getTime();
+    SCRATCH_DATE.setTime(ts);
+    SCRATCH_DATE.setHours(0, 0, 0, 0);
+    return SCRATCH_DATE.getTime();
   }
 
   /** 日期桶标题。 */

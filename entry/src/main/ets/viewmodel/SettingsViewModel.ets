@@ -28,7 +28,7 @@ export class SettingsViewModel {
   @Trace globalImmersive: boolean = false;
 
   /** 设置恢复完成的信号：列表展示偏好（排序/分组）要先读到，靠它对齐时序。 */
-  private ready: Promise<void> | undefined = undefined;
+  private ready: Promise<void> = Promise.resolve();
 
   /** 启动时装配：恢复落盘设置 → 应用主题与语言 → 恢复防窥订阅（不弹窗）→ 同步后台任务。 */
   init(context: common.Context): void {
@@ -38,11 +38,7 @@ export class SettingsViewModel {
 
   /** 等待设置恢复完成（未 init 时立即返回；可重复 await）。 */
   async whenReady(): Promise<void> {
-    const pending: Promise<void> | undefined = this.ready;
-    if (pending === undefined) {
-      return;
-    }
-    await pending;
+    await this.ready;
   }
 
   private async load(context: common.Context): Promise<void> {
