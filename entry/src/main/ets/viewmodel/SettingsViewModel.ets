@@ -16,7 +16,6 @@ import { MaterialController } from '../service/MaterialController';
 import { antiPeep } from '../service/AntiPeep';
 import { gripSensor } from '../service/GripSensor';
 import { backgroundImageService } from '../service/BackgroundImageService';
-import { appIconService } from '../service/AppIconService';
 import { backgroundRefresh } from '../service/BackgroundRefresh';
 import { notifyService } from '../service/NotifyService';
 import { BackgroundKind } from '../common/constants/SettingsConstants';
@@ -237,18 +236,14 @@ export class SettingsViewModel {
   }
 
   /**
-   * 切换 App logo：先记录并落盘（应用内 logo 立即生效），再尝试同步切换系统桌面图标。
-   * 返回系统桌面图标是否切换成功；false 时界面可提示「需上架后生效」。
+   * 切换 App logo：只影响应用内展示，并持久化。
+   *
+   * 桌面 / 启动图标走**静态资源**（随版本发布更新），不接入 AppGallery 动态图标服务，
+   * 因此这里不再尝试切换系统桌面图标。
    */
-  async setLogoKind(id: string): Promise<boolean> {
+  setLogoKind(id: string): void {
     appSettings.logoKind = id;
     settingsStore.save();
-    return await appIconService.selectDynamicIcon(id);
-  }
-
-  /** 本机是否支持切换系统桌面图标。 */
-  launcherIconSupported(): boolean {
-    return appIconService.isSupported();
   }
 
   /**

@@ -6,14 +6,6 @@
  */
 
 import { common } from '@kit.AbilityKit';
-import {
-  HdsSnackBar,
-  SnackBarIconOptions,
-  SnackBarMessageOptions,
-  SnackBarOperationOptions,
-  SnackBarStyleOptions,
-  SnackBarOperationType
-} from '@kit.UIDesignKit';
 import { appSettings } from '../../model/AppSettings';
 import {
   BACKGROUND_OPTIONS,
@@ -91,19 +83,6 @@ export struct SettingsLookView {
     return context as common.UIAbilityContext;
   }
 
-  /** 桌面图标未能切换时的即时提示（HdsSnackBar，比 Toast 更能承载「为什么没成功」）。 */
-  private launcherIconSnack(): void {
-    const bar: HdsSnackBar = new HdsSnackBar(this.getUIContext());
-    const icon: SnackBarIconOptions = { icon: $r('sys.symbol.exclamationmark_circle') };
-    const message: SnackBarMessageOptions = { title: $r('app.string.toast_logo_launcher_failed') };
-    const operation: SnackBarOperationOptions = {
-      operationType: SnackBarOperationType.CLOSE_BUTTON_ONLY,
-      closeButtonAccessibilityText: $r('app.string.snack_dismiss')
-    };
-    const style: SnackBarStyleOptions = { duration: 4000 };
-    bar.show(icon, message, operation, style);
-  }
-
   build() {
     Scroll(this.scroller) {
       Column() {
@@ -145,11 +124,7 @@ export struct SettingsLookView {
         Column() {
           LogoPickerRow({
             onPick: (id: string) => {
-              settingsViewModel.setLogoKind(id).then((applied: boolean) => {
-                if (!applied) {
-                  this.launcherIconSnack();
-                }
-              });
+              settingsViewModel.setLogoKind(id);
             }
           })
         }

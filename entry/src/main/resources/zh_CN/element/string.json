@@ -1186,11 +1186,7 @@
     },
     {
       "name": "aux_logo_launcher_hint",
-      "value": "所选 logo 会用于应用内展示；系统桌面图标需应用上架 AppGallery 后才能同步切换。"
-    },
-    {
-      "name": "toast_logo_launcher_failed",
-      "value": "桌面图标未切换：应用尚未上架或未配置动态图标。"
+      "value": "以上 logo 仅影响应用内展示；桌面与启动图标为静态资源，随应用版本更新。"
     },
     {
       "name": "effect_flow_title",

@@ -1186,11 +1186,7 @@
     },
     {
       "name": "aux_logo_launcher_hint",
-      "value": "El logotipo se muestra en la aplicación; el icono de la pantalla de inicio solo cambia tras publicar la aplicación en AppGallery."
-    },
-    {
-      "name": "toast_logo_launcher_failed",
-      "value": "No se cambió el icono de la pantalla de inicio: la aplicación no está publicada o no tiene un icono dinámico."
+      "value": "El logotipo anterior solo afecta a la vista dentro de la aplicación. Los iconos de pantalla de inicio y de arranque son recursos estáticos y se actualizan con las versiones de la aplicación."
     },
     {
       "name": "effect_flow_title",

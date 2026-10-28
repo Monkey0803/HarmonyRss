@@ -1186,11 +1186,7 @@
     },
     {
       "name": "aux_logo_launcher_hint",
-      "value": "The logo is shown in the app; the home-screen icon switches only after the app is published on AppGallery."
-    },
-    {
-      "name": "toast_logo_launcher_failed",
-      "value": "Home-screen icon not switched: the app is not published or has no dynamic icon configured."
+      "value": "The logo above only affects the in-app display. The home-screen and launch icons are static assets and update with app releases."
     },
     {
       "name": "effect_flow_title",

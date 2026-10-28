@@ -1186,11 +1186,7 @@
     },
     {
       "name": "aux_logo_launcher_hint",
-      "value": "Le logo s'affiche dans l'application ; l'icône de l'écran d'accueil ne change qu'après publication sur AppGallery."
-    },
-    {
-      "name": "toast_logo_launcher_failed",
-      "value": "Icône de l'écran d'accueil non modifiée : l'application n'est pas publiée ou n'a pas d'icône dynamique."
+      "value": "Le logo ci-dessus ne concerne que l’affichage dans l’application. Les icônes de l’écran d’accueil et de démarrage sont des ressources statiques, mises à jour avec les versions de l’application."
     },
     {
       "name": "effect_flow_title",

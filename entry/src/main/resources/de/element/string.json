@@ -1186,11 +1186,7 @@
     },
     {
       "name": "aux_logo_launcher_hint",
-      "value": "Das Logo erscheint in der App; das Symbol auf dem Startbildschirm wechselt erst, nachdem die App im AppGallery veröffentlicht wurde."
-    },
-    {
-      "name": "toast_logo_launcher_failed",
-      "value": "Startbildschirm-Symbol nicht gewechselt: Die App ist nicht veröffentlicht oder hat kein dynamisches Symbol."
+      "value": "Das Logo oben betrifft nur die Darstellung in der App. Startbildschirm- und Start-Symbol sind statische Ressourcen und ändern sich mit App-Updates."
     },
     {
       "name": "effect_flow_title",
