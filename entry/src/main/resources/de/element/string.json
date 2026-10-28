@@ -4142,7 +4142,7 @@
     },
     {
       "name": "sync_aux_cloud",
-      "value": "Sync-Datensätze liegen in deinem HUAWEI Cloud-Speicher. Wirksam, sobald die Cloud-Seite in AppGallery Connect bereitgestellt ist; die App kontaktiert keinen Entwickler-Server."
+      "value": "Sync-Datensätze liegen in deinem HUAWEI Cloud-Speicher und werden zwischen Geräten mit derselben HUAWEI ID automatisch synchronisiert. Die App kontaktiert keinen Entwickler-Server."
     },
     {
       "name": "sync_row_backend",

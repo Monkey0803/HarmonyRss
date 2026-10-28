@@ -4142,7 +4142,7 @@
     },
     {
       "name": "sync_aux_cloud",
-      "value": "Sync records are stored in your HUAWEI Cloud space. Works after the cloud side is deployed in AppGallery Connect; the app never contacts a developer server."
+      "value": "Sync records are stored in your HUAWEI Cloud space and sync automatically across devices signed in with the same HUAWEI ID. The app never contacts a developer server."
     },
     {
       "name": "sync_row_backend",

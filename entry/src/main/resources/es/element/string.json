@@ -4142,7 +4142,7 @@
     },
     {
       "name": "sync_aux_cloud",
-      "value": "Los registros de sincronización se guardan en tu espacio en la nube de HUAWEI. Funciona tras desplegar el lado cloud en AppGallery Connect; la app no contacta con ningún servidor del desarrollador."
+      "value": "Los registros de sincronización se guardan en tu espacio en la nube de HUAWEI y se sincronizan automáticamente entre dispositivos con el mismo HUAWEI ID. La app no contacta con ningún servidor del desarrollador."
     },
     {
       "name": "sync_row_backend",
