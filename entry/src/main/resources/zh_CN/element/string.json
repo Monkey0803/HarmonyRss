@@ -5,6 +5,10 @@
       "value": "后台定时刷新订阅源"
     },
     {
+      "name": "permission_datasync_reason",
+      "value": "用于在登录同一华为账号的设备之间同步订阅与阅读数据。"
+    },
+    {
       "name": "module_desc",
       "value": "HDS 应用入口模块"
     },
@@ -4127,6 +4131,18 @@
     {
       "name": "sync_row_wifi_only",
       "value": "仅 Wi-Fi 同步"
+    },
+    {
+      "name": "sync_backend_cloud",
+      "value": "华为云空间"
+    },
+    {
+      "name": "sync_row_cloud",
+      "value": "端云数据同步（实验）"
+    },
+    {
+      "name": "sync_aux_cloud",
+      "value": "同步记录存入你的华为云空间，AGC 部署云侧后生效；应用不访问开发者服务器。"
     },
     {
       "name": "sync_row_backend",

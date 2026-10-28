@@ -24,6 +24,9 @@ import { SyncCollector } from './sync/SyncCollector';
 import { SyncEngine } from './sync/SyncEngine';
 import { syncStore } from './sync/SyncStore';
 import { MockSyncBackend } from './sync/MockSyncBackend';
+import { cloudStore } from './sync/CloudStore';
+import { CloudRelayBackend } from './sync/CloudRelayBackend';
+import { SyncBackend } from './sync/SyncBackend';
 
 const DOMAIN: number = 0x0000;
 const TAG: string = 'SyncService';
@@ -58,6 +61,8 @@ export class SyncService {
   /** 失败重试定时器与已重试次数。 */
   private retryTimer: number = -1;
   private retryAttempt: number = 0;
+  /** 云端变更监听是否已绑定（同账号其他设备写入时触发一次自动同步）。 */
+  private cloudListenerBound: boolean = false;
 
   private async open(context: common.Context): Promise<preferences.Preferences | undefined> {
     const opened: preferences.Preferences | undefined = this.store;
@@ -164,6 +169,65 @@ export class SyncService {
     return store !== undefined ? this.readNumber(store, PreferencesConstants.KEY_CLOUD_SYNC_LAST_AT) : 0;
   }
 
+  /** 同步目标：'mock'（本机模拟，默认）或 'cloud'（华为云空间）。 */
+  private async backendKind(context: common.Context): Promise<string> {
+    const store: preferences.Preferences | undefined = await this.open(context);
+    if (store === undefined) {
+      return 'mock';
+    }
+    const raw: preferences.ValueType = store.getSync(PreferencesConstants.KEY_CLOUD_SYNC_BACKEND, 'mock');
+    return typeof raw === 'string' && raw === 'cloud' ? 'cloud' : 'mock';
+  }
+
+  async isCloudBackend(context: common.Context): Promise<boolean> {
+    return await this.backendKind(context) === 'cloud';
+  }
+
+  /** 切换同步目标；切到云端时顺带准备云库与网络策略。 */
+  async setCloudBackend(context: common.Context, cloud: boolean): Promise<void> {
+    const store: preferences.Preferences | undefined = await this.open(context);
+    if (store === undefined) {
+      return;
+    }
+    try {
+      store.putSync(PreferencesConstants.KEY_CLOUD_SYNC_BACKEND, cloud ? 'cloud' : 'mock');
+      await store.flush();
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.warn(DOMAIN, TAG, 'persist backend failed: %{public}d', error.code);
+    }
+    if (cloud) {
+      await this.prepareCloud(context);
+    }
+  }
+
+  /**
+   * 准备端云同步：打开云库 → 按「仅 Wi-Fi」设置网络策略 → 订阅云端变更。
+   * AGC 未部署 / 未登录华为账号时 open 仍会成功（只是没登记分布式表），此时同步退化为本机表。
+   */
+  private async prepareCloud(context: common.Context): Promise<boolean> {
+    const opened: boolean = await cloudStore.open(context);
+    if (!opened) {
+      return false;
+    }
+    await cloudStore.setWifiOnly(await this.isWifiOnly(context));
+    this.bindCloudListener(context);
+    return true;
+  }
+
+  /** 云端变更（同账号其他设备写入）→ 触发一次自动同步把状态合并回本地。 */
+  private bindCloudListener(context: common.Context): void {
+    if (this.cloudListenerBound) {
+      return;
+    }
+    this.cloudListenerBound = true;
+    cloudStore.subscribe(() => {
+      this.autoSync(context, 'cloud-change').catch((err: Error) => {
+        hilog.info(DOMAIN, TAG, 'cloud change sync failed: %{public}s', err.message);
+      });
+    });
+  }
+
   /** 当前状态快照（设置页进入时读一次）。 */
   async status(context: common.Context): Promise<SyncStatus> {
     const store: preferences.Preferences | undefined = await this.open(context);
@@ -175,7 +239,9 @@ export class SyncService {
     await articleStore.whenReady();
     const pending: number = await syncStore.pendingCount();
     const records: number = await syncStore.recordCount();
-    return new SyncStatus(enabled, wifiOnly, lastAt, pending, records, this.backendName);
+    const cloud: boolean = await this.isCloudBackend(context);
+    return new SyncStatus(enabled, wifiOnly, lastAt, pending, records,
+      cloud ? 'Cloud' : this.backendName);
   }
 
   /** 立即同步：采集 → 拉取 / 合并 / 推送 → 回写。失败不抛，返回带 error 的摘要。 */
@@ -189,8 +255,19 @@ export class SyncService {
       const origin: string = await this.nodeId(context);
       const collector: SyncCollector = new SyncCollector(syncStore, origin);
       await collector.collect(context, Date.now());
-      const engine: SyncEngine =
-        new SyncEngine(new MockSyncBackend(context), syncStore, origin);
+      let backend: SyncBackend;
+      if (await this.isCloudBackend(context)) {
+        const ready: boolean = await this.prepareCloud(context);
+        if (!ready) {
+          return new SyncSummary(0, 0, 0, await syncStore.pendingCount(), 0, 'cloud unavailable');
+        }
+        // 先把云端的最新行拉到本地表，再交给引擎合并（autoSync 之外需要一次手动拉取）。
+        await cloudStore.syncNow();
+        backend = new CloudRelayBackend(cloudStore);
+      } else {
+        backend = new MockSyncBackend(context);
+      }
+      const engine: SyncEngine = new SyncEngine(backend, syncStore, origin);
       const summary: SyncSummary = await engine.run();
       if (summary.error.length === 0) {
         await collector.apply(context);
@@ -303,8 +380,13 @@ export class SyncService {
   async resetRemote(context: common.Context): Promise<void> {
     this.retryAttempt = 0;
     this.clearRetryTimer();
-    const backend: MockSyncBackend = new MockSyncBackend(context);
-    await backend.reset();
+    if (await this.isCloudBackend(context)) {
+      await this.prepareCloud(context);
+      cloudStore.clear();
+    } else {
+      const backend: MockSyncBackend = new MockSyncBackend(context);
+      await backend.reset();
+    }
     syncStore.clearAll();
     await this.rememberLastSync(context, 0);
   }

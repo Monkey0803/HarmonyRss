@@ -5,6 +5,10 @@
       "value": "HDS アプリのエントリーモジュール"
     },
     {
+      "name": "permission_datasync_reason",
+      "value": "同じ HUAWEI ID でサインインした端末間で購読・閲覧データを同期するために使用します。"
+    },
+    {
       "name": "work_scheduler_desc",
       "value": "バックグラウンドでのフィード更新"
     },
@@ -4127,6 +4131,18 @@
     {
       "name": "sync_row_wifi_only",
       "value": "Wi-Fi 接続時のみ同期"
+    },
+    {
+      "name": "sync_backend_cloud",
+      "value": "HUAWEI クラウド"
+    },
+    {
+      "name": "sync_row_cloud",
+      "value": "端末とクラウドのデータ同期（ベータ）"
+    },
+    {
+      "name": "sync_aux_cloud",
+      "value": "同期レコードは HUAWEI クラウドスペースに保存されます。AGC でクラウド側を配備すると有効になります。開発者サーバーには接続しません。"
     },
     {
       "name": "sync_row_backend",

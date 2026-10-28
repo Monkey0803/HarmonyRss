@@ -46,13 +46,20 @@
       {
         "name": "ohos.permission.DETECT_GESTURE"
       },
-      // 防窥保护（读取系统防窥状态）。
-      {
-        "name": "ohos.permission.DLP_GET_HIDE_STATUS"
-      },
       // 播客后台播放（配合 backgroundModes: audioPlayback + AVSession）。
       {
         "name": "ohos.permission.KEEP_BACKGROUND_RUNNING"
+      },
+      // 关系型数据库端云同步（登记 DISTRIBUTED_CLOUD 表，用于同账号设备间同步阅读数据）。
+      {
+        "name": "ohos.permission.DISTRIBUTED_DATASYNC",
+        "reason": "$string:permission_datasync_reason",
+        "usedScene": {
+          "abilities": [
+            "EntryAbility"
+          ],
+          "when": "inuse"
+        }
       }
     ],
     "abilities": [

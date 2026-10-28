@@ -1,10 +1,12 @@
 {
   "app": {
-    "bundleName": "com.example.harmonyrss",
+    "bundleName": "com.xiaohuihu.rss",
     "vendor": "example",
     "versionCode": 1000000,
     "versionName": "1.0.0",
     "icon": "$media:layered_image",
-    "label": "$string:app_name"
+    "label": "$string:app_name",
+    // 关系型数据库端云同步：用户在「设置 > 云空间」可见应用开关，可自行关闭。
+    "cloudStructuredDataSyncEnabled": true
   }
 }

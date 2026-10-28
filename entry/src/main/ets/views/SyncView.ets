@@ -31,6 +31,7 @@ export struct SyncView {
   @Param scroller: Scroller = new Scroller();
   @Local syncOn: boolean = false;
   @Local wifiOnly: boolean = true;
+  @Local cloudBackend: boolean = false;
   @Local lastSyncAt: number = 0;
   @Local pending: number = 0;
   @Local records: number = 0;
@@ -54,6 +55,7 @@ export struct SyncView {
     syncService.status(context).then((status: SyncStatus) => {
       this.syncOn = status.enabled;
       this.wifiOnly = status.wifiOnly;
+      this.cloudBackend = status.backend === 'Cloud';
       this.lastSyncAt = status.lastSyncAt;
       this.pending = status.pending;
       this.records = status.records;
@@ -68,6 +70,9 @@ export struct SyncView {
   }
 
   private backendText(): ResourceStr {
+    if (this.cloudBackend) {
+      return $r('app.string.sync_backend_cloud');
+    }
     return this.backend.length > 0 ? this.backend : $r('app.string.sync_backend_mock');
   }
 
@@ -91,6 +96,18 @@ export struct SyncView {
     // 关闭同步只改开关，不动本地数据；重新打开后下一次同步继续合并。
     this.syncOn = value;
     syncService.setEnabled(context, value).then(() => {
+      this.refresh();
+    });
+  }
+
+  private toggleCloud(value: boolean): void {
+    const context: common.Context | undefined = this.hostContext();
+    if (context === undefined) {
+      return;
+    }
+    // 切到云端只是换同步目标：本地数据与同步副本都保留，随时可以切回本机模拟。
+    this.cloudBackend = value;
+    syncService.setCloudBackend(context, value).then(() => {
       this.refresh();
     });
   }
@@ -175,6 +192,24 @@ export struct SyncView {
               .selectedColor($r('app.color.hm_brand'))
               .onChange((value: boolean) => {
                 this.toggle(value);
+              })
+          }
+          .width('100%')
+          .height($r('app.float.row_height'))
+          .padding({ left: $r('app.float.space_m'), right: $r('app.float.space_m') })
+
+          Divider().color($r('app.color.hm_divider'))
+
+          Row() {
+            Row() {
+              SettingIconTitle({ icon: $r('sys.symbol.icloud'),
+                title: $r('app.string.sync_row_cloud') })
+            }
+            .layoutWeight(1)
+            Toggle({ type: ToggleType.Switch, isOn: this.cloudBackend })
+              .selectedColor($r('app.color.hm_brand'))
+              .onChange((value: boolean) => {
+                this.toggleCloud(value);
               })
           }
           .width('100%')
@@ -288,7 +323,7 @@ export struct SyncView {
         .backgroundColor($r('app.color.hm_card_background'))
         .borderRadius($r('app.float.radius_card'))
 
-        Text($r('app.string.sync_aux_mock'))
+        Text(this.cloudBackend ? $r('app.string.sync_aux_cloud') : $r('app.string.sync_aux_mock'))
           .fontSize($r('app.float.font_size_caption'))
           .fontColor($r('app.color.hm_text_secondary'))
           .width('100%')

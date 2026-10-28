@@ -5,6 +5,10 @@
       "value": "Module d'entrée de l'application HDS"
     },
     {
+      "name": "permission_datasync_reason",
+      "value": "Synchronise les abonnements et les données de lecture entre appareils connectés au même HUAWEI ID."
+    },
+    {
       "name": "work_scheduler_desc",
       "value": "Actualisation des flux en arrière-plan"
     },
@@ -4127,6 +4131,18 @@
     {
       "name": "sync_row_wifi_only",
       "value": "Synchroniser uniquement en Wi-Fi"
+    },
+    {
+      "name": "sync_backend_cloud",
+      "value": "Cloud HUAWEI"
+    },
+    {
+      "name": "sync_row_cloud",
+      "value": "Synchronisation appareil-cloud (bêta)"
+    },
+    {
+      "name": "sync_aux_cloud",
+      "value": "Les enregistrements de synchronisation sont stockés dans votre espace cloud HUAWEI. Effectif après déploiement du côté cloud dans AppGallery Connect ; l’application ne contacte aucun serveur développeur."
     },
     {
       "name": "sync_row_backend",

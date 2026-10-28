@@ -29,7 +29,7 @@ NODE="$DEVECO_HOME/tools/node/bin/node"
 HVIGOR="$DEVECO_HOME/tools/hvigor/bin/hvigorw.js"
 HDC="$DEVECO_SDK_HOME/default/openharmony/toolchains/hdc"
 DEVICE="${DEVICE:-}"
-BUNDLE="com.example.harmonyrss"
+BUNDLE="com.xiaohuihu.rss"
 TEST_MODULE="entry_test"
 
 hvigor() {

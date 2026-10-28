@@ -5,8 +5,9 @@
 | `ohos.permission.INTERNET` | normal / system_grant | 订阅抓取、正文提取、图片内联、翻译、远端同步 | 装机授予 | 离线可读缓存；抓取 / 翻译提示网络错误 |
 | `ohos.permission.GET_NETWORK_INFO` | normal / system_grant | 隐私页展示在线 / 离线 | 装机授予 | 查询失败按「离线」展示，不影响其它功能 |
 | `ohos.permission.DETECT_GESTURE` | normal / system_grant | 智感握姿（悬浮栏跟手） | 装机授予 | 关闭握姿开关后不调用 |
-| `ohos.permission.DLP_GET_HIDE_STATUS` | system_grant | 防窥保护读取系统隐藏状态 | 装机授予 | 防窥关闭时不调用 |
+| ~~`ohos.permission.DLP_GET_HIDE_STATUS`~~ | system_basic（ACL） | 防窥保护读取系统隐藏状态 | 需在 AGC 申请 ACL | **当前未申请**：接口返回 201，设置页自动隐藏防窥开关；申请 ACL 后可恢复 |
 | `ohos.permission.KEEP_BACKGROUND_RUNNING` | normal / system_grant | 播客音频后台播放 | 开始播放音频时申请长时任务 | 申请失败仍可前台播放，退出后台可能被挂起 |
+| `ohos.permission.DISTRIBUTED_DATASYNC` | user_grant（装机仍按系统策略授予） | 端云数据同步：把同步表登记为 `DISTRIBUTED_CLOUD` | 仅当用户开启「端云数据同步」时调用 | 未授予 / 未部署时只写本机云库，不跨设备（Mock 后端不受影响） |
 
 ## 不需要 manifest 权限的能力
 

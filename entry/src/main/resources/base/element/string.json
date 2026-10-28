@@ -5,6 +5,10 @@
       "value": "HDS app entry module"
     },
     {
+      "name": "permission_datasync_reason",
+      "value": "Synchronizes reading data between devices signed in with the same HUAWEI ID."
+    },
+    {
       "name": "work_scheduler_desc",
       "value": "Background feed refresh"
     },
@@ -4127,6 +4131,18 @@
     {
       "name": "sync_row_wifi_only",
       "value": "Sync on Wi-Fi only"
+    },
+    {
+      "name": "sync_backend_cloud",
+      "value": "HUAWEI Cloud"
+    },
+    {
+      "name": "sync_row_cloud",
+      "value": "Cloud data sync (beta)"
+    },
+    {
+      "name": "sync_aux_cloud",
+      "value": "Sync records are stored in your HUAWEI Cloud space. Works after the cloud side is deployed in AppGallery Connect; the app never contacts a developer server."
     },
     {
       "name": "sync_row_backend",

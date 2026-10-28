@@ -5,6 +5,10 @@
       "value": "後臺定時重新整理訂閱源"
     },
     {
+      "name": "permission_datasync_reason",
+      "value": "用於在登入同一華為帳號的裝置之間同步訂閱與閱讀資料。"
+    },
+    {
       "name": "module_desc",
       "value": "HDS 應用入口模組"
     },
@@ -4127,6 +4131,18 @@
     {
       "name": "sync_row_wifi_only",
       "value": "僅 Wi-Fi 同步"
+    },
+    {
+      "name": "sync_backend_cloud",
+      "value": "華為雲端空間"
+    },
+    {
+      "name": "sync_row_cloud",
+      "value": "端雲資料同步（實驗）"
+    },
+    {
+      "name": "sync_aux_cloud",
+      "value": "同步記錄存入你的華為雲端空間，AGC 部署雲端後生效；應用不存取開發者伺服器。"
     },
     {
       "name": "sync_row_backend",

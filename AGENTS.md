@@ -76,7 +76,7 @@ hvigorw --mode module -p module=entry@ohosTest -p product=default assembleHap -p
 # 2) 安装测试 HAP（entry/build/default/outputs/ohosTest/entry-ohosTest-signed.hap）
 hdc -t <device> install -r <entry-ohosTest-signed.hap>
 # 3) 运行用例（模块名 entry_test，runner 固定为 OpenHarmonyTestRunner）
-hdc shell aa test -b com.example.harmonyrss -m entry_test -s unittest OpenHarmonyTestRunner -s timeout 60000
+hdc shell aa test -b com.xiaohuihu.rss -m entry_test -s unittest OpenHarmonyTestRunner -s timeout 60000
 ```
 
 结果看 `OHOS_REPORT_RESULT: stream=Tests run: N, Failure: M ...`。

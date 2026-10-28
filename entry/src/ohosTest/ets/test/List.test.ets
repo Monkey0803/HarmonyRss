@@ -52,6 +52,7 @@ import syncCollectorTest from './SyncCollector.test';
 import syncContentTest from './SyncContent.test';
 import autoSyncPolicyTest from './AutoSyncPolicy.test';
 import cloudBackupTest from './CloudBackup.test';
+import cloudRelayTest from './CloudRelay.test';
 
 export default function testsuite() {
   htmlDomTest();
@@ -98,4 +99,5 @@ export default function testsuite() {
   syncContentTest();
   autoSyncPolicyTest();
   cloudBackupTest();
+  cloudRelayTest();
 }

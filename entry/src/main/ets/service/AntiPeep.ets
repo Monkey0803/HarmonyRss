@@ -5,7 +5,8 @@
  * 1. 调任何 dlpAntiPeep 接口前先 canIUse('SystemCapability.Security.DlpAntiPeep')：
  *    不支持该 syscap 的设备上直接调用会抛异常把应用冲崩，而不是返回失败。
  * 2. 三层 gating：应用开关打开 → 系统开关打开（isDlpAntiPeepSwitchOn）→ 才订阅。
- * 3. 需要一个 system_basic 权限 DLP_GET_HIDE_STATUS（证书 ACL 必须带上，否则装不上）。
+ * 3. 需要 system_basic 权限 DLP_GET_HIDE_STATUS（证书 ACL）。当前调试签名未申请该 ACL，
+ *    接口会返回 201，此时按「不支持」隐藏开关；正式包申请 ACL 后可恢复。
  * 4. 订阅只在开关打开时存在；关掉 / 页面销毁都要 off。
  * 5. 识别不是确定性的，所以遮罩允许用户一键点掉（acknowledge）。
  *
@@ -103,9 +104,11 @@ export class AntiPeepController {
       const error: BusinessError = err as BusinessError;
       console.error('dlpAntiPeep open failed: ' + error.code.toString());
       this.subscribed = false;
-      if (error.code === 801) {
+      // 801 = 设备没这个能力；201 = 证书未带 ACL 权限（DLP_GET_HIDE_STATUS）。
+      // 两种情况都按「不支持」处理，避免设置页出现一个点不动的开关。
+      if (error.code === 801 || error.code === 201) {
         this.supported = false;
-        this.problem = '设备不支持防窥保护';
+        this.problem = '设备或签名未授予防窥能力';
       } else {
         this.problem = '防窥保护暂时不可用';
       }
@@ -119,7 +122,7 @@ export class AntiPeepController {
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       console.error('requestAntiPeepOptions failed: ' + error.code.toString());
-      if (error.code === 801) {
+      if (error.code === 801 || error.code === 201) {
         this.supported = false;
       }
     }
@@ -133,7 +136,7 @@ export class AntiPeepController {
       const error: BusinessError = err as BusinessError;
       console.error('isDlpAntiPeepSwitchOn failed: ' + error.code.toString());
       // 801 = 设备没这个能力。模拟器上 canIUse 照样返回 true，真正挡住的是这里。
-      if (error.code === 801) {
+      if (error.code === 801 || error.code === 201) {
         this.supported = false;
       }
       return false;
