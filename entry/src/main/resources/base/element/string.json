@@ -4145,6 +4145,10 @@
       "value": "Sync records are stored in your HUAWEI Cloud space and sync automatically across devices signed in with the same HUAWEI ID. The app never contacts a developer server."
     },
     {
+      "name": "sync_conflicts_merged",
+      "value": "Last sync merged %d changed item(s) from both sides"
+    },
+    {
       "name": "sync_row_backend",
       "value": "Sync target"
     },

@@ -4145,6 +4145,10 @@
       "value": "Los registros de sincronización se guardan en tu espacio en la nube de HUAWEI y se sincronizan automáticamente entre dispositivos con el mismo HUAWEI ID. La app no contacta con ningún servidor del desarrollador."
     },
     {
+      "name": "sync_conflicts_merged",
+      "value": "La última sincronización combinó automáticamente %d cambios de ambos lados"
+    },
+    {
       "name": "sync_row_backend",
       "value": "Destino de sincronización"
     },

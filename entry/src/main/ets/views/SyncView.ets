@@ -32,6 +32,7 @@ export struct SyncView {
   @Local syncOn: boolean = false;
   @Local wifiOnly: boolean = true;
   @Local cloudBackend: boolean = false;
+  @Local conflicts: number = 0;
   @Local lastSyncAt: number = 0;
   @Local pending: number = 0;
   @Local records: number = 0;
@@ -56,6 +57,7 @@ export struct SyncView {
       this.syncOn = status.enabled;
       this.wifiOnly = status.wifiOnly;
       this.cloudBackend = status.backend === 'Cloud';
+      this.conflicts = status.conflicts;
       this.lastSyncAt = status.lastSyncAt;
       this.pending = status.pending;
       this.records = status.records;
@@ -322,6 +324,15 @@ export struct SyncView {
         .width('100%')
         .backgroundColor($r('app.color.hm_card_background'))
         .borderRadius($r('app.float.radius_card'))
+
+        // 只有真的发生过「两端都改」才提示，0 条时不打扰。
+        if (this.conflicts > 0) {
+          Text($r('app.string.sync_conflicts_merged', this.conflicts))
+            .fontSize($r('app.float.font_size_caption'))
+            .fontColor($r('app.color.hm_text_secondary'))
+            .width('100%')
+            .margin({ top: $r('app.float.space_s'), left: $r('app.float.space_xs') })
+        }
 
         Text(this.cloudBackend ? $r('app.string.sync_aux_cloud') : $r('app.string.sync_aux_mock'))
           .fontSize($r('app.float.font_size_caption'))

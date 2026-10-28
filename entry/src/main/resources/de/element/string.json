@@ -4145,6 +4145,10 @@
       "value": "Sync-Datensätze liegen in deinem HUAWEI Cloud-Speicher und werden zwischen Geräten mit derselben HUAWEI ID automatisch synchronisiert. Die App kontaktiert keinen Entwickler-Server."
     },
     {
+      "name": "sync_conflicts_merged",
+      "value": "Letzte Synchronisierung hat %d Änderungen beider Seiten automatisch zusammengeführt"
+    },
+    {
       "name": "sync_row_backend",
       "value": "Synchronisierungsziel"
     },

@@ -4145,6 +4145,10 @@
       "value": "同步记录存入你的华为云空间，登录同一华为账号的设备会自动同步；应用不访问开发者服务器。"
     },
     {
+      "name": "sync_conflicts_merged",
+      "value": "上次同步自动合并了 %d 条两端改动"
+    },
+    {
       "name": "sync_row_backend",
       "value": "同步目标"
     },

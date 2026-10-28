@@ -4145,6 +4145,10 @@
       "value": "同期レコードは HUAWEI クラウドスペースに保存され、同じ HUAWEI ID でサインインした端末間で自動同期されます。開発者サーバーには接続しません。"
     },
     {
+      "name": "sync_conflicts_merged",
+      "value": "前回の同期で両端の変更を %d 件自動マージしました"
+    },
+    {
       "name": "sync_row_backend",
       "value": "同期先"
     },

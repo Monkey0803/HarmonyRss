@@ -4145,6 +4145,10 @@
       "value": "同步記錄存入你的華為雲端空間，登入同一華為帳號的裝置會自動同步；應用不存取開發者伺服器。"
     },
     {
+      "name": "sync_conflicts_merged",
+      "value": "上次同步自動合併了 %d 條兩端改動"
+    },
+    {
       "name": "sync_row_backend",
       "value": "同步目標"
     },

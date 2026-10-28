@@ -38,15 +38,18 @@ export class SyncStatus {
   readonly lastSyncAt: number;
   readonly pending: number;
   readonly records: number;
+  /** 上次同步自动合并的条数（0 = 没发生冲突）。 */
+  readonly conflicts: number;
   readonly backend: string;
 
   constructor(enabled: boolean, wifiOnly: boolean, lastAt: number, pending: number, records: number,
-    backend: string) {
+    conflicts: number, backend: string) {
     this.enabled = enabled;
     this.wifiOnly = wifiOnly;
     this.lastSyncAt = lastAt;
     this.pending = pending;
     this.records = records;
+    this.conflicts = conflicts;
     this.backend = backend;
   }
 }
@@ -239,8 +242,10 @@ export class SyncService {
     await articleStore.whenReady();
     const pending: number = await syncStore.pendingCount();
     const records: number = await syncStore.recordCount();
+    const conflicts: number = store !== undefined
+      ? this.readNumber(store, PreferencesConstants.KEY_CLOUD_SYNC_LAST_CONFLICTS) : 0;
     const cloud: boolean = await this.isCloudBackend(context);
-    return new SyncStatus(enabled, wifiOnly, lastAt, pending, records,
+    return new SyncStatus(enabled, wifiOnly, lastAt, pending, records, conflicts,
       cloud ? 'Cloud' : this.backendName);
   }
 
@@ -272,6 +277,7 @@ export class SyncService {
       if (summary.error.length === 0) {
         await collector.apply(context);
         await this.rememberLastSync(context, summary.at);
+        await this.rememberConflicts(context, summary.conflicts);
         // 这一轮成功了：清掉失败重试，避免继续在后台补试。
         this.retryAttempt = 0;
         this.clearRetryTimer();
@@ -393,6 +399,22 @@ export class SyncService {
 
   syncing(): boolean {
     return this.syncingFlag;
+  }
+
+  /** 记住本次自动合并条数（0 也要写，避免上一次的计数一直挂在页面上）。 */
+  private async rememberConflicts(context: common.Context, conflicts: number): Promise<void> {
+    const store: preferences.Preferences | undefined = await this.open(context);
+    if (store === undefined) {
+      return;
+    }
+    try {
+      store.putSync(PreferencesConstants.KEY_CLOUD_SYNC_LAST_CONFLICTS,
+        conflicts > 0 ? conflicts : 0);
+      await store.flush();
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.warn(DOMAIN, TAG, 'persist conflicts failed: %{public}d', error.code);
+    }
   }
 
   private async rememberLastSync(context: common.Context, at: number): Promise<void> {

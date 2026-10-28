@@ -10,3 +10,5 @@
 - [X] T008 单测：`CloudRelay.test.ets`（游标解析 / 比较 / 脏值）
 - [X] T009 `check-i18n` / `arkts_check` / `build_project` / ohosTest（372 例全通过）
 - [X] T010 README / PRIVACY / 权限审计 / TODO 同步说明
+- [ ] T011 跨设备实测（需第二台登录同一华为账号的设备）：一端标已读 / 收藏，另一端自动更新
+      —— 单机已验证：分布式表登记成功、手动同步 33 条、待推送 0、无失败日志

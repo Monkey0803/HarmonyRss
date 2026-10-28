@@ -4145,6 +4145,10 @@
       "value": "Les enregistrements de synchronisation sont stockés dans votre espace cloud HUAWEI et se synchronisent automatiquement entre appareils connectés au même HUAWEI ID. L’application ne contacte aucun serveur développeur."
     },
     {
+      "name": "sync_conflicts_merged",
+      "value": "La dernière synchronisation a fusionné automatiquement %d modification(s) des deux côtés"
+    },
+    {
       "name": "sync_row_backend",
       "value": "Cible de synchronisation"
     },
