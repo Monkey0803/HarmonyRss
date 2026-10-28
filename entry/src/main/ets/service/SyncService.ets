@@ -249,6 +249,34 @@ export class SyncService {
     return false;
   }
 
+  /**
+   * 后台任务（WorkScheduler）内的一次性同步。
+   *
+   * 不排失败重试：扩展随时可能被系统结束，定时器不可靠，交给下一次唤醒再试。
+   * 开关关闭、或开启「仅 Wi-Fi」而当前不是 Wi-Fi / 以太网时静默跳过。
+   */
+  async syncInBackground(context: common.Context): Promise<boolean> {
+    if (this.syncingFlag) {
+      return false;
+    }
+    if (!(await this.isEnabled(context))) {
+      return false;
+    }
+    if (await this.isWifiOnly(context) && !NetworkStatus.isUnmetered()) {
+      hilog.info(DOMAIN, TAG, 'background sync skipped: not on unmetered network');
+      return false;
+    }
+    this.lastAttemptAt = Date.now();
+    const summary: SyncSummary = await this.syncNow(context);
+    if (summary.error.length === 0) {
+      hilog.info(DOMAIN, TAG, 'background sync done: pushed %{public}d, pulled %{public}d',
+        summary.pushed, summary.pulled);
+      return true;
+    }
+    hilog.info(DOMAIN, TAG, 'background sync failed: %{public}s', summary.error);
+    return false;
+  }
+
   /** 失败退避重试：30s / 60s / 120s，最多三次；次数用尽交给下一次自动触发。 */
   private scheduleRetry(context: common.Context): void {
     if (this.retryTimer >= 0 || !AutoSyncPolicy.canRetry(this.retryAttempt)) {

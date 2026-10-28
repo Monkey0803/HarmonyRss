@@ -25,6 +25,7 @@ import { appSettings } from '../model/AppSettings';
 import { notifyService } from '../service/NotifyService';
 import { retentionService } from '../service/RetentionService';
 import { ruleService } from '../service/RuleService';
+import { syncService } from '../service/SyncService';
 import { AutoRefreshMinutes } from '../common/constants/SettingsConstants';
 
 const DOMAIN: number = 0x0000;
@@ -126,5 +127,9 @@ export default class RssWorkScheduler extends WorkSchedulerExtensionAbility {
     // 离开免打扰后补发队列；每日摘要到点且今天没发过则发一条。
     await notifyService.flushQueueIfDue(context);
     await notifyService.maybeSendDigest(context);
+
+    // 后台抓取完成后收敛一次云同步：开关 / 仅 Wi-Fi 由 SyncService 判断，
+    // 失败不排重试（扩展可能随时被结束），留给下一次唤醒。
+    await syncService.syncInBackground(context);
   }
 }
