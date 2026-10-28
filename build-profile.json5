@@ -19,11 +19,11 @@
         "material": {
           "certpath": "/Users/huxiaohui/.ohos/config/default_HarmonyRss_1LPrlNhmWRlnBiSo74R7GkN9GXtiexVYyDIaPSyTK28=.cer",
           "keyAlias": "debugKey",
-          "keyPassword": "0000001B1DF293165C719B8C69AA91E215D61AC93564C3FE41A7BBBFE884B984045F676389C3173307BB40",
+          "keyPassword": "0000001B5FBCF0AC4C654351810A12FDAB9C238F4E3DFE60DF6C973231893EF3615EF4826BE5A1555F3368",
           "profile": "/Users/huxiaohui/.ohos/config/default_HarmonyRss_1LPrlNhmWRlnBiSo74R7GkN9GXtiexVYyDIaPSyTK28=.p7b",
           "signAlg": "SHA256withECDSA",
           "storeFile": "/Users/huxiaohui/.ohos/config/default_HarmonyRss_1LPrlNhmWRlnBiSo74R7GkN9GXtiexVYyDIaPSyTK28=.p12",
-          "storePassword": "0000001BC0250DD5B522A9C60DF1DDC8538CCE2315A0EBFB08E92684443EBA69F4D26E15FEC8104BA15F49"
+          "storePassword": "0000001BFF0B33EF925F7E906DD986A0A7F1C5542BEEAD11BDE2A55FC8A3FC65F9B90429F4B15C856C8D88"
         }
       }
     ],
