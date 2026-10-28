@@ -117,6 +117,8 @@ export class PreferencesConstants {
   static readonly KEY_CLOUD_SYNC_LAST_AT: string = 'cloudSyncLastAt';
   /** 上次同步自动合并（两端都改过）的条数。 */
   static readonly KEY_CLOUD_SYNC_LAST_CONFLICTS: string = 'cloudSyncLastConflicts';
+  /** 每日自动快照后是否顺带写一次云空间备份（默认开）。 */
+  static readonly KEY_CLOUD_AUTO_BACKUP: string = 'cloudAutoBackup';
   /** 仅 Wi-Fi 同步（默认开：自动同步不走蜂窝流量）。 */
   static readonly KEY_CLOUD_SYNC_WIFI_ONLY: string = 'cloudSyncWifiOnly';
   /** 同步目标：'mock'（本机模拟，默认）/ 'cloud'（华为云空间端云数据同步）。 */

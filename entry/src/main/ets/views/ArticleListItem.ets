@@ -13,6 +13,7 @@ import { appSettings } from '../model/AppSettings';
 import { ListDensityMetrics, ListRowLayout } from '../common/constants/SettingsConstants';
 import { Enclosure, firstAudio, firstVideo, formatDuration } from '../model/Enclosure';
 
+@ReusableV2
 @ComponentV2
 export struct ArticleListItem {
   @Require @Param article: Article;

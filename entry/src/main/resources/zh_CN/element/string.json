@@ -2629,6 +2629,14 @@
       "value": "从云空间恢复"
     },
     {
+      "name": "backup_cloud_auto",
+      "value": "每日自动备份"
+    },
+    {
+      "name": "backup_cloud_auto_hint",
+      "value": "每天生成本地快照后自动写入云空间；云空间不可用时跳过。"
+    },
+    {
       "name": "backup_cloud_privacy",
       "value": "只保留最新一份；文件存放在你自己的云空间，仅本应用可读。"
     },

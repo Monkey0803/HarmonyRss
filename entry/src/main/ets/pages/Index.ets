@@ -447,7 +447,7 @@ struct Index {
   /** 标题栏 bottomBuilder：阅读页签的筛选条。 */
   @Builder
   HomeFilterBar() {
-    FilterSegmentBar()
+    FilterSegmentBar(this.getUIContext())
   }
 
   /**

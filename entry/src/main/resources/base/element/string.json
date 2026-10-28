@@ -2629,6 +2629,14 @@
       "value": "Restore from Cloud"
     },
     {
+      "name": "backup_cloud_auto",
+      "value": "Auto backup daily"
+    },
+    {
+      "name": "backup_cloud_auto_hint",
+      "value": "Runs after the daily local snapshot; skipped when Cloud is unavailable."
+    },
+    {
       "name": "backup_cloud_privacy",
       "value": "Only the latest backup is kept. The file stays in your own cloud space and only this app can read it."
     },

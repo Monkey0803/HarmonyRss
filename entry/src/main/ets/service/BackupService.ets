@@ -187,6 +187,31 @@ export class BackupService {
     return cloudBackupInfo(context);
   }
 
+  /** 是否开启「每日自动快照后顺带写云空间」（默认开）。 */
+  async cloudAutoEnabled(context: common.Context): Promise<boolean> {
+    try {
+      const store: preferences.Preferences =
+        await preferences.getPreferences(context, PreferencesConstants.STORE_NAME);
+      const raw: preferences.ValueType =
+        store.getSync(PreferencesConstants.KEY_CLOUD_AUTO_BACKUP, true);
+      return typeof raw === 'boolean' ? raw : true;
+    } catch (err) {
+      logFailure('cloudAutoEnabled', err as Object);
+      return true;
+    }
+  }
+
+  async setCloudAuto(context: common.Context, enabled: boolean): Promise<void> {
+    try {
+      const store: preferences.Preferences =
+        await preferences.getPreferences(context, PreferencesConstants.STORE_NAME);
+      store.putSync(PreferencesConstants.KEY_CLOUD_AUTO_BACKUP, enabled);
+      await store.flush();
+    } catch (err) {
+      logFailure('setCloudAuto', err as Object);
+    }
+  }
+
   /**
    * 备份到用户云空间：写 `context.cloudFileDir` 下的固定文件，
    * 端云协同服务会在写入完成后自动上云，并同步到同一华为账号的其他设备。
@@ -457,7 +482,14 @@ export class BackupService {
     if (last > 0 && Date.now() - last < SNAPSHOT_INTERVAL_MS) {
       return;
     }
-    await this.snapshotNow(context);
+    const info: SnapshotInfo | undefined = await this.snapshotNow(context);
+    if (info === undefined) {
+      return;
+    }
+    // 本地快照成功后顺带写一次云空间（同样 24h 节流）；云目录不可用 / 用户关闭时静默跳过。
+    if (await this.cloudAutoEnabled(context) && cloudBackupInfo(context).available) {
+      await this.backupToCloud(context);
+    }
   }
 
   // ---- 快照列表 / 恢复 / 删除 / 清理 ----

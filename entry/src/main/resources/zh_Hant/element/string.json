@@ -2629,6 +2629,14 @@
       "value": "從雲端空間還原"
     },
     {
+      "name": "backup_cloud_auto",
+      "value": "每日自動備份"
+    },
+    {
+      "name": "backup_cloud_auto_hint",
+      "value": "每天產生本機快照後自動寫入雲端空間；雲端空間不可用時略過。"
+    },
+    {
       "name": "backup_cloud_privacy",
       "value": "只保留最新一份；檔案存放在你自己的雲端空間，僅本應用可讀。"
     },

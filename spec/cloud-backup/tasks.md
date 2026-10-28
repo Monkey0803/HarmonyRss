@@ -8,3 +8,4 @@
 - [X] T006 单测：`CloudBackup.test.ets`（真实云目录读写，设备不支持时跳过；缺失文件返回空串）
 - [X] T007 `check-i18n` / `build_project` / ohosTest（369 例全通过）
 - [X] T008 README / PRIVACY / TODO 同步说明
+- [X] T009 每日自动快照后顺带写云空间（默认开、可关闭、24h 节流、不可用时跳过）

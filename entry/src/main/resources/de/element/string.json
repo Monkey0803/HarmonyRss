@@ -2629,6 +2629,14 @@
       "value": "Aus der Cloud wiederherstellen"
     },
     {
+      "name": "backup_cloud_auto",
+      "value": "Täglich automatisch sichern"
+    },
+    {
+      "name": "backup_cloud_auto_hint",
+      "value": "Läuft nach dem täglichen lokalen Snapshot; wird übersprungen, wenn Cloud nicht verfügbar ist."
+    },
+    {
       "name": "backup_cloud_privacy",
       "value": "Es wird nur die neueste Sicherung behalten. Die Datei liegt in deinem eigenen Cloud-Speicher; nur diese App kann sie lesen."
     },

@@ -2629,6 +2629,14 @@
       "value": "Restaurer depuis le cloud"
     },
     {
+      "name": "backup_cloud_auto",
+      "value": "Sauvegarde automatique quotidienne"
+    },
+    {
+      "name": "backup_cloud_auto_hint",
+      "value": "S’exécute après l’instantané local quotidien ; ignoré si le cloud est indisponible."
+    },
+    {
       "name": "backup_cloud_privacy",
       "value": "Seule la sauvegarde la plus récente est conservée. Le fichier reste dans votre propre espace cloud et seule cette application peut le lire."
     },

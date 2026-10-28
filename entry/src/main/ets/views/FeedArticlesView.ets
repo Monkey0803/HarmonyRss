@@ -186,7 +186,7 @@ export struct FeedArticlesView {
               onToggleStar: (id: string) => {
                 feedViewModel.toggleStar(id);
               }
-            })
+            }).reuse({ reuseId: () => 'articleRow' })
           }
           .margin({ bottom: $r('app.float.space_s') })
           .swipeAction({ end: this.SwipeActions(item) })

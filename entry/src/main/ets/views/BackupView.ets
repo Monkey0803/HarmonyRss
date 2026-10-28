@@ -559,6 +559,31 @@ export struct BackupView {
           .fontColor($r('app.color.hm_text_secondary'))
           .width('100%')
 
+        Row() {
+          Column({ space: $r('app.float.space_xxs') }) {
+            Text($r('app.string.backup_cloud_auto'))
+              .fontSize($r('app.float.font_size_body'))
+              .fontColor($r('app.color.hm_text_primary'))
+            Text($r('app.string.backup_cloud_auto_hint'))
+              .fontSize($r('app.float.font_size_caption'))
+              .fontColor($r('app.color.hm_text_secondary'))
+          }
+          .layoutWeight(1)
+          .alignItems(HorizontalAlign.Start)
+
+          Toggle({ type: ToggleType.Switch, isOn: backupViewModel.cloudAuto })
+            .selectedColor($r('app.color.hm_brand'))
+            .enabled(!backupViewModel.busy())
+            .onChange((value: boolean) => {
+              const context: common.Context | undefined = this.hostContext();
+              if (context !== undefined) {
+                backupViewModel.setCloudAuto(context, value);
+              }
+            })
+        }
+        .width('100%')
+        .height($r('app.float.row_height'))
+
         BackupPrimaryButton({
           label: backupViewModel.exporting
             ? $r('app.string.backup_working')

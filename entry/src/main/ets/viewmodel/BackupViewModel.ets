@@ -58,6 +58,8 @@ export class BackupViewModel {
   @Trace cloudExists: boolean = false;
   /** 云空间备份的最后修改时间（毫秒）；0 = 不存在。 */
   @Trace cloudAt: number = 0;
+  /** 每日自动快照后是否顺带写云空间（默认开）。 */
+  @Trace cloudAuto: boolean = true;
 
   /** 是否有任何长任务在跑（页面据此禁用全部按钮）。 */
   busy(): boolean {
@@ -154,6 +156,16 @@ export class BackupViewModel {
     this.cloudAvailable = info.available;
     this.cloudExists = info.exists;
     this.cloudAt = info.at;
+    backupService.cloudAutoEnabled(context).then((enabled: boolean) => {
+      this.cloudAuto = enabled;
+    });
+  }
+
+  /** 开关「每日自动快照后顺带写云空间」。 */
+  setCloudAuto(context: common.Context, enabled: boolean): void {
+    this.cloudAuto = enabled;
+    backupService.setCloudAuto(context, enabled).catch(() => {
+    });
   }
 
   /**
