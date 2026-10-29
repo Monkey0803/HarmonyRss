@@ -7,8 +7,8 @@
  *
  * 交互约定：
  *   - 面板里改的是 appSettings（@Trace），预览区立刻按新排版显示；
- *   - 滑块**松手**（SliderChangeMode.End / Click）才落盘并通知父组件重排正文，
- *     避免拖动过程中频繁重建 Reader 文档（Web loadData 很贵）；
+ *   - 滑块拖动过程中**节流**通知父组件（正文只是原地替换 <style>，很便宜），
+ *     松手（SliderChangeMode.End / Click）才落盘；
  *   - 栏宽 / 对齐 / 主题 / 字体族仍是离散档位，点一下就生效。
  */
 
@@ -24,6 +24,9 @@ import { ReaderAlign, ReaderTypography } from '../common/constants/SettingsConst
 import { appSettings } from '../model/AppSettings';
 import { settingsViewModel } from '../viewmodel/SettingsViewModel';
 
+/** 拖动过程中应用排版的节流间隔（毫秒）。 */
+const APPLY_THROTTLE_MS: number = 100;
+
 /** 面板里一组离散档位（栏宽 / 对齐 / 主题 / 字体族）。 */
 interface ReadSettingGroup {
   id: string;
@@ -36,8 +39,32 @@ interface ReadSettingGroup {
 export struct ReadSettingsSheet {
   /** 网页原文模式：栏宽 / 对齐 / 主题 / 字体族不生效，面板里给出说明。 */
   @Param webMode: boolean = false;
-  /** 排版变化上报：父组件据此重建 Reader 文档 / 重新注入网页样式。 */
+  /** 排版变化上报：父组件据此原地替换 Reader 文档样式 / 重新注入网页样式。 */
   @Event onApply: () => void = () => {};
+
+  /** 拖动过程中应用节流（毫秒）：够跟手，又不会每帧都注入一次样式。 */
+  private lastApplyAt: number = 0;
+
+  /**
+   * 应用排版改动：拖动中节流应用，松手/点按时应用并落盘。
+   * 正文侧只是替换一条 <style>，不再是整篇重建，所以可以边拖边生效。
+   */
+  private applyChange(mode: SliderChangeMode): void {
+    if (mode === SliderChangeMode.Begin) {
+      return;
+    }
+    if (mode === SliderChangeMode.Moving) {
+      const now: number = Date.now();
+      if (now - this.lastApplyAt < APPLY_THROTTLE_MS) {
+        return;
+      }
+      this.lastApplyAt = now;
+      this.onApply();
+      return;
+    }
+    settingsViewModel.persistReaderTypography();
+    this.onApply();
+  }
 
   private fontPx(): number {
     return ReaderTypography.fontSizePx(appSettings.readerFontScale);
@@ -185,10 +212,7 @@ export struct ReadSettingsSheet {
         .width('100%')
         .onChange((value: number, mode: SliderChangeMode) => {
           settingsViewModel.setReaderFontScale(value);
-          if (mode !== SliderChangeMode.Begin && mode !== SliderChangeMode.Moving) {
-            settingsViewModel.persistReaderTypography();
-            this.onApply();
-          }
+          this.applyChange(mode);
         })
 
       // 行距（连续）
@@ -214,10 +238,7 @@ export struct ReadSettingsSheet {
         .width('100%')
         .onChange((value: number, mode: SliderChangeMode) => {
           settingsViewModel.setReaderLineScale(value);
-          if (mode !== SliderChangeMode.Begin && mode !== SliderChangeMode.Moving) {
-            settingsViewModel.persistReaderTypography();
-            this.onApply();
-          }
+          this.applyChange(mode);
         })
 
       ForEach(this.groups(), (group: ReadSettingGroup) => {

@@ -197,6 +197,8 @@ export class FeedViewModel {
   private context: common.Context | undefined = undefined;
   /** 正文已按需加载的文章 id（列表只读轻量列，正文单独 loadBody）。 */
   private bodyLoaded: Set<string> = new Set<string>();
+  /** 已预取过正文的文章 id（详情页读完当前文章后预热下一篇）。 */
+  private prefetched: Set<string> = new Set<string>();
 
   /**
    * 轻量装配：订阅源 → 本地缓存（离线可读），**不触发联网抓取**。
@@ -1817,6 +1819,28 @@ export class FeedViewModel {
     await this.ensureBodyLoaded(articleId);
     const mode: string = this.effectiveSettings(article.feedId).fullTextMode;
     return articleContentService.ensureReaderHtml(article, mode);
+  }
+
+  /**
+   * 预取某篇的 Reader 正文（详情页读完当前文章后预热下一篇）。
+   * 只做「取正文」这一件事，失败静默：预取永远不该打断用户正在做的事。
+   */
+  async prefetchReader(articleId: string): Promise<void> {
+    if (articleId.length === 0 || articleId === this.currentArticleId || this.prefetched.has(articleId)) {
+      return;
+    }
+    this.prefetched.add(articleId);
+    // 集合只是去重记录，不需要无限长。
+    if (this.prefetched.size > 20) {
+      this.prefetched.clear();
+      this.prefetched.add(articleId);
+    }
+    try {
+      await this.loadReaderHtml(articleId);
+    } catch (err) {
+      // 失败（离线 / 站点异常）：移除记录，下次进入详情时还能再试。
+      this.prefetched.delete(articleId);
+    }
   }
 
   /** 清空某篇的 Reader 缓存，迫使下次重新提取（详情页「重新提取」用）。 */

@@ -51,7 +51,7 @@ export function parsePosition(raw: string): ReaderPosition {
  * 按比例（优先）或 px（兜底）落回位置的脚本。
  *
  * 不能只 scrollTo 一次：SPA 在 onPageEnd 之后还会继续长内容，那时文档还太短，
- * 一次性滚动会被忽略 / 被后续渲染顶掉。所以每 250ms 校正一次，最多 3 秒，
+ * 一次性滚动会被忽略 / 被后续渲染顶掉。所以每 200ms 校正一次，最多 1.6 秒，
  * 或者一旦真的落到目标位置就停。比例模式下每次都按当前 scrollHeight 重算目标，
  * 这样「文档长高了」也能落到正确的一段。
  */
@@ -62,7 +62,7 @@ export function restorePositionScript(ratio: number, fallbackY: number): string 
     'var pick=function(){var d=document.documentElement;var h=d?d.scrollHeight:0;' +
     'var vh=window.innerHeight||0;return (r>0&&h>vh)?Math.round(r*(h-vh)):y;};' +
     'var iv=setInterval(function(){var t=pick();window.scrollTo(0,t);n++;' +
-    'if(n>12||Math.abs((window.scrollY||0)-t)<=4){clearInterval(iv);}},250);})()';
+    'if(n>8||Math.abs((window.scrollY||0)-t)<=4){clearInterval(iv);}},200);})()';
 }
 
 /**

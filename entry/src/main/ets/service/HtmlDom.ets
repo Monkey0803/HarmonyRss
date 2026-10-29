@@ -182,6 +182,9 @@ export function parseHtml(html: string): HtmlNode {
   const root: HtmlNode = new HtmlNode('#root');
   const stack: HtmlNode[] = [root];
   let i: number = 0;
+  // 原文小写副本按需创建一次：查找 </script> 这类结束标签不能对整篇反复 toLowerCase()。
+  let lower: string = '';
+  let lowerReady: boolean = false;
   while (i < html.length) {
     const lt: number = html.indexOf('<', i);
     if (lt < 0) {
@@ -242,7 +245,11 @@ export function parseHtml(html: string): HtmlNode {
     }
     if (isRawText(node.tag)) {
       const closeToken: string = '</' + node.tag;
-      const closeStart: number = html.toLowerCase().indexOf(closeToken, i);
+      if (!lowerReady) {
+        lower = html.toLowerCase();
+        lowerReady = true;
+      }
+      const closeStart: number = lower.indexOf(closeToken, i);
       const closeEnd: number = closeStart < 0 ? html.length : html.indexOf('>', closeStart) + 1;
       node.text = html.substring(i, closeStart < 0 ? html.length : closeStart);
       i = closeStart < 0 ? html.length : closeEnd;

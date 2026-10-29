@@ -8,7 +8,7 @@
 
 export class ReaderBudget {
   /** 单篇 reader_html 总字符上限（含内联图片）。 */
-  static readonly MAX_TOTAL_CHARS: number = 1600 * 1024;
+  static readonly MAX_TOTAL_CHARS: number = 1200 * 1024;
 
   /**
    * 在「内联版」与「纯文本版」之间做选择：内联后未超预算就用内联版，否则退回纯文本版。

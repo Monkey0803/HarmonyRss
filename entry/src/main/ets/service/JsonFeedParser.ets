@@ -7,6 +7,7 @@
  */
 
 import { ParsedArticle, ParsedFeed, stripTags } from './RssParser';
+import { summarizeForList } from '../common/utils/SummaryText';
 import { RssConstants } from '../common/constants/RssConstants';
 import { Enclosure } from '../model/Enclosure';
 
@@ -55,14 +56,6 @@ function parseDate(value: string): number {
   return Number.isNaN(parsed) ? 0 : parsed;
 }
 
-function summarize(source: string): string {
-  const text: string = stripTags(source);
-  if (text.length <= RssConstants.SUMMARY_MAX_CHARS) {
-    return text;
-  }
-  return text.substring(0, RssConstants.SUMMARY_MAX_CHARS) + '...';
-}
-
 /** JSON Feed attachments → 媒体附件。 */
 function toEnclosures(item: JsonFeedItemRaw): Enclosure[] {
   const result: Enclosure[] = [];
@@ -100,7 +93,9 @@ function toArticle(item: JsonFeedItemRaw): ParsedArticle {
     summarySource = bodySource;
   }
   const author: string = item.author === undefined ? '' : asString(item.author.name);
-  return new ParsedArticle(asString(item.title), link, summarize(summarySource), content,
+  const title: string = asString(item.title);
+  return new ParsedArticle(title, link,
+    summarizeForList(stripTags(summarySource), title, RssConstants.SUMMARY_MAX_CHARS), content,
     parseDate(asString(item.date_published)), asString(item.image), author, html, toEnclosures(item));
 }
 

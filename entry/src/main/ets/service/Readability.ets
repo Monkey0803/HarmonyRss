@@ -9,7 +9,7 @@
  * 目标是「留下能读的正文」，不追求与浏览器版 Readability 完全一致。
  */
 
-import { HtmlNode, parseHtml, textContent, findFirst } from './HtmlDom';
+import { HtmlNode, parseHtml, findFirst, DROP_WITH_CONTENT } from './HtmlDom';
 import { sanitizeNode, sanitizeFragment } from './HtmlSanitizer';
 import { toPlainText } from '../common/utils/HtmlText';
 import { ReaderConstants } from '../common/constants/RssConstants';
@@ -59,16 +59,78 @@ function commaCount(text: string): number {
   return n;
 }
 
-/** 节点内全部链接文本的长度（用于链接密度）。 */
-function linkTextLength(node: HtmlNode): number {
-  if (node.tag === 'a') {
-    return textContent(node).length;
+/** 是否是「连内容一起丢弃」的标签（script/style 等）。 */
+function isDroppedTag(tag: string): boolean {
+  return DROP_WITH_CONTENT.indexOf(tag) >= 0;
+}
+
+/** 子树指标：文本长度 / 标点数量 / 链接文本长度。 */
+class NodeMetrics {
+  textLen: number = 0;
+  commas: number = 0;
+  linkLen: number = 0;
+}
+
+/** 后序遍历栈项（显式栈，避免深文档递归爆栈）。 */
+class WalkItem {
+  readonly node: HtmlNode;
+  readonly expanded: boolean;
+
+  constructor(node: HtmlNode, expanded: boolean) {
+    this.node = node;
+    this.expanded = expanded;
   }
-  let out: number = 0;
-  for (let i = 0; i < node.children.length; i += 1) {
-    out += linkTextLength(node.children[i]);
+}
+
+/**
+ * 单遍迭代后序收集指标。
+ *
+ * 原来的实现对每个候选块都要递归调用一次 textContent() + linkTextLength()，
+ * 复杂度是 O(n · depth) 且会产生大量临时字符串；这里每个节点只算一次。
+ */
+function collectMetrics(root: HtmlNode): Map<HtmlNode, NodeMetrics> {
+  const metrics: Map<HtmlNode, NodeMetrics> = new Map<HtmlNode, NodeMetrics>();
+  const stack: WalkItem[] = [new WalkItem(root, false)];
+  while (stack.length > 0) {
+    const popped: WalkItem | undefined = stack.pop();
+    if (popped === undefined) {
+      continue;
+    }
+    const node: HtmlNode = popped.node;
+    if (node.isText()) {
+      const m: NodeMetrics = new NodeMetrics();
+      const parent: HtmlNode | undefined = node.parent;
+      if (parent === undefined || !isDroppedTag(parent.tag)) {
+        m.textLen = node.text.length;
+        m.commas = commaCount(node.text);
+      }
+      metrics.set(node, m);
+      continue;
+    }
+    if (!popped.expanded) {
+      stack.push(new WalkItem(node, true));
+      for (let i = 0; i < node.children.length; i += 1) {
+        stack.push(new WalkItem(node.children[i], false));
+      }
+      continue;
+    }
+    const m: NodeMetrics = new NodeMetrics();
+    if (!isDroppedTag(node.tag)) {
+      for (let i = 0; i < node.children.length; i += 1) {
+        const child: NodeMetrics | undefined = metrics.get(node.children[i]);
+        if (child !== undefined) {
+          m.textLen += child.textLen;
+          m.commas += child.commas;
+          m.linkLen += child.linkLen;
+        }
+      }
+      if (node.tag === 'a') {
+        m.linkLen = m.textLen;
+      }
+    }
+    metrics.set(node, m);
   }
-  return out;
+  return metrics;
 }
 
 function addScore(scores: Map<HtmlNode, number>, node: HtmlNode, delta: number): void {
@@ -76,13 +138,8 @@ function addScore(scores: Map<HtmlNode, number>, node: HtmlNode, delta: number):
   scores.set(node, (current === undefined ? 0 : current) + delta);
 }
 
-function scoreOf(scores: Map<HtmlNode, number>, node: HtmlNode): number {
-  const value: number | undefined = scores.get(node);
-  return value === undefined ? 0 : value;
-}
-
 /** 给整棵树打分；返回得分最高的节点。 */
-function bestCandidate(root: HtmlNode): HtmlNode | undefined {
+function bestCandidate(root: HtmlNode, metrics: Map<HtmlNode, NodeMetrics>): HtmlNode | undefined {
   const scores: Map<HtmlNode, number> = new Map<HtmlNode, number>();
   const stack: HtmlNode[] = root.children.slice();
   let best: HtmlNode | undefined = undefined;
@@ -101,14 +158,16 @@ function bestCandidate(root: HtmlNode): HtmlNode | undefined {
     if (node.isText() || !isBlock(node.tag)) {
       continue;
     }
-    const text: string = textContent(node);
-    const length: number = text.length;
+    const m: NodeMetrics | undefined = metrics.get(node);
+    if (m === undefined) {
+      continue;
+    }
+    const length: number = m.textLen;
     if (length < 25) {
       continue;
     }
-    const links: number = linkTextLength(node);
-    const density: number = length > 0 ? links / length : 0;
-    const base: number = 1 + commaCount(text) + Math.min(length / 100, 3);
+    const density: number = length > 0 ? m.linkLen / length : 0;
+    const base: number = 1 + m.commas + Math.min(length / 100, 3);
     const score: number = base * (1 - density) * classWeight(node);
     if (score <= 0) {
       continue;
@@ -140,7 +199,7 @@ function bestCandidate(root: HtmlNode): HtmlNode | undefined {
 }
 
 /** 主容器若是 html/body 这类，取其得分最高的子节点。 */
-function refineCandidate(root: HtmlNode, candidate: HtmlNode): HtmlNode {
+function refineCandidate(root: HtmlNode, candidate: HtmlNode, metrics: Map<HtmlNode, NodeMetrics>): HtmlNode {
   if (candidate.tag !== 'html' && candidate.tag !== 'body' && candidate.tag !== '#root') {
     return candidate;
   }
@@ -151,7 +210,8 @@ function refineCandidate(root: HtmlNode, candidate: HtmlNode): HtmlNode {
     if (child.isText()) {
       continue;
     }
-    const len: number = textContent(child).length;
+    const m: NodeMetrics | undefined = metrics.get(child);
+    const len: number = m === undefined ? 0 : m.textLen;
     if (len > bestLen) {
       bestLen = len;
       best = child;
@@ -174,8 +234,8 @@ function hasBlockMarkup(html: string): boolean {
     || lower.indexOf('<ul') >= 0 || lower.indexOf('<figure') >= 0 || lower.indexOf('<br') >= 0;
 }
 
-/** 全部 `<a>` 标签内的文本长度（用于识别「只有链接」的正文）。 */
-function linkTextLengthOf(html: string): number {
+/** 全部 `<a>` 标签内的文本长度（用于识别「只有链接」的正文）；超过 limit 立即返回。 */
+function linkTextLengthOf(html: string, limit: number): number {
   const lower: string = html.toLowerCase();
   let total: number = 0;
   let cursor: number = 0;
@@ -199,6 +259,9 @@ function linkTextLengthOf(html: string): number {
       break;
     }
     total += toPlainText(html.substring(openEnd + 1, close)).length;
+    if (total > limit) {
+      return total;
+    }
     cursor = close + '</a>'.length;
   }
   return total;
@@ -217,7 +280,8 @@ export function hasBodyContent(html: string): boolean {
   if (plain.length < ReaderConstants.MIN_FEED_BODY_CHARS) {
     return false;
   }
-  return linkTextLengthOf(html) <= plain.length * ReaderConstants.MAX_FEED_BODY_LINK_RATIO;
+  const limit: number = plain.length * ReaderConstants.MAX_FEED_BODY_LINK_RATIO;
+  return linkTextLengthOf(html, limit) <= limit;
 }
 
 /**
@@ -235,17 +299,20 @@ export function extractReadable(html: string, baseUrl: string): string {
     return '';
   }
   const body: HtmlNode = bodyOf(root);
+  // 一次后序遍历把每个节点的文本 / 标点 / 链接长度算好，下面打分与长度判断共用。
+  const metrics: Map<HtmlNode, NodeMetrics> = collectMetrics(body);
 
-  let candidate: HtmlNode | undefined = bestCandidate(body);
+  let candidate: HtmlNode | undefined = bestCandidate(body, metrics);
   if (candidate !== undefined) {
-    candidate = refineCandidate(body, candidate);
+    candidate = refineCandidate(body, candidate, metrics);
   }
 
   let fragment: string = '';
   if (candidate !== undefined) {
     fragment = sanitizeNode(candidate, baseUrl);
   }
-  const textLen: number = textContent(candidate === undefined ? body : candidate).length;
+  const measured: NodeMetrics | undefined = metrics.get(candidate === undefined ? body : candidate);
+  const textLen: number = measured === undefined ? 0 : measured.textLen;
   if (fragment.length === 0 || textLen < ReaderConstants.MIN_CONTENT_SCORE) {
     // 兜底：整页去壳，保留块结构（仍远优于纯文本）。
     fragment = sanitizeFragment(body, baseUrl);

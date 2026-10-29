@@ -296,12 +296,12 @@ export class ReaderConstants {
   static readonly MIN_FEED_BODY_CHARS: number = 160;
   /** feed 自带正文里链接文本的占比上限：超过说明是链接列表，不是正文。 */
   static readonly MAX_FEED_BODY_LINK_RATIO: number = 0.5;
-  /** 单篇内联图片的 base64 字符上限（约 450KB 原图），超过则保留远程链接不缓存。 */
-  static readonly MAX_INLINE_IMAGE_CHARS: number = 600 * 1024;
+  /** 单篇内联图片的 base64 字符上限（约 240KB 原图），超过则保留远程链接不缓存。 */
+  static readonly MAX_INLINE_IMAGE_CHARS: number = 320 * 1024;
   /** 单篇内联图片总量上限（所有 data URI 合计）。 */
-  static readonly MAX_INLINE_TOTAL_CHARS: number = 1200 * 1024;
+  static readonly MAX_INLINE_TOTAL_CHARS: number = 720 * 1024;
   /** 单篇最多内联的图片张数。 */
-  static readonly MAX_INLINE_IMAGES: number = 8;
+  static readonly MAX_INLINE_IMAGES: number = 6;
 }
 
 /** OPML 导入 / 导出相关常量（文件格式的元数据，不是界面文案）。 */

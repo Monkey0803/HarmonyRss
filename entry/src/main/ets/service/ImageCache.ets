@@ -12,6 +12,7 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import { ReaderConstants, RssConstants } from '../common/constants/RssConstants';
 import { decodeEntities } from './RssParser';
 import { sniffMime } from './MimeSniff';
+import { ImageDownscale } from './ImageDownscale';
 import { HttpOptions, HttpResponse, httpClient } from './HttpClient';
 
 const DOMAIN: number = 0x0000;
@@ -51,8 +52,11 @@ export class ImageCache {
         return '';
       }
       const bytes: Uint8Array = response.bytes;
-      const base64: string = new util.Base64Helper().encodeToStringSync(bytes);
-      return 'data:' + sniffMime(bytes, url) + ';base64,' + base64;
+      const mime: string = sniffMime(bytes, url);
+      // 大 JPEG 先缩边+重编码，显著缩小 base64 体积（首屏解析与本地库都受益）。
+      const payload: Uint8Array = await ImageDownscale.shrinkIfWorthWhile(bytes, mime);
+      const base64: string = new util.Base64Helper().encodeToStringSync(payload);
+      return 'data:' + mime + ';base64,' + base64;
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       hilog.warn(DOMAIN, TAG, 'download failed: %{public}d', error.code);
@@ -65,7 +69,7 @@ export class ImageCache {
    * baseUrl 仅用于解析相对地址（相对图片在净化阶段已绝对化，这里只处理 http/https）。
    */
   async inlineImages(fragment: string, baseUrl: string): Promise<string> {
-    let out: string = '';
+    const parts: string[] = [];
     let cursor: number = 0;
     let count: number = 0;
     let budget: number = ReaderConstants.MAX_INLINE_TOTAL_CHARS;
@@ -73,25 +77,25 @@ export class ImageCache {
     while (cursor < fragment.length) {
       const start: number = fragment.indexOf('<img', cursor);
       if (start < 0) {
-        out += fragment.substring(cursor);
+        parts.push(fragment.substring(cursor));
         break;
       }
-      out += fragment.substring(cursor, start);
+      parts.push(fragment.substring(cursor, start));
       const end: number = fragment.indexOf('>', start);
       if (end < 0) {
-        out += fragment.substring(start);
+        parts.push(fragment.substring(start));
         break;
       }
       const tag: string = fragment.substring(start, end + 1);
-      out += await this.maybeInlineTag(tag, baseUrl, count, budget, (used: number) => {
+      parts.push(await this.maybeInlineTag(tag, baseUrl, count, budget, (used: number) => {
         budget -= used;
         count += 1;
-      });
+      }));
       cursor = end + 1;
     }
     hilog.info(DOMAIN, TAG, 'inlineImages: inlined=%{public}d of %{public}d chars',
       count, fragment.length);
-    return out;
+    return parts.join('');
   }
 
   /** 处理单个 <img> 标签：可缓存则返回替换后的标签，否则原样返回。 */

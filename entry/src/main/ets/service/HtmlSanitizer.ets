@@ -328,46 +328,64 @@ function serializeEmbed(node: HtmlNode, baseUrl: string): string {
     'referrerpolicy="no-referrer" frameborder="0"></iframe>';
 }
 
-/** 序列化一个节点子树为安全 HTML 片段。 */
+/**
+ * 序列化一个节点子树为安全 HTML 片段。
+ * 内部走单次 DFS + 数组缓冲：避免递归拼串的 O(n · depth) 开销，也不会因深嵌套爆栈。
+ */
 export function sanitizeNode(node: HtmlNode, baseUrl: string): string {
+  const out: string[] = [];
+  emitNode(node, baseUrl, out);
+  return out.join('');
+}
+
+function emitNode(node: HtmlNode, baseUrl: string, out: string[]): void {
   if (node.isText()) {
-    return decodeAndEscape(node.text);
+    out.push(decodeAndEscape(node.text));
+    return;
   }
   const tag: string = node.tag;
   if (tag === 'iframe') {
     // 先于 isDropTag 判断：白名单内的播放域要保留（其余 iframe 丢弃）
-    return serializeEmbed(node, baseUrl);
+    const embed: string = serializeEmbed(node, baseUrl);
+    if (embed.length > 0) {
+      out.push(embed);
+    }
+    return;
   }
   if (isDropTag(tag)) {
-    return '';
+    return;
   }
   if (tag === 'img') {
     // img 单独处理：合并懒加载属性、绝对化地址。
-    return serializeImage(node, baseUrl);
+    out.push(serializeImage(node, baseUrl));
+    return;
   }
-  const inner: string = sanitizeChildren(node, baseUrl);
   if (!isAllowedTag(tag)) {
     // 未知标签：去壳留内容。
-    return inner;
+    emitChildren(node, baseUrl, out);
+    return;
   }
   const attrs: string = serializeAttrs(node, baseUrl);
   if (isVoidOut(tag)) {
-    return '<' + tag + attrs + '>';
+    out.push('<' + tag + attrs + '>');
+    return;
   }
-  return '<' + tag + attrs + '>' + inner + '</' + tag + '>';
+  out.push('<' + tag + attrs + '>');
+  emitChildren(node, baseUrl, out);
+  out.push('</' + tag + '>');
 }
 
-function sanitizeChildren(node: HtmlNode, baseUrl: string): string {
-  let out: string = '';
+function emitChildren(node: HtmlNode, baseUrl: string, out: string[]): void {
   for (let i = 0; i < node.children.length; i += 1) {
-    out += sanitizeNode(node.children[i], baseUrl);
+    emitNode(node.children[i], baseUrl, out);
   }
-  return out;
 }
 
 /** 只净化「子节点」，用于 body / 未知容器这类本身要去壳的节点。 */
 export function sanitizeFragment(node: HtmlNode, baseUrl: string): string {
-  return sanitizeChildren(node, baseUrl);
+  const out: string[] = [];
+  emitChildren(node, baseUrl, out);
+  return out.join('');
 }
 
 function serializeAttrs(node: HtmlNode, baseUrl: string): string {

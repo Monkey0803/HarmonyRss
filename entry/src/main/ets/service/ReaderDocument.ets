@@ -89,7 +89,7 @@ function elementRules(p: ReaderPalette, topPad: number, bottomPad: number): stri
     '.reader p,.reader li,.reader blockquote{text-align:' + align + ';}' +
     '.reader a{color:' + p.link + ';text-decoration:none;word-break:break-word;}' +
     '.reader code{background:' + p.codeBg + ';padding:.1em .35em;border-radius:4px;font-family:monospace;font-size:.92em;}' +
-    '.reader pre{background:' + p.codeBg + ';padding:12px;border-radius:8px;overflow-x:auto;font-size:.9em;}' +
+    '.reader pre{background:' + p.codeBg + ';padding:12px;border-radius:8px;overflow-x:auto;white-space:pre-wrap;word-break:break-word;font-size:.9em;}' +
     '.reader pre code{background:none;padding:0;}' +
     '.reader blockquote{margin:1em 0;padding:.2em 1em;border-left:3px solid ' + p.quoteBorder + ';color:' + p.quoteFg + ';}' +
     '.reader td,.reader th{border:1px solid ' + p.border + ';padding:6px 8px;text-align:left;}' +
@@ -101,18 +101,21 @@ function elementRules(p: ReaderPalette, topPad: number, bottomPad: number): stri
 function structuralRules(): string {
   // 显式允许选择与复制：阅读器里选段后要能用系统菜单/自定义操作条复制、分享。
   return 'html,body{margin:0;padding:0;-webkit-user-select:text;user-select:text;}' +
-    '.reader img{max-width:100%;height:auto;display:block;margin:12px auto;border-radius:8px;}' +
+    '.reader img{max-width:100%;height:auto;max-height:85vh;object-fit:contain;display:block;margin:12px auto;border-radius:8px;}' +
     // 内嵌媒体：视频 / 音频 / 播放器撑满栏宽，播放器按 16:9 占位避免布局跳动
     '.reader video,.reader audio{width:100%;max-width:100%;display:block;margin:12px auto;border-radius:8px;}' +
     '.reader iframe{width:100%;aspect-ratio:16/9;border:0;border-radius:8px;margin:12px auto;display:block;}' +
     '.reader video,.reader iframe{max-width:100%;}' +
     '.reader p{margin:0 0 1em;}' +
-    '.reader h1,.reader h2,.reader h3,.reader h4{line-height:1.35;margin:1.4em 0 .6em;font-weight:600;}' +
+    '.reader p:empty{display:none;}' +
+    '.reader h1,.reader h2,.reader h3,.reader h4,.reader h5,.reader h6{line-height:1.35;margin:1.4em 0 .6em;font-weight:600;}' +
     '.reader h1{font-size:1.5em;}.reader h2{font-size:1.3em;}.reader h3{font-size:1.15em;}' +
+    '.reader h5{font-size:1.05em;}.reader h6{font-size:1em;}' +
     '.reader ul,.reader ol{margin:0 0 1em;padding-left:1.4em;}' +
     '.reader li{margin:.3em 0;}' +
     '.reader figure{margin:1em 0;}' +
-    '.reader table{width:100%;border-collapse:collapse;margin:1em 0;font-size:.95em;}';
+    // 长表格在手机宽度下必然溢出：整块横滚，别把每一列都挤成一列字。
+    '.reader table{width:100%;border-collapse:collapse;margin:1em 0;font-size:.95em;display:block;overflow-x:auto;}';
 }
 
 /** 系统主题下的深色覆盖（显式浅色配色在深色系统里的替换）。 */
@@ -145,11 +148,29 @@ export function readerCss(topPad: number = 0, bottomPad: number = 0): string {
   return css;
 }
 
+/** 阅读样式的 <style> 元素 id：排版变化时原地替换它的内容即可（见 readerStyleScript）。 */
+export const READER_STYLE_ID: string = 'hr-reader-style';
+
 /** 拼一份完整 HTML 文档（片段已净化，可直接内嵌）。 */
 export function buildReaderDocument(bodyHtml: string, topPad: number = 0, bottomPad: number = 0): string {
   return '<!DOCTYPE html><html><head>' +
     '<meta charset="utf-8">' +
     '<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">' +
-    '<style>' + readerCss(topPad, bottomPad) + '</style>' +
+    '<style id="' + READER_STYLE_ID + '">' + readerCss(topPad, bottomPad) + '</style>' +
     '</head><body><article class="reader">' + bodyHtml + '</article></body></html>';
+}
+
+/**
+ * 在已加载的 Reader 文档里原地替换阅读样式（幂等）。
+ *
+ * 排版（字号 / 行距 / 栏宽 / 对齐 / 主题 / 字体族）变化不需要重新 loadData：
+ * 整篇重建要跨语言拷贝 + Chromium 重新解析，会白闪并把滚动位置顶掉。
+ * 这里只换 <style> 的内容，重排一次即可，位置自然保持。
+ */
+export function readerStyleScript(topPad: number = 0, bottomPad: number = 0): string {
+  const css: string = JSON.stringify(readerCss(topPad, bottomPad));
+  return '(function(){var d=document;var s=d.getElementById("' + READER_STYLE_ID + '");' +
+    'if(!s){s=d.createElement("style");s.id="' + READER_STYLE_ID + '";' +
+    '(d.head||d.documentElement).appendChild(s);}' +
+    's.textContent=' + css + ';})()';
 }

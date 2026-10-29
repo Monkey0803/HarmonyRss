@@ -6,6 +6,7 @@
  */
 
 import { RssConstants } from '../common/constants/RssConstants';
+import { summarizeForList } from '../common/utils/SummaryText';
 import { Enclosure } from '../model/Enclosure';
 import { durationFromText, numberFromText } from './EnclosureCodec';
 
@@ -117,13 +118,6 @@ function basicCleanHtml(input: string): string {
   out = out.replace(new RegExp('<script[\\s\\S]*?</script>', 'gi'), '');
   out = out.replace(new RegExp('<style[\\s\\S]*?</style>', 'gi'), '');
   return out.trim();
-}
-
-function truncate(text: string, max: number): string {
-  if (text.length <= max) {
-    return text;
-  }
-  return text.substring(0, max) + '...';
 }
 
 /** 去掉 <![CDATA[ ]]> 包裹并 trim。 */
@@ -446,7 +440,8 @@ function parseArticle(block: string, isAtom: boolean): ParsedArticle {
     dateText = readTagText(block, 'dc:date');
   }
   const summarySource: string = rawSummary.length > 0 ? rawSummary : rawContent;
-  const summary: string = truncate(stripTags(decodeEntities(summarySource)), RssConstants.SUMMARY_MAX_CHARS);
+  const summary: string = summarizeForList(stripTags(decodeEntities(summarySource)), title,
+    RssConstants.SUMMARY_MAX_CHARS);
   const bodySource: string = rawContent.length > 0 ? rawContent : rawSummary;
   const content: string = stripTags(decodeEntities(bodySource));
   const contentHtml: string = basicCleanHtml(htmlSource(bodySource));

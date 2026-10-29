@@ -15,6 +15,7 @@ import rssParserTest from './RssParser.test';
 import mimeSniffTest from './MimeSniff.test';
 import readerTypographyTest from './ReaderTypography.test';
 import readerBudgetTest from './ReaderBudget.test';
+import summaryTextTest from './SummaryText.test';
 import urlTextTest from './UrlText.test';
 import feedDiscoveryTest from './FeedDiscovery.test';
 import opmlCodecTest from './OpmlCodec.test';
@@ -62,6 +63,7 @@ export default function testsuite() {
   mimeSniffTest();
   readerTypographyTest();
   readerBudgetTest();
+  summaryTextTest();
   urlTextTest();
   feedDiscoveryTest();
   opmlCodecTest();

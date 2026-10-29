@@ -32,6 +32,7 @@ import { Article } from '../model/Feed';
 import { GroupSource } from '../model/Dedupe';
 import { feedViewModel } from '../viewmodel/FeedViewModel';
 import { safeArea } from '../service/SafeAreaController';
+import { NetworkStatus } from '../service/NetworkStatus';
 import { MaterialController } from '../service/MaterialController';
 import { CommonConstants } from '../common/constants/CommonConstants';
 import { articleActions } from '../service/ArticleActions';
@@ -51,7 +52,7 @@ import {
 import { readerStyle } from '../service/ReaderStyle';
 import { settingsStore } from '../service/SettingsStore';
 import { ReaderViewMode } from '../common/constants/RssConstants';
-import { buildReaderDocument } from '../service/ReaderDocument';
+import { buildReaderDocument, readerStyleScript } from '../service/ReaderDocument';
 import {
   applyHighlightsScript,
   gotoHighlightScript,
@@ -181,21 +182,25 @@ export struct ArticleDetailView {
   /** 当前文章纯文本缓存（复制正文 / 分享正文 / 朗读用）：按文章 id 失效。 */
   private plainTextCache: string = '';
   private plainTextCacheId: string = '';
-  /** 排版变化（重建 Reader 文档）后要落回的位置；undefined 表示无需特殊恢复。 */
-  private pendingRestore: ReaderPosition | undefined = undefined;
   /** 文档内点标注 → ArkTS 弹编辑面板（javaScriptProxy，页面创建时注册一次）。 */
   private hlBridge: ReaderHighlightBridge = new ReaderHighlightBridge((id: string) => {
     this.openHighlightEditor(id);
   });
   /** 文档内滚动 → ArkTS 的进度回调（javaScriptProxy，页面创建时注册一次）。 */
   private progressBridge: ReaderProgressBridge = new ReaderProgressBridge((ratio: number) => {
-    this.progressRatio = ratio;
+    // 进度条只需要 1% 精度：按 1% 量化，避免每 200ms 的滚动回调把整页 build() 重估一遍。
+    const next: number = Math.round(ratio * 100) / 100;
+    if (next !== this.progressRatio) {
+      this.progressRatio = next;
+    }
     this.handleProgressRatio(ratio);
   });
   /** 正文触摸判定（沉浸阅读的点按）：按下位置与时间。 */
   private tapStartX: number = -1;
   private tapStartY: number = -1;
   private tapStartTime: number = 0;
+  /** 预取下一篇正文的定时器（页面销毁 / 切文时清掉）。 */
+  private prefetchTimer: number = -1;
   /** 悬浮操作栏的页签控制器（页签栏只作为沉浸光感的生效区域）。 */
   private barTabsController: HdsTabsController = new HdsTabsController();
 
@@ -649,13 +654,39 @@ export struct ArticleDetailView {
     if (article === undefined || this.readerHtml.length === 0) {
       return;
     }
+    const start: number = Date.now();
     const doc: string = buildReaderDocument(this.readerHtml, 0, safeArea.contentBottomInsetVp);
     try {
       this.readerController.loadData(doc, 'text/html', 'UTF-8', article.link);
+      hilog.info(DOMAIN, TAG, 'perf docbuild=%{public}dms size=%{public}d',
+        Date.now() - start, doc.length);
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       hilog.warn(DOMAIN, TAG, 'load reader doc failed: %{public}d', error.code);
     }
+  }
+
+  /**
+   * 预取下一篇正文：读完当前文章停顿一会儿后，在非计费网络下提前提取好下一篇，
+   * 横向滑过去时正文已经命中缓存，不再等 spinnner。
+   */
+  private schedulePrefetch(): void {
+    if (this.prefetchTimer >= 0) {
+      clearTimeout(this.prefetchTimer);
+      this.prefetchTimer = -1;
+    }
+    if (!NetworkStatus.isUnmetered()) {
+      return;
+    }
+    this.prefetchTimer = setTimeout(() => {
+      this.prefetchTimer = -1;
+      const nextId: string = feedViewModel.nextArticleId();
+      if (nextId.length === 0) {
+        return;
+      }
+      feedViewModel.prefetchReader(nextId).catch(() => {
+      });
+    }, 1500);
   }
 
   /** 提取失败：有链接就退网页原文，否则退纯文本（loading 由对应视图的 onPageEnd 收尾）。 */
@@ -790,7 +821,6 @@ export struct ArticleDetailView {
       this.highlights = [];
       return;
     }
-    this.highlights = await articleStore.listHighlights(article.id);
     this.highlights = await articleStore.listHighlights(article.id);
     this.replayHighlights(this.activeController());
     // 从标注聚合页点进来：定位到那条标注（消费后清空，避免切文又跳一次）。
@@ -1016,6 +1046,10 @@ export struct ArticleDetailView {
   private openRelative(id: string, slideFrom: number = 1): void {
     if (id.length === 0) {
       return;
+    }
+    if (this.prefetchTimer >= 0) {
+      clearTimeout(this.prefetchTimer);
+      this.prefetchTimer = -1;
     }
     feedViewModel.openArticle(id);
     // 不重置 readerHtml：保持 Reader Web 挂载，随后直接换文档，避免 controller 失效。
@@ -1268,6 +1302,10 @@ export struct ArticleDetailView {
 
   /** 离开详情页：恢复系统息屏策略，并按当前模式取一次滚动位置写回。 */
   aboutToDisappear(): void {
+    if (this.prefetchTimer >= 0) {
+      clearTimeout(this.prefetchTimer);
+      this.prefetchTimer = -1;
+    }
     screenAwake.set(false, this.getUIContext().getHostContext());
     readerSpeech.release();
     if (this.viewMode === MODE_WEB) {
@@ -1844,18 +1882,18 @@ export struct ArticleDetailView {
   }
 
   /**
-   * 应用排版改动：Reader 模式重建文档（先记住当前滚动位置，重建完在 onPageEnd 落回），
+   * 应用排版改动：Reader 模式原地替换文档里的 <style>（不重建文档，位置保持不变），
    * 网页原文模式只需重新注入覆盖样式（幂等）。
    */
   private applyTypography(): void {
     if (this.viewMode === MODE_READER && this.readerHtml.length > 0) {
-      const controller: webview.WebviewController = this.readerController;
-      controller.runJavaScript(readPositionScript(), (err: BusinessError, value: string) => {
-        if (!err) {
-          this.pendingRestore = parsePosition(value);
-        }
-        this.loadReaderDocIntoWeb();
-      });
+      this.readerController
+        .runJavaScript(readerStyleScript(0, safeArea.contentBottomInsetVp))
+        .catch((err: BusinessError) => {
+          // 文档还没就绪（或控制器失效）时注入会失败：退回整篇重建，保证排版最终生效。
+          hilog.warn(DOMAIN, TAG, 'typography inject failed: %{public}d', err.code);
+          this.loadReaderDocIntoWeb();
+        });
       return;
     }
     if (this.viewMode === MODE_WEB) {
@@ -2052,20 +2090,16 @@ export struct ArticleDetailView {
               return this.handleLinkIntercept(event.data.getRequestUrl());
             })
             .onTextSelectionChange((selectionText: string) => {
-              this.selectedText = selectionText;
+              if (this.selectedText !== selectionText) {
+                this.selectedText = selectionText;
+              }
             })
             // 沉浸阅读：点按正文中部切换上下栏（ArkWeb 里 DOM click 不一定触发，改在 ArkTS 侧判定）
             .onTouch((event: TouchEvent) => {
               this.handleBodyTouch(event);
             })
             .onControllerAttached(() => {
-              const doc: string = buildReaderDocument(this.readerHtml, 0, safeArea.contentBottomInsetVp);
-              try {
-                this.readerController.loadData(doc, 'text/html', 'UTF-8', this.cur().link);
-              } catch (err) {
-                const error: BusinessError = err as BusinessError;
-                hilog.warn(DOMAIN, TAG, 'load reader doc failed: %{public}d', error.code);
-              }
+              this.loadReaderDocIntoWeb();
             })
             .onPageEnd(() => {
               this.loading = false;
@@ -2074,16 +2108,11 @@ export struct ArticleDetailView {
               // 搜索命中定位优先于进度恢复（用户是来找那一段的）。
               if (this.consumePendingSearch()) {
                 this.readerProgressRestored = true;
+                this.schedulePrefetch();
                 return;
               }
-              const pending: ReaderPosition | undefined = this.pendingRestore;
-              if (pending !== undefined) {
-                // 排版变化导致的重建：落回改动前的阅读位置，避免「调字号跳回顶部」。
-                this.pendingRestore = undefined;
-                this.runRestore(this.readerController, pending);
-              } else {
-                this.restoreReaderProgress();
-              }
+              this.restoreReaderProgress();
+              this.schedulePrefetch();
             })
             .onOverScroll((event: OnOverScrollEvent) => {
               if (Math.abs(event.yOffset) >= OVERSCROLL_TRIGGER_VP) {
@@ -2146,7 +2175,9 @@ export struct ArticleDetailView {
             return this.handleLinkIntercept(event.data.getRequestUrl());
           })
           .onTextSelectionChange((selectionText: string) => {
-            this.selectedText = selectionText;
+            if (this.selectedText !== selectionText) {
+              this.selectedText = selectionText;
+            }
           })
           // 沉浸阅读：点按正文中部切换上下栏（ArkWeb 里 DOM click 不一定触发，改在 ArkTS 侧判定）
           .onTouch((event: TouchEvent) => {
@@ -2164,6 +2195,7 @@ export struct ArticleDetailView {
             } else {
               this.restoreWebProgress();
             }
+            this.schedulePrefetch();
           })
           .onOverScroll((event: OnOverScrollEvent) => {
             if (Math.abs(event.yOffset) >= OVERSCROLL_TRIGGER_VP) {
