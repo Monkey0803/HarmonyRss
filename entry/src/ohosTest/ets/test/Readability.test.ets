@@ -17,6 +17,15 @@ function page(articleBody: string, extras: string): string {
     '</body></html>';
 }
 
+/** 重复若干段，用于构造「够长」的正文（触发语义容器快路径 / 打分）。 */
+function paragraphs(text: string, times: number): string {
+  let out: string = '';
+  for (let i = 0; i < times; i += 1) {
+    out += '<p>' + text + '</p>';
+  }
+  return out;
+}
+
 export default function readabilityTest() {
   describe('Readability', () => {
     it('keeps_article_body', 0, () => {
@@ -83,6 +92,46 @@ export default function readabilityTest() {
 
     it('rejects_plain_text_description', 0, () => {
       expect(hasBodyContent(LONG + LONG2)).assertFalse();
+    });
+
+    it('prefers_semantic_article_container', 0, () => {
+      const html: string = '<html><body>' +
+        '<div class="sidebar"><a href="/a">menu one</a><a href="/b">menu two</a>侧栏说明文字。</div>' +
+        '<article>' + paragraphs(LONG2, 5) + '</article>' +
+        '</body></html>';
+      const out: string = extractReadable(html, 'https://site.com/post');
+      expect(out).assertContain('Insider trading');
+      expect(out.indexOf('menu one')).assertEqual(-1);
+    });
+
+    it('drops_trailing_related_block', 0, () => {
+      const html: string = '<html><body><article>' + paragraphs(LONG2, 5) +
+        '<div class="related"><h3>相关阅读</h3><a href="/x">另一篇文章标题</a></div>' +
+        '</article></body></html>';
+      const out: string = extractReadable(html, 'https://site.com/post');
+      expect(out).assertContain('Insider trading');
+      expect(out.indexOf('相关阅读')).assertEqual(-1);
+    });
+
+    it('keeps_trailing_media_block', 0, () => {
+      const html: string = '<html><body><article>' + paragraphs(LONG2, 5) +
+        '<figure><img src="/tail.png"></figure>' +
+        '</article></body></html>';
+      const out: string = extractReadable(html, 'https://site.com/post/index.html');
+      expect(out).assertContain('https://site.com/tail.png');
+    });
+
+    it('drops_deep_large_related_list', 0, () => {
+      let cards: string = '';
+      for (let i = 0; i < 8; i += 1) {
+        cards += '<div><a href="/c' + i.toString() + '">观察：第 ' + i.toString() + ' 篇推荐文章标题文字</a></div>';
+      }
+      const html: string = '<html><body><article><div class="a"><div class="b"><div class="c">' +
+        paragraphs(LONG2, 5) + '<div class="rel">' + cards + '</div>' +
+        '</div></div></div></article></body></html>';
+      const out: string = extractReadable(html, 'https://site.com/post');
+      expect(out).assertContain('Insider trading');
+      expect(out.indexOf('观察：第')).assertEqual(-1);
     });
   });
 }

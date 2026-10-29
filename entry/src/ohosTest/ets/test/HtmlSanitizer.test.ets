@@ -84,5 +84,14 @@ export default function htmlSanitizerTest() {
       expect(out.indexOf('<source')).assertEqual(-1);
       expect(out).assertContain('src="https://s.com/lo.jpg"');
     });
+
+    it('drops_blank_paragraphs_and_containers', 0, () => {
+      expect(sanitize('<p> </p><div></div><p>ok</p>')).assertEqual('<p>ok</p>');
+      // 只剩被丢弃的元素（svg / script）也视为空段落。
+      expect(sanitize('<p><svg></svg> </p><p>ok</p>')).assertEqual('<p>ok</p>');
+      // 有视觉内容的容器要保留：分隔线 / 图片不算空块。
+      expect(sanitize('<div><hr></div>')).assertEqual('<div><hr></div>');
+      expect(sanitize('<p><img src="/a.png"></p>', 'https://s.com/p')).assertContain('<img');
+    });
   });
 }

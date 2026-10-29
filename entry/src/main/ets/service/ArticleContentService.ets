@@ -37,14 +37,16 @@ const TAG: string = 'ArticleContentService';
 
 /**
  * Reader HTML 版本标记（存在正文片段开头）。
- * 缓存命中要求带标记：旧版本（无标记、未内联图片）会在联网时重新生成一次。
+ * 缓存命中要求带标记：提取规则升级时递增版本号，旧缓存按「未命中」处理 ——
+ * 打开文章时用新规则重新提取（离线仍回退到旧缓存，不阻断阅读）。
+ * hrv6：语义容器快路径 + 文末噪声清理 + 空段落清理。
  */
-const READER_MARKER: string = '<!--hrv5-->';
+const READER_MARKER: string = '<!--hrv6-->';
 /**
  * 「文本就绪」标记：正文可立即展示，图片仍是远程链接。
  * 联网时后台串行补图，成功后再升级为 READER_MARKER。
  */
-const READER_MARKER_TEXT: string = '<!--hrv5t-->';
+const READER_MARKER_TEXT: string = '<!--hrv6t-->';
 /** 首屏渲染完成后再开始补图（避免与 Web 首次加载抢带宽与主线程）。 */
 const INLINE_DELAY_MS: number = 2000;
 

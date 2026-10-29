@@ -510,6 +510,36 @@ export class SettingsStore {
       console.error('SettingsStore.flush failed: ' + err.code.toString());
     });
   }
+
+  /**
+   * 内容规则版本（正文提取 / 摘要清洗）。
+   * 0 表示从未跑过迁移；读不到偏好时也按 0 处理（下次启动再试，幂等）。
+   */
+  contentRulesVersion(): number {
+    const store: preferences.Preferences | undefined = this.store;
+    if (store === undefined) {
+      return 0;
+    }
+    const raw: preferences.ValueType = store.getSync(PreferencesConstants.KEY_CONTENT_RULES_VERSION, 0);
+    return typeof raw === 'number' && raw > 0 ? Math.floor(raw) : 0;
+  }
+
+  /** 记录已应用的内容规则版本（迁移完成后调用一次）。 */
+  setContentRulesVersion(version: number): void {
+    const store: preferences.Preferences | undefined = this.store;
+    if (store === undefined) {
+      return;
+    }
+    try {
+      store.putSync(PreferencesConstants.KEY_CONTENT_RULES_VERSION, Math.max(0, Math.floor(version)));
+      store.flush().catch((err: BusinessError) => {
+        console.error('SettingsStore.flush failed: ' + err.code.toString());
+      });
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      console.error('SettingsStore.contentRulesVersion failed: ' + error.code.toString());
+    }
+  }
 }
 
 export const settingsStore: SettingsStore = new SettingsStore();

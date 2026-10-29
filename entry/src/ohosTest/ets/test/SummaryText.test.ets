@@ -39,5 +39,12 @@ export default function summaryTextTest() {
     it('collapses_whitespace_and_zero_width', 0, () => {
       expect(summarizeForList('  a\u200b b\n\n c  ', 'Title', 160)).assertEqual('a b c');
     });
+
+    it('drops_link_dump', 0, () => {
+      expect(summarizeForList(
+        'Article URL: https://example.com/a Comments URL: https://news.ycombinator.com/item?id=1 Points: 21',
+        'Title', 160)).assertEqual('');
+      expect(summarizeForList('https://example.com/a https://example.com/b', 'Title', 160)).assertEqual('');
+    });
   });
 }

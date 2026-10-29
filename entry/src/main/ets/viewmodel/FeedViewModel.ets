@@ -32,6 +32,7 @@ import { GroupMode, ArticleFilter, FeedError, FeedFetchError, ReaderState } from
 import { appSettings } from '../model/AppSettings';
 import { ArchiveDays, AutoRefreshMinutes, FullTextMode, TriState } from '../common/constants/SettingsConstants';
 import { settingsStore } from '../service/SettingsStore';
+import { SUMMARY_RULES_VERSION } from '../common/utils/SummaryText';
 import { settingsViewModel } from './SettingsViewModel';
 import { retentionService } from '../service/RetentionService';
 import { remoteSyncService } from '../service/remote/RemoteSyncService';
@@ -247,6 +248,8 @@ export class FeedViewModel {
     await this.ensureReady(context);
     // 老数据补一次正文纯文本（有上限）：让检索能命中「之前已提取过正文」的那些文章。
     await articleStore.backfillPlainText(BACKFILL_PLAIN_TEXT_LIMIT);
+    // 摘要清洗规则升级：按新规则重算库里已有摘要（正文由 Reader 缓存版本触发按需重提取）。
+    await this.applyContentRulesMigration();
     this.all = await articleStore.loadForList();
     this.publish();
     // 老数据补一次去重键（分批、上限 10 批）：让升级前入库的文章也能参与后续合并判定。
@@ -256,6 +259,24 @@ export class FeedViewModel {
     this.applyRetentionIfDue();
     // 冷启动是用户动作：force=true 保证首屏能拿到内容（仍不抓停用源）。
     await this.refreshAll(true);
+  }
+
+  /**
+   * 内容规则升级后的一次性回填（版本号记在偏好库，升级只跑一次）。
+   * 只重算「摘要」：摘要清洗只依赖已存的 title + summary，不需要重新抓 feed。
+   * 正文则由 Reader 缓存标记（ArticleContentService.READER_MARKER）触发按需重新提取。
+   */
+  private async applyContentRulesMigration(): Promise<void> {
+    if (settingsStore.contentRulesVersion() >= SUMMARY_RULES_VERSION) {
+      return;
+    }
+    const changed: number = await articleStore.resummarizeAll();
+    // 失败（-1）不推进版本：下次启动再试，回填本身是幂等的。
+    if (changed < 0) {
+      return;
+    }
+    settingsStore.setContentRulesVersion(SUMMARY_RULES_VERSION);
+    console.warn('content rules migration: summaries updated ' + changed.toString());
   }
 
   /**

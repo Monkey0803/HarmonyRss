@@ -294,6 +294,42 @@ export function findFirst(node: HtmlNode, tag: string): HtmlNode | undefined {
   return undefined;
 }
 
+/** 有视觉产出的元素：即使没有文字，也不能当成空块清掉。 */
+const VISUAL_ELEMENTS: string[] = [
+  'img', 'video', 'audio', 'iframe', 'picture', 'svg', 'canvas', 'embed', 'object', 'hr'
+];
+
+/**
+ * 子树里是否有「能看见」的内容（非空白文字 或 媒体 / 分隔线）。
+ * 供正文清理与净化器判断空段落 / 空容器用；迭代实现，深文档不会爆栈。
+ */
+export function hasVisibleContent(node: HtmlNode): boolean {
+  const stack: HtmlNode[] = [node];
+  while (stack.length > 0) {
+    const current: HtmlNode | undefined = stack.pop();
+    if (current === undefined) {
+      continue;
+    }
+    if (current.isText()) {
+      if (current.text.trim().length > 0) {
+        return true;
+      }
+      continue;
+    }
+    if (isDropTag(current)) {
+      // 整段丢弃的元素（svg / canvas / template…）渲染不出东西，不算可见内容。
+      continue;
+    }
+    if (VISUAL_ELEMENTS.indexOf(current.tag) >= 0) {
+      return true;
+    }
+    for (let i = 0; i < current.children.length; i += 1) {
+      stack.push(current.children[i]);
+    }
+  }
+  return false;
+}
+
 /** 提取节点的可见文本（不含 script/style 内容）。 */
 export function textContent(node: HtmlNode): string {
   if (node.isText()) {

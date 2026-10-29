@@ -56,6 +56,8 @@ export class PreferencesConstants {
   static readonly KEY_ARCHIVE_RULE: string = 'archiveRule';
   /** 详情页阅读模式：'reader' = 阅读器，其它 = 原文。 */
   static readonly KEY_READER_VIEW_MODE: string = 'readerViewMode';
+  /** 内容规则版本（正文提取 / 摘要清洗）：小于当前版本时启动跑一次性回填。 */
+  static readonly KEY_CONTENT_RULES_VERSION: string = 'contentRulesVersion';
   static readonly KEY_POINT_LIGHT: string = 'pointLightEnabled';
   static readonly KEY_GRIP_ENABLED: string = 'gripEnabled';
   static readonly KEY_ANTI_PEEP_ENABLED: string = 'antiPeepEnabled';

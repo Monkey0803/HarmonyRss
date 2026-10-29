@@ -355,6 +355,18 @@ function emitNode(node: HtmlNode, baseUrl: string, out: string[]): void {
   if (isDropTag(tag)) {
     return;
   }
+  // 空段落 / 空容器没有阅读价值，还会在正文里撑出空行：
+  // 先序列化子节点，再判断里面到底有没有「看得见」的东西（文字 / 媒体 / 分隔线）。
+  if (tag === 'p' || tag === 'div' || tag === 'span' || tag === 'section') {
+    const innerParts: string[] = [];
+    emitChildren(node, baseUrl, innerParts);
+    const inner: string = innerParts.join('');
+    if (!hasRenderedContent(inner)) {
+      return;
+    }
+    out.push('<' + tag + serializeAttrs(node, baseUrl) + '>' + inner + '</' + tag + '>');
+    return;
+  }
   if (tag === 'img') {
     // img 单独处理：合并懒加载属性、绝对化地址。
     out.push(serializeImage(node, baseUrl));
@@ -373,6 +385,21 @@ function emitNode(node: HtmlNode, baseUrl: string, out: string[]): void {
   out.push('<' + tag + attrs + '>');
   emitChildren(node, baseUrl, out);
   out.push('</' + tag + '>');
+}
+
+/** 序列化结果里是否有可见内容（文字 / 媒体 / 表格 / 分隔线）。 */
+function hasRenderedContent(html: string): boolean {
+  if (html.length === 0) {
+    return false;
+  }
+  const visual: string[] = ['<img', '<video', '<audio', '<iframe', '<hr', '<picture', '<table', '<canvas'];
+  for (let i = 0; i < visual.length; i += 1) {
+    if (html.indexOf(visual[i]) >= 0) {
+      return true;
+    }
+  }
+  // 去掉标签后还剩非空白字符，才算有正文。
+  return html.replace(/<[^>]*>/g, '').replace(/\s+/g, '').length > 0;
 }
 
 function emitChildren(node: HtmlNode, baseUrl: string, out: string[]): void {

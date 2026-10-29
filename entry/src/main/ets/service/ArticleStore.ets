@@ -43,6 +43,7 @@ import {
 import { ArticleDbConstants, ReaderState, RssConstants, SearchConstants } from '../common/constants/RssConstants';
 import { RetentionMode } from '../common/constants/SettingsConstants';
 import { toPlainText } from '../common/utils/HtmlText';
+import { summarizeForList } from '../common/utils/SummaryText';
 import { escapeFtsToken } from './SearchQueryParser';
 import { compile, hasCjk, isBlankQuery, postFilterSql } from './SearchPlan';
 import { grams } from './CjkTokenizer';
@@ -458,6 +459,17 @@ export class CacheStats {
   constructor(articles: number, bytes: number) {
     this.articles = articles;
     this.bytes = bytes;
+  }
+}
+
+/** 摘要回填的一条待写记录（先收集再统一写库，避免遍历 ResultSet 时并发写同一连接）。 */
+class SummaryFix {
+  readonly id: string;
+  readonly summary: string;
+
+  constructor(id: string, summary: string) {
+    this.id = id;
+    this.summary = summary;
   }
 }
 
@@ -3304,8 +3316,77 @@ export class ArticleStore {
     }
   }
 
-  markAllRead(): void {
-    this.exec('UPDATE ' + ArticleDbConstants.TABLE_ARTICLES + ' SET is_read = 1 WHERE is_read = 0', []);
+  /**
+   * 一次性回填列表摘要：用当前清洗规则重算库里已有的摘要，只写「结果有变化」的行（幂等）。
+   * 不重新抓 feed —— 摘要清洗（去 CTA 尾巴、标题复读、链接堆抑制）只依赖已存的 title + summary。
+   */
+  async resummarizeAll(): Promise<number> {
+    const store: relationalStore.RdbStore | undefined = this.store;
+    if (store === undefined) {
+      return 0;
+    }
+    const fixes: SummaryFix[] = [];
+    try {
+      const rs: relationalStore.ResultSet = await store.querySql(
+        'SELECT id, title, summary FROM ' + ArticleDbConstants.TABLE_ARTICLES + ' WHERE summary <> \'\'');
+      try {
+        while (rs.goToNextRow()) {
+          const id: string = rs.getString(rs.getColumnIndex('id'));
+          const title: string = rs.getString(rs.getColumnIndex('title'));
+          const old: string = rs.getString(rs.getColumnIndex('summary'));
+          const next: string = summarizeForList(old, title, RssConstants.SUMMARY_MAX_CHARS);
+          if (next !== old) {
+            fixes.push(new SummaryFix(id, next));
+          }
+        }
+      } finally {
+        rs.close();
+      }
+      for (let i = 0; i < fixes.length; i += 1) {
+        this.exec('UPDATE ' + ArticleDbConstants.TABLE_ARTICLES +
+          ' SET summary = ? WHERE id = ?', [fixes[i].summary, fixes[i].id]);
+        this.reindexRow(fixes[i].id);
+      }
+      hilog.info(DOMAIN, TAG, 'resummarize updated rows: %{public}d', fixes.length);
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.warn(DOMAIN, TAG, 'resummarize failed: %{public}d', error.code);
+      return -1;
+    }
+    return fixes.length;
+  }
+
+  /** 按主表当前值重建某行的两套检索索引（摘要变更后 grams 也要重算）。 */
+  private reindexRow(id: string): void {
+    if (!this.ftsReady && !this.cjkReady) {
+      return;
+    }
+    const store: relationalStore.RdbStore | undefined = this.store;
+    if (store === undefined) {
+      return;
+    }
+    try {
+      const rs: relationalStore.ResultSet = store.querySqlSync(
+        'SELECT title, summary, plain_text, author FROM ' + ArticleDbConstants.TABLE_ARTICLES + ' WHERE id = ?',
+        [id]);
+      try {
+        if (rs.goToNextRow()) {
+          const title: string = rs.getString(rs.getColumnIndex('title'));
+          const summary: string = rs.getString(rs.getColumnIndex('summary'));
+          const plain: string = rs.getString(rs.getColumnIndex('plain_text'));
+          this.ftsUpsert(id, title, summary, plain, rs.getString(rs.getColumnIndex('author')));
+          this.cjkUpsert(id, title, summary, plain);
+        }
+      } finally {
+        rs.close();
+      }
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.warn(DOMAIN, TAG, 'reindex after resummarize failed: %{public}d', error.code);
+    }
+  }
+
+  markAllRead(): void {    this.exec('UPDATE ' + ArticleDbConstants.TABLE_ARTICLES + ' SET is_read = 1 WHERE is_read = 0', []);
   }
 
   /** 删除订阅源及其文章（含索引与标签关联）。 */

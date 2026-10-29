@@ -12,6 +12,12 @@
  *   4. 超长时优先在句读处截断，而不是硬切。
  */
 
+/**
+ * 列表摘要规则的版本号：清洗规则变化时 +1，启动时据此跑一次性回填，
+ * 让库里已有文章的摘要也吃上新规则（不重新抓 feed）。
+ */
+export const SUMMARY_RULES_VERSION: number = 2;
+
 /** 结尾的行动号召 / 省略号尾巴（可连续出现多次，大小写不敏感）。 */
 const CTA_TAIL: RegExp = new RegExp(
   '(?:\\s*(?:阅读全文|阅读原文|继续阅读|点击阅读|查看全文|Read\\s*more|Continue\\s*reading|…|\\.\\.\\.)' +
@@ -21,6 +27,9 @@ const CTA_TAIL: RegExp = new RegExp(
 const TITLE_NOISE: RegExp =
   /[\s\u3000.,:;!?'"`~@#$%^&*()<>\\/|+=\-_，。！？；：、“”‘’（）《》【】…—]/g;
 
+/** 摘要里的 URL（用于识别「只有链接」的摘要）。 */
+const URL_PATTERN: RegExp = /https?:\/\/\S+/g;
+
 /** 折叠空白并去掉零宽字符。 */
 function flatten(raw: string): string {
   return raw.replace(/[\u200b\ufeff]/g, '').replace(/\s+/g, ' ').trim();
@@ -29,6 +38,23 @@ function flatten(raw: string): string {
 /** 去重比较用的归一化形态。 */
 function comparable(text: string): string {
   return text.replace(TITLE_NOISE, '').toLowerCase();
+}
+
+/**
+ * 是否是「链接堆」摘要：Hacker News 一类源把正文写成
+ * “Article URL: … / Comments URL: … / Points: …”，列表里毫无阅读价值；
+ * 另外「去掉 URL 后只剩几十个字符」的摘要也按链接堆处理。
+ */
+function isLinkDump(text: string): boolean {
+  const lower: string = text.toLowerCase();
+  if (lower.indexOf('article url:') >= 0 || lower.indexOf('comments url:') >= 0) {
+    return true;
+  }
+  if (text.indexOf('://') < 0) {
+    return false;
+  }
+  const stripped: string = text.replace(URL_PATTERN, '').replace(/\s+/g, ' ').trim();
+  return stripped.length < 40 || stripped.length * 2 < text.length;
 }
 
 /** 在句读处截断（找不到就找空格，再不行才硬截）。 */
@@ -60,6 +86,9 @@ export function summarizeForList(raw: string, title: string, max: number): strin
   // 剥掉 CTA 后可能留下孤立的分隔符（句子本身的句号 / 问号要保留）。
   text = text.replace(/[\s,，;；:：]+$/, '').trim();
   if (text.length === 0) {
+    return '';
+  }
+  if (isLinkDump(text)) {
     return '';
   }
   if (comparable(text) === comparable(flatten(title))) {
