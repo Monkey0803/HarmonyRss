@@ -1201,6 +1201,10 @@
       "value": "两条边缘流光沿组件周界流动"
     },
     {
+      "name": "action_back",
+      "value": "返回"
+    },
+    {
       "name": "action_more",
       "value": "更多"
     },
@@ -4195,6 +4199,46 @@
     {
       "name": "sync_reset_body",
       "value": "会清空本机模拟远端并重置同步状态；文章、订阅与阅读状态都保留在本机。"
+    },
+    {
+      "name": "row_reader_indent",
+      "value": "首行缩进"
+    },
+    {
+      "name": "opt_indent_off",
+      "value": "无"
+    },
+    {
+      "name": "opt_indent_two",
+      "value": "两字"
+    },
+    {
+      "name": "row_reader_prefetch",
+      "value": "预取下一篇正文"
+    },
+    {
+      "name": "action_toc",
+      "value": "目录"
+    },
+    {
+      "name": "toc_title",
+      "value": "目录"
+    },
+    {
+      "name": "toc_empty",
+      "value": "本篇没有可用标题"
+    },
+    {
+      "name": "image_saved",
+      "value": "图片已保存"
+    },
+    {
+      "name": "image_save_failed",
+      "value": "图片保存失败"
+    },
+    {
+      "name": "image_load_failed",
+      "value": "图片加载失败"
     }
   ]
 }

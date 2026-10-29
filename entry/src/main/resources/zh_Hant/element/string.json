@@ -1201,6 +1201,10 @@
       "value": "兩條邊緣流光沿元件周界流動"
     },
     {
+      "name": "action_back",
+      "value": "返回"
+    },
+    {
       "name": "action_more",
       "value": "更多"
     },
@@ -4195,6 +4199,46 @@
     {
       "name": "sync_reset_body",
       "value": "會清空本機模擬遠端並重設同步狀態；文章、訂閱與閱讀狀態都保留在本機。"
+    },
+    {
+      "name": "row_reader_indent",
+      "value": "首行縮進"
+    },
+    {
+      "name": "opt_indent_off",
+      "value": "無"
+    },
+    {
+      "name": "opt_indent_two",
+      "value": "兩字"
+    },
+    {
+      "name": "row_reader_prefetch",
+      "value": "預取下一篇正文"
+    },
+    {
+      "name": "action_toc",
+      "value": "目錄"
+    },
+    {
+      "name": "toc_title",
+      "value": "目錄"
+    },
+    {
+      "name": "toc_empty",
+      "value": "本篇沒有可用標題"
+    },
+    {
+      "name": "image_saved",
+      "value": "圖片已儲存"
+    },
+    {
+      "name": "image_save_failed",
+      "value": "圖片儲存失敗"
+    },
+    {
+      "name": "image_load_failed",
+      "value": "圖片載入失敗"
     }
   ]
 }

@@ -197,6 +197,12 @@ export enum ReaderAlign {
   JUSTIFY = 'justify'
 }
 
+/** 中文首行缩进：无 / 两字（仅正文段落生效）。 */
+export enum ReaderIndent {
+  OFF = 'off',
+  TWO = 'two'
+}
+
 /** 阅读主题（Reader 视图专用，独立于应用主题）。 */
 export enum ReaderTheme {
   SYSTEM = 'system',

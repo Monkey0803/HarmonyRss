@@ -52,6 +52,8 @@ const SETTINGS_WHITELIST: string[] = [
   PreferencesConstants.KEY_READER_WIDTH,
   PreferencesConstants.KEY_READER_ALIGN,
   PreferencesConstants.KEY_READER_THEME,
+  PreferencesConstants.KEY_READER_INDENT,
+  PreferencesConstants.KEY_PREFETCH_READER,
   PreferencesConstants.KEY_NOTIFY_NEW,
   PreferencesConstants.KEY_LIST_NEWEST_FIRST,
   PreferencesConstants.KEY_LIST_GROUP_MODE,

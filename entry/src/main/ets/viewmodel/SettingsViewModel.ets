@@ -6,7 +6,7 @@
 
 import { common } from '@kit.AbilityKit';
 import { ReaderTypography } from '../common/constants/SettingsConstants';
-import { ARCHIVE_OPTIONS, LIST_DENSITY_OPTIONS, ROW_LAYOUT_OPTIONS, SUMMARY_LINES_OPTIONS, RETENTION_MODE_OPTIONS, RETENTION_DAYS_OPTIONS } from '../model/SettingsOptions';
+import { ARCHIVE_OPTIONS, LIST_DENSITY_OPTIONS, ROW_LAYOUT_OPTIONS, SUMMARY_LINES_OPTIONS, RETENTION_MODE_OPTIONS, RETENTION_DAYS_OPTIONS, READER_INDENT_OPTIONS } from '../model/SettingsOptions';
 import { feedViewModel } from './FeedViewModel';
 import { appSettings } from '../model/AppSettings';
 import { settingsStore } from '../service/SettingsStore';
@@ -189,6 +189,18 @@ export class SettingsViewModel {
   /** 阅读时常亮屏幕。 */
   setReaderKeepScreenOn(value: boolean): void {
     appSettings.readerKeepScreenOn = value;
+    settingsStore.save();
+  }
+
+  /** 中文首行缩进：'off' | 'two'。 */
+  setReaderIndent(id: string): void {
+    appSettings.readerIndent = READER_INDENT_OPTIONS.normalize(id);
+    settingsStore.save();
+  }
+
+  /** 详情页预取下一篇正文（WiFi 下、读完停留片刻后触发）。 */
+  setReaderPrefetch(value: boolean): void {
+    appSettings.prefetchReader = value;
     settingsStore.save();
   }
 

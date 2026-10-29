@@ -5,7 +5,7 @@
  * 状态文件可读，SDK 枚举重排也不会错位；读到旧值 / 脏值统一退回默认项。控件（下拉菜单）只认 label。
  */
 
-import { ArchiveRule, ListDensity, ListRowLayout, SummaryLines, ThemeMode, AppLanguage, MaterialKind, MaterialGrade, BackgroundKind, LogoKind, AutoRefreshInterval, ReaderFontSize, ReaderLineHeight, ReaderFontFamily, ReaderWidth, ReaderAlign, ReaderTheme, RetentionMode, RetentionDays, TriState, FullTextMode } from '../common/constants/SettingsConstants';
+import { ArchiveRule, ListDensity, ListRowLayout, SummaryLines, ThemeMode, AppLanguage, MaterialKind, MaterialGrade, BackgroundKind, LogoKind, AutoRefreshInterval, ReaderFontSize, ReaderLineHeight, ReaderFontFamily, ReaderWidth, ReaderAlign, ReaderTheme, ReaderIndent, RetentionMode, RetentionDays, TriState, FullTextMode } from '../common/constants/SettingsConstants';
 
 /** 一个可选项：语义 id + 展示文案。 */
 export class ChoiceOption {
@@ -182,6 +182,12 @@ export const READER_ALIGN_OPTIONS: ChoiceSet = new ChoiceSet([
   new ChoiceOption(ReaderAlign.LEFT, $r('app.string.opt_align_left')),
   new ChoiceOption(ReaderAlign.JUSTIFY, $r('app.string.opt_align_justify'))
 ], ReaderAlign.LEFT);
+
+/** 中文首行缩进：无 / 两字。 */
+export const READER_INDENT_OPTIONS: ChoiceSet = new ChoiceSet([
+  new ChoiceOption(ReaderIndent.OFF, $r('app.string.opt_indent_off')),
+  new ChoiceOption(ReaderIndent.TWO, $r('app.string.opt_indent_two'))
+], ReaderIndent.OFF);
 
 /** 阅读主题：跟随系统 / 浅色 / 护眼 / 暗色。 */
 export const READER_THEME_OPTIONS: ChoiceSet = new ChoiceSet([

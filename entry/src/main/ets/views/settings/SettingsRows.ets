@@ -36,6 +36,8 @@ export enum SettingField {
   READER_WIDTH = 'readerWidth',
   READER_ALIGN = 'readerAlign',
   READER_THEME = 'readerTheme',
+  READER_INDENT = 'readerIndent',
+  READER_PREFETCH = 'readerPrefetch',
   READER_KEEP_ON = 'readerKeepScreenOn',
   NOTIFY_NEW = 'notifyNew',
   DEDUPE = 'dedupe'
@@ -120,6 +122,8 @@ export struct OptionSelectRow {
         return appSettings.readerAlign;
       case SettingField.READER_THEME:
         return appSettings.readerTheme;
+      case SettingField.READER_INDENT:
+        return appSettings.readerIndent;
       default:
         return appSettings.themeMode;
     }
@@ -243,6 +247,8 @@ export struct SwitchSettingRow {
         return appSettings.notifyNewArticles;
       case SettingField.READER_KEEP_ON:
         return appSettings.readerKeepScreenOn;
+      case SettingField.READER_PREFETCH:
+        return appSettings.prefetchReader;
       case SettingField.DEDUPE:
         return appSettings.dedupeEnabled;
       default:

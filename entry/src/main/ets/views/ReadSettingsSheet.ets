@@ -17,10 +17,11 @@ import {
   ChoiceSet,
   READER_ALIGN_OPTIONS,
   READER_FAMILY_OPTIONS,
+  READER_INDENT_OPTIONS,
   READER_THEME_OPTIONS,
   READER_WIDTH_OPTIONS
 } from '../model/SettingsOptions';
-import { ReaderAlign, ReaderTypography } from '../common/constants/SettingsConstants';
+import { ReaderAlign, ReaderIndent, ReaderTypography } from '../common/constants/SettingsConstants';
 import { appSettings } from '../model/AppSettings';
 import { settingsViewModel } from '../viewmodel/SettingsViewModel';
 
@@ -85,6 +86,9 @@ export struct ReadSettingsSheet {
     if (groupId === 'theme') {
       return appSettings.readerTheme;
     }
+    if (groupId === 'indent') {
+      return appSettings.readerIndent;
+    }
     return appSettings.readerFontFamily;
   }
 
@@ -112,6 +116,14 @@ export struct ReadSettingsSheet {
         choice: READER_THEME_OPTIONS,
         pick: (id: string) => {
           settingsViewModel.setReaderTheme(id);
+        }
+      },
+      {
+        id: 'indent',
+        title: $r('app.string.row_reader_indent'),
+        choice: READER_INDENT_OPTIONS,
+        pick: (id: string) => {
+          settingsViewModel.setReaderIndent(id);
         }
       },
       {
@@ -185,6 +197,7 @@ export struct ReadSettingsSheet {
         .textAlign(appSettings.readerAlign === ReaderAlign.JUSTIFY ? TextAlign.JUSTIFY : TextAlign.Start)
         .maxLines(4)
         .textOverflow({ overflow: TextOverflow.Ellipsis })
+        .textIndent(appSettings.readerIndent === ReaderIndent.TWO ? this.fontPx() * 2 : 0)
         .width('100%')
         .padding($r('app.float.space_m'))
         .backgroundColor($r('app.color.hm_value_chip_background'))

@@ -13,6 +13,7 @@ import {
   READER_LINE_OPTIONS,
   READER_THEME_OPTIONS,
   READER_WIDTH_OPTIONS,
+  READER_INDENT_OPTIONS,
   ROW_LAYOUT_OPTIONS,
   SUMMARY_LINES_OPTIONS
 } from '../../model/SettingsOptions';
@@ -90,6 +91,25 @@ export struct SettingsReadingView {
             field: SettingField.READER_THEME,
             onPick: (id: string) => {
               settingsViewModel.setReaderTheme(id);
+            }
+          })
+          Divider().color($r('app.color.hm_divider'))
+          OptionSelectRow({
+            icon: $r('sys.symbol.text_alignleft'),
+            title: $r('app.string.row_reader_indent'),
+            choice: READER_INDENT_OPTIONS,
+            field: SettingField.READER_INDENT,
+            onPick: (id: string) => {
+              settingsViewModel.setReaderIndent(id);
+            }
+          })
+          Divider().color($r('app.color.hm_divider'))
+          SwitchSettingRow({
+            icon: $r('sys.symbol.arrow_clockwise'),
+            title: $r('app.string.row_reader_prefetch'),
+            field: SettingField.READER_PREFETCH,
+            onToggle: (value: boolean) => {
+              settingsViewModel.setReaderPrefetch(value);
             }
           })
           Divider().color($r('app.color.hm_divider'))

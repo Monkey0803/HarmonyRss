@@ -8,7 +8,7 @@ import { preferences } from '@kit.ArkData';
 import { common } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { appSettings } from '../model/AppSettings';
-import { ARCHIVE_OPTIONS, LIST_DENSITY_OPTIONS, ROW_LAYOUT_OPTIONS, SUMMARY_LINES_OPTIONS, THEME_OPTIONS, LANGUAGE_OPTIONS, MATERIAL_TYPE_OPTIONS, MATERIAL_LEVEL_OPTIONS, BACKGROUND_OPTIONS, LOGO_OPTIONS, AUTO_REFRESH_OPTIONS, READER_FONT_OPTIONS, READER_LINE_OPTIONS, READER_FAMILY_OPTIONS, READER_WIDTH_OPTIONS, READER_ALIGN_OPTIONS, READER_THEME_OPTIONS, RETENTION_MODE_OPTIONS, RETENTION_DAYS_OPTIONS } from '../model/SettingsOptions';
+import { ARCHIVE_OPTIONS, LIST_DENSITY_OPTIONS, ROW_LAYOUT_OPTIONS, SUMMARY_LINES_OPTIONS, THEME_OPTIONS, LANGUAGE_OPTIONS, MATERIAL_TYPE_OPTIONS, MATERIAL_LEVEL_OPTIONS, BACKGROUND_OPTIONS, LOGO_OPTIONS, AUTO_REFRESH_OPTIONS, READER_FONT_OPTIONS, READER_LINE_OPTIONS, READER_FAMILY_OPTIONS, READER_WIDTH_OPTIONS, READER_ALIGN_OPTIONS, READER_THEME_OPTIONS, READER_INDENT_OPTIONS, RETENTION_MODE_OPTIONS, RETENTION_DAYS_OPTIONS } from '../model/SettingsOptions';
 import { PreferencesConstants } from '../common/constants/PreferencesConstants';
 import { ReaderTypography } from '../common/constants/SettingsConstants';
 import { normalizeArticleFilter, normalizeReaderViewMode } from '../common/constants/RssConstants';
@@ -140,6 +140,10 @@ export class SettingsStore {
         store.getSync(PreferencesConstants.KEY_READER_ALIGN, appSettings.readerAlign) as string);
       appSettings.readerTheme = READER_THEME_OPTIONS.normalize(
         store.getSync(PreferencesConstants.KEY_READER_THEME, appSettings.readerTheme) as string);
+      appSettings.readerIndent = READER_INDENT_OPTIONS.normalize(
+        store.getSync(PreferencesConstants.KEY_READER_INDENT, appSettings.readerIndent) as string);
+      appSettings.prefetchReader =
+        store.getSync(PreferencesConstants.KEY_PREFETCH_READER, appSettings.prefetchReader) as boolean;
       appSettings.notifyNewArticles =
         store.getSync(PreferencesConstants.KEY_NOTIFY_NEW, appSettings.notifyNewArticles) as boolean;
       appSettings.immersiveOn = store.getSync(PreferencesConstants.KEY_IMMERSIVE_ON, appSettings.immersiveOn) as boolean;
@@ -396,6 +400,12 @@ export class SettingsStore {
         case PreferencesConstants.KEY_READER_THEME:
           appSettings.readerTheme = READER_THEME_OPTIONS.normalize(stringValue(value, appSettings.readerTheme));
           break;
+        case PreferencesConstants.KEY_READER_INDENT:
+          appSettings.readerIndent = READER_INDENT_OPTIONS.normalize(stringValue(value, appSettings.readerIndent));
+          break;
+        case PreferencesConstants.KEY_PREFETCH_READER:
+          appSettings.prefetchReader = booleanValue(value, appSettings.prefetchReader);
+          break;
         case PreferencesConstants.KEY_NOTIFY_NEW:
           appSettings.notifyNewArticles = booleanValue(value, appSettings.notifyNewArticles);
           break;
@@ -476,6 +486,8 @@ export class SettingsStore {
       store.putSync(PreferencesConstants.KEY_READER_WIDTH, appSettings.readerWidth);
       store.putSync(PreferencesConstants.KEY_READER_ALIGN, appSettings.readerAlign);
       store.putSync(PreferencesConstants.KEY_READER_THEME, appSettings.readerTheme);
+      store.putSync(PreferencesConstants.KEY_READER_INDENT, appSettings.readerIndent);
+      store.putSync(PreferencesConstants.KEY_PREFETCH_READER, appSettings.prefetchReader);
       store.putSync(PreferencesConstants.KEY_NOTIFY_NEW, appSettings.notifyNewArticles);
       store.putSync(PreferencesConstants.KEY_LIST_NEWEST_FIRST, appSettings.listNewestFirst);
       store.putSync(PreferencesConstants.KEY_LIST_GROUP_MODE, appSettings.listGroupMode);

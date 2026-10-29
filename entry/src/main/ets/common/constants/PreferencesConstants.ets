@@ -35,6 +35,10 @@ export class PreferencesConstants {
   static readonly KEY_READER_ALIGN: string = 'readerAlign';
   /** 阅读主题。 */
   static readonly KEY_READER_THEME: string = 'readerTheme';
+  /** 中文首行缩进：'off' | 'two'。 */
+  static readonly KEY_READER_INDENT: string = 'readerIndent';
+  /** 详情页预取下一篇正文（WiFi 下）。 */
+  static readonly KEY_PREFETCH_READER: string = 'prefetchReader';
   /** 新文章通知开关。 */
   static readonly KEY_NOTIFY_NEW: string = 'notifyNewArticles';
   static readonly KEY_IMMERSIVE_ON: string = 'immersiveOn';

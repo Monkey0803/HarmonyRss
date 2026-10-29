@@ -85,6 +85,20 @@ export default function htmlSanitizerTest() {
       expect(out).assertContain('src="https://s.com/lo.jpg"');
     });
 
+    it('unwraps_image_only_link', 0, () => {
+      const out: string = sanitize('<a href="/post"><img src="/p.png"></a>', 'https://s.com/a');
+      expect(out.indexOf('<a')).assertEqual(-1);
+      expect(out).assertContain('src="https://s.com/p.png"');
+      // 带文字的链接照常保留。
+      expect(sanitize('<a href="/x">text</a>')).assertEqual('<a href="/x">text</a>');
+    });
+
+    it('normalizes_text_only_div_to_paragraph', 0, () => {
+      expect(sanitize('<div>plain text</div>')).assertEqual('<p>plain text</p>');
+      // 含块级子节点的 div 保持容器语义（不把块塞进 p）。
+      expect(sanitize('<div><p>a</p><p>b</p></div>')).assertEqual('<div><p>a</p><p>b</p></div>');
+    });
+
     it('drops_blank_paragraphs_and_containers', 0, () => {
       expect(sanitize('<p> </p><div></div><p>ok</p>')).assertEqual('<p>ok</p>');
       // 只剩被丢弃的元素（svg / script）也视为空段落。

@@ -1201,6 +1201,10 @@
       "value": "Zwei Lichtstreifen fließen entlang des Elementrands"
     },
     {
+      "name": "action_back",
+      "value": "Zurück"
+    },
+    {
       "name": "action_more",
       "value": "Mehr"
     },
@@ -4195,6 +4199,46 @@
     {
       "name": "sync_reset_body",
       "value": "Leert das simulierte Ziel und setzt den Synchronisierungsstatus zurück. Artikel, Abonnements und Lesestatus bleiben auf diesem Gerät."
+    },
+    {
+      "name": "row_reader_indent",
+      "value": "Erstzeilen-Einzug"
+    },
+    {
+      "name": "opt_indent_off",
+      "value": "Aus"
+    },
+    {
+      "name": "opt_indent_two",
+      "value": "2 Zeichen"
+    },
+    {
+      "name": "row_reader_prefetch",
+      "value": "Nächsten Artikel vorladen"
+    },
+    {
+      "name": "action_toc",
+      "value": "Inhalt"
+    },
+    {
+      "name": "toc_title",
+      "value": "Inhalt"
+    },
+    {
+      "name": "toc_empty",
+      "value": "Keine Überschriften in diesem Artikel"
+    },
+    {
+      "name": "image_saved",
+      "value": "Bild gespeichert"
+    },
+    {
+      "name": "image_save_failed",
+      "value": "Bild konnte nicht gespeichert werden"
+    },
+    {
+      "name": "image_load_failed",
+      "value": "Bild konnte nicht geladen werden"
     }
   ]
 }

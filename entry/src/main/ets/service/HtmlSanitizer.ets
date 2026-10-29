@@ -357,6 +357,26 @@ function emitNode(node: HtmlNode, baseUrl: string, out: string[]): void {
   }
   // 空段落 / 空容器没有阅读价值，还会在正文里撑出空行：
   // 先序列化子节点，再判断里面到底有没有「看得见」的东西（文字 / 媒体 / 分隔线）。
+  // 只包图片的链接（缩略图 / 头像 / 点图跳原站）在阅读器里没有意义，
+  // 去掉 <a> 只留 <img>：点图片交给大图查看器，也不会把页面导航出去。
+  if (tag === 'a') {
+    const linkParts: string[] = [];
+    emitChildren(node, baseUrl, linkParts);
+    const linkInner: string = linkParts.join('');
+    const withoutImages: string = linkInner
+      .replace(/<img[^>]*>/g, '')
+      .replace(/<\/?picture>/g, '')
+      .trim();
+    if (linkInner.indexOf('<img') >= 0 && withoutImages.length === 0) {
+      out.push(linkInner);
+      return;
+    }
+    if (hasRenderedContent(linkInner)) {
+      out.push('<a' + serializeAttrs(node, baseUrl) + '>' + linkInner + '</a>');
+    }
+    return;
+  }
+
   if (tag === 'p' || tag === 'div' || tag === 'span' || tag === 'section') {
     const innerParts: string[] = [];
     emitChildren(node, baseUrl, innerParts);
@@ -364,7 +384,10 @@ function emitNode(node: HtmlNode, baseUrl: string, out: string[]): void {
     if (!hasRenderedContent(inner)) {
       return;
     }
-    out.push('<' + tag + serializeAttrs(node, baseUrl) + '>' + inner + '</' + tag + '>');
+    // 很多站点（含少数派）的正文用 div 当段落：纯文字的 div 归一成 p，
+    // 这样段落间距与「首行缩进」等基于 p 的排版规则才能生效。
+    const outTag: string = (tag === 'div' && !hasBlockMarkup(inner)) ? 'p' : tag;
+    out.push('<' + outTag + serializeAttrs(node, baseUrl) + '>' + inner + '</' + outTag + '>');
     return;
   }
   if (tag === 'img') {
@@ -385,6 +408,21 @@ function emitNode(node: HtmlNode, baseUrl: string, out: string[]): void {
   out.push('<' + tag + attrs + '>');
   emitChildren(node, baseUrl, out);
   out.push('</' + tag + '>');
+}
+
+/** 片段里是否含块级标签（决定 div 能否安全地归一成 p）。 */
+function hasBlockMarkup(html: string): boolean {
+  const blocks: string[] = [
+    '<div', '<p', '<ul', '<ol', '<li', '<table', '<figure', '<figcaption',
+    '<h1', '<h2', '<h3', '<h4', '<h5', '<h6', '<blockquote', '<pre',
+    '<img', '<video', '<audio', '<iframe', '<picture', '<hr'
+  ];
+  for (let i = 0; i < blocks.length; i += 1) {
+    if (html.indexOf(blocks[i]) >= 0) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /** 序列化结果里是否有可见内容（文字 / 媒体 / 表格 / 分隔线）。 */

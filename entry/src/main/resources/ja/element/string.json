@@ -1201,6 +1201,10 @@
       "value": "2 本の光がコンポーネントの縁を流れます"
     },
     {
+      "name": "action_back",
+      "value": "戻る"
+    },
+    {
       "name": "action_more",
       "value": "その他"
     },
@@ -4195,6 +4199,46 @@
     {
       "name": "sync_reset_body",
       "value": "端末内のモック同期先を消去し、同期状態を初期化します。記事・購読・既読状態は端末に残ります。"
+    },
+    {
+      "name": "row_reader_indent",
+      "value": "行頭インデント"
+    },
+    {
+      "name": "opt_indent_off",
+      "value": "なし"
+    },
+    {
+      "name": "opt_indent_two",
+      "value": "2文字"
+    },
+    {
+      "name": "row_reader_prefetch",
+      "value": "次の記事を先読み"
+    },
+    {
+      "name": "action_toc",
+      "value": "目次"
+    },
+    {
+      "name": "toc_title",
+      "value": "目次"
+    },
+    {
+      "name": "toc_empty",
+      "value": "この記事に見出しがありません"
+    },
+    {
+      "name": "image_saved",
+      "value": "画像を保存しました"
+    },
+    {
+      "name": "image_save_failed",
+      "value": "画像の保存に失敗しました"
+    },
+    {
+      "name": "image_load_failed",
+      "value": "画像を読み込めませんでした"
     }
   ]
 }

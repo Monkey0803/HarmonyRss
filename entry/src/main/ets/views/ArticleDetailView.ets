@@ -50,6 +50,10 @@ import {
   runFindScript
 } from '../service/ReaderFind';
 import { readerStyle } from '../service/ReaderStyle';
+import { TocEntry, collectTocScript, gotoHeadingScript } from '../service/ReaderToc';
+import { imageAtPointScript } from '../service/ReaderImage';
+import { readerImageSave } from '../service/ReaderImageSave';
+import { ReaderImageViewer } from './ReaderImageViewer';
 import { settingsStore } from '../service/SettingsStore';
 import { ReaderViewMode } from '../common/constants/RssConstants';
 import { buildReaderDocument, readerStyleScript } from '../service/ReaderDocument';
@@ -108,6 +112,13 @@ const OVERSCROLL_TRIGGER_VP: number = 24;
 /** 标题下方标签条的固定高度（vp）：正文整体下移同样高度，chips 才不会压住首行文字。 */
 const TAG_STRIP_VP: number = 44;
 
+/** 目录采集脚本回传的原始项（只读，逐字段校验后再转 TocEntry）。 */
+interface TocRaw {
+  level?: number;
+  text?: string;
+  index?: number;
+}
+
 /** 空文章占位：@Builder 内不能声明局部变量，用辅助方法返回兜底对象避免 undefined 判空。 */
 const EMPTY_ARTICLE: Article = new Article('', '', '', '', '', '', '', 0);
 
@@ -148,6 +159,11 @@ export struct ArticleDetailView {
   @Local highlights: Highlight[] = [];
   /** 当前文章的标签（标题下方的 chips；由 TagViewModel 读出）。 */
   @Local articleTags: TagWithCount[] = [];
+  /** 正文目录（h1–h4；打开「目录」时从文档里采集）。 */
+  @Local toc: TocEntry[] = [];
+  /** 图片查看器：当前图片地址与显隐。 */
+  @Local viewerSrc: string = '';
+  @Local viewerOpen: boolean = false;
   /** 当前文章所属合并组的全部来源（跨源去重；只有 >1 时才展示）。 */
   @Local groupSources: GroupSource[] = [];
   /** 正在编辑的标注（弹面板改备注 / 改色 / 删除）。 */
@@ -199,6 +215,9 @@ export struct ArticleDetailView {
   private tapStartX: number = -1;
   private tapStartY: number = -1;
   private tapStartTime: number = 0;
+  /** 按下点在 Web 组件内的坐标（vp，≈ CSS px），用于图片命中测试。 */
+  private tapLocalX: number = -1;
+  private tapLocalY: number = -1;
   /** 预取下一篇正文的定时器（页面销毁 / 切文时清掉）。 */
   private prefetchTimer: number = -1;
   /** 悬浮操作栏的页签控制器（页签栏只作为沉浸光感的生效区域）。 */
@@ -675,7 +694,7 @@ export struct ArticleDetailView {
       clearTimeout(this.prefetchTimer);
       this.prefetchTimer = -1;
     }
-    if (!NetworkStatus.isUnmetered()) {
+    if (!appSettings.prefetchReader || !NetworkStatus.isUnmetered()) {
       return;
     }
     this.prefetchTimer = setTimeout(() => {
@@ -1215,6 +1234,13 @@ export struct ArticleDetailView {
           })
       }
       MenuItem({
+        content: $r('app.string.action_toc'),
+        symbolStartIcon: this.menuIcon($r('sys.symbol.text_alignleft'))
+      })
+        .onClick(() => {
+          this.openToc();
+        })
+      MenuItem({
         content: $r('app.string.action_find_in_article'),
         symbolStartIcon: this.menuIcon($r('sys.symbol.magnifyingglass'))
       })
@@ -1355,6 +1381,53 @@ export struct ArticleDetailView {
   }
 
   /** 注入滚动监听与点按监听（进度条 + 沉浸切换用；失败不影响阅读）。 */
+  /**
+   * 点按 / 长按正文：先问文档「这个坐标上是图片吗」。
+   * 是图片就打开大图；不是就按原来的逻辑处理（点按中部切换沉浸栏）。
+   */
+  private handleBodyTap(localX: number, localY: number, windowY: number, longPress: boolean): void {
+    this.activeController().runJavaScript(imageAtPointScript(localX, localY))
+      .then((raw: string) => {
+        const src: string = this.decodeJsString(raw);
+        if (src.length > 0) {
+          this.viewerSrc = src;
+          this.viewerOpen = true;
+          return;
+        }
+        if (!longPress && this.isMiddleBandVp(windowY)) {
+          this.toggleBars();
+        }
+      })
+      .catch(() => {
+        // 命中测试失败（页面未就绪等）：按普通点按处理，不打断阅读。
+        if (!longPress && this.isMiddleBandVp(windowY)) {
+          this.toggleBars();
+        }
+      });
+  }
+
+  /** runJavaScript 的字符串结果可能被 JSON 序列化包一层引号 / 转义。 */
+  private decodeJsString(raw: string): string {
+    let text: string = raw.trim();
+    if (text.length > 1 && text.startsWith('"') && text.endsWith('"')) {
+      text = text.substring(1, text.length - 1);
+    }
+    return text.replace(/\\"/g, '"').replace(/\\\//g, '/').replace(/\\\\/g, '\\');
+  }
+
+  /** 保存图片到相册（授权由查看器里的保存控件完成）。 */
+  private saveImage(src: string): void {
+    readerImageSave.save(this.hostContext(), src, this.cur().link).then((ok: boolean) => {
+      if (ok) {
+        this.snack($r('app.string.image_saved'));
+      } else {
+        this.toast($r('app.string.image_save_failed'));
+      }
+    }).catch(() => {
+      this.toast($r('app.string.image_save_failed'));
+    });
+  }
+
   private bindProgressListener(controller: webview.WebviewController): void {
     controller
       .runJavaScript(progressListenerScript())
@@ -1370,6 +1443,9 @@ export struct ArticleDetailView {
   private handleBodyTouch(event: TouchEvent): void {
     if (event.type === TouchType.Down) {
       if (event.touches.length > 0) {
+        // 组件内坐标（vp）用于图片命中；窗口坐标保留给「点按屏幕中部」的沉浸判定。
+        this.tapLocalX = event.touches[0].x;
+        this.tapLocalY = event.touches[0].y;
         this.tapStartX = event.touches[0].windowX;
         this.tapStartY = event.touches[0].windowY;
         this.tapStartTime = Date.now();
@@ -1379,6 +1455,8 @@ export struct ArticleDetailView {
     if (event.type !== TouchType.Up || this.tapStartTime === 0) {
       return;
     }
+    const localX: number = this.tapLocalX;
+    const localY: number = this.tapLocalY;
     const startX: number = this.tapStartX;
     const startY: number = this.tapStartY;
     const moved: number = event.changedTouches.length > 0
@@ -1386,12 +1464,18 @@ export struct ArticleDetailView {
       : 0;
     const elapsed: number = Date.now() - this.tapStartTime;
     this.tapStartTime = 0;
-    if (elapsed > 300 || moved > 12) {
+    if (moved > 12 || this.viewerOpen) {
       return;
     }
-    if (this.isMiddleBandVp(startY)) {
-      this.toggleBars();
+    if (elapsed >= 600) {
+      // 长按：只处理图片（打开大图，保存入口在查看器里），不做沉浸切换。
+      this.handleBodyTap(localX, localY, startY, true);
+      return;
     }
+    if (elapsed > 300) {
+      return;
+    }
+    this.handleBodyTap(localX, localY, startY, false);
   }
 
   /** 竖直方向是否落在屏幕中间 60%（入参是 vp）。 */
@@ -1548,6 +1632,8 @@ export struct ArticleDetailView {
       this.SharePanel()
     } else if (this.sheetMode === 'translate') {
       this.TranslatePanel()
+    } else if (this.sheetMode === 'toc') {
+      this.TocSheet()
     } else {
       this.ReadSheet()
     }
@@ -1579,6 +1665,105 @@ export struct ArticleDetailView {
         this.navPathStack.pushPath(new NavPathInfo(RouterConstants.PAGE_TRANSLATE_SETTINGS, ''));
       }
     })
+  }
+
+  /** 打开目录：先从正文里采集标题，没有标题就给即时提示。 */
+  private openToc(): void {
+    this.bodyController().runJavaScript(collectTocScript())
+      .then((raw: string) => {
+        this.toc = this.parseToc(raw);
+        if (this.toc.length === 0) {
+          this.toast($r('app.string.toc_empty'));
+          return;
+        }
+        this.openSheet('toc');
+      })
+      .catch((err: BusinessError) => {
+        hilog.warn(DOMAIN, TAG, 'collect toc failed: %{public}d', err.code);
+      });
+  }
+
+  /** 目录面板点一条：滚到对应标题并收起面板。 */
+  private gotoHeading(index: number): void {
+    this.bodyController().runJavaScript(gotoHeadingScript(index)).catch((err: BusinessError) => {
+      hilog.warn(DOMAIN, TAG, 'goto heading failed: %{public}d', err.code);
+    });
+    this.closeSheet();
+  }
+
+  /** runJavaScript 回传可能再包一层引号；解析失败按「没有目录」处理。 */
+  private parseToc(raw: string): TocEntry[] {
+    let text: string = raw.trim();
+    if (text.length > 1 && text.startsWith('"') && text.endsWith('"')) {
+      text = text.substring(1, text.length - 1).replace(/\\"/g, '"').replace(/\\\\/g, '\\');
+    }
+    const result: TocEntry[] = [];
+    try {
+      const list: TocRaw[] = JSON.parse(text) as TocRaw[];
+      for (let i = 0; i < list.length; i += 1) {
+        const item: TocRaw = list[i];
+        const label: string = typeof item.text === 'string' ? item.text : '';
+        if (label.length === 0) {
+          continue;
+        }
+        const level: number = typeof item.level === 'number' ? item.level : 2;
+        const index: number = typeof item.index === 'number' ? item.index : i;
+        result.push(new TocEntry(level, label, index));
+      }
+    } catch (err) {
+      hilog.warn(DOMAIN, TAG, 'parse toc failed');
+      return [];
+    }
+    return result;
+  }
+
+  /** 目录面板：h1–h4 按层级缩进，点一条跳过去。 */
+  @Builder
+  TocSheet() {
+    Column({ space: $r('app.float.space_m') }) {
+      Text($r('app.string.toc_title'))
+        .fontSize($r('app.float.font_size_section'))
+        .fontWeight(FontWeight.Medium)
+        .fontColor($r('app.color.hm_text_primary'))
+        .width('100%')
+
+      List() {
+        ForEach(this.toc, (entry: TocEntry) => {
+          ListItem() {
+            Row({ space: $r('app.float.space_s') }) {
+              Row()
+                .width(Math.max(0, entry.level - 1) * 14)
+                .height(1)
+              Text(entry.text)
+                .fontSize(entry.level <= 2
+                  ? $r('app.float.font_size_body') : $r('app.float.font_size_caption'))
+                .fontWeight(entry.level === 2 ? FontWeight.Medium : FontWeight.Regular)
+                .fontColor($r('app.color.hm_text_primary'))
+                .maxLines(2)
+                .textOverflow({ overflow: TextOverflow.Ellipsis })
+                .layoutWeight(1)
+            }
+            .width('100%')
+            .padding({ top: $r('app.float.space_s'), bottom: $r('app.float.space_s') })
+            .alignItems(VerticalAlign.Center)
+            .onClick(() => {
+              this.gotoHeading(entry.index);
+            })
+          }
+        }, (entry: TocEntry) => entry.index.toString() + '_' + entry.text)
+      }
+      .width('100%')
+      .layoutWeight(1)
+      .scrollBar(BarState.Off)
+    }
+    .width('100%')
+    .height('100%')
+    .padding({
+      left: $r('app.float.space_l'),
+      right: $r('app.float.space_l'),
+      top: $r('app.float.space_m')
+    })
+    .alignItems(HorizontalAlign.Start)
   }
 
   /** 来源面板：列出合并组里的全部来源，点一条用系统浏览器打开对应链接。 */
@@ -1940,9 +2125,22 @@ export struct ArticleDetailView {
       })
   }
 
+  /** 底栏操作：打标签（打开标签选择器面板）。 */
+  @Builder
+  TagAction() {
+    SymbolGlyph($r('sys.symbol.plus'))
+      .fontSize($r('app.float.icon_size'))
+      .fontColor([$r('app.color.hm_brand')])
+      .padding($r('app.float.space_xs'))
+      .accessibilityText($r('app.string.tag_picker_title'))
+      .onClick(() => {
+        this.openTagSheet();
+      })
+  }
+
   /**
    * 悬浮操作栏：阅读导航（上一篇 / 下一篇 / 下一条未读）+ 文章操作
-   * （更多 / 排版 / 模式切换 / 收藏），一行铺在 HDS 悬浮页签栏里。
+   * （更多 / 排版 / 模式切换 / 收藏 / 打标签），一行铺在 HDS 悬浮页签栏里。
    *
    * 为什么是「页签栏」：沉浸光感是区域级能力 —— 只有 Navigation/NavDestination 标题栏与
    * Tabs 的底部 TabBar 属于生效区域，内容区里给普通容器挂 systemMaterial 会静默失效
@@ -1954,7 +2152,7 @@ export struct ArticleDetailView {
    */
   @Builder
   BarContent() {
-    Row({ space: $r('app.float.space_s') }) {
+    Row({ space: $r('app.float.space_xs') }) {
       this.PrevNav()
       this.NextNav()
       this.NextUnreadNav()
@@ -1963,6 +2161,7 @@ export struct ArticleDetailView {
       this.FontAction()
       this.ModeAction()
       this.StarAction()
+      this.TagAction()
     }
     .width('100%')
     .height('100%')
@@ -1996,7 +2195,7 @@ export struct ArticleDetailView {
    * 悬浮操作栏宽度（vp）：页面宽度减去两侧留白，再额外留出跟手侧移的余量。
    *
    * 智感握姿是「整条悬浮栏左右平移」（adaptToHandedness）；若宽度锁成「页宽 - 2×留白」，
-   * 栏就贴满两侧、没有可平移的余量，跟手看不出效果。内容本身 7 个图标只需 ~260vp，
+   * 栏就贴满两侧、没有可平移的余量，跟手看不出效果。内容本身 9 个图标（含打标签）约 300vp，
    * 收窄后靠中间的 Blank 吃掉余量即可。
    */
   private barWidthVp(): number {
@@ -2664,12 +2863,13 @@ export struct ArticleDetailView {
   }
 
   /**
-   * 标题下方的标签条：已有标签横排（可左右滑动）+ 右侧「+」。
-   * 正文顶部预留同样高度（见 build 里的 TAG_STRIP_VP），所以这里不会压住正文首行。
+   * 标题下方的标签条：已有标签横排（可左右滑动）。
+   * 「+ 添加标签」已移到悬浮底栏（见 TagAction），标签条只在有内容时才占位。
+   * 正文顶部预留同样高度（见 build 里的 bodyTopPadding），所以这里不会压住正文首行。
    */
   @Builder
   TagChips() {
-    if (this.hasArticle()) {
+    if (this.hasArticle() && this.hasTopChips()) {
       Row({ space: $r('app.float.space_xs') }) {
         if (this.articleTags.length > 0) {
           // 横排、可左右滑动：标签多时不换行（换行会超出预留高度压住正文）。
@@ -2725,24 +2925,27 @@ export struct ArticleDetailView {
               this.openSourceSheet();
             })
         }
-
-        SymbolGlyph($r('sys.symbol.plus'))
-          .fontSize($r('app.float.font_size_caption'))
-          .fontColor([$r('app.color.hm_brand')])
-          .height($r('app.float.value_chip_height'))
-          .padding({ left: $r('app.float.space_m'), right: $r('app.float.space_m') })
-          .backgroundColor($r('app.color.hm_value_chip_background'))
-          .borderRadius($r('app.float.radius_chip'))
-          .accessibilityText($r('app.string.tag_picker_title'))
-          .onClick(() => {
-            this.openTagSheet();
-          })
       }
       .width('100%')
       .height(TAG_STRIP_VP)
       .padding({ left: $r('app.float.space_l'), right: $r('app.float.space_l') })
       .alignItems(VerticalAlign.Top)
     }
+  }
+
+  /**
+   * 标题下方标签条是否有内容：标签 / 媒体标识 / 来源数任一存在时才占位。
+   * 都没有时（绝大多数单来源、无标签文章）不再白留一条高度给已移走的「+」。
+   */
+  private hasTopChips(): boolean {
+    return this.articleTags.length > 0
+      || this.cur().enclosures.length > 0
+      || this.merged();
+  }
+
+  /** 顶部标签条占用的高度（无内容时为 0，正文直接顶上去）。 */
+  private topChipStripVp(): number {
+    return this.hasTopChips() ? TAG_STRIP_VP : 0;
   }
 
   /**
@@ -2756,10 +2959,10 @@ export struct ArticleDetailView {
     if (this.viewMode === MODE_WEB || this.viewMode === MODE_READER) {
       // Reader 文档与网页原文都由外层统一让位：文档自身的 topPad 传 0，
       // 避免 safeArea 尚未就绪时文档内边距为 0、而标签条已按最新值定位导致遮挡。
-      return TAG_STRIP_VP + safeArea.contentTopInsetVp;
+      return this.topChipStripVp() + safeArea.contentTopInsetVp;
     }
     // 纯文本模式在滚动内容里已有 contentTopInsetVp 占位，外层只让出标签条。
-    return TAG_STRIP_VP;
+    return this.topChipStripVp();
   }
 
   build() {
@@ -2840,6 +3043,21 @@ export struct ArticleDetailView {
       .justifyContent(FlexAlign.Start)
       .alignItems(HorizontalAlign.Start)
       .hitTestBehavior(HitTestMode.Transparent)
+
+      // 图片全屏查看器：盖在最上层，自带黑色背景与保存控件。
+      if (this.viewerOpen && this.viewerSrc.length > 0) {
+        ReaderImageViewer({
+          src: this.viewerSrc,
+          referer: this.cur().link,
+          onClose: () => {
+            this.viewerOpen = false;
+            this.viewerSrc = '';
+          },
+          onSave: (src: string) => {
+            this.saveImage(src);
+          }
+        })
+      }
     }
     .width('100%')
     .height('100%')

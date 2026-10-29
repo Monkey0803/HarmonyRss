@@ -7,7 +7,7 @@
 
 import { ArticleFilter, GroupMode, ReaderViewMode } from '../common/constants/RssConstants';
 import { ArchiveRule, ListDensity, ListRowLayout, RetentionDays, RetentionMode, SummaryLines } from '../common/constants/SettingsConstants';
-import { THEME_OPTIONS, LANGUAGE_OPTIONS, MATERIAL_TYPE_OPTIONS, MATERIAL_LEVEL_OPTIONS, BACKGROUND_OPTIONS, LOGO_OPTIONS, AUTO_REFRESH_OPTIONS, READER_FONT_OPTIONS, READER_LINE_OPTIONS, READER_FAMILY_OPTIONS, READER_WIDTH_OPTIONS, READER_ALIGN_OPTIONS, READER_THEME_OPTIONS } from './SettingsOptions';
+import { THEME_OPTIONS, LANGUAGE_OPTIONS, MATERIAL_TYPE_OPTIONS, MATERIAL_LEVEL_OPTIONS, BACKGROUND_OPTIONS, LOGO_OPTIONS, AUTO_REFRESH_OPTIONS, READER_FONT_OPTIONS, READER_LINE_OPTIONS, READER_FAMILY_OPTIONS, READER_WIDTH_OPTIONS, READER_ALIGN_OPTIONS, READER_THEME_OPTIONS, READER_INDENT_OPTIONS } from './SettingsOptions';
 import { NotifyDefaults } from './Notify';
 import { TranslateDefaults } from '../common/constants/TranslateConstants';
 
@@ -59,6 +59,10 @@ export class AppSettings {
   @Trace readerAlign: string = READER_ALIGN_OPTIONS.defaultValue;
   /** 阅读主题：'system' | 'light' | 'sepia' | 'dark'。 */
   @Trace readerTheme: string = READER_THEME_OPTIONS.defaultValue;
+  /** 中文首行缩进：'off' | 'two'（仅正文段落生效）。 */
+  @Trace readerIndent: string = READER_INDENT_OPTIONS.defaultValue;
+  /** 详情页是否预取下一篇正文（WiFi 下、读完停留片刻后触发）。 */
+  @Trace prefetchReader: boolean = true;
   /** 后台抓取到新文章时是否发系统通知。 */
   @Trace notifyNewArticles: boolean = false;
   /** 首页列表排序：true = 最新在前（默认），false = 最旧在前。 */

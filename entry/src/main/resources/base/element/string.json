@@ -1201,6 +1201,10 @@
       "value": "Two edge light streams flow along the component border"
     },
     {
+      "name": "action_back",
+      "value": "Back"
+    },
+    {
       "name": "action_more",
       "value": "More"
     },
@@ -4195,6 +4199,46 @@
     {
       "name": "sync_reset_body",
       "value": "Clears the local simulated server and resets sync state. Your articles, subscriptions and reading status stay on this device."
+    },
+    {
+      "name": "row_reader_indent",
+      "value": "First-line indent"
+    },
+    {
+      "name": "opt_indent_off",
+      "value": "Off"
+    },
+    {
+      "name": "opt_indent_two",
+      "value": "2 chars"
+    },
+    {
+      "name": "row_reader_prefetch",
+      "value": "Prefetch next article"
+    },
+    {
+      "name": "action_toc",
+      "value": "Contents"
+    },
+    {
+      "name": "toc_title",
+      "value": "Contents"
+    },
+    {
+      "name": "toc_empty",
+      "value": "No headings in this article"
+    },
+    {
+      "name": "image_saved",
+      "value": "Image saved"
+    },
+    {
+      "name": "image_save_failed",
+      "value": "Failed to save image"
+    },
+    {
+      "name": "image_load_failed",
+      "value": "Failed to load image"
     }
   ]
 }

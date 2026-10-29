@@ -1201,6 +1201,10 @@
       "value": "Dos flujos de luz recorren el borde del componente"
     },
     {
+      "name": "action_back",
+      "value": "Atrás"
+    },
+    {
       "name": "action_more",
       "value": "Más"
     },
@@ -4195,6 +4199,46 @@
     {
       "name": "sync_reset_body",
       "value": "Vacía el destino simulado y reinicia el estado de sincronización. Los artículos, las suscripciones y los estados de lectura permanecen en este dispositivo."
+    },
+    {
+      "name": "row_reader_indent",
+      "value": "Sangría de primera línea"
+    },
+    {
+      "name": "opt_indent_off",
+      "value": "Ninguna"
+    },
+    {
+      "name": "opt_indent_two",
+      "value": "2 caracteres"
+    },
+    {
+      "name": "row_reader_prefetch",
+      "value": "Precargar el siguiente artículo"
+    },
+    {
+      "name": "action_toc",
+      "value": "Índice"
+    },
+    {
+      "name": "toc_title",
+      "value": "Índice"
+    },
+    {
+      "name": "toc_empty",
+      "value": "Este artículo no tiene títulos"
+    },
+    {
+      "name": "image_saved",
+      "value": "Imagen guardada"
+    },
+    {
+      "name": "image_save_failed",
+      "value": "No se pudo guardar la imagen"
+    },
+    {
+      "name": "image_load_failed",
+      "value": "No se pudo cargar la imagen"
     }
   ]
 }

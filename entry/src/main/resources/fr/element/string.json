@@ -1201,6 +1201,10 @@
       "value": "Deux flux de lumière parcourent le bord du composant"
     },
     {
+      "name": "action_back",
+      "value": "Retour"
+    },
+    {
       "name": "action_more",
       "value": "Plus"
     },
@@ -4195,6 +4199,46 @@
     {
       "name": "sync_reset_body",
       "value": "Vide la cible simulée et réinitialise l’état de synchronisation. Articles, abonnements et états de lecture restent sur cet appareil."
+    },
+    {
+      "name": "row_reader_indent",
+      "value": "Retrait de première ligne"
+    },
+    {
+      "name": "opt_indent_off",
+      "value": "Aucun"
+    },
+    {
+      "name": "opt_indent_two",
+      "value": "2 caractères"
+    },
+    {
+      "name": "row_reader_prefetch",
+      "value": "Précharger l'article suivant"
+    },
+    {
+      "name": "action_toc",
+      "value": "Sommaire"
+    },
+    {
+      "name": "toc_title",
+      "value": "Sommaire"
+    },
+    {
+      "name": "toc_empty",
+      "value": "Aucun titre dans cet article"
+    },
+    {
+      "name": "image_saved",
+      "value": "Image enregistrée"
+    },
+    {
+      "name": "image_save_failed",
+      "value": "Échec de l'enregistrement de l'image"
+    },
+    {
+      "name": "image_load_failed",
+      "value": "Impossible de charger l'image"
     }
   ]
 }

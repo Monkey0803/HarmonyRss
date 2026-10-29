@@ -40,6 +40,13 @@ export default function summaryTextTest() {
       expect(summarizeForList('  a\u200b b\n\n c  ', 'Title', 160)).assertEqual('a b c');
     });
 
+    it('cuts_mid_text_cta', 0, () => {
+      const longBody: string = '这是一段很长的正文内容。'.repeat(8);
+      const out: string = summarizeForList(longBody + '查看全文 本文为会员文章，订阅后可读。', 'Title', 160);
+      expect(out).assertEqual(longBody.trim());
+      expect(out.indexOf('查看全文')).assertEqual(-1);
+    });
+
     it('drops_link_dump', 0, () => {
       expect(summarizeForList(
         'Article URL: https://example.com/a Comments URL: https://news.ycombinator.com/item?id=1 Points: 21',
