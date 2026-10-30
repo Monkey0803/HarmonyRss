@@ -1,27 +1,23 @@
 /*
  * SubscriptionsView.ets — 订阅源管理（订阅源页签内容，纯展示 + 事件上报）。
  *
- * 结构：整页只有一个 List —— 头部（顶部占位 + 添加卡 + 资料库卡 + 订阅源小节标题）作为第 0 项，
+ * 结构：整页只有一个 List —— 头部（顶部占位 + 资料库卡 + 订阅源小节标题）作为第 0 项，
  * 随内容一起滚走，浏览订阅列表时可占满屏；下面是分组头 / 订阅源行。
  * 多选态的动作条悬浮在悬浮页签栏上方，不占内容高度。
  *
- * 顶部输入订阅地址并添加（添加前会先抓一次校验可用性）；支持 OPML 导入 / 导出（系统文档选择器）；
+ * 添加订阅源只保留 MiniBar 一处入口；OPML 导入 / 导出已移到「订阅与通知」设置页；
  * 订阅源行支持就地改名 / 分组 / 地址、长按拖拽排序、批量管理（移动分组 / 删除）。
  */
 
-import { common } from '@kit.AbilityKit';
 import { FeedListItem, FeedSource } from '../model/Feed';
 import { feedViewModel } from '../viewmodel/FeedViewModel';
 import { FeedErrorText } from '../common/utils/FeedErrorText';
 import { safeArea } from '../service/SafeAreaController';
 import { CommonConstants } from '../common/constants/CommonConstants';
 import { ToastUtil } from '../common/utils/ToastUtil';
-import { opmlService } from '../service/OpmlService';
-import { OpmlEntry, parseOpml } from '../service/OpmlCodec';
 import { RouterConstants } from '../common/constants/RouterConstants';
 import { MaterialController } from '../service/MaterialController';
 import { appSettings } from '../model/AppSettings';
-import { AddFeedPanel } from './AddFeedPanel';
 import { DateUtil } from '../common/utils/DateUtil';
 import { UrlText } from '../common/utils/UrlText';
 import { tagViewModel } from '../viewmodel/TagViewModel';
@@ -39,7 +35,6 @@ const HEADER_ROWS: number = 1;
 export struct SubscriptionsView {
   @Param navPathStack: NavPathStack = new NavPathStack();
   @Param scroller: Scroller = new Scroller();
-  @Local submitting: boolean = false;
   /** 就地重命名：正在编辑的订阅源 id 与草稿名。 */
   @Local editingId: string = '';
   @Local draftTitle: string = '';
@@ -52,11 +47,6 @@ export struct SubscriptionsView {
   /** 多选批量管理：是否处于选择态与选中的订阅源 id。 */
   @Local selecting: boolean = false;
   @Local selectedIds: string[] = [];
-
-  private hostContext(): common.UIAbilityContext {
-    const context: common.Context | undefined = this.getUIContext().getHostContext();
-    return context as common.UIAbilityContext;
-  }
 
   /**
    * 进入页签 / 回到本页时刷新三个入口的计数。
@@ -74,15 +64,12 @@ export struct SubscriptionsView {
     ruleViewModel.load();
   }
 
-  /** 页头：顶部占位 + 添加卡 + 资料库卡 + 订阅源小节标题（作为 List 第 0 项，随内容滚走）。 */
+  /** 页头：顶部占位 + 资料库卡 + 订阅源小节标题（作为 List 第 0 项，随内容滚走）。 */
   @Builder
   Header() {
     Column() {
       // 透明标题栏占位：放进滚动内容里，内容才能穿过标题栏（HDS 材质渐显随之生效）。
       Row().width('100%').height(safeArea.contentTopInsetVp)
-
-      SettingsSectionTitle({ title: $r('app.string.home_add_feed_title') })
-      this.AddCard()
 
       SettingsSectionTitle({ title: $r('app.string.subs_library_title') })
       this.LibraryCard()
@@ -93,19 +80,10 @@ export struct SubscriptionsView {
     .alignItems(HorizontalAlign.Start)
   }
 
-  /** 添加卡：输入表单 + 发现入口 + OPML 导入 / 导出，全部收在一张卡里。 */
+  /** 资料库：发现 / 标签 / 智能文件夹 / 规则。一张卡 + 分割线（与设置页同一套行与计数位）。 */
   @Builder
-  AddCard() {
+  LibraryCard() {
     Column() {
-      // 复用添加面板：多行输入 + 预览确认 + 分组选择 + 剪贴板预填。
-      // 标题上移成小节标题，面板内不再画 18 号标题（避免和页面标题形成双重标题）。
-      AddFeedPanel({
-        showTitle: false,
-        onSubmitResult: () => {
-        }
-      })
-      Divider().color($r('app.color.hm_divider'))
-      // 发现：属于「怎么添加订阅」，从独立卡片归位到添加卡。
       NavSettingRow({
         icon: $r('sys.symbol.rays'),
         title: $r('app.string.discover_entry'),
@@ -114,54 +92,6 @@ export struct SubscriptionsView {
         }
       })
       Divider().color($r('app.color.hm_divider'))
-      this.OpmlRow()
-    }
-    .width('100%')
-    .backgroundColor($r('app.color.hm_card_background'))
-    .borderRadius($r('app.float.radius_card'))
-    // 分割线 / 行按压底色跟着卡片圆角收边。
-    .clip(true)
-    .alignItems(HorizontalAlign.Start)
-  }
-
-  /**
-   * OPML 导入 / 导出：都走系统文档选择器，无需存储权限。
-   * 内边距与卡内其它元素同为 16（原来这里又套了一层，导致相对其它元素缩进 32、底部双倍留白）。
-   */
-  @Builder
-  OpmlRow() {
-    Row({ space: $r('app.float.space_s') }) {
-      Button($r('app.string.subs_import_opml'))
-        .buttonStyle(ButtonStyleMode.TEXTUAL)
-        .fontSize($r('app.float.font_size_caption'))
-        .fontColor($r('app.color.hm_brand'))
-        .enabled(!this.submitting)
-        .onClick(() => {
-          this.importOpml();
-        })
-      Button($r('app.string.subs_export_opml'))
-        .buttonStyle(ButtonStyleMode.TEXTUAL)
-        .fontSize($r('app.float.font_size_caption'))
-        .fontColor($r('app.color.hm_brand'))
-        .enabled(!this.submitting)
-        .onClick(() => {
-          this.exportOpml();
-        })
-      Blank()
-    }
-    .width('100%')
-    .padding({
-      left: $r('app.float.space_l'),
-      right: $r('app.float.space_l'),
-      top: $r('app.float.space_s'),
-      bottom: $r('app.float.space_s')
-    })
-  }
-
-  /** 资料库：标签 / 智能文件夹 / 规则。一张卡三行 + 分割线（与设置页同一套行与计数位）。 */
-  @Builder
-  LibraryCard() {
-    Column() {
       NavSettingRow({
         icon: $r('sys.symbol.checkmark_circle'),
         title: $r('app.string.tag_title'),
@@ -223,41 +153,6 @@ export struct SubscriptionsView {
 
   private toast(message: ResourceStr): void {
     ToastUtil.show(this.getUIContext(), message);
-  }
-
-  /** 导入 OPML：选文件 → 解析 → 去重入库并抓取。 */
-  private async importOpml(): Promise<void> {
-    this.submitting = true;
-    const text: string = await opmlService.importFromFile(this.hostContext());
-    if (text.length === 0) {
-      this.submitting = false;
-      return;
-    }
-    const entries: OpmlEntry[] = parseOpml(text);
-    if (entries.length === 0) {
-      this.submitting = false;
-      this.toast($r('app.string.subs_import_empty'));
-      return;
-    }
-    const added: number = await feedViewModel.importFeeds(entries);
-    this.submitting = false;
-    this.toast(added > 0
-      ? $r('app.string.subs_import_result', added)
-      : $r('app.string.subs_import_duplicate'));
-  }
-
-  /** 导出 OPML：把当前订阅写进用户选定的文件。 */
-  private async exportOpml(): Promise<void> {
-    if (feedViewModel.feeds.length === 0) {
-      this.toast($r('app.string.subs_export_empty'));
-      return;
-    }
-    this.submitting = true;
-    const ok: boolean = await opmlService.exportToFile(this.hostContext(), feedViewModel.exportOpml());
-    this.submitting = false;
-    if (ok) {
-      this.toast($r('app.string.subs_export_success'));
-    }
   }
 
   /** 是否处于就地编辑（重命名 / 分组 / 地址）。 */
@@ -787,7 +682,7 @@ export struct SubscriptionsView {
   build() {
     Stack({ alignContent: Alignment.Bottom }) {
       List({ scroller: this.scroller }) {
-        // 第 0 项：整块头部（占位 + 添加卡 + 资料库卡 + 订阅源小节标题），随滚动离开。
+        // 第 0 项：整块头部（占位 + 资料库卡 + 订阅源小节标题），随滚动离开。
         ListItem() {
           this.Header()
         }
@@ -809,10 +704,17 @@ export struct SubscriptionsView {
           }, (row: FeedListItem) => row.isGroup ? 'g:' + row.groupName : 'f:' + row.feed.id)
 
           if (this.selecting) {
-            // 多选动作条悬浮在内容下沿：末尾留一段可滚动的余量，最后一行不会被它压住。
+            // 多选动作条悬浮在内容下沿：末尾再留一段可滚动的余量，最后一行不会被它压住。
             ListItem() {
               Row().width('100%').height($r('app.float.space_3xl'))
             }
+          }
+
+          // 底部避让：悬浮页签栏叠在内容之上，避让高度必须作为「可滚动」的末尾留白，
+          // 不能用 List 的 padding —— padding 会让内容在页签栏上方就被裁掉，
+          // 列表没滚到底时底部就出现一条永远填不满的空白。
+          ListItem() {
+            Row().width('100%').height(safeArea.contentBottomInsetVp)
           }
         }
       }
@@ -820,8 +722,7 @@ export struct SubscriptionsView {
       .height('100%')
       .padding({
         left: $r('app.float.space_l'),
-        right: $r('app.float.space_l'),
-        bottom: safeArea.contentBottomInsetVp
+        right: $r('app.float.space_l')
       })
       .scrollBar(BarState.Off)
       // 长按拖拽排序：拖订阅源行 → 单条移动（含跨组）；拖分组头 → 整组换位。

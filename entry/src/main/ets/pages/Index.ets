@@ -101,8 +101,6 @@ import { Article } from '../model/Feed';
 @ComponentV2
 struct Index {
   @Local currentTab: number = appSettings.lastTabIndex;
-  /** 详情页沉浸阅读：由详情页点按正文中部切换，控制 HdsNavDestination 标题栏显隐。 */
-  @Local articleBarsHidden: boolean = false;
   /** 添加订阅源面板：显隐（入口在悬浮页签栏的 miniBar 上）。 */
   @Local showAddSheet: boolean = false;
   /** 分享进入时预填到添加面板的地址（多行）。 */
@@ -611,6 +609,10 @@ struct Index {
       // 悬浮页签栏默认距 HdsTabs 底部 0vp；全屏布局下会压住系统导航条，这里按避让高度上抬。
       barBottomMargin: safeArea.bottomInsetVp,
       systemMaterialEffect: this.materialParams(),
+      // 背板蒙层默认是 #CCF1F3F5（浅色 80% 不透明）的整块浅灰板，会横跨满宽把全局壁纸压成
+      // 一大块白，还盖住页签栏的沉浸光感材质。这里始终设全透明，让壁纸直接透到屏幕底部；
+      // 页签文字的可读性交给页签栏自身的材质 / 胶囊底承担。
+      gradientMask: { maskColor: Color.Transparent },
       miniBar: miniBar
     };
     return style;
@@ -642,7 +644,11 @@ struct Index {
   @Builder
   AddFeedPanelSheet() {
     AddFeedPanel({
+      showClose: true,
       initialText: this.pendingAddText,
+      onClose: () => {
+        this.showAddSheet = false;
+      },
       onSubmitResult: () => {
         this.pendingAddText = '';
         this.showAddSheet = false;
@@ -925,20 +931,17 @@ struct Index {
       HdsNavDestination() {
         ArticleDetailView({
           scroller: this.articleScroller,
-          navPathStack: this.navPathStack,
-          onImmersiveChange: (hidden: boolean) => {
-            this.articleBarsHidden = hidden;
-          }
+          navPathStack: this.navPathStack
         })
       }
       .titleBar(this.articleTitleOptions())
       // 原生返回键会被标题横栏的材质盖住（stackBuilder 在按钮之上），改为横栏内自绘返回键。
       .hideBackButton(true)
-      // 沉浸阅读：详情页点按正文中部时收起 / 恢复标题栏（带系统动画）
-      .hideTitleBar(this.articleBarsHidden, true)
       .titleMode(HdsNavDestinationTitleMode.MINI)
       // 不透明背板：原生覆盖式 push 时不会透过新页看到上一页，也不再因淡出透出壁纸。
       .backgroundColor($r('app.color.hm_web_surface'))
+      // 标题栏显隐统一交给滚动（与其它页一致）；点正文只收起页内底部操作条，不再单独控制标题栏。
+      .dynamicHideTitleBar(this.dynamicHideParams())
       .bindToScrollable([this.articleScroller])
     } else if (name === RouterConstants.PAGE_FEED_ARTICLES) {
       HdsNavDestination() {
@@ -952,6 +955,7 @@ struct Index {
       .titleMode(HdsNavDestinationTitleMode.MINI)
       // 不透明背板：与详情页一致，走系统原生转场不穿透。
       .backgroundColor($r('app.color.hm_web_surface'))
+      .dynamicHideTitleBar(this.dynamicHideParams())
       .bindToScrollable([this.feedArticlesScroller])
     } else if (name === RouterConstants.PAGE_HIGHLIGHTS) {
       HdsNavDestination() {
@@ -963,6 +967,7 @@ struct Index {
       .titleMode(HdsNavDestinationTitleMode.MINI)
       // 不透明背板：与详情页一致，走系统原生转场不穿透。
       .backgroundColor($r('app.color.hm_web_surface'))
+      .dynamicHideTitleBar(this.dynamicHideParams())
       .bindToScrollable([this.highlightsScroller])
     } else if (name === RouterConstants.PAGE_EFFECT) {
       HdsNavDestination() {
@@ -981,6 +986,7 @@ struct Index {
       .titleBar(this.titleOptions($r('app.string.search_title')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
       .backgroundColor($r('app.color.hm_web_surface'))
+      .dynamicHideTitleBar(this.dynamicHideParams())
       .bindToScrollable([this.searchScroller])
     } else if (name === RouterConstants.PAGE_STORAGE) {
       HdsNavDestination() {
@@ -991,6 +997,7 @@ struct Index {
       .titleBar(this.titleOptions($r('app.string.storage_title')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
       .backgroundColor($r('app.color.hm_web_surface'))
+      .dynamicHideTitleBar(this.dynamicHideParams())
       .bindToScrollable([this.storageScroller])
     } else if (name === RouterConstants.PAGE_SETTINGS_LOOK) {
       HdsNavDestination() {
@@ -1001,6 +1008,7 @@ struct Index {
       .titleBar(this.titleOptions($r('app.string.settings_entry_look')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
       .backgroundColor($r('app.color.hm_web_surface'))
+      .dynamicHideTitleBar(this.dynamicHideParams())
       .bindToScrollable([this.settingsLookScroller])
     } else if (name === RouterConstants.PAGE_SETTINGS_MATERIAL) {
       HdsNavDestination() {
@@ -1011,6 +1019,7 @@ struct Index {
       .titleBar(this.titleOptions($r('app.string.settings_entry_material')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
       .backgroundColor($r('app.color.hm_web_surface'))
+      .dynamicHideTitleBar(this.dynamicHideParams())
       .bindToScrollable([this.settingsMaterialScroller])
     } else if (name === RouterConstants.PAGE_SETTINGS_READING) {
       HdsNavDestination() {
@@ -1021,6 +1030,7 @@ struct Index {
       .titleBar(this.titleOptions($r('app.string.settings_entry_reading')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
       .backgroundColor($r('app.color.hm_web_surface'))
+      .dynamicHideTitleBar(this.dynamicHideParams())
       .bindToScrollable([this.settingsReadingScroller])
     } else if (name === RouterConstants.PAGE_SETTINGS_FEED) {
       HdsNavDestination() {
@@ -1031,6 +1041,7 @@ struct Index {
       .titleBar(this.titleOptions($r('app.string.settings_entry_feed')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
       .backgroundColor($r('app.color.hm_web_surface'))
+      .dynamicHideTitleBar(this.dynamicHideParams())
       .bindToScrollable([this.settingsFeedScroller])
     } else if (name === RouterConstants.PAGE_SETTINGS_SYSTEM) {
       HdsNavDestination() {
@@ -1041,6 +1052,7 @@ struct Index {
       .titleBar(this.titleOptions($r('app.string.settings_entry_system')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
       .backgroundColor($r('app.color.hm_web_surface'))
+      .dynamicHideTitleBar(this.dynamicHideParams())
       .bindToScrollable([this.settingsSystemScroller])
     } else if (name === RouterConstants.PAGE_BACKUP) {
       HdsNavDestination() {
@@ -1051,6 +1063,7 @@ struct Index {
       .titleBar(this.titleOptions($r('app.string.backup_title')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
       .backgroundColor($r('app.color.hm_web_surface'))
+      .dynamicHideTitleBar(this.dynamicHideParams())
       .bindToScrollable([this.backupScroller])
     } else if (name === RouterConstants.PAGE_FEED_SETTINGS) {
       HdsNavDestination() {
@@ -1061,6 +1074,7 @@ struct Index {
       .titleBar(this.titleOptions(feedViewModel.settingsFeedTitle()))
       .titleMode(HdsNavDestinationTitleMode.MINI)
       .backgroundColor($r('app.color.hm_web_surface'))
+      .dynamicHideTitleBar(this.dynamicHideParams())
       .bindToScrollable([this.feedSettingsScroller])
     } else if (name === RouterConstants.PAGE_TAGS) {
       HdsNavDestination() {
@@ -1071,6 +1085,7 @@ struct Index {
       .titleBar(this.titleOptions($r('app.string.tag_title')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
       .backgroundColor($r('app.color.hm_web_surface'))
+      .dynamicHideTitleBar(this.dynamicHideParams())
       .bindToScrollable([this.tagsScroller])
     } else if (name === RouterConstants.PAGE_TAG_ARTICLES) {
       HdsNavDestination() {
@@ -1081,6 +1096,7 @@ struct Index {
       .titleBar(this.titleOptions($r('app.string.tag_articles_title')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
       .backgroundColor($r('app.color.hm_web_surface'))
+      .dynamicHideTitleBar(this.dynamicHideParams())
       .bindToScrollable([this.tagArticlesScroller])
     } else if (name === RouterConstants.PAGE_SMART_FOLDERS) {
       HdsNavDestination() {
@@ -1091,6 +1107,7 @@ struct Index {
       .titleBar(this.titleOptions($r('app.string.smart_folder_title')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
       .backgroundColor($r('app.color.hm_web_surface'))
+      .dynamicHideTitleBar(this.dynamicHideParams())
       .bindToScrollable([this.smartFoldersScroller])
     } else if (name === RouterConstants.PAGE_RULES) {
       HdsNavDestination() {
@@ -1101,6 +1118,7 @@ struct Index {
       .titleBar(this.titleOptions($r('app.string.rule_title')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
       .backgroundColor($r('app.color.hm_web_surface'))
+      .dynamicHideTitleBar(this.dynamicHideParams())
       .bindToScrollable([this.rulesScroller])
     } else if (name === RouterConstants.PAGE_RULE_EDIT) {
       HdsNavDestination() {
@@ -1111,6 +1129,7 @@ struct Index {
       .titleBar(this.titleOptions($r('app.string.rule_edit_title')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
       .backgroundColor($r('app.color.hm_web_surface'))
+      .dynamicHideTitleBar(this.dynamicHideParams())
       .bindToScrollable([this.ruleEditScroller])
     } else if (name === RouterConstants.PAGE_HIDDEN) {
       HdsNavDestination() {
@@ -1121,6 +1140,7 @@ struct Index {
       .titleBar(this.titleOptions($r('app.string.hidden_title')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
       .backgroundColor($r('app.color.hm_web_surface'))
+      .dynamicHideTitleBar(this.dynamicHideParams())
       .bindToScrollable([this.hiddenScroller])
     } else if (name === RouterConstants.PAGE_SYNC) {
       HdsNavDestination() {
@@ -1131,6 +1151,7 @@ struct Index {
       .titleBar(this.titleOptions($r('app.string.sync_entry_title')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
       .backgroundColor($r('app.color.hm_web_surface'))
+      .dynamicHideTitleBar(this.dynamicHideParams())
       .bindToScrollable([this.syncScroller])
     } else if (name === RouterConstants.PAGE_REMOTE) {
       HdsNavDestination() {
@@ -1141,6 +1162,7 @@ struct Index {
       .titleBar(this.titleOptions($r('app.string.remote_title')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
       .backgroundColor($r('app.color.hm_web_surface'))
+      .dynamicHideTitleBar(this.dynamicHideParams())
       .bindToScrollable([this.remoteScroller])
     } else if (name === RouterConstants.PAGE_REMOTE_MIGRATION) {
       HdsNavDestination() {
@@ -1151,6 +1173,7 @@ struct Index {
       .titleBar(this.titleOptions($r('app.string.remote_migration_title')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
       .backgroundColor($r('app.color.hm_web_surface'))
+      .dynamicHideTitleBar(this.dynamicHideParams())
       .bindToScrollable([this.remoteMigrationScroller])
     } else if (name === RouterConstants.PAGE_SHARE_SETTINGS) {
       HdsNavDestination() {
@@ -1161,6 +1184,7 @@ struct Index {
       .titleBar(this.titleOptions($r('app.string.share_settings_title')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
       .backgroundColor($r('app.color.hm_web_surface'))
+      .dynamicHideTitleBar(this.dynamicHideParams())
       .bindToScrollable([this.shareSettingsScroller])
     } else if (name === RouterConstants.PAGE_NOTIFY_SETTINGS) {
       HdsNavDestination() {
@@ -1171,6 +1195,7 @@ struct Index {
       .titleBar(this.titleOptions($r('app.string.notify_settings_title')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
       .backgroundColor($r('app.color.hm_web_surface'))
+      .dynamicHideTitleBar(this.dynamicHideParams())
       .bindToScrollable([this.notifySettingsScroller])
     } else if (name === RouterConstants.PAGE_TRANSLATE_SETTINGS) {
       HdsNavDestination() {
@@ -1181,6 +1206,7 @@ struct Index {
       .titleBar(this.titleOptions($r('app.string.translate_settings_title')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
       .backgroundColor($r('app.color.hm_web_surface'))
+      .dynamicHideTitleBar(this.dynamicHideParams())
       .bindToScrollable([this.translateSettingsScroller])
     } else if (name === RouterConstants.PAGE_PRIVACY) {
       HdsNavDestination() {
@@ -1191,6 +1217,7 @@ struct Index {
       .titleBar(this.titleOptions($r('app.string.privacy_settings_title')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
       .backgroundColor($r('app.color.hm_web_surface'))
+      .dynamicHideTitleBar(this.dynamicHideParams())
       .bindToScrollable([this.privacyScroller])
     } else if (name === RouterConstants.PAGE_DISCOVER) {
       HdsNavDestination() {
@@ -1201,6 +1228,7 @@ struct Index {
       .titleBar(this.titleOptions($r('app.string.discover_title')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
       .backgroundColor($r('app.color.hm_web_surface'))
+      .dynamicHideTitleBar(this.dynamicHideParams())
       .bindToScrollable([this.discoverScroller])
     } else if (name === RouterConstants.PAGE_DIAGNOSTICS) {
       HdsNavDestination() {
@@ -1211,6 +1239,7 @@ struct Index {
       .titleBar(this.titleOptions($r('app.string.diagnostics_title')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
       .backgroundColor($r('app.color.hm_web_surface'))
+      .dynamicHideTitleBar(this.dynamicHideParams())
       .bindToScrollable([this.diagnosticsScroller])
     }
   }
@@ -1260,6 +1289,8 @@ struct Index {
     .bindSheet(this.showAddSheet, this.AddFeedPanelSheet(), MaterialController.sheetOptions({
       height: 420,
       dragBar: true,
+      // 关闭按钮画在面板标题行里（尺寸与标题同高），不用系统那颗偏大的圆钮。
+      showClose: false,
       onDisappear: () => {
         this.pendingAddText = '';
         this.showAddSheet = false;

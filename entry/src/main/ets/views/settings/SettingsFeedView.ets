@@ -1,7 +1,8 @@
 /*
  * SettingsFeedView.ets — 「订阅与通知」二级页（纯展示 + 事件上报）。
  *
- * 内容：跨源去重、自动刷新、立即刷新、归档规则、标注库入口、新文章通知与通知设置入口。
+ * 内容：跨源去重、自动刷新、立即刷新、归档规则、标注库入口、新文章通知与通知设置入口、
+ *       OPML 导入 / 导出（从订阅源页移来）。
  * 业务逻辑在 SettingsViewModel / FeedViewModel，这里只读状态、把操作上报。
  */
 
@@ -21,11 +22,14 @@ import {
 import { settingsViewModel } from '../../viewmodel/SettingsViewModel';
 import { feedViewModel } from '../../viewmodel/FeedViewModel';
 import { articleStore } from '../../service/ArticleStore';
+import { opmlService } from '../../service/OpmlService';
+import { OpmlEntry, parseOpml } from '../../service/OpmlCodec';
 import { RouterConstants } from '../../common/constants/RouterConstants';
 import { safeArea } from '../../service/SafeAreaController';
 import { DateUtil } from '../../common/utils/DateUtil';
 import { ToastUtil } from '../../common/utils/ToastUtil';
 import {
+  ActionSettingRow,
   NavSettingRow,
   OptionSelectRow,
   SettingField,
@@ -60,6 +64,35 @@ export struct SettingsFeedView {
     const granted: boolean = await settingsViewModel.setNotifyNewArticles(value, this.hostContext());
     if (value && !granted) {
       ToastUtil.show(this.getUIContext(), $r('app.string.toast_notify_denied'));
+    }
+  }
+
+  /** 导入 OPML：选文件 → 解析 → 去重入库并抓取。 */
+  private async importOpml(): Promise<void> {
+    const text: string = await opmlService.importFromFile(this.hostContext());
+    if (text.length === 0) {
+      return;
+    }
+    const entries: OpmlEntry[] = parseOpml(text);
+    if (entries.length === 0) {
+      ToastUtil.show(this.getUIContext(), $r('app.string.subs_import_empty'));
+      return;
+    }
+    const added: number = await feedViewModel.importFeeds(entries);
+    ToastUtil.show(this.getUIContext(), added > 0
+      ? $r('app.string.subs_import_result', added)
+      : $r('app.string.subs_import_duplicate'));
+  }
+
+  /** 导出 OPML：把当前订阅写进用户选定的文件。 */
+  private async exportOpml(): Promise<void> {
+    if (feedViewModel.feeds.length === 0) {
+      ToastUtil.show(this.getUIContext(), $r('app.string.subs_export_empty'));
+      return;
+    }
+    const ok: boolean = await opmlService.exportToFile(this.hostContext(), feedViewModel.exportOpml());
+    if (ok) {
+      ToastUtil.show(this.getUIContext(), $r('app.string.subs_export_success'));
     }
   }
 
@@ -160,6 +193,23 @@ export struct SettingsFeedView {
             title: $r('app.string.notify_settings_title'),
             onOpen: () => {
               this.navPathStack.pushPath(new NavPathInfo(RouterConstants.PAGE_NOTIFY_SETTINGS, ''));
+            }
+          })
+          Divider().color($r('app.color.hm_divider'))
+          // OPML 导入 / 导出：从订阅源页移来，统一收在设置里；都走系统文档选择器，无需存储权限。
+          ActionSettingRow({
+            icon: $r('sys.symbol.doc_text'),
+            title: $r('app.string.subs_import_opml'),
+            onAction: () => {
+              this.importOpml();
+            }
+          })
+          Divider().color($r('app.color.hm_divider'))
+          ActionSettingRow({
+            icon: $r('sys.symbol.doc_text'),
+            title: $r('app.string.subs_export_opml'),
+            onAction: () => {
+              this.exportOpml();
             }
           })
         }

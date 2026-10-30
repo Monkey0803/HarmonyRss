@@ -182,12 +182,10 @@ export struct ArticleDetailView {
   @Local speechTotal: number = 0;
   /** 朗读：当前语速倍数。 */
   @Local speechSpeed: number = 1;
-  /** 沉浸阅读：隐藏标题栏与底栏（点按正文中部切换）。 */
-  @Local barsHidden: boolean = false;
+  /** 沉浸阅读：只隐藏页内底部操作条（点按正文中部切换；标题栏由外壳的滚动显隐控制）。 */
+  @Local bottomBarHidden: boolean = false;
   /** 横向手势的起手点（px），用于避让系统边缘返回手势。 */
   private panStartX: number = -1;
-  /** 沉浸态切换上报给外壳（标题栏由 HdsNavDestination.hideTitleBar 控制）。 */
-  @Event onImmersiveChange: (hidden: boolean) => void = () => {};
   /** 导航栈：「只看该源」要退回首页列表（范围 chip 在首页顶部）。 */
   @Param navPathStack: NavPathStack = new NavPathStack();
   /** 文内查找：查找条显隐、查询串、命中数与当前下标。 */
@@ -1077,10 +1075,9 @@ export struct ArticleDetailView {
     if (this.speaking) {
       readerSpeech.stop();
     }
-    // 沉浸态与查找条都复位（新文章从完整界面开始）
-    if (this.barsHidden) {
-      this.barsHidden = false;
-      this.onImmersiveChange(false);
+    // 底栏沉浸态与查找条都复位（新文章从完整界面开始）
+    if (this.bottomBarHidden) {
+      this.bottomBarHidden = false;
     }
     this.findOpen = false;
     this.findQuery = '';
@@ -1395,13 +1392,13 @@ export struct ArticleDetailView {
           return;
         }
         if (!longPress && this.isMiddleBandVp(windowY)) {
-          this.toggleBars();
+          this.toggleBottomBar();
         }
       })
       .catch(() => {
         // 命中测试失败（页面未就绪等）：按普通点按处理，不打断阅读。
         if (!longPress && this.isMiddleBandVp(windowY)) {
-          this.toggleBars();
+          this.toggleBottomBar();
         }
       });
   }
@@ -1490,10 +1487,9 @@ export struct ArticleDetailView {
     }
   }
 
-  /** 沉浸阅读：点按正文中部时切换标题栏与底栏显隐。 */
-  private toggleBars(): void {
-    this.barsHidden = !this.barsHidden;
-    this.onImmersiveChange(this.barsHidden);
+  /** 沉浸阅读：点按正文中部时收起 / 恢复页内底部操作条（标题栏统一由滚动显隐控制）。 */
+  private toggleBottomBar(): void {
+    this.bottomBarHidden = !this.bottomBarHidden;
   }
 
   private restoreWebProgress(): void {
@@ -2986,8 +2982,8 @@ export struct ArticleDetailView {
         this.FloatingBar()
       }
       .width('100%')
-      .height(this.barsHidden ? 0 : this.barStripHeight())
-      .opacity(this.barsHidden ? 0 : 1)
+      .height(this.bottomBarHidden ? 0 : this.barStripHeight())
+      .opacity(this.bottomBarHidden ? 0 : 1)
       .clip(true)
       .animation({ duration: 180, curve: Curve.Friction })
 

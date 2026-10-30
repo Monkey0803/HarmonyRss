@@ -240,7 +240,7 @@ export struct TagsView {
         .width('100%')
         .layoutWeight(1)
         .scrollBar(BarState.Off)
-        .padding({ bottom: safeArea.contentBottomInsetVp })
+        .padding({ bottom: safeArea.bottomInsetVp })
       }
 
       if (tagViewModel.selectedTagIds.length > 0) {

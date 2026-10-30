@@ -289,11 +289,20 @@ export class MaterialController {
     return options;
   }
 
+  /** 半模态设置系统材质时，背板色必须让位（官方示例10：否则材质被 backgroundColor 覆盖）。 */
+  private static readonly SHEET_MATERIAL_BACKDROP: ResourceColor = Color.Transparent;
+
+  /** 半模态面板（bindSheet）设置系统材质。 */
+  private static applySheetMaterial(options: SheetOptions, material: uiMaterial.Material): void {
+    options.systemMaterial = material;
+    options.backgroundColor = MaterialController.SHEET_MATERIAL_BACKDROP;
+  }
+
   /** 半模态面板（bindSheet）注入沉浸光感；不支持时原样返回。 */
   static sheetOptions(options: SheetOptions, immersiveOn: boolean): SheetOptions {
     const material: uiMaterial.Material | undefined = MaterialController.overlayMaterial(immersiveOn);
     if (material !== undefined) {
-      options.systemMaterial = material;
+      MaterialController.applySheetMaterial(options, material);
     }
     return options;
   }

@@ -29,6 +29,11 @@ export struct AddFeedPanel {
    * 分享页 / 底部面板保持默认 true，标题仍在面板内。
    */
   @Param showTitle: boolean = true;
+  /** 是否在标题行右侧画关闭按钮（底部面板用；页面内嵌时不画）。 */
+  @Param showClose: boolean = false;
+  /** 关闭回调：由宿主收回弹层（如收起底部面板）。 */
+  @Event onClose: () => void = () => {
+  };
   /** 初始输入（分享入口把解析出的地址传进来）；非空时优先于剪贴板预填。 */
   @Param initialText: string = '';
   /** 成功添加一项 / 一批后回调，宿主据此关闭面板或刷新。 */
@@ -224,6 +229,8 @@ export struct AddFeedPanel {
     Column({ space: $r('app.float.space_s') }) {
       TextArea({ text: this.inputText, placeholder: $r('app.string.subs_url_hint') })
         .fontSize($r('app.float.font_size_body'))
+        // 进入页面时输入框会被默认焦点命中，但不要因此直接弹起软键盘（仅点击时才弹）。
+        .enableKeyboardOnFocus(false)
         .maxLines(4)
         .constraintSize({ minHeight: 64, maxHeight: 140 })
         .onChange((value: string) => {
@@ -362,11 +369,27 @@ export struct AddFeedPanel {
   build() {
     Column({ space: $r('app.float.space_m') }) {
       if (this.showTitle) {
-        Text(this.panelTitle)
-          .fontSize($r('app.float.font_size_title'))
-          .fontWeight(FontWeight.Bold)
-          .fontColor($r('app.color.hm_text_primary'))
-          .width('100%')
+        Row({ space: $r('app.float.space_s') }) {
+          Text(this.panelTitle)
+            .fontSize($r('app.float.font_size_title'))
+            .fontWeight(FontWeight.Bold)
+            .fontColor($r('app.color.hm_text_primary'))
+            .maxLines(1)
+            .textOverflow({ overflow: TextOverflow.Ellipsis })
+            .layoutWeight(1)
+          if (this.showClose) {
+            SymbolGlyph($r('sys.symbol.xmark'))
+              .fontSize($r('app.float.icon_size'))
+              .fontColor([$r('app.color.hm_text_secondary')])
+              .padding($r('app.float.space_xs'))
+              .accessibilityText($r('app.string.dialog_cancel'))
+              .onClick(() => {
+                this.onClose();
+              })
+          }
+        }
+        .width('100%')
+        .alignItems(VerticalAlign.Center)
       }
 
       if (this.hasPreview) {
