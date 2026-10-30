@@ -1,9 +1,12 @@
 /*
  * SubscriptionsView.ets — 订阅源管理（订阅源页签内容，纯展示 + 事件上报）。
  *
+ * 结构：整页只有一个 List —— 头部（顶部占位 + 添加卡 + 资料库卡 + 订阅源小节标题）作为第 0 项，
+ * 随内容一起滚走，浏览订阅列表时可占满屏；下面是分组头 / 订阅源行。
+ * 多选态的动作条悬浮在悬浮页签栏上方，不占内容高度。
+ *
  * 顶部输入订阅地址并添加（添加前会先抓一次校验可用性）；支持 OPML 导入 / 导出（系统文档选择器）；
- * 下方列出已有订阅源（含未读数）并可删除（删除前确认）。
- * 点击某个订阅源 → 推入该源的单源文章列表页（NavDestination）。
+ * 订阅源行支持就地改名 / 分组 / 地址、长按拖拽排序、批量管理（移动分组 / 删除）。
  */
 
 import { common } from '@kit.AbilityKit';
@@ -20,9 +23,17 @@ import { MaterialController } from '../service/MaterialController';
 import { appSettings } from '../model/AppSettings';
 import { AddFeedPanel } from './AddFeedPanel';
 import { DateUtil } from '../common/utils/DateUtil';
+import { UrlText } from '../common/utils/UrlText';
 import { tagViewModel } from '../viewmodel/TagViewModel';
 import { smartFolderViewModel } from '../viewmodel/SmartFolderViewModel';
 import { ruleViewModel } from '../viewmodel/RuleViewModel';
+import { NavSettingRow, SettingsSectionTitle } from './settings/SettingsRows';
+
+/**
+ * 列表头部固定合并成 1 个 ListItem。
+ * 拖拽回调拿到的 itemIndex 是「含头部」的列表下标，换算成订阅行下标时要减掉它。
+ */
+const HEADER_ROWS: number = 1;
 
 @ComponentV2
 export struct SubscriptionsView {
@@ -48,7 +59,7 @@ export struct SubscriptionsView {
   }
 
   /**
-   * 进入页签 / 回到本页时刷新两个入口的计数。
+   * 进入页签 / 回到本页时刷新三个入口的计数。
    * 计数本身读的是 @ObservedV2 单例的 @Trace 数组长度，任何打标 / 增删操作后都会自动更新；
    * 这里再主动 load 一次，冷启动首个渲染也有数据。
    */
@@ -63,84 +74,151 @@ export struct SubscriptionsView {
     ruleViewModel.load();
   }
 
-  /**
-   * 入口行的外观（参数只收常量：图标 / 动作 / 类型）。
-   * 计数在 builder 体内直接读 @Trace 状态：@Builder 的参数是值传递、不参与刷新，
-   * 把 `$r(..., count)` 当参数传进来会导致计数变化后文案不更新。
-   */
+  /** 页头：顶部占位 + 添加卡 + 资料库卡 + 订阅源小节标题（作为 List 第 0 项，随内容滚走）。 */
   @Builder
-  EntryRowFrame(icon: Resource, action: () => void, kind: number) {
-    Row({ space: $r('app.float.space_m') }) {
-      SymbolGlyph(icon)
-        .fontSize($r('app.float.icon_size'))
-        .fontColor([$r('app.color.hm_brand')])
-      Text(kind === 0
-        ? $r('app.string.tag_entry', tagViewModel.tags.length)
-        : (kind === 1
-          ? $r('app.string.smart_folder_entry', smartFolderViewModel.folders.length)
-          : (kind === 2
-            ? $r('app.string.rule_entry', ruleViewModel.rules.length)
-            : $r('app.string.discover_entry'))))
-        .fontSize($r('app.float.font_size_body'))
-        .fontColor($r('app.color.hm_text_primary'))
-        .maxLines(1)
-        .textOverflow({ overflow: TextOverflow.Ellipsis })
-        .layoutWeight(1)
-      SymbolGlyph($r('sys.symbol.chevron_right'))
-        .fontSize($r('app.float.icon_size_small'))
-        .fontColor([$r('app.color.hm_text_secondary')])
+  Header() {
+    Column() {
+      // 透明标题栏占位：放进滚动内容里，内容才能穿过标题栏（HDS 材质渐显随之生效）。
+      Row().width('100%').height(safeArea.contentTopInsetVp)
+
+      SettingsSectionTitle({ title: $r('app.string.home_add_feed_title') })
+      this.AddCard()
+
+      SettingsSectionTitle({ title: $r('app.string.subs_library_title') })
+      this.LibraryCard()
+
+      this.FeedsSectionHeader()
     }
     .width('100%')
-    .padding($r('app.float.space_m'))
+    .alignItems(HorizontalAlign.Start)
+  }
+
+  /** 添加卡：输入表单 + 发现入口 + OPML 导入 / 导出，全部收在一张卡里。 */
+  @Builder
+  AddCard() {
+    Column() {
+      // 复用添加面板：多行输入 + 预览确认 + 分组选择 + 剪贴板预填。
+      // 标题上移成小节标题，面板内不再画 18 号标题（避免和页面标题形成双重标题）。
+      AddFeedPanel({
+        showTitle: false,
+        onSubmitResult: () => {
+        }
+      })
+      Divider().color($r('app.color.hm_divider'))
+      // 发现：属于「怎么添加订阅」，从独立卡片归位到添加卡。
+      NavSettingRow({
+        icon: $r('sys.symbol.rays'),
+        title: $r('app.string.discover_entry'),
+        onOpen: () => {
+          this.navPathStack.pushPath(new NavPathInfo(RouterConstants.PAGE_DISCOVER, ''));
+        }
+      })
+      Divider().color($r('app.color.hm_divider'))
+      this.OpmlRow()
+    }
+    .width('100%')
     .backgroundColor($r('app.color.hm_card_background'))
     .borderRadius($r('app.float.radius_card'))
-    .onClick(() => {
-      action();
+    // 分割线 / 行按压底色跟着卡片圆角收边。
+    .clip(true)
+    .alignItems(HorizontalAlign.Start)
+  }
+
+  /**
+   * OPML 导入 / 导出：都走系统文档选择器，无需存储权限。
+   * 内边距与卡内其它元素同为 16（原来这里又套了一层，导致相对其它元素缩进 32、底部双倍留白）。
+   */
+  @Builder
+  OpmlRow() {
+    Row({ space: $r('app.float.space_s') }) {
+      Button($r('app.string.subs_import_opml'))
+        .buttonStyle(ButtonStyleMode.TEXTUAL)
+        .fontSize($r('app.float.font_size_caption'))
+        .fontColor($r('app.color.hm_brand'))
+        .enabled(!this.submitting)
+        .onClick(() => {
+          this.importOpml();
+        })
+      Button($r('app.string.subs_export_opml'))
+        .buttonStyle(ButtonStyleMode.TEXTUAL)
+        .fontSize($r('app.float.font_size_caption'))
+        .fontColor($r('app.color.hm_brand'))
+        .enabled(!this.submitting)
+        .onClick(() => {
+          this.exportOpml();
+        })
+      Blank()
+    }
+    .width('100%')
+    .padding({
+      left: $r('app.float.space_l'),
+      right: $r('app.float.space_l'),
+      top: $r('app.float.space_s'),
+      bottom: $r('app.float.space_s')
     })
   }
 
-  /** 标签入口：计数直接读 @Trace 数组长度，任何打标 / 删标后自动刷新。 */
+  /** 资料库：标签 / 智能文件夹 / 规则。一张卡三行 + 分割线（与设置页同一套行与计数位）。 */
   @Builder
-  TagEntry() {
-    this.EntryRowFrame($r('sys.symbol.checkmark_circle'), () => {
-      this.navPathStack.pushPath(new NavPathInfo(RouterConstants.PAGE_TAGS, ''));
-    }, 0)
-  }
-
-  /** 智能文件夹入口。 */
-  @Builder
-  SmartFolderEntry() {
-    this.EntryRowFrame($r('sys.symbol.folder_fill'), () => {
-      this.navPathStack.pushPath(new NavPathInfo(RouterConstants.PAGE_SMART_FOLDERS, ''));
-    }, 1)
-  }
-
-  /** 规则入口。 */
-  @Builder
-  RuleEntry() {
-    this.EntryRowFrame($r('sys.symbol.gearshape'), () => {
-      this.navPathStack.pushPath(new NavPathInfo(RouterConstants.PAGE_RULES, ''));
-    }, 2)
-  }
-
-  /** 发现与推荐入口：精选目录 / 相似源 / RSSHub 路由 / 剪贴板导入。 */
-  @Builder
-  DiscoverEntry() {
-    this.EntryRowFrame($r('sys.symbol.rays'), () => {
-      this.navPathStack.pushPath(new NavPathInfo(RouterConstants.PAGE_DISCOVER, ''));
-    }, 3)
-  }
-
-  /** 三个入口：标签 / 智能文件夹 / 规则（放在添加区下方、订阅列表上方）。 */
-  @Builder
-  LibraryEntries() {
-    Column({ space: $r('app.float.space_s') }) {
-      this.DiscoverEntry()
-      this.TagEntry()
-      this.SmartFolderEntry()
-      this.RuleEntry()
+  LibraryCard() {
+    Column() {
+      NavSettingRow({
+        icon: $r('sys.symbol.checkmark_circle'),
+        title: $r('app.string.tag_title'),
+        detail: String(tagViewModel.tags.length),
+        onOpen: () => {
+          this.navPathStack.pushPath(new NavPathInfo(RouterConstants.PAGE_TAGS, ''));
+        }
+      })
+      Divider().color($r('app.color.hm_divider'))
+      NavSettingRow({
+        icon: $r('sys.symbol.folder_fill'),
+        title: $r('app.string.smart_folder_title'),
+        detail: String(smartFolderViewModel.folders.length),
+        onOpen: () => {
+          this.navPathStack.pushPath(new NavPathInfo(RouterConstants.PAGE_SMART_FOLDERS, ''));
+        }
+      })
+      Divider().color($r('app.color.hm_divider'))
+      NavSettingRow({
+        icon: $r('sys.symbol.gearshape'),
+        title: $r('app.string.rule_title'),
+        detail: String(ruleViewModel.rules.length),
+        onOpen: () => {
+          this.navPathStack.pushPath(new NavPathInfo(RouterConstants.PAGE_RULES, ''));
+        }
+      })
     }
     .width('100%')
+    .backgroundColor($r('app.color.hm_card_background'))
+    .borderRadius($r('app.float.radius_card'))
+    .clip(true)
+  }
+
+  /** 订阅源小节标题：右侧「选择」入口，不必再从单行菜单里进入多选。 */
+  @Builder
+  FeedsSectionHeader() {
+    Row({ space: $r('app.float.space_s') }) {
+      Text($r('app.string.tab_subs'))
+        .fontSize($r('app.float.font_size_section'))
+        .fontColor($r('app.color.hm_text_secondary'))
+      Blank()
+      if (feedViewModel.feeds.length > 0 && !this.selecting) {
+        Button($r('app.string.subs_bulk_enter'))
+          .buttonStyle(ButtonStyleMode.TEXTUAL)
+          .fontSize($r('app.float.font_size_caption'))
+          .fontColor($r('app.color.hm_brand'))
+          .onClick(() => {
+            this.enterSelect('');
+          })
+      }
+    }
+    .width('100%')
+    .padding({ left: $r('app.float.space_xs'), right: $r('app.float.space_xs') })
+    .margin({
+      top: $r('app.float.space_xl'),
+      bottom: $r('app.float.space_s')
+    })
   }
 
   private toast(message: ResourceStr): void {
@@ -191,9 +269,10 @@ export struct SubscriptionsView {
     return this.selectedIds.indexOf(feedId) >= 0;
   }
 
+  /** 进入选择态。feedId 为空串时从「选择」入口进入，先不选任何行。 */
   private enterSelect(feedId: string): void {
     this.selecting = true;
-    this.selectedIds = [feedId];
+    this.selectedIds = feedId.length > 0 ? [feedId] : [];
   }
 
   private toggleSelect(feedId: string): void {
@@ -261,76 +340,63 @@ export struct SubscriptionsView {
     .radius($r('app.float.radius_card'))
   }
 
-  /** 多选态动作条：已选数量 + 移动分组 / 删除 / 取消。 */
-  @Builder
-  SelectBar() {
-    Row({ space: $r('app.float.space_s') }) {
-      Text($r('app.string.subs_bulk_selected', this.selectedIds.length))
-        .fontSize($r('app.float.font_size_body'))
-        .fontColor($r('app.color.hm_text_primary'))
-      Blank()
-      Button($r('app.string.subs_bulk_move'))
-        .buttonStyle(ButtonStyleMode.TEXTUAL)
-        .fontSize($r('app.float.font_size_caption'))
-        .fontColor($r('app.color.hm_brand'))
-        .bindMenu(this.BulkGroupMenu(), MaterialController.menuOptions({}, appSettings.immersiveOn))
-      Button($r('app.string.subs_bulk_remove'))
-        .buttonStyle(ButtonStyleMode.TEXTUAL)
-        .fontSize($r('app.float.font_size_caption'))
-        .fontColor($r('app.color.hm_danger'))
-        .onClick(() => {
-          this.confirmRemoveMany();
-        })
-      Button($r('app.string.dialog_cancel'))
-        .buttonStyle(ButtonStyleMode.TEXTUAL)
-        .fontSize($r('app.float.font_size_caption'))
-        .fontColor($r('app.color.hm_text_secondary'))
-        .onClick(() => {
-          this.exitSelect();
-        })
-    }
-    .width('100%')
-    .padding($r('app.float.space_m'))
-    .backgroundColor($r('app.color.hm_card_background'))
-    .borderRadius($r('app.float.radius_card'))
+  /** 多选态动作条与页签栏之间的底边距。 */
+  private selectBarBottom(): number {
+    return safeArea.bottomInsetVp + CommonConstants.TAB_BAR_HEIGHT_VP + CommonConstants.SELECT_BAR_GAP_VP;
   }
 
+  /**
+   * 多选态动作条：悬浮在悬浮页签栏上方。
+   * 用图标而不是文字按钮：德 / 法语的「移动到分组」会把一行字撑破。
+   */
   @Builder
-  Editor() {
-    Column({ space: $r('app.float.space_s') }) {
-      // 复用添加面板：多行输入 + 预览确认 + 分组选择 + 剪贴板预填。
-      AddFeedPanel({
-        onSubmitResult: () => {
-        }
-      })
-
-      // OPML 迁移：导入 / 导出都走系统文档选择器，无需存储权限。
-      Row({ space: $r('app.float.space_s') }) {
-        Button($r('app.string.subs_import_opml'))
-          .buttonStyle(ButtonStyleMode.TEXTUAL)
-          .fontSize($r('app.float.font_size_caption'))
-          .fontColor($r('app.color.hm_brand'))
-          .enabled(!this.submitting)
+  SelectBar() {
+    Column() {
+      Row({ space: $r('app.float.space_xs') }) {
+        Text($r('app.string.subs_bulk_selected', this.selectedIds.length))
+          .fontSize($r('app.float.font_size_body'))
+          .fontColor($r('app.color.hm_text_primary'))
+          .maxLines(1)
+          .textOverflow({ overflow: TextOverflow.Ellipsis })
+          .layoutWeight(1)
+        SymbolGlyph($r('sys.symbol.folder'))
+          .fontSize($r('app.float.icon_size'))
+          .fontColor([$r('app.color.hm_brand')])
+          .padding($r('app.float.space_s'))
+          .opacity(this.selectedIds.length > 0 ? 1 : 0.4)
+          .accessibilityText($r('app.string.subs_bulk_move'))
+          .enabled(this.selectedIds.length > 0)
+          // 动作条贴着屏幕底部，菜单必须向上弹，否则会被屏底裁掉。
+          .bindMenu(this.BulkGroupMenu(),
+            MaterialController.menuOptions({ placement: Placement.TopRight }, appSettings.immersiveOn))
+        SymbolGlyph($r('sys.symbol.trash'))
+          .fontSize($r('app.float.icon_size'))
+          .fontColor([$r('app.color.hm_danger')])
+          .padding($r('app.float.space_s'))
+          .opacity(this.selectedIds.length > 0 ? 1 : 0.4)
+          .accessibilityText($r('app.string.subs_bulk_remove'))
+          .enabled(this.selectedIds.length > 0)
           .onClick(() => {
-            this.importOpml();
+            this.confirmRemoveMany();
           })
-        Button($r('app.string.subs_export_opml'))
-          .buttonStyle(ButtonStyleMode.TEXTUAL)
-          .fontSize($r('app.float.font_size_caption'))
-          .fontColor($r('app.color.hm_brand'))
-          .enabled(!this.submitting)
+        SymbolGlyph($r('sys.symbol.xmark'))
+          .fontSize($r('app.float.icon_size'))
+          .fontColor([$r('app.color.hm_text_secondary')])
+          .padding($r('app.float.space_s'))
+          .accessibilityText($r('app.string.dialog_cancel'))
           .onClick(() => {
-            this.exportOpml();
+            this.exitSelect();
           })
-        Blank()
       }
       .width('100%')
-      .padding({ left: $r('app.float.space_l'), right: $r('app.float.space_l'), bottom: $r('app.float.space_l') })
+      .height($r('app.float.row_height'))
+      .padding({ left: $r('app.float.space_l'), right: $r('app.float.space_s') })
+      .backgroundColor($r('app.color.hm_card_background'))
+      .borderRadius($r('app.float.radius_card'))
     }
     .width('100%')
-    .backgroundColor($r('app.color.hm_card_background'))
-    .borderRadius($r('app.float.radius_card'))
-    .alignItems(HorizontalAlign.Start)
+    .padding({ left: $r('app.float.space_l'), right: $r('app.float.space_l') })
+    .margin({ bottom: this.selectBarBottom() })
   }
 
   /** 保存编辑后的订阅地址：保留原标题与分组，失败时提示。 */
@@ -415,6 +481,12 @@ export struct SubscriptionsView {
     .borderRadius($r('app.float.radius_card'))
   }
 
+  /** 头部行不可拖拽：给一个 0 尺寸预览，落点也会被忽略。 */
+  @Builder
+  EmptyDragPreview() {
+    Row().width(0).height(0)
+  }
+
   /** 行内溢出菜单：重命名 / 移动分组 / 删除。 */
   @Builder
   FeedMenu(feed: FeedSource) {
@@ -470,19 +542,53 @@ export struct SubscriptionsView {
     .radius($r('app.float.radius_card'))
   }
 
+  /** 未读数徽标；没有未读时退回文章总数（弱化展示）。 */
+  @Builder
+  CountBadge(feed: FeedSource) {
+    if (feed.unreadCount > 0) {
+      Text(feed.unreadCount.toString())
+        .fontSize($r('app.float.font_size_caption'))
+        .fontColor($r('app.color.hm_brand'))
+        .padding({
+          left: $r('app.float.space_s'),
+          right: $r('app.float.space_s'),
+          top: $r('app.float.space_xxs'),
+          bottom: $r('app.float.space_xxs')
+        })
+        .backgroundColor($r('app.color.hm_menu_item_selected'))
+        .borderRadius($r('app.float.radius_chip'))
+        .accessibilityText($r('app.string.home_unread_count', feed.unreadCount))
+        .flexShrink(0)
+    } else {
+      Text($r('app.string.subs_article_count', feed.articleCount))
+        .fontSize($r('app.float.font_size_caption'))
+        .fontColor($r('app.color.hm_text_secondary'))
+        .maxLines(1)
+        .flexShrink(0)
+    }
+  }
+
+  /** 行副标题用的站点域名；解析不出主机名时退回原地址。 */
+  private feedHost(feed: FeedSource): string {
+    const host: string = UrlText.host(feed.url);
+    return host.length > 0 ? host : feed.url;
+  }
+
   @Builder
   FeedRow(feed: FeedSource) {
-    Row({ space: $r('app.float.space_m') }) {
+    Row({ space: $r('app.float.space_s') }) {
       if (this.selecting) {
+        // 只用 onClick 更新选中集合：onChange 会在「选中态被回写到 Checkbox」时再触发一次，
+        // 和行点击互相抵消（点整行选不中，几秒后又被自己取消）。
         Checkbox({ name: feed.id })
           .select(this.isSelected(feed.id))
-          .onChange(() => {
+          .onClick(() => {
             this.toggleSelect(feed.id);
           })
       }
 
       // 信息区点击 = 进入该源的单源视图（返回阅读页只看这个订阅源的文章）。
-      Column({ space: $r('app.float.space_xs') }) {
+      Column({ space: $r('app.float.space_xxs') }) {
         if (this.groupEditId === feed.id) {
           Row({ space: $r('app.float.space_s') }) {
             TextInput({ text: this.draftGroup, placeholder: $r('app.string.group_hint') })
@@ -543,48 +649,55 @@ export struct SubscriptionsView {
           }
           .width('100%')
         } else {
-          Text(feed.title)
-            .fontSize($r('app.float.font_size_body'))
-            .fontColor($r('app.color.hm_text_primary'))
+          Row({ space: $r('app.float.space_s') }) {
+            Text(feed.title)
+              .fontSize($r('app.float.font_size_body'))
+              .fontColor($r('app.color.hm_text_primary'))
+              .maxLines(1)
+              .textOverflow({ overflow: TextOverflow.Ellipsis })
+              .layoutWeight(1)
+            this.CountBadge(feed)
+          }
+          .width('100%')
+        }
+
+        // 一行元信息：站点域名 + 健康状态（原来是 URL / 未读 / 停用 / 上次成功 / 错误最多 6 行）。
+        Row({ space: $r('app.float.space_xs') }) {
+          Text(this.feedHost(feed))
+            .fontSize($r('app.float.font_size_caption'))
+            .fontColor($r('app.color.hm_text_secondary'))
             .maxLines(1)
             .textOverflow({ overflow: TextOverflow.Ellipsis })
-            .width('100%')
+            .layoutWeight(1)
+          if (!feed.enabled) {
+            Text($r('app.string.feed_settings_disabled'))
+              .fontSize($r('app.float.font_size_caption'))
+              .fontColor($r('app.color.hm_text_secondary'))
+              .flexShrink(0)
+          }
+          if (feed.failureCount > 0) {
+            Text($r('app.string.health_failure_count', feed.failureCount))
+              .fontSize($r('app.float.font_size_caption'))
+              .fontColor($r('app.color.hm_danger'))
+              .flexShrink(0)
+          } else if (feed.lastUpdated > 0) {
+            Text($r('app.string.health_last_success', DateUtil.format(feed.lastUpdated)))
+              .fontSize($r('app.float.font_size_caption'))
+              .fontColor($r('app.color.hm_text_secondary'))
+              .maxLines(1)
+              .textOverflow({ overflow: TextOverflow.Ellipsis })
+              .flexShrink(1)
+          }
         }
-        Text(feed.url)
-          .fontSize($r('app.float.font_size_caption'))
-          .fontColor($r('app.color.hm_text_secondary'))
-          .maxLines(1)
-          .textOverflow({ overflow: TextOverflow.Ellipsis })
-          .width('100%')
-        if (feed.unreadCount > 0) {
-          Text($r('app.string.home_unread_count', feed.unreadCount))
-            .fontSize($r('app.float.font_size_caption'))
-            .fontColor($r('app.color.hm_brand'))
-        } else {
-          Text($r('app.string.subs_article_count', feed.articleCount))
-            .fontSize($r('app.float.font_size_caption'))
-            .fontColor($r('app.color.hm_text_secondary'))
-        }
-        // 停用标识 / 连续失败 / 最后成功时间（源健康状态）。
-        if (!feed.enabled) {
-          Text($r('app.string.feed_settings_disabled'))
-            .fontSize($r('app.float.font_size_caption'))
-            .fontColor($r('app.color.hm_text_secondary'))
-        }
-        if (feed.failureCount > 0) {
-          Text($r('app.string.health_failure_count', feed.failureCount))
-            .fontSize($r('app.float.font_size_caption'))
-            .fontColor($r('app.color.hm_danger'))
-        } else if (feed.lastUpdated > 0) {
-          Text($r('app.string.health_last_success', DateUtil.format(feed.lastUpdated)))
-            .fontSize($r('app.float.font_size_caption'))
-            .fontColor($r('app.color.hm_text_secondary'))
-        }
+        .width('100%')
+
+        // 抓取错误：只保留一行，详情去单源设置页看。
         if (feed.lastError.length > 0) {
           Text($r('app.string.subs_error_prefix') + feed.lastError)
             .fontSize($r('app.float.font_size_caption'))
             .fontColor($r('app.color.hm_danger'))
-            .maxLines(2)
+            .maxLines(1)
+            .textOverflow({ overflow: TextOverflow.Ellipsis })
             .width('100%')
         }
       }
@@ -624,32 +737,66 @@ export struct SubscriptionsView {
       }
     }
     .width('100%')
-    .padding($r('app.float.space_m'))
+    .padding({
+      left: $r('app.float.space_m'),
+      right: $r('app.float.space_s'),
+      top: $r('app.float.space_m'),
+      bottom: $r('app.float.space_m')
+    })
     .backgroundColor($r('app.color.hm_card_background'))
     .borderRadius($r('app.float.radius_card'))
   }
 
+  /** 空态：图标 + 说明 + 下一步动作（原来是居中一行灰字）。 */
+  @Builder
+  EmptyState() {
+    Column({ space: $r('app.float.space_s') }) {
+      // 用「空文件夹」而不是 rays（放射状图标在小尺寸下容易被误认为加载中）。
+      SymbolGlyph($r('sys.symbol.folder'))
+        .fontSize($r('app.float.hero_icon_size'))
+        .fontColor([$r('app.color.hm_text_secondary')])
+      Text($r('app.string.subs_empty'))
+        .fontSize($r('app.float.font_size_body'))
+        .fontColor($r('app.color.hm_text_primary'))
+      Text($r('app.string.subs_empty_hint'))
+        .fontSize($r('app.float.font_size_caption'))
+        .fontColor($r('app.color.hm_text_secondary'))
+        .textAlign(TextAlign.Center)
+      Button($r('app.string.subs_discover_action'))
+        .buttonStyle(ButtonStyleMode.NORMAL)
+        .fontSize($r('app.float.font_size_body'))
+        .fontColor($r('app.color.hm_on_brand'))
+        .backgroundColor($r('app.color.hm_brand'))
+        .margin({ top: $r('app.float.space_s') })
+        .onClick(() => {
+          this.navPathStack.pushPath(new NavPathInfo(RouterConstants.PAGE_DISCOVER, ''));
+        })
+    }
+    .width('100%')
+    .padding({
+      left: $r('app.float.space_l'),
+      right: $r('app.float.space_l'),
+      top: $r('app.float.space_2xl'),
+      bottom: $r('app.float.space_2xl')
+    })
+    .backgroundColor($r('app.color.hm_card_background'))
+    .borderRadius($r('app.float.radius_card'))
+    .alignItems(HorizontalAlign.Center)
+  }
+
   build() {
-    Column({ space: $r('app.float.space_m') }) {
-      // 透明标题栏占位：固定页头（输入区）整体下移，避免被透明标题栏遮挡。
-      Row().width('100%').height(safeArea.contentTopInsetVp)
+    Stack({ alignContent: Alignment.Bottom }) {
+      List({ scroller: this.scroller }) {
+        // 第 0 项：整块头部（占位 + 添加卡 + 资料库卡 + 订阅源小节标题），随滚动离开。
+        ListItem() {
+          this.Header()
+        }
 
-      this.Editor()
-
-      this.LibraryEntries()
-
-      if (this.selecting) {
-        this.SelectBar()
-      }
-
-      if (feedViewModel.feeds.length === 0) {
-        Text($r('app.string.subs_empty'))
-          .fontSize($r('app.float.font_size_caption'))
-          .fontColor($r('app.color.hm_text_secondary'))
-          .layoutWeight(1)
-          .padding($r('app.float.space_2xl'))
-      } else {
-        List({ scroller: this.scroller }) {
+        if (feedViewModel.feeds.length === 0) {
+          ListItem() {
+            this.EmptyState()
+          }
+        } else {
           ForEach(feedViewModel.displayRows(), (row: FeedListItem) => {
             ListItem() {
               if (row.isGroup) {
@@ -660,26 +807,47 @@ export struct SubscriptionsView {
             }
             .margin({ bottom: $r('app.float.space_s') })
           }, (row: FeedListItem) => row.isGroup ? 'g:' + row.groupName : 'f:' + row.feed.id)
-        }
-        .width('100%')
-        .layoutWeight(1)
-        .scrollBar(BarState.Off)
-        // 长按拖拽排序：拖订阅源行 → 单条移动（含跨组）；拖分组头 → 整组换位。
-        .onItemDragStart((event: ItemDragInfo, itemIndex: number) => {
-          return this.DragPreview(feedViewModel.rowAt(itemIndex));
-        })
-        .onItemDrop((event: ItemDragInfo, itemIndex: number, insertIndex: number, isSuccess: boolean) => {
-          if (isSuccess) {
-            feedViewModel.reorderByDrag(itemIndex, insertIndex);
+
+          if (this.selecting) {
+            // 多选动作条悬浮在内容下沿：末尾留一段可滚动的余量，最后一行不会被它压住。
+            ListItem() {
+              Row().width('100%').height($r('app.float.space_3xl'))
+            }
           }
-        })
-        // 悬浮页签栏下的可滚动内容：底部预留 = 页签栏避让高度 + 系统导航条高度。
-        .padding({ bottom: safeArea.contentBottomInsetVp })
+        }
+      }
+      .width('100%')
+      .height('100%')
+      .padding({
+        left: $r('app.float.space_l'),
+        right: $r('app.float.space_l'),
+        bottom: safeArea.contentBottomInsetVp
+      })
+      .scrollBar(BarState.Off)
+      // 长按拖拽排序：拖订阅源行 → 单条移动（含跨组）；拖分组头 → 整组换位。
+      // 头部是第 0 项，行索引用 HEADER_ROWS 换算，否则会「拖 A 动 B」。
+      .onItemDragStart((event: ItemDragInfo, itemIndex: number) => {
+        const rowIndex: number = itemIndex - HEADER_ROWS;
+        if (rowIndex < 0) {
+          return this.EmptyDragPreview();
+        }
+        return this.DragPreview(feedViewModel.rowAt(rowIndex));
+      })
+      .onItemDrop((event: ItemDragInfo, itemIndex: number, insertIndex: number, isSuccess: boolean) => {
+        if (!isSuccess || itemIndex < HEADER_ROWS) {
+          return;
+        }
+        const from: number = itemIndex - HEADER_ROWS;
+        const to: number = Math.max(0, insertIndex - HEADER_ROWS);
+        feedViewModel.reorderByDrag(from, to);
+      })
+
+      if (this.selecting) {
+        this.SelectBar()
       }
     }
     .width('100%')
     .height('100%')
-    .padding($r('app.float.space_l'))
     .backgroundColor($r('app.color.hm_page_transparent'))
   }
 }

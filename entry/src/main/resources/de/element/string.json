@@ -941,6 +941,18 @@
       "value": "Abbrechen"
     },
     {
+      "name": "subs_library_title",
+      "value": "Bibliothek"
+    },
+    {
+      "name": "subs_empty_hint",
+      "value": "Gib oben eine Feed-URL ein oder wähle eine unter „Entdecken“."
+    },
+    {
+      "name": "subs_discover_action",
+      "value": "Entdecken öffnen"
+    },
+    {
       "name": "subs_empty",
       "value": "Noch keine Feeds"
     },

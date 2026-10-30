@@ -941,6 +941,18 @@
       "value": "取消"
     },
     {
+      "name": "subs_library_title",
+      "value": "资料库"
+    },
+    {
+      "name": "subs_empty_hint",
+      "value": "在上方输入订阅地址，或从「发现」里挑一个"
+    },
+    {
+      "name": "subs_discover_action",
+      "value": "去发现"
+    },
+    {
       "name": "subs_empty",
       "value": "暂无订阅源"
     },

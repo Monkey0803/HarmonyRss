@@ -941,6 +941,18 @@
       "value": "取消"
     },
     {
+      "name": "subs_library_title",
+      "value": "資料庫"
+    },
+    {
+      "name": "subs_empty_hint",
+      "value": "在上方輸入訂閱地址，或從「發現」裡挑一個"
+    },
+    {
+      "name": "subs_discover_action",
+      "value": "去發現"
+    },
+    {
       "name": "subs_empty",
       "value": "暫無訂閱源"
     },

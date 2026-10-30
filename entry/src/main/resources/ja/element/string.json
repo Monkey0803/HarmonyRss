@@ -941,6 +941,18 @@
       "value": "キャンセル"
     },
     {
+      "name": "subs_library_title",
+      "value": "ライブラリ"
+    },
+    {
+      "name": "subs_empty_hint",
+      "value": "上にフィードの URL を入力するか、「発見」から選んでください。"
+    },
+    {
+      "name": "subs_discover_action",
+      "value": "発見を開く"
+    },
+    {
       "name": "subs_empty",
       "value": "フィードがまだありません"
     },

@@ -941,6 +941,18 @@
       "value": "Cancel"
     },
     {
+      "name": "subs_library_title",
+      "value": "Library"
+    },
+    {
+      "name": "subs_empty_hint",
+      "value": "Enter a feed URL above, or pick one from Discover."
+    },
+    {
+      "name": "subs_discover_action",
+      "value": "Browse Discover"
+    },
+    {
       "name": "subs_empty",
       "value": "No feeds yet"
     },

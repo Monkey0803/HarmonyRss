@@ -23,6 +23,12 @@ import { appSettings } from '../model/AppSettings';
 export struct AddFeedPanel {
   /** 面板标题（默认「添加订阅源」；分享入口可传「添加到 RSS」）。 */
   @Param panelTitle: ResourceStr = $r('app.string.home_add_feed_title');
+  /**
+   * 是否在面板内画标题。
+   * 订阅源页把标题上移成小节标题（与设置页同一套层级），这里传 false；
+   * 分享页 / 底部面板保持默认 true，标题仍在面板内。
+   */
+  @Param showTitle: boolean = true;
   /** 初始输入（分享入口把解析出的地址传进来）；非空时优先于剪贴板预填。 */
   @Param initialText: string = '';
   /** 成功添加一项 / 一批后回调，宿主据此关闭面板或刷新。 */
@@ -197,15 +203,18 @@ export struct AddFeedPanel {
           .fontColor($r('app.color.hm_text_primary'))
           .maxLines(1)
           .textOverflow({ overflow: TextOverflow.Ellipsis })
+          .flexShrink(1)
+        // 明确「可展开」：与设置页取值胶囊同一个视觉语言。
+        SymbolGlyph($r('sys.symbol.arrowtriangle_down_fill'))
+          .fontSize($r('app.float.icon_size_tiny'))
+          .fontColor([$r('app.color.hm_text_primary')])
+          .flexShrink(0)
       }
-      .padding({
-        left: $r('app.float.space_s'),
-        right: $r('app.float.space_s'),
-        top: $r('app.float.space_xs'),
-        bottom: $r('app.float.space_xs')
-      })
-      .backgroundColor($r('app.color.hm_card_background'))
-      .borderRadius($r('app.float.radius_card'))
+      .height($r('app.float.value_chip_height'))
+      .padding({ left: $r('app.float.space_m'), right: $r('app.float.space_m') })
+      // 原来用卡片底色，和白卡片同色 → 看起来只是普通文字，点不到。
+      .backgroundColor($r('app.color.hm_value_chip_background'))
+      .borderRadius($r('app.float.radius_chip'))
       .bindMenu(this.GroupMenu(), MaterialController.menuOptions({}, appSettings.immersiveOn))
     }
   }
@@ -241,12 +250,15 @@ export struct AddFeedPanel {
           .fontSize($r('app.float.font_size_body'))
           .fontColor($r('app.color.hm_on_brand'))
           .backgroundColor($r('app.color.hm_brand'))
+          .constraintSize({ minWidth: 88 })
           .enabled(!this.submitting)
           .onClick(() => {
             this.submit();
           })
       }
       .width('100%')
+      // 粘贴（安全控件，高度由系统决定）与添加按钮同一基线，避免一高一矮。
+      .alignItems(VerticalAlign.Center)
 
       // 分组：批量添加时整批落到这里选的分组；单地址时作为预览分组的默认值。
       this.GroupPicker()
@@ -349,11 +361,13 @@ export struct AddFeedPanel {
 
   build() {
     Column({ space: $r('app.float.space_m') }) {
-      Text(this.panelTitle)
-        .fontSize($r('app.float.font_size_title'))
-        .fontWeight(FontWeight.Bold)
-        .fontColor($r('app.color.hm_text_primary'))
-        .width('100%')
+      if (this.showTitle) {
+        Text(this.panelTitle)
+          .fontSize($r('app.float.font_size_title'))
+          .fontWeight(FontWeight.Bold)
+          .fontColor($r('app.color.hm_text_primary'))
+          .width('100%')
+      }
 
       if (this.hasPreview) {
         this.PreviewPhase()

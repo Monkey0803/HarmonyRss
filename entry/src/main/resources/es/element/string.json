@@ -941,6 +941,18 @@
       "value": "Cancelar"
     },
     {
+      "name": "subs_library_title",
+      "value": "Biblioteca"
+    },
+    {
+      "name": "subs_empty_hint",
+      "value": "Introduce una URL arriba o elige una en «Descubrir»."
+    },
+    {
+      "name": "subs_discover_action",
+      "value": "Abrir Descubrir"
+    },
+    {
       "name": "subs_empty",
       "value": "Aún no hay fuentes"
     },

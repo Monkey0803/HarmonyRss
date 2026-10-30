@@ -94,6 +94,11 @@ export class UrlText {
     return result;
   }
 
+  /** 取地址的主机名（小写）；解析不出时返回空串。列表行用它做简短副标题。 */
+  static host(value: string): string {
+    return hostOf(value);
+  }
+
   /** 两个地址是否同一站点；任一解析不出主机名时返回 false。 */
   static isSameSite(a: string, b: string): boolean {
     const hostA: string = hostOf(a);

@@ -941,6 +941,18 @@
       "value": "Annuler"
     },
     {
+      "name": "subs_library_title",
+      "value": "Bibliothèque"
+    },
+    {
+      "name": "subs_empty_hint",
+      "value": "Saisissez une URL ci-dessus ou choisissez-en une dans « Découvrir »."
+    },
+    {
+      "name": "subs_discover_action",
+      "value": "Ouvrir Découvrir"
+    },
+    {
       "name": "subs_empty",
       "value": "Aucun flux pour l'instant"
     },
