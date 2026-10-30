@@ -713,6 +713,10 @@
       "value": "全体の没入感：オン"
     },
     {
+      "name": "aux_material_level",
+      "value": "デバイスの処理能力："
+    },
+    {
       "name": "aux_global_immersive_off",
       "value": "全体の没入感：オフ"
     },

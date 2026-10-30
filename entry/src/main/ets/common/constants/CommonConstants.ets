@@ -12,6 +12,13 @@ export class CommonConstants {
   /** 分栏时左栏宽度范围（vp）。 */
   static readonly SPLIT_NAV_MIN_VP: number = 320;
   static readonly SPLIT_NAV_MAX_VP: number = 460;
+  /**
+   * 侧栏外壳（≥1000vp）下的左栏宽度：侧栏 200 + 列表 360。
+   * 侧栏在左栏内部，所以分栏宽度要把侧栏一起算进来，否则列表会被压窄。
+   */
+  static readonly SPLIT_NAV_WIDTH_WITH_RAIL_VP: number = 560;
+  static readonly SPLIT_NAV_MIN_WITH_RAIL_VP: number = 520;
+  static readonly SPLIT_NAV_MAX_WITH_RAIL_VP: number = 640;
   /** 列表分页：首屏与每次续页加载的条数。 */
   static readonly LIST_PAGE_SIZE: number = 50;
   /** 应用启动时的默认页签下标。 */

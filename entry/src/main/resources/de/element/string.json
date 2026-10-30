@@ -713,6 +713,10 @@
       "value": "Globale Immersion: an"
     },
     {
+      "name": "aux_material_level",
+      "value": "Geräteleistung:"
+    },
+    {
       "name": "aux_global_immersive_off",
       "value": "Globale Immersion: aus"
     },

@@ -13,8 +13,8 @@
  *
  * 单位统一换算成 vp，方便直接用于布局；旋转 / 分屏 / 折叠时由 avoidAreaChange 刷新。
  *
- * 另外这里也维护**窗口宽度断点**（widthVp / wide）：分栏（列表 + 正文两栏）需要知道窗口够不够宽。
- * 手机竖屏 ~360–440vp 走单栏，折叠屏展开 / 平板 ≥ 600vp 走两栏。
+ * 宽度断点（分栏 / 侧栏）不在这里：由 service/DeviceService 用 mediaquery 独占维护
+ * （见 common/constants/BreakpointConstants），避免同一件事有两个数据源。
  */
 
 import { window } from '@kit.ArkUI';
@@ -36,10 +36,6 @@ export class SafeAreaController {
   @Trace contentTopInsetVp: number = 0;
   /** 可滚动内容底部预留量（vp）= 悬浮页签栏避让高度 + 系统导航条高度。 */
   @Trace contentBottomInsetVp: number = 0;
-  /** 当前窗口宽度（vp）。 */
-  @Trace widthVp: number = 0;
-  /** 是否走两栏（宽度 ≥ 断点）：列表在左、正文在右。 */
-  @Trace wide: boolean = false;
 
   private mainWindow: window.Window | undefined = undefined;
   private tabClearanceVp: number = 0;
@@ -57,15 +53,6 @@ export class SafeAreaController {
       const error: BusinessError = err as BusinessError;
       hilog.error(DOMAIN, TAG, 'avoidAreaChange listen failed: %{public}d', error.code);
     }
-    // 旋转 / 分屏 / 折叠展开会改变窗口宽度：断点跟着重算。
-    try {
-      mainWindow.on('windowSizeChange', () => {
-        this.refreshBreakpoint();
-      });
-    } catch (err) {
-      const error: BusinessError = err as BusinessError;
-      hilog.error(DOMAIN, TAG, 'windowSizeChange listen failed: %{public}d', error.code);
-    }
   }
 
   /** 解绑监听（窗口销毁时调用）。 */
@@ -79,12 +66,6 @@ export class SafeAreaController {
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       hilog.error(DOMAIN, TAG, 'avoidAreaChange off failed: %{public}d', error.code);
-    }
-    try {
-      mainWindow.off('windowSizeChange');
-    } catch (err) {
-      const error: BusinessError = err as BusinessError;
-      hilog.error(DOMAIN, TAG, 'windowSizeChange off failed: %{public}d', error.code);
     }
     this.mainWindow = undefined;
   }
@@ -129,23 +110,6 @@ export class SafeAreaController {
     }
     this.contentTopInsetVp = this.topInsetVp + CommonConstants.TITLE_BAR_HEIGHT_VP;
     this.contentBottomInsetVp = this.tabClearanceVp + this.bottomInsetVp;
-    this.refreshBreakpoint();
-  }
-
-  /** 依当前窗口宽度算断点（失败时保持原值，避免闪一下回单栏）。 */
-  private refreshBreakpoint(): void {
-    const mainWindow: window.Window | undefined = this.mainWindow;
-    if (mainWindow === undefined) {
-      return;
-    }
-    try {
-      const rect: window.Rect = mainWindow.getWindowProperties().windowRect;
-      this.widthVp = mainWindow.getUIContext().px2vp(rect.width);
-      this.wide = this.widthVp >= CommonConstants.SPLIT_BREAKPOINT_VP;
-    } catch (err) {
-      const error: BusinessError = err as BusinessError;
-      hilog.error(DOMAIN, TAG, 'windowRect failed: %{public}d', error.code);
-    }
   }
 }
 

@@ -164,7 +164,7 @@ function MarkAllReadButton(ui: UIContext) {
 @Builder
 export function FilterSegmentBar(ui: UIContext) {
   Row({ space: $r('app.float.space_s') }) {
-    if (MaterialController.controlsSupported(appSettings.immersiveOn)) {
+    if (MaterialController.materialRenders(appSettings.immersiveOn)) {
       CapsuleWithMaterial()
     } else {
       CapsuleFallback()

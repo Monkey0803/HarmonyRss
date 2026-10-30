@@ -713,6 +713,10 @@
       "value": "全局沉浸：已开启"
     },
     {
+      "name": "aux_material_level",
+      "value": "设备算力档："
+    },
+    {
       "name": "aux_global_immersive_off",
       "value": "全局沉浸：已关闭"
     },

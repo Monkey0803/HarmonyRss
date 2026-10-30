@@ -713,6 +713,10 @@
       "value": "全域性沉浸：已開啟"
     },
     {
+      "name": "aux_material_level",
+      "value": "裝置算力等級："
+    },
+    {
       "name": "aux_global_immersive_off",
       "value": "全域性沉浸：已關閉"
     },

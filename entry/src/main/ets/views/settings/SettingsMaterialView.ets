@@ -77,6 +77,20 @@ export struct SettingsMaterialView {
           .width('100%')
           .margin({ top: $r('app.float.space_s'), left: $r('app.float.space_xs') })
 
+        // 设备算力档：低算力设备上材质等级会被钳到「自适应」（见 MaterialController.clampLevel）。
+        if (settingsViewModel.globalLevelId.length > 0) {
+          Row({ space: $r('app.float.space_xxs') }) {
+            Text($r('app.string.aux_material_level'))
+              .fontSize($r('app.float.font_size_caption'))
+              .fontColor($r('app.color.hm_text_secondary'))
+            Text(MATERIAL_LEVEL_OPTIONS.labelOf(settingsViewModel.globalLevelId))
+              .fontSize($r('app.float.font_size_caption'))
+              .fontColor($r('app.color.hm_text_secondary'))
+          }
+          .width('100%')
+          .margin({ top: $r('app.float.space_xxs'), left: $r('app.float.space_xs') })
+        }
+
         SettingsSectionTitle({ title: $r('app.string.section_navigation') })
         Column() {
           SwitchSettingRow({

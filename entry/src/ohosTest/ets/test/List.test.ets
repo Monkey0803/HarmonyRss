@@ -54,6 +54,7 @@ import syncContentTest from './SyncContent.test';
 import autoSyncPolicyTest from './AutoSyncPolicy.test';
 import cloudBackupTest from './CloudBackup.test';
 import cloudRelayTest from './CloudRelay.test';
+import materialLevelTest from './MaterialLevel.test';
 
 export default function testsuite() {
   htmlDomTest();
@@ -102,4 +103,5 @@ export default function testsuite() {
   autoSyncPolicyTest();
   cloudBackupTest();
   cloudRelayTest();
+  materialLevelTest();
 }

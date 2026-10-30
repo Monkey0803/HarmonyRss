@@ -134,7 +134,7 @@ export struct ReaderImageViewer {
           .fontSize($r('app.float.icon_size'))
           .fontColor([Color.White])
           .padding($r('app.float.space_m'))
-          .backgroundColor('#66000000')
+          .backgroundColor($r('app.color.hm_image_scrim'))
           .borderRadius($r('app.float.icon_size'))
           .accessibilityText($r('app.string.action_back'))
           .onClick(() => {

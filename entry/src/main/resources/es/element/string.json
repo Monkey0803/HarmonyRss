@@ -713,6 +713,10 @@
       "value": "Inmersión global: activada"
     },
     {
+      "name": "aux_material_level",
+      "value": "Nivel de cálculo del dispositivo:"
+    },
+    {
       "name": "aux_global_immersive_off",
       "value": "Inmersión global: desactivada"
     },

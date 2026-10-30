@@ -30,9 +30,12 @@ import {
   HdsTabsMiniBar,
   HdsBarStyle,
   HdsTabsBarChangeMode,
-  HdsBarWidthRangeOptions
+  HdsBarWidthRangeOptions,
+  HdsSideBar,
+  HdsSideMenu,
+  HdsSideMenuMainItem
 } from '@kit.UIDesignKit';
-import { LengthMetrics } from '@kit.ArkUI';
+import { LengthMetrics, SymbolGlyphModifier } from '@kit.ArkUI';
 import { appSettings } from '../model/AppSettings';
 import { settingsViewModel } from '../viewmodel/SettingsViewModel';
 import { settingsStore } from '../service/SettingsStore';
@@ -40,6 +43,7 @@ import { MaterialController } from '../service/MaterialController';
 import { antiPeep } from '../service/AntiPeep';
 import { gripSensor } from '../service/GripSensor';
 import { safeArea } from '../service/SafeAreaController';
+import { deviceService } from '../service/DeviceService';
 import { diagnostics } from '../service/DiagnosticsService';
 import { backgroundImageService } from '../service/BackgroundImageService';
 import { CommonConstants } from '../common/constants/CommonConstants';
@@ -61,6 +65,7 @@ import { ImageTabView } from '../views/ImageTabView';
 import { PrivacyVeil } from '../views/PrivacyVeil';
 import { ArticleDetailView } from '../views/ArticleDetailView';
 import { SubscriptionsView } from '../views/SubscriptionsView';
+import { ResponsiveContent } from '../views/ResponsiveContent';
 import { FeedArticlesView } from '../views/FeedArticlesView';
 import { EffectPreviewView } from '../views/EffectPreviewView';
 import { feedViewModel } from '../viewmodel/FeedViewModel';
@@ -144,6 +149,8 @@ struct Index {
 
   aboutToAppear(): void {
     feedViewModel.subscribeArticles(this.onArticlesReadyDeepLink);
+    // 窗口宽度断点（分栏 / 侧栏）：唯一 owner 是外壳，子页面只读 deviceService。
+    deviceService.start(this.getUIContext());
     const context: common.Context | undefined = this.getUIContext().getHostContext();
     if (context !== undefined) {
       context.eventHub.on(DEEP_LINK_EVENT, this.onDeepLinkEvent);
@@ -167,7 +174,22 @@ struct Index {
 
   /** 分栏模式：宽窗口用 Split，窄窗口用 Stack（单栏）。 */
   private navMode(): NavigationMode {
-    return safeArea.wide ? NavigationMode.Split : NavigationMode.Stack;
+    return deviceService.split ? NavigationMode.Split : NavigationMode.Stack;
+  }
+
+  /** 左栏宽度：侧栏外壳下要把侧栏一起算进来（200 侧栏 + 360 列表）。 */
+  private navBarWidth(): number {
+    return deviceService.rail
+      ? CommonConstants.SPLIT_NAV_WIDTH_WITH_RAIL_VP
+      : CommonConstants.SPLIT_NAV_WIDTH_VP;
+  }
+
+  private navBarMinWidth(): number {
+    return deviceService.rail ? CommonConstants.SPLIT_NAV_MIN_WITH_RAIL_VP : CommonConstants.SPLIT_NAV_MIN_VP;
+  }
+
+  private navBarMaxWidth(): number {
+    return deviceService.rail ? CommonConstants.SPLIT_NAV_MAX_WITH_RAIL_VP : CommonConstants.SPLIT_NAV_MAX_VP;
   }
 
   /**
@@ -183,6 +205,7 @@ struct Index {
   }
 
   aboutToDisappear(): void {
+    deviceService.stop();
     const context: common.Context | undefined = this.getUIContext().getHostContext();
     if (context !== undefined) {
       context.eventHub.off(DEEP_LINK_EVENT, this.onDeepLinkEvent);
@@ -372,6 +395,9 @@ struct Index {
     };
     const scrollEffectOpts: ScrollEffectOptions = {
       enableScrollEffect: true,
+      // 用 GRADIENT_BLUR（半透明 → 模糊）而不是 IMMERSIVE_GRADIENT_BLUR：
+      // 后者在浅色主题下会让系统把标题文字与状态栏图标切成白色（它假定深色底），
+      // 本 App 是浅色为主的阅读器，实测白字压在浅色壁纸上看不清，故保留更克制的变体。
       scrollEffectType: ScrollEffectType.GRADIENT_BLUR,
       blurEffectiveStartOffset: LengthMetrics.vp(0),
       blurEffectiveEndOffset: LengthMetrics.vp(CommonConstants.TITLE_MATERIAL_FADE_VP)
@@ -451,11 +477,11 @@ struct Index {
   }
 
   /**
-   * 详情页标题栏样式：整条背板保持透明，沉浸光感交给标题胶囊自身（见 ArticleTitlePill）。
+   * 详情页标题栏样式：整条背板保持透明，沉浸光感交给标题横栏自身（见 ArticleTitleBar）。
    *
    * 详情页正文是 Web / Reader 文档，标题栏整条的材质采样不到 Web 画面（实测背后无模糊），
-   * 若给整条铺半透明底就变成一块实心白板，和底部悬浮胶囊的观感对不上。
-   * 因此这里不再给背板着色，改用与底部操作栏同一套「悬浮胶囊 + 沉浸光感」的视觉语言。
+   * 若给整条铺半透明底就变成一块实心白板，和底部悬浮栏的观感对不上。
+   * 因此这里不给标题栏背板着色，材质只由标题横栏这一个组件提供。
    */
   private stickyTitleStyle(): TitleBarStyleOptions {
     const transparent: HdsNavigationTitleBarStyle = {
@@ -471,12 +497,12 @@ struct Index {
 
   /**
    * 详情页标题栏配置：返回键沿用 HDS 原生（自带沉浸光感圆形按钮），
-   * 标题换成与底部操作栏同款的悬浮胶囊（见 ArticleTitlePill）。
+   * 标题换成与底部操作栏同款的整条沉浸光感横栏（见 ArticleTitleBar）。
    */
   private articleTitleOptions(): HdsNavigationTitleBarOptions {
     const content: TitleBarContentOptions = {
       stackBuilder: (): void => {
-        this.ArticleTitlePill();
+        this.ArticleTitleBar();
       }
     };
     const options: HdsNavigationTitleBarOptions = {
@@ -489,50 +515,60 @@ struct Index {
   }
 
   /**
-   * 标题胶囊右侧留白（vp）：与底部悬浮操作栏一致。
+   * 标题栏右侧留白（vp）：与底部悬浮操作栏一致。
    *
    * 操作栏宽度 = 屏宽 - 2×贴边留白 - 跟手余量，且居中摆放，
    * 因此它离屏幕左右边缘的实际留白 = 贴边留白 + 跟手余量 / 2。
    */
-  private titlePillRightMargin(): number {
+  private titleBarRightInset(): number {
     return CommonConstants.BAR_SIDE_MARGIN_VP + CommonConstants.BAR_HANDEDNESS_ROOM_VP / 2;
   }
 
+  /** 标题横栏是否真的吃到了组件级沉浸光感材质（决定要不要补兜底底色）。 */
+  private titleMaterialActive(): boolean {
+    return MaterialController.materialRenders(appSettings.immersiveOn);
+  }
+
   /**
-   * 详情页标题胶囊：与底部悬浮操作栏同款（沉浸光感材质 + 胶囊圆角）。
+   * 详情页标题栏：整条铺满宽度的沉浸光感横栏（与底部悬浮操作栏同源材质），
+   * 标题文字本身不再带胶囊底色 / 圆角，顶部与底栏观感一致。
    *
-   * 左移 72vp 让开 HDS 原生返回键（它自带沉浸光感圆形背板，与胶囊同源）——
-   * stackBuilder 里的内容从标题栏起点开始排，不挪开就会整块压住返回键。
-   * 右侧留白与底部操作栏对齐，胶囊不再贴到屏幕右边缘。
+   * 返回键自绘在横栏里：HDS 原生返回键的圆形背板会被整条横栏盖住（stackBuilder 内容
+   * 压在标题栏按钮之上），所以这里关掉原生返回键（见 pageMap 的 hideBackButton），
+   * 改画一枚与底栏同款的图标按钮；系统侧滑返回仍然有效。
+   * 右侧留白与底部操作栏对齐，标题不会顶到屏幕边缘。
    */
   @Builder
-  ArticleTitlePill() {
-    if (MaterialController.controlsSupported(appSettings.immersiveOn)) {
-      Row() {
-        this.ArticleTitleText()
-      }
-      .height(CommonConstants.TITLE_BAR_HEIGHT_VP)
-      .padding({ left: $r('app.float.space_m'), right: $r('app.float.space_m') })
-      .margin({ left: 72, right: this.titlePillRightMargin() })
-      .borderRadius(CommonConstants.TITLE_BAR_HEIGHT_VP / 2)
-      .clip(true)
-      // 与底部悬浮栏同源的组件级沉浸光感材质（THIN，带按压光感反馈）。
-      .systemMaterial(MaterialController.titleMaterial(appSettings.immersiveOn))
-    } else {
-      Row() {
-        this.ArticleTitleText()
-      }
-      .height(CommonConstants.TITLE_BAR_HEIGHT_VP)
-      .padding({ left: $r('app.float.space_m'), right: $r('app.float.space_m') })
-      .margin({ left: 72, right: this.titlePillRightMargin() })
-      .borderRadius(CommonConstants.TITLE_BAR_HEIGHT_VP / 2)
-      .clip(true)
-      // 材质不可用时的兜底：与首页标题栏滚起来之后一致的半透明玻璃底。
-      .backgroundColor($r('app.color.hm_glass_scrim'))
+  ArticleTitleBar() {
+    Row() {
+      this.ArticleBackButton()
+      this.ArticleTitleText()
+    }
+    .width('100%')
+    .height(CommonConstants.TITLE_BAR_HEIGHT_VP)
+    .padding({ left: $r('app.float.space_s'), right: this.titleBarRightInset() })
+    // 与底部悬浮栏同源的组件级沉浸光感材质（THIN，带按压光感反馈）。
+    .systemMaterial(MaterialController.titleMaterial(appSettings.immersiveOn))
+    // 材质会渲染时底色必须留透明（否则盖住材质）；不可用时退回半透明玻璃底。
+    .backgroundColor(this.titleMaterialActive() ? Color.Transparent : $r('app.color.hm_glass_scrim'))
+  }
+
+  /** 标题横栏里的返回键（替代被横栏盖住的 HDS 原生返回键）。 */
+  @Builder
+  ArticleBackButton() {
+    if (this.navPathStack.size() > 0) {
+      SymbolGlyph($r('sys.symbol.chevron_left'))
+        .fontSize($r('app.float.icon_size'))
+        .fontColor([$r('app.color.hm_text_primary')])
+        .padding($r('app.float.space_xs'))
+        .accessibilityText($r('app.string.action_back'))
+        .onClick(() => {
+          this.navPathStack.pop();
+        })
     }
   }
 
-  /** 标题胶囊里的文章标题文本。 */
+  /** 标题横栏里的文章标题文本。 */
   @Builder
   ArticleTitleText() {
     Text(this.articleTitle())
@@ -614,6 +650,220 @@ struct Index {
     })
   }
 
+  /**
+   * 切换 section（底部页签与侧边栏共用）：记住停留的页签，下次打开直接回到这里。
+   * HdsTabs 的 onChange 与 HdsSideMenu 的 $selectedIndex 都走这里，两条外壳行为一致。
+   */
+  private selectTab(index: number): void {
+    this.currentTab = index;
+    appSettings.lastTabIndex = index;
+    settingsStore.save();
+  }
+
+  /** 页签内容：窄屏（HdsTabs）与宽屏（HdsSideBar 内容面板）共用，避免两套外壳各写一遍。 */
+  @Builder
+  homeContent() {
+    ResponsiveContent() {
+      HomeTabView({
+        navPathStack: this.navPathStack,
+        scroller: this.homeScroller,
+        onAddFeedRequest: () => {
+          this.showAddSheet = true;
+        }
+      })
+    }
+  }
+
+  @Builder
+  subsContent() {
+    ResponsiveContent() {
+      SubscriptionsView({ navPathStack: this.navPathStack, scroller: this.subsScroller })
+    }
+  }
+
+  @Builder
+  settingsContent() {
+    ResponsiveContent() {
+      SettingsTabView({ navPathStack: this.navPathStack, scroller: this.settingsScroller })
+    }
+  }
+
+  @Builder
+  imagesContent() {
+    ImageTabView()
+  }
+
+  /** 窄屏外壳：底部悬浮页签栏（barOverlap + 沉浸材质 + miniBar）。 */
+  @Builder
+  tabShell() {
+    HdsTabs({ index: this.currentTab, controller: this.tabsController }) {
+      TabContent() {
+        this.homeContent()
+      }
+      .tabBar(this.barBuilder($r('sys.symbol.house'), $r('app.string.tab_home'),
+        this.currentTab === TabIndex.HOME))
+
+      TabContent() {
+        this.subsContent()
+      }
+      .tabBar(this.barBuilder($r('sys.symbol.folder'), $r('app.string.tab_subs'),
+        this.currentTab === TabIndex.SUBSCRIPTIONS))
+
+      TabContent() {
+        this.settingsContent()
+      }
+      .tabBar(this.barBuilder($r('sys.symbol.gearshape'), $r('app.string.tab_settings'),
+        this.currentTab === TabIndex.SETTINGS))
+
+      if (IMAGE_DOMAIN) {
+        TabContent() {
+          this.imagesContent()
+        }
+        .tabBar(this.barBuilder($r('sys.symbol.picture'), $r('app.string.tab_images'),
+          this.currentTab === TabIndex.IMAGES))
+      }
+    }
+    .barPosition(BarPosition.End)
+    // barOverlap(true)：页签栏模糊悬浮并叠在内容之上（沉浸式外观，配合 barFloatingStyle + 材质）。
+    .barOverlap(true)
+    .vertical(false)
+    // 禁用左右滑动切页签：只能点页签栏切换，避免与内容区的横向手势冲突。
+    .scrollable(false)
+    .barFloatingStyle(this.floatingStyle())
+    // 挂载完成后再补一次恢复（whenReady 可能早于挂载，命令会被丢掉）
+    .onAppear(() => {
+      this.restoreTab();
+    })
+    .onChange((index: number) => {
+      this.selectTab(index);
+    })
+    .width('100%')
+    .height('100%')
+    .backgroundColor($r('app.color.hm_page_transparent'))
+  }
+
+  /** 侧边栏条目（每次 build 重建，避免共享可变实例）。 */
+  private sideItems(): HdsSideMenuMainItem[] {
+    const items: HdsSideMenuMainItem[] = [];
+    items.push(new HdsSideMenuMainItem({
+      itemId: 'home',
+      label: $r('app.string.tab_home'),
+      symbol: new SymbolGlyphModifier($r('sys.symbol.house')),
+      action: () => {
+        this.selectTab(TabIndex.HOME);
+      }
+    }));
+    items.push(new HdsSideMenuMainItem({
+      itemId: 'subs',
+      label: $r('app.string.tab_subs'),
+      symbol: new SymbolGlyphModifier($r('sys.symbol.folder')),
+      action: () => {
+        this.selectTab(TabIndex.SUBSCRIPTIONS);
+      }
+    }));
+    items.push(new HdsSideMenuMainItem({
+      itemId: 'settings',
+      label: $r('app.string.tab_settings'),
+      symbol: new SymbolGlyphModifier($r('sys.symbol.gearshape')),
+      action: () => {
+        this.selectTab(TabIndex.SETTINGS);
+      }
+    }));
+    if (IMAGE_DOMAIN) {
+      items.push(new HdsSideMenuMainItem({
+        itemId: 'images',
+        label: $r('app.string.tab_images'),
+        symbol: new SymbolGlyphModifier($r('sys.symbol.picture')),
+        action: () => {
+          this.selectTab(TabIndex.IMAGES);
+        }
+      }));
+    }
+    return items;
+  }
+
+  /** 宽屏左侧栏底部入口：宽屏没有 miniBar，添加订阅源要在这里补一个。 */
+  @Builder
+  RailAddButton() {
+    Row({ space: $r('app.float.space_s') }) {
+      SymbolGlyph($r('sys.symbol.plus'))
+        .fontSize($r('app.float.icon_size'))
+        .fontColor([$r('app.color.hm_brand')])
+      Text($r('app.string.home_add_feed_title'))
+        .fontSize($r('app.float.font_size_caption'))
+        .fontColor($r('app.color.hm_text_primary'))
+        .maxLines(1)
+        .textOverflow({ overflow: TextOverflow.Ellipsis })
+    }
+    .width('100%')
+    .height($r('app.float.row_height'))
+    .padding({ left: $r('app.float.space_m'), right: $r('app.float.space_m') })
+    .onClick(() => {
+      this.showAddSheet = true;
+    })
+  }
+
+  /** 宽屏左侧栏：section 导航 + 底部添加入口。 */
+  @Builder
+  sideRail() {
+    Column() {
+      // 透明标题栏占位：HdsNavigation 的标题栏是浮层（enableComponentSafeArea: false），
+      // 侧栏条目必须自己下移，否则会压在标题文字下面。
+      Row().width('100%').height(safeArea.contentTopInsetVp)
+      HdsSideMenu({
+        items: this.sideItems(),
+        selectedIndex: this.currentTab,
+        $selectedIndex: (index: number) => {
+          this.selectTab(index);
+        }
+      })
+        .layoutWeight(1)
+      this.RailAddButton()
+    }
+    .width('100%')
+    .height('100%')
+    .padding({ bottom: safeArea.bottomInsetVp })
+  }
+
+  /** 宽屏内容面板：没有 TabContent 宿主，按当前 section 渲染。 */
+  @Builder
+  wideContent() {
+    if (this.currentTab === TabIndex.HOME) {
+      this.homeContent()
+    } else if (this.currentTab === TabIndex.SUBSCRIPTIONS) {
+      this.subsContent()
+    } else if (this.currentTab === TabIndex.SETTINGS) {
+      this.settingsContent()
+    } else if (IMAGE_DOMAIN) {
+      this.imagesContent()
+    }
+  }
+
+  /**
+   * 宽屏外壳：侧边栏替代底部页签。
+   * 分栏仍由外层 HdsNavigation 提供，因此大屏是「侧栏 + 列表 + 详情」三栏
+   * （左栏宽度见 navBarWidth()：200 侧栏 + 360 列表）。
+   */
+  @Builder
+  wideShell() {
+    HdsSideBar({
+      isShowSideBar: true,
+      sideBarContainerType: SideBarContainerType.Embed,
+      sideBarPosition: SideBarPosition.Start,
+      autoHide: false,
+      minSideBarWidth: $r('app.float.rail_min_width'),
+      maxSideBarWidth: $r('app.float.rail_max_width'),
+      // 必须用箭头函数包一层：直接传 this.sideRail 会丢掉 this 绑定，
+      // 子组件回调时 this.sideItems / this.homeContent 拿不到（实测 "undefined is not callable" 崩溃）。
+      sideBarPanelBuilder: (): void => {
+        this.sideRail();
+      },
+      contentPanelBuilder: (): void => {
+        this.wideContent();
+      }
+    })
+  }
+
   /** 内置背景图资源（默认 / 极光 / 暮色）。 */
   private backgroundResource(): Resource {
     if (appSettings.backgroundKind === BackgroundKind.AURORA) {
@@ -682,6 +932,8 @@ struct Index {
         })
       }
       .titleBar(this.articleTitleOptions())
+      // 原生返回键会被标题横栏的材质盖住（stackBuilder 在按钮之上），改为横栏内自绘返回键。
+      .hideBackButton(true)
       // 沉浸阅读：详情页点按正文中部时收起 / 恢复标题栏（带系统动画）
       .hideTitleBar(this.articleBarsHidden, true)
       .titleMode(HdsNavDestinationTitleMode.MINI)
@@ -690,7 +942,9 @@ struct Index {
       .bindToScrollable([this.articleScroller])
     } else if (name === RouterConstants.PAGE_FEED_ARTICLES) {
       HdsNavDestination() {
-        FeedArticlesView({ navPathStack: this.navPathStack, scroller: this.feedArticlesScroller })
+        ResponsiveContent() {
+          FeedArticlesView({ navPathStack: this.navPathStack, scroller: this.feedArticlesScroller })
+        }
       }
       .titleBar(this.titleOptions(feedViewModel.detailFeedTitle.length > 0
         ? feedViewModel.detailFeedTitle
@@ -701,7 +955,9 @@ struct Index {
       .bindToScrollable([this.feedArticlesScroller])
     } else if (name === RouterConstants.PAGE_HIGHLIGHTS) {
       HdsNavDestination() {
-        HighlightsView({ navPathStack: this.navPathStack, scroller: this.highlightsScroller })
+        ResponsiveContent() {
+          HighlightsView({ navPathStack: this.navPathStack, scroller: this.highlightsScroller })
+        }
       }
       .titleBar(this.titleOptions($r('app.string.hl_library_title')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
@@ -718,7 +974,9 @@ struct Index {
       .backgroundColor($r('app.color.hm_web_surface'))
     } else if (name === RouterConstants.PAGE_SEARCH) {
       HdsNavDestination() {
-        SearchView({ navPathStack: this.navPathStack, scroller: this.searchScroller })
+        ResponsiveContent() {
+          SearchView({ navPathStack: this.navPathStack, scroller: this.searchScroller })
+        }
       }
       .titleBar(this.titleOptions($r('app.string.search_title')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
@@ -726,7 +984,9 @@ struct Index {
       .bindToScrollable([this.searchScroller])
     } else if (name === RouterConstants.PAGE_STORAGE) {
       HdsNavDestination() {
-        StorageView({ navPathStack: this.navPathStack, scroller: this.storageScroller })
+        ResponsiveContent() {
+          StorageView({ navPathStack: this.navPathStack, scroller: this.storageScroller })
+        }
       }
       .titleBar(this.titleOptions($r('app.string.storage_title')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
@@ -734,7 +994,9 @@ struct Index {
       .bindToScrollable([this.storageScroller])
     } else if (name === RouterConstants.PAGE_SETTINGS_LOOK) {
       HdsNavDestination() {
-        SettingsLookView({ navPathStack: this.navPathStack, scroller: this.settingsLookScroller })
+        ResponsiveContent() {
+          SettingsLookView({ navPathStack: this.navPathStack, scroller: this.settingsLookScroller })
+        }
       }
       .titleBar(this.titleOptions($r('app.string.settings_entry_look')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
@@ -742,7 +1004,9 @@ struct Index {
       .bindToScrollable([this.settingsLookScroller])
     } else if (name === RouterConstants.PAGE_SETTINGS_MATERIAL) {
       HdsNavDestination() {
-        SettingsMaterialView({ navPathStack: this.navPathStack, scroller: this.settingsMaterialScroller })
+        ResponsiveContent() {
+          SettingsMaterialView({ navPathStack: this.navPathStack, scroller: this.settingsMaterialScroller })
+        }
       }
       .titleBar(this.titleOptions($r('app.string.settings_entry_material')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
@@ -750,7 +1014,9 @@ struct Index {
       .bindToScrollable([this.settingsMaterialScroller])
     } else if (name === RouterConstants.PAGE_SETTINGS_READING) {
       HdsNavDestination() {
-        SettingsReadingView({ navPathStack: this.navPathStack, scroller: this.settingsReadingScroller })
+        ResponsiveContent() {
+          SettingsReadingView({ navPathStack: this.navPathStack, scroller: this.settingsReadingScroller })
+        }
       }
       .titleBar(this.titleOptions($r('app.string.settings_entry_reading')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
@@ -758,7 +1024,9 @@ struct Index {
       .bindToScrollable([this.settingsReadingScroller])
     } else if (name === RouterConstants.PAGE_SETTINGS_FEED) {
       HdsNavDestination() {
-        SettingsFeedView({ navPathStack: this.navPathStack, scroller: this.settingsFeedScroller })
+        ResponsiveContent() {
+          SettingsFeedView({ navPathStack: this.navPathStack, scroller: this.settingsFeedScroller })
+        }
       }
       .titleBar(this.titleOptions($r('app.string.settings_entry_feed')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
@@ -766,7 +1034,9 @@ struct Index {
       .bindToScrollable([this.settingsFeedScroller])
     } else if (name === RouterConstants.PAGE_SETTINGS_SYSTEM) {
       HdsNavDestination() {
-        SettingsSystemView({ navPathStack: this.navPathStack, scroller: this.settingsSystemScroller })
+        ResponsiveContent() {
+          SettingsSystemView({ navPathStack: this.navPathStack, scroller: this.settingsSystemScroller })
+        }
       }
       .titleBar(this.titleOptions($r('app.string.settings_entry_system')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
@@ -774,7 +1044,9 @@ struct Index {
       .bindToScrollable([this.settingsSystemScroller])
     } else if (name === RouterConstants.PAGE_BACKUP) {
       HdsNavDestination() {
-        BackupView({ navPathStack: this.navPathStack, scroller: this.backupScroller })
+        ResponsiveContent() {
+          BackupView({ navPathStack: this.navPathStack, scroller: this.backupScroller })
+        }
       }
       .titleBar(this.titleOptions($r('app.string.backup_title')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
@@ -782,7 +1054,9 @@ struct Index {
       .bindToScrollable([this.backupScroller])
     } else if (name === RouterConstants.PAGE_FEED_SETTINGS) {
       HdsNavDestination() {
-        FeedSettingsView({ navPathStack: this.navPathStack, scroller: this.feedSettingsScroller })
+        ResponsiveContent() {
+          FeedSettingsView({ navPathStack: this.navPathStack, scroller: this.feedSettingsScroller })
+        }
       }
       .titleBar(this.titleOptions(feedViewModel.settingsFeedTitle()))
       .titleMode(HdsNavDestinationTitleMode.MINI)
@@ -790,7 +1064,9 @@ struct Index {
       .bindToScrollable([this.feedSettingsScroller])
     } else if (name === RouterConstants.PAGE_TAGS) {
       HdsNavDestination() {
-        TagsView({ navPathStack: this.navPathStack, scroller: this.tagsScroller })
+        ResponsiveContent() {
+          TagsView({ navPathStack: this.navPathStack, scroller: this.tagsScroller })
+        }
       }
       .titleBar(this.titleOptions($r('app.string.tag_title')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
@@ -798,7 +1074,9 @@ struct Index {
       .bindToScrollable([this.tagsScroller])
     } else if (name === RouterConstants.PAGE_TAG_ARTICLES) {
       HdsNavDestination() {
-        TagArticlesView({ navPathStack: this.navPathStack, scroller: this.tagArticlesScroller })
+        ResponsiveContent() {
+          TagArticlesView({ navPathStack: this.navPathStack, scroller: this.tagArticlesScroller })
+        }
       }
       .titleBar(this.titleOptions($r('app.string.tag_articles_title')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
@@ -806,7 +1084,9 @@ struct Index {
       .bindToScrollable([this.tagArticlesScroller])
     } else if (name === RouterConstants.PAGE_SMART_FOLDERS) {
       HdsNavDestination() {
-        SmartFoldersView({ navPathStack: this.navPathStack, scroller: this.smartFoldersScroller })
+        ResponsiveContent() {
+          SmartFoldersView({ navPathStack: this.navPathStack, scroller: this.smartFoldersScroller })
+        }
       }
       .titleBar(this.titleOptions($r('app.string.smart_folder_title')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
@@ -814,7 +1094,9 @@ struct Index {
       .bindToScrollable([this.smartFoldersScroller])
     } else if (name === RouterConstants.PAGE_RULES) {
       HdsNavDestination() {
-        RulesView({ navPathStack: this.navPathStack, scroller: this.rulesScroller })
+        ResponsiveContent() {
+          RulesView({ navPathStack: this.navPathStack, scroller: this.rulesScroller })
+        }
       }
       .titleBar(this.titleOptions($r('app.string.rule_title')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
@@ -822,7 +1104,9 @@ struct Index {
       .bindToScrollable([this.rulesScroller])
     } else if (name === RouterConstants.PAGE_RULE_EDIT) {
       HdsNavDestination() {
-        RuleEditView({ navPathStack: this.navPathStack, scroller: this.ruleEditScroller })
+        ResponsiveContent() {
+          RuleEditView({ navPathStack: this.navPathStack, scroller: this.ruleEditScroller })
+        }
       }
       .titleBar(this.titleOptions($r('app.string.rule_edit_title')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
@@ -830,7 +1114,9 @@ struct Index {
       .bindToScrollable([this.ruleEditScroller])
     } else if (name === RouterConstants.PAGE_HIDDEN) {
       HdsNavDestination() {
-        HiddenArticlesView({ navPathStack: this.navPathStack, scroller: this.hiddenScroller })
+        ResponsiveContent() {
+          HiddenArticlesView({ navPathStack: this.navPathStack, scroller: this.hiddenScroller })
+        }
       }
       .titleBar(this.titleOptions($r('app.string.hidden_title')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
@@ -838,7 +1124,9 @@ struct Index {
       .bindToScrollable([this.hiddenScroller])
     } else if (name === RouterConstants.PAGE_SYNC) {
       HdsNavDestination() {
-        SyncView({ navPathStack: this.navPathStack, scroller: this.syncScroller })
+        ResponsiveContent() {
+          SyncView({ navPathStack: this.navPathStack, scroller: this.syncScroller })
+        }
       }
       .titleBar(this.titleOptions($r('app.string.sync_entry_title')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
@@ -846,7 +1134,9 @@ struct Index {
       .bindToScrollable([this.syncScroller])
     } else if (name === RouterConstants.PAGE_REMOTE) {
       HdsNavDestination() {
-        RemoteServiceView({ navPathStack: this.navPathStack, scroller: this.remoteScroller })
+        ResponsiveContent() {
+          RemoteServiceView({ navPathStack: this.navPathStack, scroller: this.remoteScroller })
+        }
       }
       .titleBar(this.titleOptions($r('app.string.remote_title')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
@@ -854,7 +1144,9 @@ struct Index {
       .bindToScrollable([this.remoteScroller])
     } else if (name === RouterConstants.PAGE_REMOTE_MIGRATION) {
       HdsNavDestination() {
-        RemoteMigrationView({ navPathStack: this.navPathStack, scroller: this.remoteMigrationScroller })
+        ResponsiveContent() {
+          RemoteMigrationView({ navPathStack: this.navPathStack, scroller: this.remoteMigrationScroller })
+        }
       }
       .titleBar(this.titleOptions($r('app.string.remote_migration_title')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
@@ -862,7 +1154,9 @@ struct Index {
       .bindToScrollable([this.remoteMigrationScroller])
     } else if (name === RouterConstants.PAGE_SHARE_SETTINGS) {
       HdsNavDestination() {
-        ShareSettingsView({ navPathStack: this.navPathStack, scroller: this.shareSettingsScroller })
+        ResponsiveContent() {
+          ShareSettingsView({ navPathStack: this.navPathStack, scroller: this.shareSettingsScroller })
+        }
       }
       .titleBar(this.titleOptions($r('app.string.share_settings_title')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
@@ -870,7 +1164,9 @@ struct Index {
       .bindToScrollable([this.shareSettingsScroller])
     } else if (name === RouterConstants.PAGE_NOTIFY_SETTINGS) {
       HdsNavDestination() {
-        NotifySettingsView({ navPathStack: this.navPathStack, scroller: this.notifySettingsScroller })
+        ResponsiveContent() {
+          NotifySettingsView({ navPathStack: this.navPathStack, scroller: this.notifySettingsScroller })
+        }
       }
       .titleBar(this.titleOptions($r('app.string.notify_settings_title')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
@@ -878,7 +1174,9 @@ struct Index {
       .bindToScrollable([this.notifySettingsScroller])
     } else if (name === RouterConstants.PAGE_TRANSLATE_SETTINGS) {
       HdsNavDestination() {
-        TranslateSettingsView({ navPathStack: this.navPathStack, scroller: this.translateSettingsScroller })
+        ResponsiveContent() {
+          TranslateSettingsView({ navPathStack: this.navPathStack, scroller: this.translateSettingsScroller })
+        }
       }
       .titleBar(this.titleOptions($r('app.string.translate_settings_title')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
@@ -886,7 +1184,9 @@ struct Index {
       .bindToScrollable([this.translateSettingsScroller])
     } else if (name === RouterConstants.PAGE_PRIVACY) {
       HdsNavDestination() {
-        PrivacyView({ navPathStack: this.navPathStack, scroller: this.privacyScroller })
+        ResponsiveContent() {
+          PrivacyView({ navPathStack: this.navPathStack, scroller: this.privacyScroller })
+        }
       }
       .titleBar(this.titleOptions($r('app.string.privacy_settings_title')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
@@ -894,7 +1194,9 @@ struct Index {
       .bindToScrollable([this.privacyScroller])
     } else if (name === RouterConstants.PAGE_DISCOVER) {
       HdsNavDestination() {
-        DiscoverView({ scroller: this.discoverScroller })
+        ResponsiveContent() {
+          DiscoverView({ scroller: this.discoverScroller })
+        }
       }
       .titleBar(this.titleOptions($r('app.string.discover_title')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
@@ -902,7 +1204,9 @@ struct Index {
       .bindToScrollable([this.discoverScroller])
     } else if (name === RouterConstants.PAGE_DIAGNOSTICS) {
       HdsNavDestination() {
-        DiagnosticsView({ navPathStack: this.navPathStack, scroller: this.diagnosticsScroller })
+        ResponsiveContent() {
+          DiagnosticsView({ navPathStack: this.navPathStack, scroller: this.diagnosticsScroller })
+        }
       }
       .titleBar(this.titleOptions($r('app.string.diagnostics_title')))
       .titleMode(HdsNavDestinationTitleMode.MINI)
@@ -916,70 +1220,21 @@ struct Index {
       this.BackgroundLayer()
 
       HdsNavigation(this.navPathStack) {
-        // index 受控于 currentTab：只改状态就能切内容（不用控制器命令，避免挂载时序问题）。
-        HdsTabs({ index: this.currentTab, controller: this.tabsController }) {
-          TabContent() {
-            HomeTabView({
-              navPathStack: this.navPathStack,
-              scroller: this.homeScroller,
-              onAddFeedRequest: () => {
-                this.showAddSheet = true;
-              }
-            })
-          }
-          .tabBar(this.barBuilder($r('sys.symbol.house'), $r('app.string.tab_home'),
-            this.currentTab === TabIndex.HOME))
-
-          TabContent() {
-            SubscriptionsView({ navPathStack: this.navPathStack, scroller: this.subsScroller })
-          }
-          .tabBar(this.barBuilder($r('sys.symbol.folder'), $r('app.string.tab_subs'),
-            this.currentTab === TabIndex.SUBSCRIPTIONS))
-
-          TabContent() {
-            SettingsTabView({ navPathStack: this.navPathStack, scroller: this.settingsScroller })
-          }
-          .tabBar(this.barBuilder($r('sys.symbol.gearshape'), $r('app.string.tab_settings'),
-            this.currentTab === TabIndex.SETTINGS))
-
-          if (IMAGE_DOMAIN) {
-            TabContent() {
-              ImageTabView()
-            }
-            .tabBar(this.barBuilder($r('sys.symbol.picture'), $r('app.string.tab_images'),
-              this.currentTab === TabIndex.IMAGES))
-          }
+        // 外壳切换：≥1000vp 用侧边栏（三栏），否则底部悬浮页签栏。
+        // 两种外壳共享 homeContent / subsContent / settingsContent，行为（含 lastTabIndex）一致。
+        if (deviceService.rail) {
+          this.wideShell()
+        } else {
+          this.tabShell()
         }
-        .barPosition(BarPosition.End)
-        // barOverlap(true)：页签栏模糊悬浮并叠在内容之上（沉浸式外观，配合 barFloatingStyle + 材质）。
-        // 代价是内容会延伸到页签栏下方，所以各页签的可滚动内容底部要用 tab_clearance 预留避让。
-        // 若想要「内容与页签栏分离、天然避开」，改为 barOverlap(false) 并去掉底部预留即可。
-        .barOverlap(true)
-        .vertical(false)
-        // 禁用左右滑动切页签：只能点页签栏切换，避免与内容区的横向手势冲突。
-        .scrollable(false)
-        .barFloatingStyle(this.floatingStyle())
-        // 挂载完成后再补一次恢复（whenReady 可能早于挂载，命令会被丢掉）
-        .onAppear(() => {
-          this.restoreTab();
-        })
-        .onChange((index: number) => {
-          this.currentTab = index;
-          // 记住停留的页签：下次打开直接回到这里。
-          appSettings.lastTabIndex = index;
-          settingsStore.save();
-        })
-        .width('100%')
-        .height('100%')
-        .backgroundColor($r('app.color.hm_page_transparent'))
       }
       // 分栏：宽窗口（折叠屏展开 / 平板）自动切成「左列表 + 右正文」两栏，窄窗口保持单栏堆叠。
-      // 断点由 SafeAreaController 依窗口宽度维护（windowSizeChange 时重算）。
+      // 断点由 DeviceService 依窗口宽度维护（mediaquery）。
       .mode(this.navMode())
-      .navBarWidth(CommonConstants.SPLIT_NAV_WIDTH_VP)
+      .navBarWidth(this.navBarWidth())
       .navBarWidthRange({
-        minWidth: CommonConstants.SPLIT_NAV_MIN_VP,
-        maxWidth: CommonConstants.SPLIT_NAV_MAX_VP
+        minWidth: this.navBarMinWidth(),
+        maxWidth: this.navBarMaxWidth()
       })
       .titleBar(this.rootTitleOptions())
       // 紧凑标题栏（默认 FREE 是大标题模式，标题上下留白很大）。

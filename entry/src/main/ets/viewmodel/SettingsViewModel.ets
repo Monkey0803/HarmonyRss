@@ -26,6 +26,8 @@ export class SettingsViewModel {
   @Trace immersiveSupported: boolean = true;
   /** 应用级（全局）沉浸光感是否开启（由 module.json5 的 metadata 决定，运行时读取）。 */
   @Trace globalImmersive: boolean = false;
+  /** 设备算力档语义 id（uiMaterial 三档；取不到为空串，设置页据此隐藏该行）。 */
+  @Trace globalLevelId: string = '';
 
   /** 设置恢复完成的信号：列表展示偏好（排序/分组）要先读到，靠它对齐时序。 */
   private ready: Promise<void> = Promise.resolve();
@@ -46,7 +48,8 @@ export class SettingsViewModel {
     ThemeController.apply(context, appSettings.themeMode);
     LocaleController.apply(appSettings.languageMode);
     this.immersiveSupported = MaterialController.immersiveSupported();
-    this.globalImmersive = MaterialController.globalEnabled();
+    this.globalImmersive = MaterialController.appMaterialOn();
+    this.globalLevelId = MaterialController.globalLevelId();
     if (appSettings.antiPeepEnabled) {
       await antiPeep.setEnabled(true);
     }

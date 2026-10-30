@@ -713,6 +713,10 @@
       "value": "Global immersion: on"
     },
     {
+      "name": "aux_material_level",
+      "value": "Device compute level:"
+    },
+    {
       "name": "aux_global_immersive_off",
       "value": "Global immersion: off"
     },

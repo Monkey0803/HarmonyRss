@@ -175,6 +175,14 @@
     {
       "name": "flow_light_height",
       "value": "96"
+    },
+    {
+      "name": "rail_min_width",
+      "value": "200"
+    },
+    {
+      "name": "rail_max_width",
+      "value": "240"
     }
   ]
 }

@@ -19,6 +19,7 @@
     { "name": "hm_menu_item_selected", "value": "#333F7CFF" },
     { "name": "hm_web_surface", "value": "#FF121318" },
     { "name": "hm_glass_scrim", "value": "#B31E2128" },
-    { "name": "hm_value_chip_background", "value": "#1FFFFFFF" }
+    { "name": "hm_value_chip_background", "value": "#1FFFFFFF" },
+    { "name": "hm_image_scrim", "value": "#99000000" }
   ]
 }
