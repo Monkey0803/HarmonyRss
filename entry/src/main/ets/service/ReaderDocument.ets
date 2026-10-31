@@ -139,10 +139,11 @@ function darkOverride(): string {
 }
 
 /**
- * 阅读 CSS（正文排版 + 主题）。
+ * 阅读文档：把正文包成完整 HTML 时用的 CSS（正文字号 / 行距 / 主题 + 首尾内边距）。
  *
- * topPad / bottomPad：为浮在正文之上的标题栏 / 悬浮底栏让出的内边距（CSS px）。
- * 沉浸式布局下正文铺满整页、从两栏下方穿过，正文首尾必须自己留出这段空间才不会被挡住。
+ * 顶部：详情页把 topPad 传成「状态栏 + 标题栏」（见 ArticleDetailView.readerTopPad）——
+ * 让位写在文档里跟着内容走，首行在标题栏下沿之外，滚动时正文继续从顶部背板下方穿过。
+ * 底部：必须由文档补，否则文末文字会被悬浮操作栏挡住。
  */
 export function readerCss(topPad: number = 0, bottomPad: number = 0): string {
   const palette: ReaderPalette = paletteOf(appSettings.readerTheme);

@@ -1041,6 +1041,10 @@
       "value": "正文提取失败，已为你打开网页原文。"
     },
     {
+      "name": "article_reader_placeholder",
+      "value": "原文需要 JavaScript，已为你打开网页原文。"
+    },
+    {
       "name": "article_prev",
       "value": "上一篇"
     },

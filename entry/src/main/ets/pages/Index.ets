@@ -101,6 +101,8 @@ import { Article } from '../model/Feed';
 @ComponentV2
 struct Index {
   @Local currentTab: number = appSettings.lastTabIndex;
+  /** 提前更新根标题栏，不在页签切换动画中改写 HdsTabs.index。 */
+  @Local titleTab: number = appSettings.lastTabIndex;
   /** 添加订阅源面板：显隐（入口在悬浮页签栏的 miniBar 上）。 */
   @Local showAddSheet: boolean = false;
   /** 分享进入时预填到添加面板的地址（多行）。 */
@@ -200,6 +202,7 @@ struct Index {
     const max: number = IMAGE_DOMAIN ? TabIndex.IMAGES : TabIndex.SETTINGS;
     const saved: number = appSettings.lastTabIndex;
     this.currentTab = saved >= 0 && saved <= max ? saved : CommonConstants.DEFAULT_TAB_INDEX;
+    this.titleTab = this.currentTab;
   }
 
   aboutToDisappear(): void {
@@ -257,6 +260,7 @@ struct Index {
     await feedViewModel.openArticleById(articleId);
     // 切回「阅读」页签，再压详情页（页面栈是全局的，不切页签会压在设置页上面）。
     this.currentTab = TabIndex.HOME;
+    this.titleTab = TabIndex.HOME;
     this.navPathStack.pushPath(new NavPathInfo(RouterConstants.PAGE_ARTICLE, ''));
     return true;
   }
@@ -323,10 +327,10 @@ struct Index {
 
   /** 根标题：随当前页签变化。 */
   private rootTitle(): ResourceStr {
-    if (this.currentTab === TabIndex.SUBSCRIPTIONS) {
+    if (this.titleTab === TabIndex.SUBSCRIPTIONS) {
       return $r('app.string.subs_title');
     }
-    if (this.currentTab === TabIndex.SETTINGS) {
+    if (this.titleTab === TabIndex.SETTINGS) {
       return $r('app.string.settings_title');
     }
     return $r('app.string.home_title');
@@ -438,7 +442,7 @@ struct Index {
    * 筛选条用 bottomBuilder 挂在标题下方（首页内容顶部按 FILTER_BAR_HEIGHT_VP 多留一段占位）。
    */
   private rootTitleOptions(): HdsNavigationTitleBarOptions {
-    const isHome: boolean = this.currentTab === TabIndex.HOME;
+    const isHome: boolean = this.titleTab === TabIndex.HOME;
     const title: HdsNavigationTitle = { mainTitle: isHome ? '' : this.rootTitle() };
     const content: TitleBarContentOptions = { title: title };
     if (isHome) {
@@ -475,108 +479,21 @@ struct Index {
   }
 
   /**
-   * 详情页标题栏样式：整条背板保持透明，沉浸光感交给标题横栏自身（见 ArticleTitleBar）。
+   * 详情页标题栏配置：完全交给 HDS 原生默认样式（系统返回键 + 标题文字 + 系统自带背板）。
    *
-   * 详情页正文是 Web / Reader 文档，标题栏整条的材质采样不到 Web 画面（实测背后无模糊），
-   * 若给整条铺半透明底就变成一块实心白板，和底部悬浮栏的观感对不上。
-   * 因此这里不给标题栏背板着色，材质只由标题横栏这一个组件提供。
-   */
-  private stickyTitleStyle(): TitleBarStyleOptions {
-    const transparent: HdsNavigationTitleBarStyle = {
-      backgroundStyle: { backgroundColor: Color.Transparent }
-    };
-    const style: TitleBarStyleOptions = {
-      originalStyle: transparent,
-      scrollEffectStyle: transparent,
-      systemMaterialEffect: this.materialParams()
-    };
-    return style;
-  }
-
-  /**
-   * 详情页标题栏配置：返回键沿用 HDS 原生（自带沉浸光感圆形按钮），
-   * 标题换成与底部操作栏同款的整条沉浸光感横栏（见 ArticleTitleBar）。
+   * 不套用全 App 那套「滚动跟手渐显材质」：详情页正文是 Web / Reader 文档，滚动发生在
+   * ArkWeb 内部，偏移不会进入 bindToScrollable 绑定的 Scroller，跟手渐变永远等不到触发时机，
+   * 正文就会锐利地压到标题与状态栏图标上。这里改用系统默认背板，任何时刻标题都可读。
    */
   private articleTitleOptions(): HdsNavigationTitleBarOptions {
-    const content: TitleBarContentOptions = {
-      stackBuilder: (): void => {
-        this.ArticleTitleBar();
-      }
-    };
+    const title: HdsNavigationTitle = { mainTitle: this.articleTitle() };
+    const content: TitleBarContentOptions = { title: title };
     const options: HdsNavigationTitleBarOptions = {
       avoidLayoutSafeArea: true,
       enableComponentSafeArea: false,
-      content: content,
-      style: this.stickyTitleStyle()
+      content: content
     };
     return options;
-  }
-
-  /**
-   * 标题栏右侧留白（vp）：与底部悬浮操作栏一致。
-   *
-   * 操作栏宽度 = 屏宽 - 2×贴边留白 - 跟手余量，且居中摆放，
-   * 因此它离屏幕左右边缘的实际留白 = 贴边留白 + 跟手余量 / 2。
-   */
-  private titleBarRightInset(): number {
-    return CommonConstants.BAR_SIDE_MARGIN_VP + CommonConstants.BAR_HANDEDNESS_ROOM_VP / 2;
-  }
-
-  /** 标题横栏是否真的吃到了组件级沉浸光感材质（决定要不要补兜底底色）。 */
-  private titleMaterialActive(): boolean {
-    return MaterialController.materialRenders(appSettings.immersiveOn);
-  }
-
-  /**
-   * 详情页标题栏：整条铺满宽度的沉浸光感横栏（与底部悬浮操作栏同源材质），
-   * 标题文字本身不再带胶囊底色 / 圆角，顶部与底栏观感一致。
-   *
-   * 返回键自绘在横栏里：HDS 原生返回键的圆形背板会被整条横栏盖住（stackBuilder 内容
-   * 压在标题栏按钮之上），所以这里关掉原生返回键（见 pageMap 的 hideBackButton），
-   * 改画一枚与底栏同款的图标按钮；系统侧滑返回仍然有效。
-   * 右侧留白与底部操作栏对齐，标题不会顶到屏幕边缘。
-   */
-  @Builder
-  ArticleTitleBar() {
-    Row() {
-      this.ArticleBackButton()
-      this.ArticleTitleText()
-    }
-    .width('100%')
-    .height(CommonConstants.TITLE_BAR_HEIGHT_VP)
-    .padding({ left: $r('app.float.space_s'), right: this.titleBarRightInset() })
-    // 与底部悬浮栏同源的组件级沉浸光感材质（THIN，带按压光感反馈）。
-    .systemMaterial(MaterialController.titleMaterial(appSettings.immersiveOn))
-    // 材质会渲染时底色必须留透明（否则盖住材质）；不可用时退回半透明玻璃底。
-    .backgroundColor(this.titleMaterialActive() ? Color.Transparent : $r('app.color.hm_glass_scrim'))
-  }
-
-  /** 标题横栏里的返回键（替代被横栏盖住的 HDS 原生返回键）。 */
-  @Builder
-  ArticleBackButton() {
-    if (this.navPathStack.size() > 0) {
-      SymbolGlyph($r('sys.symbol.chevron_left'))
-        .fontSize($r('app.float.icon_size'))
-        .fontColor([$r('app.color.hm_text_primary')])
-        .padding($r('app.float.space_xs'))
-        .accessibilityText($r('app.string.action_back'))
-        .onClick(() => {
-          this.navPathStack.pop();
-        })
-    }
-  }
-
-  /** 标题横栏里的文章标题文本。 */
-  @Builder
-  ArticleTitleText() {
-    Text(this.articleTitle())
-      .fontSize($r('app.float.font_size_section'))
-      .fontWeight(FontWeight.Medium)
-      .fontColor($r('app.color.hm_text_primary'))
-      .maxLines(1)
-      .textOverflow({ overflow: TextOverflow.Ellipsis })
-      .layoutWeight(1)
-      .margin({ left: $r('app.float.space_xs') })
   }
 
   private floatingStyle(): HdsTabsFloatingStyle {
@@ -661,6 +578,10 @@ struct Index {
    * HdsTabs 的 onChange 与 HdsSideMenu 的 $selectedIndex 都走这里，两条外壳行为一致。
    */
   private selectTab(index: number): void {
+    this.titleTab = index;
+    if (this.currentTab === index) {
+      return;
+    }
     this.currentTab = index;
     appSettings.lastTabIndex = index;
     settingsStore.save();
@@ -739,6 +660,9 @@ struct Index {
     // 挂载完成后再补一次恢复（whenReady 可能早于挂载，命令会被丢掉）
     .onAppear(() => {
       this.restoreTab();
+    })
+    .onSelected((index: number) => {
+      this.titleTab = index;
     })
     .onChange((index: number) => {
       this.selectTab(index);
@@ -934,13 +858,14 @@ struct Index {
           navPathStack: this.navPathStack
         })
       }
+      // 标题栏为 HDS 原生（系统返回键 + 标题文字），背板常显（见 articleTitleOptions）：
+      // 正文滚动发生在 ArkWeb 内部，跟手渐变等不到触发时机，固定背板才能保证标题可读。
       .titleBar(this.articleTitleOptions())
-      // 原生返回键会被标题横栏的材质盖住（stackBuilder 在按钮之上），改为横栏内自绘返回键。
-      .hideBackButton(true)
       .titleMode(HdsNavDestinationTitleMode.MINI)
       // 不透明背板：原生覆盖式 push 时不会透过新页看到上一页，也不再因淡出透出壁纸。
       .backgroundColor($r('app.color.hm_web_surface'))
-      // 标题栏显隐统一交给滚动（与其它页一致）；点正文只收起页内底部操作条，不再单独控制标题栏。
+      // 标题栏显隐与其它页同一机制（跟随滚动 + 两个设置）。正文模式滚动挂在 articleScroller 上能跟到；
+      // 网页原文由 ArkWeb 自己滚动、不出现在 Scroller 偏移里，那种情况下标题栏保持常驻。
       .dynamicHideTitleBar(this.dynamicHideParams())
       .bindToScrollable([this.articleScroller])
     } else if (name === RouterConstants.PAGE_FEED_ARTICLES) {

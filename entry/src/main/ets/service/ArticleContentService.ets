@@ -18,6 +18,7 @@ import { Article } from '../model/Feed';
 import { articleStore } from './ArticleStore';
 import { toPlainText } from '../common/utils/HtmlText';
 import { extractReadable, hasBodyContent } from './Readability';
+import { isReaderPlaceholder, ReaderPlaceholderError } from './ReaderContentGuard';
 import { imageCache } from './ImageCache';
 import { ReaderBudget } from './ReaderBudget';
 import { NetworkStatus } from './NetworkStatus';
@@ -143,7 +144,21 @@ export class ArticleContentService {
    *   never  —— 只用 feed 自带正文，不联网（没有正文则失败，由上层退网页原文）。
    */
   async ensureReaderHtml(article: Article, fullTextMode: string = FullTextMode.AUTO): Promise<string> {
-    const cached: string = article.readerHtml;
+    let cached: string = article.readerHtml;
+    if (cached.length > 0 && isReaderPlaceholder(cached, article.link)) {
+      // 旧版本曾将站点的脚本提示落库：先清掉，允许本次重新提取有效正文。
+      hilog.info(DOMAIN, TAG, 'reader placeholder cache invalidated');
+      cached = '';
+      article.readerHtml = '';
+      article.plainText = '';
+      article.readerState = ReaderState.NONE;
+      try {
+        articleStore.setReaderHtml(article.id, '', '');
+      } catch (err) {
+        const error: BusinessError = err as BusinessError;
+        hilog.warn(DOMAIN, TAG, 'clear invalid reader cache failed: %{public}d', error.code);
+      }
+    }
     if (cached.length > 0 && cached.startsWith(READER_MARKER)) {
       article.readerState = ReaderState.READY;
       hilog.info(DOMAIN, TAG, 'reader cache hit (%{public}d chars)', cached.length);
@@ -214,6 +229,15 @@ export class ArticleContentService {
       throw new FeedFetchError(FeedError.FETCH_FAILED, 'fetch html failed');
     }
 
+    if (isReaderPlaceholder(fresh, article.link)) {
+      hilog.info(DOMAIN, TAG, 'reader placeholder extracted');
+      if (cached.length > 0) {
+        article.readerState = ReaderState.READY;
+        return cached;
+      }
+      article.readerState = ReaderState.FAILED;
+      throw new ReaderPlaceholderError();
+    }
     if (fresh.length === 0) {
       if (cached.length > 0) {
         article.readerState = ReaderState.READY;

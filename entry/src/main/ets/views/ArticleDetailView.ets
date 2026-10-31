@@ -50,6 +50,7 @@ import {
   runFindScript
 } from '../service/ReaderFind';
 import { readerStyle } from '../service/ReaderStyle';
+import { ReaderPlaceholderError } from '../service/ReaderContentGuard';
 import { TocEntry, collectTocScript, gotoHeadingScript } from '../service/ReaderToc';
 import { imageAtPointScript } from '../service/ReaderImage';
 import { readerImageSave } from '../service/ReaderImageSave';
@@ -220,6 +221,8 @@ export struct ArticleDetailView {
   private prefetchTimer: number = -1;
   /** 悬浮操作栏的页签控制器（页签栏只作为沉浸光感的生效区域）。 */
   private barTabsController: HdsTabsController = new HdsTabsController();
+  /** 上一次注入到文档里的顶部让位（CSS px）；值没变就不重复重排。 */
+  private appliedTopPad: number = -1;
 
   private hostContext(): common.UIAbilityContext {
     const context: common.Context | undefined = this.getUIContext().getHostContext();
@@ -471,11 +474,16 @@ export struct ArticleDetailView {
   }
 
   /**
-   * 正文里的链接拦截：放行文档自身（Reader 的 baseUrl / 网页原文地址），
-   * 其余外链交给系统浏览器，避免在阅读视图里原地跳走。
+   * 仅把用户点击的正文外链交给系统浏览器。网页原文首次加载时的站点跳转
+   * 以及脚本导航都应留在 Web 内，否则打开某些文章会自动拉起浏览器。
    * 注意：将来支持内嵌媒体（iframe 白名单）时，这里要放行白名单域。
    */
-  private handleLinkIntercept(url: string): boolean {
+  private handleLinkIntercept(event: OnLoadInterceptEvent): boolean {
+    const request: WebResourceRequest = event.data;
+    if (!request.isMainFrame() || !request.isRequestGesture() || request.isRedirect()) {
+      return false;
+    }
+    const url: string = request.getRequestUrl();
     if (url.length === 0 || url.startsWith('about:') || url.startsWith('data:') || url.startsWith('file:')) {
       return false;
     }
@@ -661,7 +669,7 @@ export struct ArticleDetailView {
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       hilog.warn(DOMAIN, TAG, 'reader extract failed: %{public}d', error.code);
-      this.onReaderFailed();
+      this.onReaderFailed(err instanceof ReaderPlaceholderError);
     }
   }
 
@@ -672,7 +680,9 @@ export struct ArticleDetailView {
       return;
     }
     const start: number = Date.now();
-    const doc: string = buildReaderDocument(this.readerHtml, 0, safeArea.contentBottomInsetVp);
+    const topPad: number = this.readerTopPad();
+    this.appliedTopPad = topPad;
+    const doc: string = buildReaderDocument(this.readerHtml, topPad, safeArea.contentBottomInsetVp);
     try {
       this.readerController.loadData(doc, 'text/html', 'UTF-8', article.link);
       hilog.info(DOMAIN, TAG, 'perf docbuild=%{public}dms size=%{public}d',
@@ -680,6 +690,46 @@ export struct ArticleDetailView {
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       hilog.warn(DOMAIN, TAG, 'load reader doc failed: %{public}d', error.code);
+    }
+  }
+
+  /**
+   * 正文顶部让位（CSS px）：状态栏 + 标题栏 + 有 chips 时一条标签条的高度。
+   *
+   * 正文铺到屏幕最顶端（连状态栏区域都是正文），首行被这段内边距推到标题栏下沿之外；
+   * 滚动时正文依次从状态栏、标题栏下方穿过，被顶部的模糊背板压住。
+   */
+  private readerTopPad(): number {
+    return safeArea.topInsetVp + CommonConstants.TITLE_BAR_HEIGHT_VP
+      + (this.hasTopChips() ? TAG_STRIP_VP : 0);
+  }
+
+  /** chips 异步就绪 / 变化后重新注入顶部让位（幂等：值没变直接返回）。 */
+  private syncReaderInset(): void {
+    const next: number = this.readerTopPad();
+    if (next === this.appliedTopPad) {
+      return;
+    }
+    if (this.viewMode === MODE_WEB) {
+      this.appliedTopPad = next;
+      readerStyle.apply(this.webController, next);
+      return;
+    }
+    if (this.readerHtml.length === 0) {
+      return;
+    }
+    this.appliedTopPad = next;
+    try {
+      this.readerController
+        .runJavaScript(readerStyleScript(next, safeArea.contentBottomInsetVp))
+        .catch((err: BusinessError) => {
+          hilog.warn(DOMAIN, TAG, 'inset inject failed: %{public}d', err.code);
+        });
+    } catch (err) {
+      // onAreaChange 可能先于 Web 控制器挂载；onPageEnd 会按当前尺寸再补一次。
+      const error: BusinessError = err as BusinessError;
+      this.appliedTopPad = -1;
+      hilog.warn(DOMAIN, TAG, 'inset before attach failed: %{public}d', error.code);
     }
   }
 
@@ -707,13 +757,13 @@ export struct ArticleDetailView {
   }
 
   /** 提取失败：有链接就退网页原文，否则退纯文本（loading 由对应视图的 onPageEnd 收尾）。 */
-  private onReaderFailed(): void {
+  private onReaderFailed(placeholder: boolean = false): void {
     this.readerFailed = true;
     const article: Article | undefined = feedViewModel.currentArticle();
     if (article !== undefined && article.link.length > 0) {
       this.viewMode = MODE_WEB;
       this.loading = true;
-      this.toast($r('app.string.article_reader_failed'));
+      this.toast(placeholder ? $r('app.string.article_reader_placeholder') : $r('app.string.article_reader_failed'));
     } else {
       this.viewMode = MODE_READER;
       this.readerHtml = '';
@@ -741,6 +791,7 @@ export struct ArticleDetailView {
       return;
     }
     this.articleTags = await tagViewModel.tagsOf(article.id);
+    this.syncReaderInset();
   }
 
   /** 打开标签选择器（复用底部面板，见 sheetMode = 'tags'）。 */
@@ -767,6 +818,7 @@ export struct ArticleDetailView {
       hilog.warn(DOMAIN, TAG, 'load group sources failed: %{public}d', error.code);
       this.groupSources = [];
     }
+    this.syncReaderInset();
   }
 
   /** 是否是多来源合并出的文章（只在 >1 时展示来源入口）。 */
@@ -1086,6 +1138,8 @@ export struct ArticleDetailView {
     this.readerFailed = false;
     this.webProgressRestored = false;
     this.readerProgressRestored = false;
+    // 新文章的 chips 可能不同：顶部让位需要按新文章重新注入。
+    this.appliedTopPad = -1;
     this.finished = false;
     this.loading = true;
     if (this.viewMode === MODE_READER) {
@@ -1120,6 +1174,8 @@ export struct ArticleDetailView {
     feedViewModel.clearReaderHtml(article.id);
     this.readerFailed = false;
     this.readerProgressRestored = false;
+    // 新文章的 chips 可能不同：顶部让位需要按新文章重新注入。
+    this.appliedTopPad = -1;
     this.finished = false;
     this.viewMode = MODE_READER;
     this.startReader();
@@ -2068,8 +2124,10 @@ export struct ArticleDetailView {
    */
   private applyTypography(): void {
     if (this.viewMode === MODE_READER && this.readerHtml.length > 0) {
+      const topPad: number = this.readerTopPad();
+      this.appliedTopPad = topPad;
       this.readerController
-        .runJavaScript(readerStyleScript(0, safeArea.contentBottomInsetVp))
+        .runJavaScript(readerStyleScript(topPad, safeArea.contentBottomInsetVp))
         .catch((err: BusinessError) => {
           // 文档还没就绪（或控制器失效）时注入会失败：退回整篇重建，保证排版最终生效。
           hilog.warn(DOMAIN, TAG, 'typography inject failed: %{public}d', err.code);
@@ -2078,7 +2136,9 @@ export struct ArticleDetailView {
       return;
     }
     if (this.viewMode === MODE_WEB) {
-      readerStyle.apply(this.webController);
+      const webTopPad: number = this.readerTopPad();
+      this.appliedTopPad = webTopPad;
+      readerStyle.apply(this.webController, webTopPad);
     }
   }
 
@@ -2282,7 +2342,7 @@ export struct ArticleDetailView {
               controller: this.readerController
             })
             .onLoadIntercept((event: OnLoadInterceptEvent) => {
-              return this.handleLinkIntercept(event.data.getRequestUrl());
+              return this.handleLinkIntercept(event);
             })
             .onTextSelectionChange((selectionText: string) => {
               if (this.selectedText !== selectionText) {
@@ -2300,6 +2360,8 @@ export struct ArticleDetailView {
               this.loading = false;
               this.bindProgressListener(this.readerController);
               this.replayHighlights(this.readerController);
+              // 冷启动 / 旋转后 safe-area 可能晚于文档构建就绪：按当前值补一次顶部让位。
+              this.syncReaderInset();
               // 搜索命中定位优先于进度恢复（用户是来找那一段的）。
               if (this.consumePendingSearch()) {
                 this.readerProgressRestored = true;
@@ -2367,7 +2429,7 @@ export struct ArticleDetailView {
             controller: this.webController
           })
           .onLoadIntercept((event: OnLoadInterceptEvent) => {
-            return this.handleLinkIntercept(event.data.getRequestUrl());
+            return this.handleLinkIntercept(event);
           })
           .onTextSelectionChange((selectionText: string) => {
             if (this.selectedText !== selectionText) {
@@ -2380,8 +2442,10 @@ export struct ArticleDetailView {
           })
           .onPageEnd(() => {
             this.loading = false;
-            // 网页原文的排版只能靠注入：按设置覆盖正文字号 / 行距 / 字体族。
-            readerStyle.apply(this.webController);
+            // 网页原文的排版只能靠注入：按设置覆盖正文字号 / 行距 / 字体族 + 顶部 / 底部让位。
+            const topPad: number = this.readerTopPad();
+            this.appliedTopPad = topPad;
+            readerStyle.apply(this.webController, topPad);
             this.bindProgressListener(this.webController);
             this.replayHighlights(this.webController);
             // 搜索命中定位优先；否则排版注入完成后再恢复进度，避免字号变化导致落点偏移。
@@ -2427,9 +2491,6 @@ export struct ArticleDetailView {
     if (this.hasArticle()) {
       Scroll(this.scroller) {
         Column({ space: $r('app.float.space_m') }) {
-          // 透明标题栏占位：放在滚动内容里（不是外层固定占位），正文才会从标题栏下方穿过。
-          Row().width('100%').height(safeArea.contentTopInsetVp)
-
           Text(this.cur().content.length > 0 ? this.cur().content : $r('app.string.article_no_content'))
             .fontSize(ReaderTypography.fontSizePx(appSettings.readerFontScale))
             .lineHeight(ReaderTypography.fontSizePx(appSettings.readerFontScale)
@@ -2861,7 +2922,7 @@ export struct ArticleDetailView {
   /**
    * 标题下方的标签条：已有标签横排（可左右滑动）。
    * 「+ 添加标签」已移到悬浮底栏（见 TagAction），标签条只在有内容时才占位。
-   * 正文顶部预留同样高度（见 build 里的 bodyTopPadding），所以这里不会压住正文首行。
+   * 正文顶部按 bodyTopPadding() 一起让位（状态栏 + 标题栏 + 本条的 44vp），所以不会压住正文首行。
    */
   @Builder
   TagChips() {
@@ -2939,43 +3000,56 @@ export struct ArticleDetailView {
       || this.merged();
   }
 
-  /** 顶部标签条占用的高度（无内容时为 0，正文直接顶上去）。 */
-  private topChipStripVp(): number {
-    return this.hasTopChips() ? TAG_STRIP_VP : 0;
+  /**
+   * 正文容器顶部让位：0（正文铺到屏幕最顶端，状态栏 + 标题栏都是叠加层）。
+   *
+   * 首屏首行由文档内边距让位（见 readerTopPad），滚动时正文从状态栏、标题栏下方穿过；
+   * 顶部那条模糊背板（见 TopBlurBand）负责把穿过的文字压住，标题始终可读。
+   */
+  private bodyTopPadding(): number {
+    return 0;
   }
 
   /**
-   * 正文顶部让位：
-   * - Reader 文档自身有 CSS 顶部内边距（contentTopInsetVp），这里只需再让出标签条高度；
-   * - 网页原文是裸 WebView，不会读取 CSS 内边距，必须在这里补上「标题栏 + 标签条」两段，
-   *   否则标签条会压住网页首行（HTML/表格类文章肉眼可见被遮挡）。
-   * - 纯文本模式在滚动内容里已有 contentTopInsetVp 占位，同样只需让出标签条高度。
+   * 顶部背板：覆盖「状态栏 + 标题栏（+ 标签条）」那一条的模糊 + 半透明遮罩。
+   *
+   * 只做底衬 —— 标题文字 / 返回键仍由 HDS 原生标题栏绘制，这里不加任何控件。
+   * 正文滚动到这一条时被模糊压住，标题任何时刻都可读（ArkWeb 画面不参与原生材质采样，
+   * 所以这里用 ArkUI 的背景模糊自己做一层）。
    */
-  private bodyTopPadding(): number {
-    if (this.viewMode === MODE_WEB || this.viewMode === MODE_READER) {
-      // Reader 文档与网页原文都由外层统一让位：文档自身的 topPad 传 0，
-      // 避免 safeArea 尚未就绪时文档内边距为 0、而标签条已按最新值定位导致遮挡。
-      return this.topChipStripVp() + safeArea.contentTopInsetVp;
+  @Builder
+  TopScrim() {
+    Column() {
+      Row()
+        .width('100%')
+        .height(safeArea.contentTopInsetVp + (this.hasTopChips() ? TAG_STRIP_VP : 0))
+        .backgroundBlurStyle(BlurStyle.COMPONENT_THICK)
+        .hitTestBehavior(HitTestMode.None)
     }
-    // 纯文本模式在滚动内容里已有 contentTopInsetVp 占位，外层只让出标签条。
-    return this.topChipStripVp();
+    .width('100%')
+    .height('100%')
+    .justifyContent(FlexAlign.Start)
+    .alignItems(HorizontalAlign.Start)
+    .hitTestBehavior(HitTestMode.None)
   }
 
   build() {
     Stack({ alignContent: Alignment.Bottom }) {
-      // 正文铺满整页（含标题栏与悬浮底栏下方），从两栏下方穿过 —— 与首页 barOverlap(true) 同源；
-      // 首尾让位由正文自己留：Reader 文档 / 网页原文走 CSS 内边距，纯文本走滚动内容里的占位与底部内边距。
+      // 正文铺满整屏（含状态栏 / 标题栏下方），首屏首行由文档内边距让位（见 readerTopPad）；
       // 切文时由 playSwitchAnimation 给一层轻量位移 + 淡入。
       Column() {
         this.BodySwitch()
       }
       .width('100%')
       .height('100%')
-      // 顶部预留标签条高度：chips 浮在这一条里，不压住正文首行。
       .padding({ top: this.bodyTopPadding() })
       .backgroundColor($r('app.color.hm_web_surface'))
       .translate({ x: this.bodyShift })
       .opacity(this.bodyAlpha)
+
+      // 顶部背板：状态栏 + 标题栏（+ 标签条）那一条的模糊/遮罩，正文从下面穿过时被压住。
+      // 只做底衬，标题与返回键仍由 HDS 原生标题栏绘制（不在上面再画一层栏）。
+      this.TopScrim()
 
       // 底栏：沉浸态下收起（高度 + 透明度动画；内容底部预留是固定的，收起后只是多点留白）
       Column() {
@@ -3062,6 +3136,10 @@ export struct ArticleDetailView {
     .defaultFocus(true)
     .onKeyEvent((event: KeyEvent): boolean => {
       return this.handleShortcut(event);
+    })
+    // 旋转 / 折叠 / 分栏后状态栏高度会变：文档里的顶部让位要按新值重新注入。
+    .onAreaChange((oldValue: Area, newValue: Area) => {
+      this.syncReaderInset();
     })
     .backgroundColor($r('app.color.hm_page_transparent'))
     .bindSheet(this.showSheet, this.SheetContent(), MaterialController.sheetOptions({

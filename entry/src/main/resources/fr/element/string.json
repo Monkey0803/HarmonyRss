@@ -1041,6 +1041,10 @@
       "value": "Impossible d'extraire l'article. Affichage de la page d'origine."
     },
     {
+      "name": "article_reader_placeholder",
+      "value": "Cette page nécessite JavaScript. Affichage de la page d'origine."
+    },
+    {
       "name": "article_prev",
       "value": "Précédent"
     },

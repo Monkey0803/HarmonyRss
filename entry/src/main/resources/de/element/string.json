@@ -1041,6 +1041,10 @@
       "value": "Der Artikel konnte nicht extrahiert werden. Die Originalseite wird angezeigt."
     },
     {
+      "name": "article_reader_placeholder",
+      "value": "Diese Seite benötigt JavaScript. Die Originalseite wird angezeigt."
+    },
+    {
       "name": "article_prev",
       "value": "Zurück"
     },

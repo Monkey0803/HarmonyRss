@@ -1041,6 +1041,10 @@
       "value": "Couldn't extract the article. Showing the original page."
     },
     {
+      "name": "article_reader_placeholder",
+      "value": "This page needs JavaScript. Showing the original page."
+    },
+    {
       "name": "article_prev",
       "value": "Previous"
     },
