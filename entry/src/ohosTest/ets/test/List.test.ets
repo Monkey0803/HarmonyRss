@@ -16,6 +16,7 @@ import readerSpeechFollowTest from './ReaderSpeechFollow.test';
 import readerProgressTest from './ReaderProgress.test';
 import rssParserTest from './RssParser.test';
 import mimeSniffTest from './MimeSniff.test';
+import imageCacheTest from './ImageCache.test';
 import readerTypographyTest from './ReaderTypography.test';
 import readerBudgetTest from './ReaderBudget.test';
 import summaryTextTest from './SummaryText.test';
@@ -68,6 +69,7 @@ export default function testsuite() {
   readerProgressTest();
   rssParserTest();
   mimeSniffTest();
+  imageCacheTest();
   readerTypographyTest();
   readerBudgetTest();
   summaryTextTest();

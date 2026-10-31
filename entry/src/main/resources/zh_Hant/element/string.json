@@ -4271,6 +4271,14 @@
     {
       "name": "article_read_progress",
       "value": "已讀 %d%"
+    },
+    {
+      "name": "article_offline_images_pending",
+      "value": "離線時部分圖片尚未快取"
+    },
+    {
+      "name": "article_offline_body_fallback",
+      "value": "離線時無法取得全文，已顯示可用的訂閱內容"
     }
   ]
 }

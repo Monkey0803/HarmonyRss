@@ -7,9 +7,10 @@
  *   3. 联网抓 article.link 的 HTML 再提取。
  * 抓取失败 / 提取为空时抛出 FeedFetchError，由上层决定退网页原文。
  *
- * 两级缓存标记（图片内联是「为了离线可读」，不该挡在首屏前面）：
- *   <!--hrv5t--> 文本已就绪、图片仍是远程链接 —— 立即返回，联网时后台串行补图；
- *   <!--hrv5-->  文本 + 图片都已就绪 —— 真正的完整离线缓存。
+ * 三级缓存标记（补图不阻塞正文首屏）：
+ *   hrv9t：文本已就绪，失败图片下次联网打开可重试；
+ *   hrv9p：图片预算或格式受限，正文可离线读，部分图片仍需联网；
+ *   hrv9：正文与所含图片都已缓存。
  */
 
 import { BusinessError } from '@kit.BasicServicesKit';
@@ -19,7 +20,7 @@ import { articleStore } from './ArticleStore';
 import { toPlainText } from '../common/utils/HtmlText';
 import { extractReadable, hasBodyContent } from './Readability';
 import { isReaderPlaceholder, ReaderPlaceholderError } from './ReaderContentGuard';
-import { imageCache } from './ImageCache';
+import { imageCache, InlineImagesResult } from './ImageCache';
 import { ReaderBudget } from './ReaderBudget';
 import { NetworkStatus } from './NetworkStatus';
 import { ReaderState, RssConstants, FeedError, FeedFetchError } from '../common/constants/RssConstants';
@@ -40,16 +41,46 @@ const TAG: string = 'ArticleContentService';
  * Reader HTML 版本标记（存在正文片段开头）。
  * 缓存命中要求带标记：提取规则升级时递增版本号，旧缓存按「未命中」处理 ——
  * 打开文章时用新规则重新提取（离线仍回退到旧缓存，不阻断阅读）。
- * hrv8：纯文字 div 归一成 p、并去掉「只包图片的链接」（点图不再触发导航）。
+ * hrv9：校验图片真实格式，并区分完整缓存与预算受限的部分缓存。
  */
-const READER_MARKER: string = '<!--hrv8-->';
+const READER_MARKER: string = '<!--hrv9-->';
 /**
  * 「文本就绪」标记：正文可立即展示，图片仍是远程链接。
  * 联网时后台串行补图，成功后再升级为 READER_MARKER。
  */
-const READER_MARKER_TEXT: string = '<!--hrv8t-->';
+const READER_MARKER_TEXT: string = '<!--hrv9t-->';
+/** 已尽力缓存，但仍有超出单篇预算的远程图片；下次打开不重复下载。 */
+const READER_MARKER_PARTIAL: string = '<!--hrv9p-->';
+const LEGACY_READER_MARKER: string = '<!--hrv8-->';
+const LEGACY_READER_MARKER_TEXT: string = '<!--hrv8t-->';
 /** 首屏渲染完成后再开始补图（避免与 Web 首次加载抢带宽与主线程）。 */
 const INLINE_DELAY_MS: number = 2000;
+
+/** 网络失败保留重试入口；预算受限只标为部分缓存；全数落本地才标完整。 */
+export function readerImageCacheMarker(remainingRemote: number, retryable: number,
+  budgetRejected: boolean): string {
+  if (retryable > 0) {
+    return READER_MARKER_TEXT;
+  }
+  if (remainingRemote > 0 || budgetRejected) {
+    return READER_MARKER_PARTIAL;
+  }
+  return READER_MARKER;
+}
+
+/** v8 缓存保留已内联图片；若仍有远程图，进入待补全状态而不重新抓整篇。 */
+export function upgradeLegacyReaderCache(cached: string): string {
+  let body: string = '';
+  if (cached.startsWith(LEGACY_READER_MARKER)) {
+    body = cached.substring(LEGACY_READER_MARKER.length);
+  } else if (cached.startsWith(LEGACY_READER_MARKER_TEXT)) {
+    body = cached.substring(LEGACY_READER_MARKER_TEXT.length);
+  } else {
+    return cached;
+  }
+  const hasRemote: boolean = /<img\b[^>]*\bsrc="https?:/i.test(body);
+  return (hasRemote ? READER_MARKER_TEXT : READER_MARKER) + body;
+}
 
 /** 统一网络错误 → 抓取错误码（超时与其它网络故障区分开）。 */
 function classifyRequestError(err: Object): FeedError {
@@ -92,8 +123,8 @@ export class ArticleContentService {
   private inFlight: Map<string, Promise<string>> = new Map<string, Promise<string>>();
   /** 后台补图任务串行链：避免多篇同时下载图片抢带宽。 */
   private inlineQueue: Promise<void> = Promise.resolve();
-  /** 已排队的补图任务（同一篇不重复排）。 */
-  private inlineScheduled: Set<string> = new Set<string>();
+  /** 按文章 ID 记录当前排队版本；相同正文的不同文章也各自补图。 */
+  private inlineScheduled: Map<string, string> = new Map<string, string>();
 
   /**
    * 抓取正文页 HTML，带条件请求：带上 ETag / Last-Modified 时，页面没变服务端回 304，
@@ -159,9 +190,19 @@ export class ArticleContentService {
         hilog.warn(DOMAIN, TAG, 'clear invalid reader cache failed: %{public}d', error.code);
       }
     }
+    const upgraded: string = upgradeLegacyReaderCache(cached);
+    if (upgraded !== cached) {
+      cached = upgraded;
+      this.persist(article, upgraded, article.plainText);
+    }
     if (cached.length > 0 && cached.startsWith(READER_MARKER)) {
       article.readerState = ReaderState.READY;
       hilog.info(DOMAIN, TAG, 'reader cache hit (%{public}d chars)', cached.length);
+      return cached;
+    }
+    if (cached.length > 0 && cached.startsWith(READER_MARKER_PARTIAL)) {
+      article.readerState = ReaderState.READY;
+      hilog.info(DOMAIN, TAG, 'reader partial cache hit (%{public}d chars)', cached.length);
       return cached;
     }
     if (cached.length > 0 && cached.startsWith(READER_MARKER_TEXT)) {
@@ -265,11 +306,10 @@ export class ArticleContentService {
    */
   private scheduleInline(article: Article, fresh: string, plain: string): void {
     const token: string = READER_MARKER_TEXT + fresh;
-    // 以 token 去重（而不是文章 id）：重新提取会产出新 token，旧任务自然失效。
-    if (!NetworkStatus.isOnline() || this.inlineScheduled.has(token)) {
+    if (!NetworkStatus.isOnline() || this.inlineScheduled.get(article.id) === token) {
       return;
     }
-    this.inlineScheduled.add(token);
+    this.inlineScheduled.set(article.id, token);
     this.inlineQueue = this.inlineQueue
       .then(() => this.inlineLater(article, fresh, plain, token))
       .catch((err: BusinessError) => {
@@ -285,16 +325,19 @@ export class ArticleContentService {
         return;
       }
       const start: number = Date.now();
-      const inlined: string = await imageCache.inlineImages(fresh, article.link);
-      if (inlined === fresh) {
-        // 一张都没内联成功（离线 / 全超预算）：保留文本标记，下次打开再试。
-        return;
-      }
+      const result: InlineImagesResult = await imageCache.inlineImages(fresh);
       if (article.readerHtml !== token) {
         return;
       }
       // 最后一道总预算：超限则退回未内联的正文，保证单篇体积有界。
-      const fragment: string = READER_MARKER + ReaderBudget.fit(fresh, inlined);
+      const fitted: string = ReaderBudget.fit(fresh, result.html);
+      const budgetRejected: boolean = fitted !== result.html;
+      const marker: string = readerImageCacheMarker(result.remainingRemote, result.retryable, budgetRejected);
+      const fragment: string = marker + fitted;
+      if (fragment === token) {
+        // 全部下载失败且仍可重试；保留文本标记，下一次联网打开再补。
+        return;
+      }
       hilog.info(DOMAIN, TAG, 'perf inline=%{public}dms inlined=%{public}d chars',
         Date.now() - start, fragment.length);
       this.persist(article, fragment, plain);
@@ -302,7 +345,9 @@ export class ArticleContentService {
       const error: BusinessError = err as BusinessError;
       hilog.warn(DOMAIN, TAG, 'inline images failed: %{public}d', error.code);
     } finally {
-      this.inlineScheduled.delete(token);
+      if (this.inlineScheduled.get(article.id) === token) {
+        this.inlineScheduled.delete(article.id);
+      }
     }
   }
 

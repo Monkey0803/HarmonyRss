@@ -4271,6 +4271,14 @@
     {
       "name": "article_read_progress",
       "value": "Read %d%"
+    },
+    {
+      "name": "article_offline_images_pending",
+      "value": "Offline: some images need a connection"
+    },
+    {
+      "name": "article_offline_body_fallback",
+      "value": "Full article unavailable offline; showing available feed content"
     }
   ]
 }

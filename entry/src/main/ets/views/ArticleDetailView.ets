@@ -768,6 +768,9 @@ export struct ArticleDetailView {
       if (html.length > 0) {
         this.readerHtml = html;
         this.viewMode = MODE_READER;
+        if (!NetworkStatus.isOnline() && /<img\b[^>]*\bsrc="https?:/i.test(html)) {
+          this.toast($r('app.string.article_offline_images_pending'));
+        }
         if (webMounted) {
           // Web 已挂载（原地切文）：直接换文档，避免销毁重建导致 controller 失效。
           this.loadReaderDocIntoWeb();
@@ -873,6 +876,13 @@ export struct ArticleDetailView {
   private onReaderFailed(placeholder: boolean = false): void {
     this.readerFailed = true;
     const article: Article | undefined = feedViewModel.currentArticle();
+    if (!NetworkStatus.isOnline()) {
+      this.viewMode = MODE_READER;
+      this.readerHtml = '';
+      this.loading = false;
+      this.toast($r('app.string.article_offline_body_fallback'));
+      return;
+    }
     if (article !== undefined && article.link.length > 0) {
       this.viewMode = MODE_WEB;
       this.loading = true;

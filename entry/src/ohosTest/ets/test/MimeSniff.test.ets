@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from '@ohos/hypium';
-import { sniffMime, guessMime } from '../../../main/ets/service/MimeSniff';
+import { sniffMime, guessMime, verifiedImageMime } from '../../../main/ets/service/MimeSniff';
 
 function bytes(values: number[]): Uint8Array {
   const out: Uint8Array = new Uint8Array(values.length);
@@ -63,6 +63,13 @@ export default function mimeSniffTest() {
     it('falls_back_to_url_suffix', 0, () => {
       expect(sniffMime(bytes([0x00, 0x01, 0x02]), 'https://x/y.png')).assertEqual('image/png');
       expect(sniffMime(bytes([0x00, 0x01, 0x02]), 'https://x/y')).assertEqual('image/jpeg');
+    });
+
+    it('rejects_html_or_other_files_for_offline_image_cache', 0, () => {
+      expect(verifiedImageMime(ascii('<html>Sign in</html>'))).assertEqual('');
+      expect(verifiedImageMime(ascii('AAAAftypmp42'))).assertEqual('');
+      expect(verifiedImageMime(ascii('GIFabc'))).assertEqual('');
+      expect(verifiedImageMime(ascii('AAAAftypavif'))).assertEqual('image/avif');
     });
 
     it('guess_mime_by_suffix', 0, () => {

@@ -4271,6 +4271,14 @@
     {
       "name": "article_read_progress",
       "value": "%d% leído"
+    },
+    {
+      "name": "article_offline_images_pending",
+      "value": "Algunas imágenes no están disponibles sin conexión"
+    },
+    {
+      "name": "article_offline_body_fallback",
+      "value": "Artículo completo no disponible sin conexión; se muestra el contenido del feed"
     }
   ]
 }

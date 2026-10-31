@@ -4271,6 +4271,14 @@
     {
       "name": "article_read_progress",
       "value": "已读 %d%"
+    },
+    {
+      "name": "article_offline_images_pending",
+      "value": "离线时部分图片尚未缓存"
+    },
+    {
+      "name": "article_offline_body_fallback",
+      "value": "离线时无法获取全文，已显示可用的订阅内容"
     }
   ]
 }

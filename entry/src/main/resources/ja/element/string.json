@@ -4271,6 +4271,14 @@
     {
       "name": "article_read_progress",
       "value": "%d% 既読"
+    },
+    {
+      "name": "article_offline_images_pending",
+      "value": "オフラインでは一部の画像を表示できません"
+    },
+    {
+      "name": "article_offline_body_fallback",
+      "value": "オフラインでは全文を取得できません。利用可能なフィード内容を表示します"
     }
   ]
 }
