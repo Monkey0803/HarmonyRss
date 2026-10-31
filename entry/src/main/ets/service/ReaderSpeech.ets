@@ -13,14 +13,15 @@
 import { textToSpeech } from '@kit.CoreSpeechKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
+import { SpeechSegment } from './ReaderSpeechDocument';
+import { SPEECH_CHINESE, SPEECH_ENGLISH } from './ReaderSpeechLanguage';
 
 const DOMAIN: number = 0x0000;
 const TAG: string = 'ReaderSpeech';
 
-/** 朗读语言（中文正文；英文内容也按中文引擎读，后续可按正文语言切换）。 */
-const SPEAK_LANGUAGE: string = 'zh-CN';
-/** 音色：0 / 13 均为聆小珊女声。 */
-const SPEAK_PERSON: number = 0;
+/** 中文用本机聆小珊，英文用 Laura（需设备已安装英文音色）。 */
+const CHINESE_PERSON: number = 0;
+const ENGLISH_PERSON: number = 8;
 /** 模式：0 = 在线（当前不支持），1 = 离线（本机合成）。 */
 const SPEAK_ONLINE_OFFLINE: number = 1;
 /** 每个分句块的目标长度（字符）与回退查找分隔符的下限。 */
@@ -49,6 +50,8 @@ export class SpeechProgress {
   /** 正文一共切了多少块。 */
   total: number = 0;
   speed: number = 1;
+  /** Reader DOM 段落 id；无对应文档段落时为 -1。 */
+  segmentId: number = -1;
 }
 
 /** 把正文切成适合逐块朗读的句子块（保序、不丢字符）。 */
@@ -97,11 +100,14 @@ function pushChunk(chunks: string[], value: string): void {
 
 export class ReaderSpeech {
   private engine: textToSpeech.TextToSpeechEngine | undefined = undefined;
+  private engineLanguage: string = '';
   private status: SpeechStatus = SpeechStatus.IDLE;
   private chunks: string[] = [];
+  private segmentIds: number[] = [];
   private index: number = 0;
   private speed: number = SPEECH_SPEEDS[DEFAULT_SPEED_INDEX];
   private currentId: string = '';
+  private operationToken: number = 0;
   private seq: number = 0;
   private retries: number = 0;
   /** 扩展参数被引擎拒绝后，降级为最小参数重试一次。 */
@@ -124,20 +130,45 @@ export class ReaderSpeech {
    * 开始朗读；返回 false 表示本机不支持或启动失败（调用方负责提示）。
    * onProgress 在开始 / 换块 / 暂停 / 继续 / 结束 / 出错时回调。
    */
-  async start(text: string, onProgress: (progress: SpeechProgress) => void): Promise<boolean> {
-    const chunks: string[] = splitIntoChunks(text);
+  async start(text: string, onProgress: (progress: SpeechProgress) => void,
+    language: string = SPEECH_CHINESE, segments: SpeechSegment[] = []): Promise<boolean> {
+    const chunks: string[] = [];
+    const segmentIds: number[] = [];
+    if (segments.length > 0) {
+      for (let i = 0; i < segments.length; i++) {
+        const parts: string[] = splitIntoChunks(segments[i].text);
+        for (let j = 0; j < parts.length; j++) {
+          chunks.push(parts[j]);
+          segmentIds.push(segments[i].id);
+        }
+      }
+    } else {
+      const parts: string[] = splitIntoChunks(text);
+      for (let i = 0; i < parts.length; i++) {
+        chunks.push(parts[i]);
+        segmentIds.push(-1);
+      }
+    }
     if (chunks.length === 0) {
       return false;
     }
+    if (language !== SPEECH_CHINESE && language !== SPEECH_ENGLISH) {
+      return false;
+    }
     this.onProgress = onProgress;
+    const token: number = ++this.operationToken;
     this.chunks = chunks;
+    this.segmentIds = segmentIds;
     this.index = 0;
     this.retries = 0;
     this.plainParams = false;
     this.status = SpeechStatus.SPEAKING;
     this.currentId = '';
     try {
-      const engine: textToSpeech.TextToSpeechEngine | undefined = await this.ensureEngine();
+      const engine: textToSpeech.TextToSpeechEngine | undefined = await this.ensureEngine(language);
+      if (token !== this.operationToken || this.status !== SpeechStatus.SPEAKING) {
+        return false;
+      }
       if (engine === undefined) {
         this.reset();
         return false;
@@ -201,6 +232,7 @@ export class ReaderSpeech {
 
   /** 停止朗读（幂等）。 */
   stop(): void {
+    this.operationToken++;
     if (this.status === SpeechStatus.IDLE && this.chunks.length === 0) {
       return;
     }
@@ -210,8 +242,10 @@ export class ReaderSpeech {
 
   /** 释放引擎（页面销毁时调用；下次朗读会重新创建）。 */
   release(): void {
+    this.operationToken++;
     const engine: textToSpeech.TextToSpeechEngine | undefined = this.engine;
     this.engine = undefined;
+    this.engineLanguage = '';
     this.reset();
     if (engine === undefined) {
       return;
@@ -237,6 +271,7 @@ export class ReaderSpeech {
   private reset(): void {
     this.status = SpeechStatus.IDLE;
     this.chunks = [];
+    this.segmentIds = [];
     this.index = 0;
     this.retries = 0;
     this.currentId = '';
@@ -308,6 +343,7 @@ export class ReaderSpeech {
     progress.index = this.index;
     progress.total = this.chunks.length;
     progress.speed = this.speed;
+    progress.segmentId = this.segmentIds[this.index] ?? -1;
     this.onProgress(progress);
   }
 
@@ -317,11 +353,22 @@ export class ReaderSpeech {
   }
 
   /** 按需创建引擎；不支持时返回 undefined（不抛）。 */
-  private async ensureEngine(): Promise<textToSpeech.TextToSpeechEngine | undefined> {
+  private async ensureEngine(language: string): Promise<textToSpeech.TextToSpeechEngine | undefined> {
     const cached: textToSpeech.TextToSpeechEngine | undefined = this.engine;
-    if (cached !== undefined) {
+    if (cached !== undefined && this.engineLanguage === language) {
       return cached;
     }
+    if (cached !== undefined) {
+      this.engine = undefined;
+      this.engineLanguage = '';
+      try {
+        cached.shutdown();
+      } catch (err) {
+        const error: BusinessError = err as BusinessError;
+        hilog.warn(DOMAIN, TAG, 'old engine shutdown failed: %{public}d', error.code);
+      }
+    }
+    const person: number = language === SPEECH_ENGLISH ? ENGLISH_PERSON : CHINESE_PERSON;
     try {
       const extraParams: Record<string, Object> = {
         'style': 'interaction-broadcast',
@@ -330,14 +377,15 @@ export class ReaderSpeech {
         'isBackStage': true
       };
       const params: textToSpeech.CreateEngineParams = {
-        language: SPEAK_LANGUAGE,
-        person: SPEAK_PERSON,
+        language: language,
+        person: person,
         online: SPEAK_ONLINE_OFFLINE,
         extraParams: extraParams
       };
       const engine: textToSpeech.TextToSpeechEngine = await textToSpeech.createEngine(params);
       this.setListener(engine);
       this.engine = engine;
+      this.engineLanguage = language;
       return engine;
     } catch (err) {
       const error: BusinessError = err as BusinessError;
@@ -345,13 +393,14 @@ export class ReaderSpeech {
       // 扩展参数（style / 后台播报）不被支持时，退回最小参数再创建一次。
       try {
         const minimal: textToSpeech.CreateEngineParams = {
-          language: SPEAK_LANGUAGE,
-          person: SPEAK_PERSON,
+          language: language,
+          person: person,
           online: SPEAK_ONLINE_OFFLINE
         };
         const engine: textToSpeech.TextToSpeechEngine = await textToSpeech.createEngine(minimal);
         this.setListener(engine);
         this.engine = engine;
+        this.engineLanguage = language;
         return engine;
       } catch (retryErr) {
         const retryError: BusinessError = retryErr as BusinessError;

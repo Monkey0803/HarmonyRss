@@ -237,6 +237,14 @@
       "value": "本机不支持朗读"
     },
     {
+      "name": "action_return_to_speech",
+      "value": "返回朗读处"
+    },
+    {
+      "name": "toast_speech_language_unsupported",
+      "value": "朗读目前仅支持中文和英文"
+    },
+    {
       "name": "action_copy",
       "value": "复制"
     },
@@ -4259,6 +4267,10 @@
     {
       "name": "image_load_failed",
       "value": "图片加载失败"
+    },
+    {
+      "name": "article_read_progress",
+      "value": "已读 %d%"
     }
   ]
 }

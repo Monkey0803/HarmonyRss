@@ -237,6 +237,14 @@
       "value": "Read-aloud is not supported on this device"
     },
     {
+      "name": "action_return_to_speech",
+      "value": "Return to voice"
+    },
+    {
+      "name": "toast_speech_language_unsupported",
+      "value": "Read aloud currently supports Chinese and English"
+    },
+    {
       "name": "action_copy",
       "value": "Copy"
     },
@@ -4259,6 +4267,10 @@
     {
       "name": "image_load_failed",
       "value": "Failed to load image"
+    },
+    {
+      "name": "article_read_progress",
+      "value": "Read %d%"
     }
   ]
 }

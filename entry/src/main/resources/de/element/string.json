@@ -237,6 +237,14 @@
       "value": "Vorlesen wird auf diesem Gerät nicht unterstützt"
     },
     {
+      "name": "action_return_to_speech",
+      "value": "Zur Vorlesestelle"
+    },
+    {
+      "name": "toast_speech_language_unsupported",
+      "value": "Vorlesen unterstützt derzeit nur Chinesisch und Englisch"
+    },
+    {
       "name": "action_copy",
       "value": "Kopieren"
     },
@@ -4259,6 +4267,10 @@
     {
       "name": "image_load_failed",
       "value": "Bild konnte nicht geladen werden"
+    },
+    {
+      "name": "article_read_progress",
+      "value": "%d% gelesen"
     }
   ]
 }

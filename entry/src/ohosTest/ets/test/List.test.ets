@@ -12,6 +12,8 @@ import htmlDomTest from './HtmlDom.test';
 import htmlSanitizerTest from './HtmlSanitizer.test';
 import readabilityTest from './Readability.test';
 import readerContentGuardTest from './ReaderContentGuard.test';
+import readerSpeechFollowTest from './ReaderSpeechFollow.test';
+import readerProgressTest from './ReaderProgress.test';
 import rssParserTest from './RssParser.test';
 import mimeSniffTest from './MimeSniff.test';
 import readerTypographyTest from './ReaderTypography.test';
@@ -62,6 +64,8 @@ export default function testsuite() {
   htmlSanitizerTest();
   readabilityTest();
   readerContentGuardTest();
+  readerSpeechFollowTest();
+  readerProgressTest();
   rssParserTest();
   mimeSniffTest();
   readerTypographyTest();

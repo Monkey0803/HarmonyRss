@@ -237,6 +237,14 @@
       "value": "La lectura en voz alta no es compatible con este dispositivo"
     },
     {
+      "name": "action_return_to_speech",
+      "value": "Volver a la lectura"
+    },
+    {
+      "name": "toast_speech_language_unsupported",
+      "value": "La lectura en voz alta solo admite chino e inglés por ahora"
+    },
+    {
       "name": "action_copy",
       "value": "Copiar"
     },
@@ -4259,6 +4267,10 @@
     {
       "name": "image_load_failed",
       "value": "No se pudo cargar la imagen"
+    },
+    {
+      "name": "article_read_progress",
+      "value": "%d% leído"
     }
   ]
 }

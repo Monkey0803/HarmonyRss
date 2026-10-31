@@ -237,6 +237,14 @@
       "value": "この端末では読み上げに対応していません"
     },
     {
+      "name": "action_return_to_speech",
+      "value": "読み上げ位置へ"
+    },
+    {
+      "name": "toast_speech_language_unsupported",
+      "value": "読み上げは現在、中国語と英語のみ対応しています"
+    },
+    {
       "name": "action_copy",
       "value": "コピー"
     },
@@ -4259,6 +4267,10 @@
     {
       "name": "image_load_failed",
       "value": "画像を読み込めませんでした"
+    },
+    {
+      "name": "article_read_progress",
+      "value": "%d% 既読"
     }
   ]
 }

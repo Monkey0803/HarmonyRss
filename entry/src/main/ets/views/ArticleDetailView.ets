@@ -42,6 +42,16 @@ import { ToastUtil } from '../common/utils/ToastUtil';
 import { toPlainText } from '../common/utils/HtmlText';
 import { screenAwake } from '../service/ScreenAwake';
 import { readerSpeech, SpeechProgress, SpeechStatus } from '../service/ReaderSpeech';
+import { speechLanguageOf } from '../service/ReaderSpeechLanguage';
+import {
+  clearSpeechSegmentScript,
+  collectSpeechSegmentsScript,
+  markSpeechSegmentScript,
+  parseSpeechSegments,
+  ReaderSpeechScrollBridge,
+  speechManualScrollScript,
+  SpeechSegment
+} from '../service/ReaderSpeechDocument';
 import {
   clearFindScript,
   countFindScript,
@@ -71,9 +81,7 @@ import { Highlight, HighlightColor } from '../model/Highlight';
 import { articleStore } from '../service/ArticleStore';
 import {
   parsePosition,
-  progressListenerScript,
   ReaderPosition,
-  ReaderProgressBridge,
   readPositionScript,
   restorePositionScript
 } from '../service/ReaderProgress';
@@ -154,6 +162,14 @@ export struct ArticleDetailView {
   @Local showSheet: boolean = false;
   /** 当前阅读进度（0–1），用于标题栏下方的细进度条；由文档内滚动回调刷新。 */
   @Local progressRatio: number = 0;
+  /** 恢复位置时忽略脚本产生的中间滚动，避免把未恢复完成的位置写回。 */
+  private progressReadyAt: number = 0;
+  private progressSaveTimer: number = -1;
+  private progressPollTimer: number = -1;
+  private progressPollVersion: number = 0;
+  private lastPolledY: number = -1;
+  private pendingProgress: ReaderPosition | undefined = undefined;
+  private pendingProgressArticleId: string = '';
   /** 正文里选中的文本（Web 的 onTextSelectionChange 回调）；非空时显示「复制/分享选段」浮条。 */
   @Local selectedText: string = '';
   /** 当前文章的标注（本地库读出；正文里靠注入脚本重放高亮）。 */
@@ -183,6 +199,14 @@ export struct ArticleDetailView {
   @Local speechTotal: number = 0;
   /** 朗读：当前语速倍数。 */
   @Local speechSpeed: number = 1;
+  /** 手动滚动后暂停自动跟随，播放条提供返回当前朗读段落的入口。 */
+  @Local speechFollow: boolean = true;
+  private speechSegmentId: number = -1;
+  private speechScrollBridge: ReaderSpeechScrollBridge = new ReaderSpeechScrollBridge(() => {
+    if (this.speaking && this.speechSegmentId >= 0) {
+      this.speechFollow = false;
+    }
+  });
   /** 沉浸阅读：只隐藏页内底部操作条（点按正文中部切换；标题栏由外壳的滚动显隐控制）。 */
   @Local bottomBarHidden: boolean = false;
   /** 横向手势的起手点（px），用于避让系统边缘返回手势。 */
@@ -200,15 +224,6 @@ export struct ArticleDetailView {
   /** 文档内点标注 → ArkTS 弹编辑面板（javaScriptProxy，页面创建时注册一次）。 */
   private hlBridge: ReaderHighlightBridge = new ReaderHighlightBridge((id: string) => {
     this.openHighlightEditor(id);
-  });
-  /** 文档内滚动 → ArkTS 的进度回调（javaScriptProxy，页面创建时注册一次）。 */
-  private progressBridge: ReaderProgressBridge = new ReaderProgressBridge((ratio: number) => {
-    // 进度条只需要 1% 精度：按 1% 量化，避免每 200ms 的滚动回调把整页 build() 重估一遍。
-    const next: number = Math.round(ratio * 100) / 100;
-    if (next !== this.progressRatio) {
-      this.progressRatio = next;
-    }
-    this.handleProgressRatio(ratio);
   });
   /** 正文触摸判定（沉浸阅读的点按）：按下位置与时间。 */
   private tapStartX: number = -1;
@@ -349,7 +364,44 @@ export struct ArticleDetailView {
       return;
     }
     this.finished = true;
+    this.clearQueuedProgress();
     feedViewModel.markFinished(article.id);
+  }
+
+  /** 滚动时最多每 1.2 秒写一次；切文和离开页面时立即冲刷最后的位置。 */
+  private queueProgress(articleId: string, position: ReaderPosition): void {
+    this.pendingProgressArticleId = articleId;
+    this.pendingProgress = position;
+    if (this.progressSaveTimer >= 0) {
+      return;
+    }
+    this.progressSaveTimer = setTimeout(() => {
+      this.progressSaveTimer = -1;
+      this.flushProgress();
+    }, 1200);
+  }
+
+  private flushProgress(): void {
+    if (this.progressSaveTimer >= 0) {
+      clearTimeout(this.progressSaveTimer);
+      this.progressSaveTimer = -1;
+    }
+    const position: ReaderPosition | undefined = this.pendingProgress;
+    const articleId: string = this.pendingProgressArticleId;
+    this.pendingProgress = undefined;
+    this.pendingProgressArticleId = '';
+    if (position !== undefined && articleId.length > 0 && !this.finished) {
+      feedViewModel.saveProgress(articleId, position.y, position.ratio);
+    }
+  }
+
+  private clearQueuedProgress(): void {
+    if (this.progressSaveTimer >= 0) {
+      clearTimeout(this.progressSaveTimer);
+      this.progressSaveTimer = -1;
+    }
+    this.pendingProgress = undefined;
+    this.pendingProgressArticleId = '';
   }
 
   /** 下一个 / 上一个命中项（循环）。 */
@@ -392,9 +444,29 @@ export struct ArticleDetailView {
       readerSpeech.stop();
       return;
     }
-    const text: string = this.plainText();
+    const articleId: string = this.cur().id;
+    let segments: SpeechSegment[] = [];
+    if (this.viewMode === MODE_READER && this.readerHtml.length > 0) {
+      try {
+        segments = parseSpeechSegments(await this.readerController.runJavaScript(collectSpeechSegmentsScript()));
+      } catch (err) {
+        const error: BusinessError = err as BusinessError;
+        hilog.warn(DOMAIN, TAG, 'collect speech segments failed: %{public}d', error.code);
+      }
+    }
+    if (feedViewModel.currentArticle()?.id !== articleId) {
+      return;
+    }
+    const text: string = segments.length > 0
+      ? segments.map((item: SpeechSegment) => item.text).join(' ')
+      : this.plainText();
     if (text.length === 0) {
       this.toast($r('app.string.article_no_content'));
+      return;
+    }
+    const language: string = speechLanguageOf(text);
+    if (language.length === 0) {
+      this.toast($r('app.string.toast_speech_language_unsupported'));
       return;
     }
     // 与播客播放互斥：开始朗读前先暂停音频，避免同时出声。
@@ -402,16 +474,51 @@ export struct ArticleDetailView {
       mediaPlayerService.pause().catch(() => {
       });
     }
+    this.speechFollow = true;
+    this.speechSegmentId = -1;
     const ok: boolean = await readerSpeech.start(text, (progress: SpeechProgress) => {
       this.speaking = progress.status !== SpeechStatus.IDLE;
       this.speechPaused = progress.status === SpeechStatus.PAUSED;
       this.speechIndex = progress.index;
       this.speechTotal = progress.total;
       this.speechSpeed = progress.speed;
-    });
-    if (!ok) {
+      if (progress.status === SpeechStatus.IDLE) {
+        this.clearSpeechMark();
+        this.speechSegmentId = -1;
+      } else if (progress.segmentId >= 0 && progress.segmentId !== this.speechSegmentId) {
+        this.speechSegmentId = progress.segmentId;
+        this.markSpeechSegment(this.speechFollow);
+      }
+    }, language, segments);
+    if (!ok && feedViewModel.currentArticle()?.id === articleId) {
       this.toast($r('app.string.toast_speech_unsupported'));
     }
+  }
+
+  private markSpeechSegment(follow: boolean): void {
+    if (this.viewMode !== MODE_READER || this.speechSegmentId < 0) {
+      return;
+    }
+    try {
+      this.readerController.runJavaScript(markSpeechSegmentScript(this.speechSegmentId, follow))
+        .catch((err: BusinessError) => {
+          hilog.warn(DOMAIN, TAG, 'speech mark failed: %{public}d', err.code);
+        });
+    } catch (_) {
+      // 切文或离开页面时 Web 控制器可能已卸载。
+    }
+  }
+
+  private clearSpeechMark(): void {
+    try {
+      this.readerController.runJavaScript(clearSpeechSegmentScript()).catch(() => {});
+    } catch (_) {
+    }
+  }
+
+  private returnToSpeech(): void {
+    this.speechFollow = true;
+    this.markSpeechSegment(true);
   }
 
   /** 朗读暂停 / 继续。 */
@@ -655,6 +762,9 @@ export struct ArticleDetailView {
     const webMounted: boolean = this.readerHtml.length > 0;
     try {
       const html: string = await feedViewModel.loadReaderHtml(article.id);
+      if (feedViewModel.currentArticle()?.id !== article.id) {
+        return;
+      }
       if (html.length > 0) {
         this.readerHtml = html;
         this.viewMode = MODE_READER;
@@ -667,6 +777,9 @@ export struct ArticleDetailView {
         this.onReaderFailed();
       }
     } catch (err) {
+      if (feedViewModel.currentArticle()?.id !== article.id) {
+        return;
+      }
       const error: BusinessError = err as BusinessError;
       hilog.warn(DOMAIN, TAG, 'reader extract failed: %{public}d', error.code);
       this.onReaderFailed(err instanceof ReaderPlaceholderError);
@@ -1039,10 +1152,20 @@ export struct ArticleDetailView {
     if (article === undefined) {
       return;
     }
+    if (this.viewMode === MODE_READER && article.link.length === 0) {
+      return;
+    }
+    this.stopProgressPolling();
+    this.flushProgress();
+    if (this.viewMode === MODE_WEB) {
+      this.persistWebProgress();
+    } else {
+      this.persistReaderProgress();
+    }
+    readerSpeech.stop();
+    this.speechFollow = true;
+    this.speechSegmentId = -1;
     if (this.viewMode === MODE_READER) {
-      if (article.link.length === 0) {
-        return;
-      }
       this.applyViewMode(MODE_WEB);
       this.loading = true;
     } else {
@@ -1116,17 +1239,25 @@ export struct ArticleDetailView {
     if (id.length === 0) {
       return;
     }
+    this.stopProgressPolling();
+    this.flushProgress();
+    if (this.viewMode === MODE_WEB) {
+      this.persistWebProgress();
+    } else {
+      this.persistReaderProgress();
+    }
     if (this.prefetchTimer >= 0) {
       clearTimeout(this.prefetchTimer);
       this.prefetchTimer = -1;
     }
     feedViewModel.openArticle(id);
     // 不重置 readerHtml：保持 Reader Web 挂载，随后直接换文档，避免 controller 失效。
-    this.progressRatio = 0;
+    this.progressRatio = feedViewModel.currentArticle()?.progressRatio ?? 0;
+    this.progressReadyAt = 0;
     // 换了文章：停掉朗读
-    if (this.speaking) {
-      readerSpeech.stop();
-    }
+    readerSpeech.stop();
+    this.speechFollow = true;
+    this.speechSegmentId = -1;
     // 底栏沉浸态与查找条都复位（新文章从完整界面开始）
     if (this.bottomBarHidden) {
       this.bottomBarHidden = false;
@@ -1364,6 +1495,7 @@ export struct ArticleDetailView {
     // 恢复上次用的阅读模式：上次停在「网页原文」时直接进 Web，
     // 不能再跑一遍 startReader()（它会无条件把 viewMode 拽回阅读器）。
     const article: Article | undefined = feedViewModel.currentArticle();
+    this.progressRatio = article?.progressRatio ?? 0;
     if (appSettings.readerViewMode === MODE_WEB && article !== undefined && article.link.length > 0) {
       this.viewMode = MODE_WEB;
       this.loading = true;
@@ -1387,6 +1519,8 @@ export struct ArticleDetailView {
     }
     screenAwake.set(false, this.getUIContext().getHostContext());
     readerSpeech.release();
+    this.stopProgressPolling();
+    this.flushProgress();
     if (this.viewMode === MODE_WEB) {
       this.persistWebProgress();
     } else {
@@ -1418,6 +1552,7 @@ export struct ArticleDetailView {
     if (article === undefined || (article.progress <= 0 && article.progressRatio <= 0)) {
       return;
     }
+    this.progressReadyAt = Date.now() + 3200;
     this.runRestore(controller, new ReaderPosition(article.progress, article.progressRatio));
   }
 
@@ -1481,12 +1616,55 @@ export struct ArticleDetailView {
     });
   }
 
-  private bindProgressListener(controller: webview.WebviewController): void {
-    controller
-      .runJavaScript(progressListenerScript())
-      .catch((err: BusinessError) => {
-        hilog.warn(DOMAIN, TAG, 'progress listener failed: %{public}d', err.code);
-      });
+  /** ArkWeb 的 JS 代理在部分页面未暴露；定期读取当前文档位置更稳定。 */
+  private startProgressPolling(controller: webview.WebviewController): void {
+    this.stopProgressPolling();
+    const article: Article | undefined = feedViewModel.currentArticle();
+    if (article === undefined) {
+      return;
+    }
+    const articleId: string = article.id;
+    const mode: string = this.viewMode;
+    const version: number = this.progressPollVersion;
+    this.lastPolledY = -1;
+    const poll = (): void => {
+      if (version !== this.progressPollVersion || feedViewModel.currentArticle()?.id !== articleId ||
+        this.viewMode !== mode || Date.now() < this.progressReadyAt) {
+        return;
+      }
+      controller.runJavaScript(readPositionScript()).then((raw: string) => {
+        if (version !== this.progressPollVersion || feedViewModel.currentArticle()?.id !== articleId ||
+          this.viewMode !== mode || Date.now() < this.progressReadyAt) {
+          return;
+        }
+        if (raw.indexOf('|') < 0) {
+          return;
+        }
+        const position: ReaderPosition = parsePosition(raw);
+        if (Math.abs(position.y - this.lastPolledY) < 1) {
+          return;
+        }
+        this.lastPolledY = position.y;
+        const next: number = Math.round(position.ratio * 100) / 100;
+        if (next !== this.progressRatio) {
+          this.progressRatio = next;
+        }
+        this.handleProgressRatio(position.ratio);
+        if (!this.finished) {
+          this.queueProgress(articleId, position);
+        }
+      }).catch(() => {});
+    };
+    this.progressPollTimer = setInterval(poll, 1200);
+    poll();
+  }
+
+  private stopProgressPolling(): void {
+    this.progressPollVersion++;
+    if (this.progressPollTimer >= 0) {
+      clearInterval(this.progressPollTimer);
+      this.progressPollTimer = -1;
+    }
   }
 
   /**
@@ -1589,6 +1767,12 @@ export struct ArticleDetailView {
     controller.runJavaScript(readPositionScript(), (err: BusinessError, value: string) => {
       if (err) {
         hilog.warn(DOMAIN, TAG, 'read scroll position failed: %{public}d', err.code);
+        return;
+      }
+      if (value.indexOf('|') < 0) {
+        return;
+      }
+      if (this.finished && feedViewModel.currentArticle()?.id === articleId) {
         return;
       }
       const position: ReaderPosition = parsePosition(value);
@@ -2327,11 +2511,10 @@ export struct ArticleDetailView {
             .javaScriptAccess(true)
             .domStorageAccess(false)
             .horizontalScrollBarAccess(false)
-            // 文档内滚动回调：window.hrProgress.onProgress(ratio)
             .javaScriptProxy({
-              object: this.progressBridge,
-              name: 'hrProgress',
-              methodList: ['onProgress'],
+              object: this.speechScrollBridge,
+              name: 'hrSpeechScroll',
+              methodList: ['onManualScroll'],
               controller: this.readerController
             })
             // 文档内点标注：window.__hrHlCb.onHlClick(id)
@@ -2358,7 +2541,11 @@ export struct ArticleDetailView {
             })
             .onPageEnd(() => {
               this.loading = false;
-              this.bindProgressListener(this.readerController);
+              const article: Article | undefined = feedViewModel.currentArticle();
+              this.progressReadyAt = article !== undefined &&
+                (article.progress > 0 || article.progressRatio > 0) ? Date.now() + 3200 : 0;
+              this.startProgressPolling(this.readerController);
+              this.readerController.runJavaScript(speechManualScrollScript()).catch(() => {});
               this.replayHighlights(this.readerController);
               // 冷启动 / 旋转后 safe-area 可能晚于文档构建就绪：按当前值补一次顶部让位。
               this.syncReaderInset();
@@ -2414,13 +2601,6 @@ export struct ArticleDetailView {
           .darkMode(WebDarkMode.Auto)
           .javaScriptAccess(true)
           .domStorageAccess(true)
-          // 文档内滚动回调：window.hrProgress.onProgress(ratio)
-          .javaScriptProxy({
-            object: this.progressBridge,
-            name: 'hrProgress',
-            methodList: ['onProgress'],
-            controller: this.webController
-          })
           // 文档内点标注：window.__hrHlCb.onHlClick(id)
           .javaScriptProxy({
             object: this.hlBridge,
@@ -2442,11 +2622,14 @@ export struct ArticleDetailView {
           })
           .onPageEnd(() => {
             this.loading = false;
+            const article: Article | undefined = feedViewModel.currentArticle();
+            this.progressReadyAt = article !== undefined &&
+              (article.progress > 0 || article.progressRatio > 0) ? Date.now() + 3200 : 0;
             // 网页原文的排版只能靠注入：按设置覆盖正文字号 / 行距 / 字体族 + 顶部 / 底部让位。
             const topPad: number = this.readerTopPad();
             this.appliedTopPad = topPad;
             readerStyle.apply(this.webController, topPad);
-            this.bindProgressListener(this.webController);
+            this.startProgressPolling(this.webController);
             this.replayHighlights(this.webController);
             // 搜索命中定位优先；否则排版注入完成后再恢复进度，避免字号变化导致落点偏移。
             if (this.consumePendingSearch()) {
@@ -2753,50 +2936,64 @@ export struct ArticleDetailView {
   @Builder
   SpeechBar() {
     if (this.speaking) {
-      Row({ space: $r('app.float.space_xxs') }) {
-        SymbolGlyph($r('sys.symbol.speaker'))
-          .fontSize($r('app.float.icon_size_small'))
-          .fontColor([$r('app.color.hm_brand')])
+      Column({ space: $r('app.float.space_xxs') }) {
+        Row({ space: $r('app.float.space_xxs') }) {
+          SymbolGlyph($r('sys.symbol.speaker'))
+            .fontSize($r('app.float.icon_size_small'))
+            .fontColor([$r('app.color.hm_brand')])
 
-        Column({ space: $r('app.float.space_xxs') }) {
-          Text(this.speechPaused ? $r('app.string.speech_paused') : $r('app.string.speech_running'))
-            .fontSize($r('app.float.font_size_caption'))
-            .fontColor($r('app.color.hm_text_primary'))
-            .maxLines(1)
-            .textOverflow({ overflow: TextOverflow.Ellipsis })
-          Text(`${this.speechIndex + 1}/${this.speechTotal}`)
+          Column({ space: $r('app.float.space_xxs') }) {
+            Text(this.speechPaused ? $r('app.string.speech_paused') : $r('app.string.speech_running'))
+              .fontSize($r('app.float.font_size_caption'))
+              .fontColor($r('app.color.hm_text_primary'))
+              .maxLines(1)
+              .textOverflow({ overflow: TextOverflow.Ellipsis })
+            Text(`${this.speechIndex + 1}/${this.speechTotal}`)
+              .fontSize($r('app.float.font_size_caption'))
+              .fontColor($r('app.color.hm_text_secondary'))
+          }
+          .alignItems(HorizontalAlign.Start)
+          .layoutWeight(1)
+
+          Button(`${this.speechSpeed.toFixed(1)}×`)
+            .buttonStyle(ButtonStyleMode.TEXTUAL)
             .fontSize($r('app.float.font_size_caption'))
             .fontColor($r('app.color.hm_text_secondary'))
+            .padding({ left: $r('app.float.space_xxs'), right: $r('app.float.space_xxs') })
+            .onClick(() => {
+              this.cycleSpeechSpeed();
+            })
+
+          Button(this.speechPaused ? $r('app.string.action_resume_speech') : $r('app.string.action_pause_speech'))
+            .buttonStyle(ButtonStyleMode.TEXTUAL)
+            .fontSize($r('app.float.font_size_caption'))
+            .fontColor($r('app.color.hm_brand'))
+            .padding({ left: $r('app.float.space_xxs'), right: $r('app.float.space_xxs') })
+            .onClick(() => {
+              this.toggleSpeechPause();
+            })
+
+          Button($r('app.string.action_stop_speech'))
+            .buttonStyle(ButtonStyleMode.TEXTUAL)
+            .fontSize($r('app.float.font_size_caption'))
+            .fontColor($r('app.color.hm_brand'))
+            .padding({ left: $r('app.float.space_xxs'), right: $r('app.float.space_xxs') })
+            .onClick(() => {
+              readerSpeech.stop();
+            })
         }
-        .alignItems(HorizontalAlign.Start)
-        .layoutWeight(1)
+        .width('100%')
+        .alignItems(VerticalAlign.Center)
 
-        Button(`${this.speechSpeed.toFixed(1)}×`)
-          .buttonStyle(ButtonStyleMode.TEXTUAL)
-          .fontSize($r('app.float.font_size_caption'))
-          .fontColor($r('app.color.hm_text_secondary'))
-          .padding({ left: $r('app.float.space_xxs'), right: $r('app.float.space_xxs') })
-          .onClick(() => {
-            this.cycleSpeechSpeed();
-          })
-
-        Button(this.speechPaused ? $r('app.string.action_resume_speech') : $r('app.string.action_pause_speech'))
-          .buttonStyle(ButtonStyleMode.TEXTUAL)
-          .fontSize($r('app.float.font_size_caption'))
-          .fontColor($r('app.color.hm_brand'))
-          .padding({ left: $r('app.float.space_xxs'), right: $r('app.float.space_xxs') })
-          .onClick(() => {
-            this.toggleSpeechPause();
-          })
-
-        Button($r('app.string.action_stop_speech'))
-          .buttonStyle(ButtonStyleMode.TEXTUAL)
-          .fontSize($r('app.float.font_size_caption'))
-          .fontColor($r('app.color.hm_brand'))
-          .padding({ left: $r('app.float.space_xxs'), right: $r('app.float.space_xxs') })
-          .onClick(() => {
-            readerSpeech.stop();
-          })
+        if (!this.speechFollow && this.speechSegmentId >= 0) {
+          Button($r('app.string.action_return_to_speech'))
+            .buttonStyle(ButtonStyleMode.TEXTUAL)
+            .fontSize($r('app.float.font_size_caption'))
+            .fontColor($r('app.color.hm_brand'))
+            .onClick(() => {
+              this.returnToSpeech();
+            })
+        }
       }
       .width('100%')
       .padding({
@@ -2812,7 +3009,7 @@ export struct ArticleDetailView {
       })
       .backgroundColor($r('app.color.hm_card_background'))
       .borderRadius($r('app.float.radius_card'))
-      .alignItems(VerticalAlign.Center)
+      .alignItems(HorizontalAlign.Center)
     }
   }
 
@@ -2897,6 +3094,27 @@ export struct ArticleDetailView {
       }
       .width('100%')
       .height($r('app.float.read_progress_height'))
+    }
+  }
+
+  /** 长文阅读时在底栏上方显示明确的百分比，沉浸阅读下也可查看。 */
+  @Builder
+  ProgressBadge() {
+    if (this.hasArticle() && this.progressRatio > 0.005 && this.progressRatio < 1) {
+      Row() {
+        Text($r('app.string.article_read_progress', Math.round(this.progressRatio * 100)))
+          .fontSize($r('app.float.font_size_caption'))
+          .fontColor($r('app.color.hm_text_secondary'))
+          .padding({ left: $r('app.float.space_s'), right: $r('app.float.space_s'),
+            top: $r('app.float.space_xxs'), bottom: $r('app.float.space_xxs') })
+          .backgroundColor($r('app.color.hm_card_background'))
+          .borderRadius($r('app.float.radius_card'))
+      }
+      .width('100%')
+      .padding({ right: $r('app.float.space_l'), bottom: $r('app.float.space_xxs') })
+      .margin({ bottom: this.bottomBarHidden ? safeArea.bottomInsetVp : this.barStripHeight() })
+      .justifyContent(FlexAlign.End)
+      .hitTestBehavior(HitTestMode.None)
     }
   }
 
@@ -3060,6 +3278,14 @@ export struct ArticleDetailView {
       .opacity(this.bottomBarHidden ? 0 : 1)
       .clip(true)
       .animation({ duration: 180, curve: Curve.Friction })
+
+      Column() {
+        Blank()
+        this.ProgressBadge()
+      }
+      .width('100%')
+      .height('100%')
+      .hitTestBehavior(HitTestMode.None)
 
       // 底部浮层：朗读条 + 选段条（都贴在底栏上方）
       Column() {

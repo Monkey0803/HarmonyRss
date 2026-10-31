@@ -237,6 +237,14 @@
       "value": "La lecture à voix haute n'est pas prise en charge sur cet appareil"
     },
     {
+      "name": "action_return_to_speech",
+      "value": "Revenir à la lecture"
+    },
+    {
+      "name": "toast_speech_language_unsupported",
+      "value": "La lecture à voix haute ne prend actuellement en charge que le chinois et l’anglais"
+    },
+    {
       "name": "action_copy",
       "value": "Copier"
     },
@@ -4259,6 +4267,10 @@
     {
       "name": "image_load_failed",
       "value": "Impossible de charger l'image"
+    },
+    {
+      "name": "article_read_progress",
+      "value": "%d% lu"
     }
   ]
 }
