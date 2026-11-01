@@ -17,6 +17,7 @@ import { common } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { Article } from '../model/Feed';
+import { WEB_PAGE_FEED_ID } from '../model/WebPagePreview';
 import {
   ArticleStatePatch,
   BackupArticle,
@@ -54,6 +55,17 @@ import { Enclosure } from '../model/Enclosure';
 
 const DOMAIN: number = 0x0000;
 const TAG: string = 'ArticleStore';
+
+/** 手动保存网页的结果；复用已有文章时 created 为 false。 */
+export class SavedWebPageResult {
+  readonly articleId: string;
+  readonly created: boolean;
+
+  constructor(articleId: string, created: boolean) {
+    this.articleId = articleId;
+    this.created = created;
+  }
+}
 
 /** 正文相关列（列表不读，按需 loadBody）。 */
 const BODY_COLUMNS: string =
@@ -1243,6 +1255,24 @@ export class ArticleStore {
     return result;
   }
 
+  /** SQLite 外部连接写入版本；分享扩展保存后主界面据此按需重载。 */
+  dataVersion(): number {
+    const store: relationalStore.RdbStore | undefined = this.store;
+    if (store === undefined) {
+      return 0;
+    }
+    try {
+      const rs: relationalStore.ResultSet = store.querySqlSync('PRAGMA data_version');
+      try {
+        return rs.goToNextRow() ? rs.getLong(0) : 0;
+      } finally {
+        rs.close();
+      }
+    } catch (err) {
+      return 0;
+    }
+  }
+
   /**
    * 某时刻之后入库的新文章（轻量列）：未读 + 未隐藏 + 非重复项，按发布时间倒序。
    * 每日摘要的数据源（`ts` 一般是当天 00:00），不做正文 / HTML 读取。
@@ -1564,6 +1594,66 @@ export class ArticleStore {
       return [];
     }
     return created;
+  }
+
+  /** 保存独立网页；相同归一化链接若已有 RSS 文章，直接将原文章加入稍后读。 */
+  saveWebPage(article: Article): SavedWebPageResult | undefined {
+    const store: relationalStore.RdbStore | undefined = this.store;
+    if (store === undefined || article.link.length === 0) {
+      return undefined;
+    }
+    const linkKey: string = DedupeKeys.urlKey(article.link);
+    try {
+      store.beginTransaction();
+      try {
+        let existingId: string = '';
+        const rs: relationalStore.ResultSet = store.querySqlSync(
+          'SELECT id, canonical_id FROM ' + ArticleDbConstants.TABLE_ARTICLES +
+          ' WHERE link_key = ? OR link = ?' +
+          ' ORDER BY CASE WHEN canonical_id = \'\' THEN 0 ELSE 1 END, published_at DESC LIMIT 1',
+          [linkKey, article.link]);
+        try {
+          if (rs.goToNextRow()) {
+            const canonical: string = rs.getString(rs.getColumnIndex('canonical_id'));
+            existingId = canonical.length > 0 ? canonical : rs.getString(rs.getColumnIndex('id'));
+          }
+        } finally {
+          rs.close();
+        }
+        if (existingId.length > 0) {
+          store.executeSync('UPDATE ' + ArticleDbConstants.TABLE_ARTICLES +
+            ' SET is_saved = 1, is_hidden = 0 WHERE id = ?', [existingId]);
+          if (article.readerHtml.length > 0) {
+            store.executeSync('UPDATE ' + ArticleDbConstants.TABLE_ARTICLES +
+              ' SET reader_html = ?, plain_text = ? WHERE id = ? AND reader_html = \'\'',
+              [article.readerHtml, article.plainText, existingId]);
+            if (this.lastChanges() > 0) {
+              this.upsertIndexFromRow(existingId, article.plainText);
+            }
+          }
+          store.commit();
+          return new SavedWebPageResult(existingId, false);
+        }
+        article.linkKey = linkKey;
+        article.titleKey = DedupeKeys.titleKey(article.title);
+        store.executeSync('INSERT INTO ' + ArticleDbConstants.TABLE_ARTICLES +
+          ' (id, feed_id, feed_title, title, link, summary, content, published_at, is_saved, fetched_at,' +
+          ' reader_html, plain_text, link_key, title_key) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?)',
+          [article.id, article.feedId, article.feedTitle, article.title, article.link,
+            article.summary, article.content, article.publishedAt, Date.now(), article.readerHtml,
+            article.plainText, article.linkKey, article.titleKey]);
+        this.indexInserted(article);
+        store.commit();
+        return new SavedWebPageResult(article.id, true);
+      } catch (inner) {
+        store.rollBack();
+        throw inner as Error;
+      }
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.error(DOMAIN, TAG, 'save web page failed: %{public}d', error.code);
+      return undefined;
+    }
   }
 
   /** 新插入的主条写两张索引（重复项不写：列表与检索都不看它们）。 */
@@ -3591,6 +3681,8 @@ export class ArticleStore {
       return counts;
     }
     const allowed: Set<string> = new Set<string>();
+    // 独立保存的网页没有订阅源记录，但属于可备份的本地文章。
+    allowed.add(WEB_PAGE_FEED_ID);
     for (let i = 0; i < validFeedIds.length; i += 1) {
       allowed.add(validFeedIds[i]);
     }

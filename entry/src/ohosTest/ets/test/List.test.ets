@@ -59,6 +59,7 @@ import autoSyncPolicyTest from './AutoSyncPolicy.test';
 import cloudBackupTest from './CloudBackup.test';
 import cloudRelayTest from './CloudRelay.test';
 import materialLevelTest from './MaterialLevel.test';
+import webPageSaveTest from './WebPageSave.test';
 
 export default function testsuite() {
   htmlDomTest();
@@ -112,4 +113,5 @@ export default function testsuite() {
   cloudBackupTest();
   cloudRelayTest();
   materialLevelTest();
+  webPageSaveTest();
 }

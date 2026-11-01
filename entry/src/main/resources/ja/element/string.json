@@ -4347,6 +4347,50 @@
     {
       "name": "discover_catalog_updated",
       "value": "Catalog updated %1$s"
+    },
+    {
+      "name": "save_web_title",
+      "value": "Save web page"
+    },
+    {
+      "name": "save_web_hint",
+      "value": "Paste an article URL"
+    },
+    {
+      "name": "save_web_loading",
+      "value": "Loading…"
+    },
+    {
+      "name": "save_web_preview",
+      "value": "Preview page"
+    },
+    {
+      "name": "save_web_invalid_url",
+      "value": "Enter a valid web address"
+    },
+    {
+      "name": "save_web_fetch_failed",
+      "value": "Could not load this page"
+    },
+    {
+      "name": "save_web_save_failed",
+      "value": "Could not save this page"
+    },
+    {
+      "name": "save_web_saved",
+      "value": "Saved for later"
+    },
+    {
+      "name": "save_web_no_reader",
+      "value": "Readable text was not found. The original page can still be opened online."
+    },
+    {
+      "name": "save_web_confirm",
+      "value": "Save for later"
+    },
+    {
+      "name": "save_web_close",
+      "value": "Close"
     }
   ]
 }

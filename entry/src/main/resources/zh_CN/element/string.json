@@ -4347,6 +4347,50 @@
     {
       "name": "discover_catalog_updated",
       "value": "目录更新于 %1$s"
+    },
+    {
+      "name": "save_web_title",
+      "value": "保存网页"
+    },
+    {
+      "name": "save_web_hint",
+      "value": "粘贴文章网页地址"
+    },
+    {
+      "name": "save_web_loading",
+      "value": "正在加载…"
+    },
+    {
+      "name": "save_web_preview",
+      "value": "预览网页"
+    },
+    {
+      "name": "save_web_invalid_url",
+      "value": "请输入有效的网页地址"
+    },
+    {
+      "name": "save_web_fetch_failed",
+      "value": "网页加载失败"
+    },
+    {
+      "name": "save_web_save_failed",
+      "value": "保存网页失败"
+    },
+    {
+      "name": "save_web_saved",
+      "value": "已加入稍后读"
+    },
+    {
+      "name": "save_web_no_reader",
+      "value": "未提取到可读正文，联网时仍可打开网页原文"
+    },
+    {
+      "name": "save_web_confirm",
+      "value": "加入稍后读"
+    },
+    {
+      "name": "save_web_close",
+      "value": "关闭"
     }
   ]
 }

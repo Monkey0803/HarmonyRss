@@ -46,7 +46,7 @@ export default class EntryAbility extends UIAbility {
   }
 
   /**
-   * 解析分享进来的内容并交给界面：取出地址写入 shareHandoff，界面据此打开「添加订阅源」面板并预填。
+   * 解析分享进来的内容并交给界面：取出地址写入 shareHandoff，界面据此打开网页保存面板并预填。
    * 不是分享（普通启动 / 深链启动）时记录里没有可订阅地址，静默跳过即可。
    */
   private handleSharedData(want: Want): void {

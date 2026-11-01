@@ -3,7 +3,7 @@
  *
  * 用户在其它 App 里对链接 / 文本发起「分享」，在系统分享面板里选择本应用后，系统会拉起这个扩展能力。
  * 分享内容通过 `systemShare.getSharedData(want)` 解析（官方路径），再加载分享详情页（SharePage）让用户
- * 预览 / 确认订阅。
+ * 预览 / 保存网页或确认订阅。
  *
  * 说明：扩展能力运行在独立上下文，不能依赖主界面已初始化的内存态；SharePage 会自行完成
  * settingsViewModel / feedViewModel 的装配。解析失败时按官方要求 terminateSelf，避免占用分享通道。

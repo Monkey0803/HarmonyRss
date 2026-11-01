@@ -53,6 +53,7 @@ import { BackgroundKind } from '../common/constants/SettingsConstants';
 import { IMAGE_DOMAIN } from '../common/constants/DomainConstants';
 import { HomeTabView } from '../views/HomeTabView';
 import { AddFeedPanel } from '../views/AddFeedPanel';
+import { SaveWebPagePanel } from '../views/SaveWebPagePanel';
 import { FilterSegmentBar } from '../views/FilterSegmentBar';
 import { BrandTitle } from '../views/BrandTitle';
 import { SettingsTabView } from '../views/SettingsTabView';
@@ -96,6 +97,7 @@ import { backupService } from '../service/BackupService';
 import { deepLink, DEEP_LINK_EVENT, DeepLinkParams } from '../service/DeepLink';
 import { shareHandoff } from '../service/ShareHandoff';
 import { Article } from '../model/Feed';
+import { ArticleFilter } from '../common/constants/RssConstants';
 
 @Entry
 @ComponentV2
@@ -105,6 +107,7 @@ struct Index {
   @Local titleTab: number = appSettings.lastTabIndex;
   /** 添加订阅源面板：显隐（入口在悬浮页签栏的 miniBar 上）。 */
   @Local showAddSheet: boolean = false;
+  @Local addSheetMode: string = 'feed';
   /** 分享进入时预填到添加面板的地址（多行）。 */
   @Local pendingAddText: string = '';
   @Local navPathStack: NavPathStack = new NavPathStack();
@@ -162,14 +165,21 @@ struct Index {
       this.restoreTab();
     });
     // 分享进入：接收方解析出地址后（可能晚于本页挂载）打开添加面板并预填。
-    shareHandoff.onReady((urls: string[]) => {
-      this.pendingAddText = urls.join('\n');
-      this.showAddSheet = true;
-    });
+    this.observeSharedUrls();
     // 首屏耗时：aboutToAppear 仍在首帧之前，推到当前任务之后记录（近似首帧完成时刻）。
     setTimeout(() => {
       diagnostics.markFirstScreen();
     }, 0);
+  }
+
+  /** 每次分享消费后重新监听，保证应用已运行时连续分享也能打开面板。 */
+  private observeSharedUrls(): void {
+    shareHandoff.onReady((urls: string[]) => {
+      this.pendingAddText = urls.join('\n');
+      this.addSheetMode = 'web';
+      this.showAddSheet = true;
+      this.observeSharedUrls();
+    });
   }
 
   /** 分栏模式：宽窗口用 Split，窄窗口用 Stack（单栏）。 */
@@ -286,6 +296,7 @@ struct Index {
   /** 回到前台（或页面重新显示）时，按设置的自动刷新间隔决定是否抓取。 */
   onPageShow(): void {
     this.consumeDeepLink();
+    feedViewModel.reloadIfExternalChange().catch(() => {});
     feedViewModel.maybeAutoRefresh();
     // 远端服务：按「账号与服务」里的自动同步间隔判断（默认关）。
     remoteSyncService.maybeAutoSync();
@@ -560,17 +571,41 @@ struct Index {
   /** 添加订阅源底部面板：复用可复用面板 AddFeedPanel，成功即收起。 */
   @Builder
   AddFeedPanelSheet() {
-    AddFeedPanel({
-      showClose: true,
-      initialText: this.pendingAddText,
-      onClose: () => {
-        this.showAddSheet = false;
-      },
-      onSubmitResult: () => {
-        this.pendingAddText = '';
-        this.showAddSheet = false;
+    Column({ space: $r('app.float.space_s') }) {
+      Row({ space: $r('app.float.space_s') }) {
+        Button($r('app.string.home_add_feed_title'))
+          .buttonStyle(this.addSheetMode === 'feed' ? ButtonStyleMode.NORMAL : ButtonStyleMode.TEXTUAL)
+          .onClick(() => { this.addSheetMode = 'feed'; })
+        Button($r('app.string.save_web_title'))
+          .buttonStyle(this.addSheetMode === 'web' ? ButtonStyleMode.NORMAL : ButtonStyleMode.TEXTUAL)
+          .onClick(() => { this.addSheetMode = 'web'; })
       }
-    })
+      .padding({ left: $r('app.float.space_m'), right: $r('app.float.space_m'), top: $r('app.float.space_s') })
+      if (this.addSheetMode === 'web') {
+        SaveWebPagePanel({
+          initialText: this.pendingAddText,
+          showClose: true,
+          onClose: () => { this.showAddSheet = false; },
+          onSaved: () => {
+            this.pendingAddText = '';
+            this.showAddSheet = false;
+            feedViewModel.clearScope();
+            feedViewModel.setFilter(ArticleFilter.SAVED);
+            this.selectTab(TabIndex.HOME);
+          }
+        })
+      } else {
+        AddFeedPanel({
+          showClose: true,
+          initialText: this.pendingAddText,
+          onClose: () => { this.showAddSheet = false; },
+          onSubmitResult: () => {
+            this.pendingAddText = '';
+            this.showAddSheet = false;
+          }
+        })
+      }
+    }
   }
 
   /**
@@ -1212,12 +1247,13 @@ struct Index {
     // 背景图关闭时露出的兜底色（与窗口层 start_window_background 一致，含深浅色适配）。
     .backgroundColor($r('app.color.start_window_background'))
     .bindSheet(this.showAddSheet, this.AddFeedPanelSheet(), MaterialController.sheetOptions({
-      height: 420,
+      height: 500,
       dragBar: true,
       // 关闭按钮画在面板标题行里（尺寸与标题同高），不用系统那颗偏大的圆钮。
       showClose: false,
       onDisappear: () => {
         this.pendingAddText = '';
+        this.addSheetMode = 'feed';
         this.showAddSheet = false;
       }
     }, appSettings.immersiveOn))

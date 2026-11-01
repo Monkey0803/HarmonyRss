@@ -19,7 +19,9 @@ import {
 } from '../service/FeedStore';
 import { feedService, FeedFetchResult, ResolvedFeed } from '../service/FeedService';
 import { feedDiscovery } from '../service/FeedDiscovery';
-import { articleStore, CacheStats } from '../service/ArticleStore';
+import { articleStore, CacheStats, SavedWebPageResult } from '../service/ArticleStore';
+import { WebPagePreview, WEB_PAGE_FEED_ID } from '../model/WebPagePreview';
+import { DedupeKeys } from '../service/DedupeKeys';
 import { dedupeService } from '../service/DedupeService';
 import { CommonConstants } from '../common/constants/CommonConstants';
 import { UrlText } from '../common/utils/UrlText';
@@ -202,6 +204,7 @@ export class FeedViewModel {
   private bodyLoaded: Set<string> = new Set<string>();
   /** 已预取过正文的文章 id（详情页读完当前文章后预热下一篇）。 */
   private prefetched: Set<string> = new Set<string>();
+  private observedDataVersion: number = 0;
 
   /**
    * 轻量装配：订阅源 → 本地缓存（离线可读），**不触发联网抓取**。
@@ -245,6 +248,7 @@ export class FeedViewModel {
       }
     });
     this.all = await articleStore.loadForList();
+    this.observedDataVersion = articleStore.dataVersion();
     retentionService.configure(context, this.feeds);
     this.publish();
   }
@@ -1237,6 +1241,40 @@ export class FeedViewModel {
     } finally {
       this.loading = false;
     }
+  }
+
+  /** 用户确认保存独立网页；已有 RSS 条目复用原文章，不产生第二份列表记录。 */
+  async saveWebPage(preview: WebPagePreview): Promise<SavedWebPageResult | undefined> {
+    await articleStore.whenReady();
+    const article: Article = new Article('saved-web|' + DedupeKeys.urlKey(preview.url),
+      WEB_PAGE_FEED_ID, preview.source, preview.title, preview.url,
+      preview.summary, preview.plainText, Date.now());
+    article.saved = true;
+    article.readerHtml = preview.readerHtml;
+    article.plainText = preview.plainText;
+    const result: SavedWebPageResult | undefined = articleStore.saveWebPage(article);
+    if (result === undefined) {
+      return undefined;
+    }
+    await this.reloadFromStore();
+    this.observedDataVersion = articleStore.dataVersion();
+    this.publish();
+    return result;
+  }
+
+  /** 返回主界面时只在分享扩展等其它数据库连接写入后刷新列表。 */
+  async reloadIfExternalChange(): Promise<void> {
+    const version: number = articleStore.dataVersion();
+    if (version === 0 || this.observedDataVersion === 0) {
+      this.observedDataVersion = version;
+      return;
+    }
+    if (version === this.observedDataVersion) {
+      return;
+    }
+    await this.reloadFromStore();
+    this.observedDataVersion = articleStore.dataVersion();
+    this.publish();
   }
 
   /**
