@@ -3410,6 +3410,23 @@ export class ArticleStore {
     }
   }
 
+  /** 仅移除单篇 Reader 离线文件；保留 feed 正文、检索文本和阅读状态。 */
+  async clearOfflineArticle(id: string): Promise<boolean> {
+    const store: relationalStore.RdbStore | undefined = this.store;
+    if (store === undefined || id.length === 0) {
+      return false;
+    }
+    try {
+      await store.executeSql('UPDATE ' + ArticleDbConstants.TABLE_ARTICLES +
+        ' SET reader_html = \'\' WHERE id = ?', [id]);
+      return true;
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.error(DOMAIN, TAG, 'clear offline article failed: %{public}d', error.code);
+      return false;
+    }
+  }
+
   /**
    * 清理正文缓存：清空未收藏文章的 reader_html / content_html / plain_text，
    * 列表条目与已读状态保留（收藏的文章不动）。返回清理条数。

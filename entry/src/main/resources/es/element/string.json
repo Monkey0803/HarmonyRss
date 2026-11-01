@@ -4317,6 +4317,38 @@
       "value": "Download this group offline"
     },
     {
+      "name": "subs_choose_feed",
+      "value": "Elegir fuente"
+    },
+    {
+      "name": "offline_single_download_short",
+      "value": "Descargar/Reintentar"
+    },
+    {
+      "name": "offline_single_clear_short",
+      "value": "Borrar sin conexión"
+    },
+    {
+      "name": "offline_single_download",
+      "value": "Descargar este artículo sin conexión"
+    },
+    {
+      "name": "offline_single_retry",
+      "value": "Reintentar la descarga"
+    },
+    {
+      "name": "offline_single_clear",
+      "value": "Eliminar copia sin conexión"
+    },
+    {
+      "name": "offline_single_cleared",
+      "value": "Copia sin conexión eliminada"
+    },
+    {
+      "name": "offline_single_failed",
+      "value": "Error al descargar sin conexión"
+    },
+    {
       "name": "offline_full",
       "value": "Available offline with images"
     },

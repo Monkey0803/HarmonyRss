@@ -4317,6 +4317,38 @@
       "value": "Download this group offline"
     },
     {
+      "name": "subs_choose_feed",
+      "value": "Choose a feed"
+    },
+    {
+      "name": "offline_single_download_short",
+      "value": "Download/Retry"
+    },
+    {
+      "name": "offline_single_clear_short",
+      "value": "Clear offline"
+    },
+    {
+      "name": "offline_single_download",
+      "value": "Download this article offline"
+    },
+    {
+      "name": "offline_single_retry",
+      "value": "Retry offline download"
+    },
+    {
+      "name": "offline_single_clear",
+      "value": "Remove offline copy"
+    },
+    {
+      "name": "offline_single_cleared",
+      "value": "Offline copy removed"
+    },
+    {
+      "name": "offline_single_failed",
+      "value": "Offline download failed"
+    },
+    {
       "name": "offline_full",
       "value": "Available offline with images"
     },

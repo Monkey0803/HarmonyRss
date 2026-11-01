@@ -63,6 +63,7 @@ export struct DiscoverView {
   @Local checkingWebsite: boolean = false;
   @Local previewTitle: string = '';
   @Local previewCount: number = 0;
+  @Local previewChoices: FeedPreview[] = [];
   @Local catalogRevision: number = 0;
   private pendingPreview: FeedPreview | undefined = undefined;
 
@@ -96,12 +97,12 @@ export struct DiscoverView {
     this.checkingWebsite = true;
     this.pendingPreview = undefined;
     this.previewTitle = '';
-    const preview: FeedPreview | undefined = await feedViewModel.previewFeed(address);
+    this.previewChoices = [];
+    const choices: FeedPreview[] = await feedViewModel.previewFeeds(address);
     this.checkingWebsite = false;
-    if (preview !== undefined) {
-      this.pendingPreview = preview;
-      this.previewTitle = preview.title;
-      this.previewCount = preview.itemCount;
+    if (choices.length > 0) {
+      this.previewChoices = choices;
+      this.selectPreview(choices[0]);
       this.scroller.scrollTo({ xOffset: 0, yOffset: 0, animation: true });
       return;
     }
@@ -110,6 +111,12 @@ export struct DiscoverView {
     if (this.suggestions.length === 0) {
       ToastUtil.show(this.getUIContext(), $r('app.string.discover_no_feed'));
     }
+  }
+
+  private selectPreview(preview: FeedPreview): void {
+    this.pendingPreview = preview;
+    this.previewTitle = preview.title;
+    this.previewCount = preview.itemCount;
   }
 
   private async confirmPreview(): Promise<void> {
@@ -123,6 +130,7 @@ export struct DiscoverView {
     if (ok) {
       this.pendingPreview = undefined;
       this.previewTitle = '';
+      this.previewChoices = [];
       ToastUtil.show(this.getUIContext(), $r('app.string.discover_subscribe_success'));
     } else {
       ToastUtil.show(this.getUIContext(), FeedErrorText.of(feedViewModel.errorCode));
@@ -243,6 +251,30 @@ export struct DiscoverView {
         .enabled(!this.checkingWebsite)
         .onClick(() => { this.inspectAddress(this.websiteInput); })
       if (this.previewTitle.length > 0) {
+        if (this.previewChoices.length > 1) {
+          Text($r('app.string.subs_choose_feed'))
+            .fontSize($r('app.float.font_size_caption'))
+            .fontColor($r('app.color.hm_text_secondary'))
+          ForEach(this.previewChoices, (choice: FeedPreview) => {
+            Column() {
+              Text(choice.title)
+                .fontSize($r('app.float.font_size_body'))
+                .fontColor($r('app.color.hm_text_primary'))
+              Text(choice.resolvedUrl)
+                .fontSize($r('app.float.font_size_caption'))
+                .fontColor($r('app.color.hm_text_secondary'))
+                .maxLines(1)
+                .textOverflow({ overflow: TextOverflow.Ellipsis })
+            }
+            .width('100%')
+            .alignItems(HorizontalAlign.Start)
+            .padding($r('app.float.space_s'))
+            .backgroundColor(this.pendingPreview?.resolvedUrl === choice.resolvedUrl ?
+              $r('app.color.hm_menu_item_selected') : $r('app.color.hm_value_chip_background'))
+            .borderRadius($r('app.float.radius_chip'))
+            .onClick(() => { this.selectPreview(choice); })
+          }, (choice: FeedPreview) => choice.resolvedUrl)
+        }
         Text($r('app.string.discover_preview', this.previewTitle, this.previewCount))
           .fontSize($r('app.float.font_size_caption'))
           .fontColor($r('app.color.hm_text_primary'))

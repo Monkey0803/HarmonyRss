@@ -4317,6 +4317,38 @@
       "value": "Download this group offline"
     },
     {
+      "name": "subs_choose_feed",
+      "value": "フィードを選択"
+    },
+    {
+      "name": "offline_single_download_short",
+      "value": "保存/再試行"
+    },
+    {
+      "name": "offline_single_clear_short",
+      "value": "オフライン削除"
+    },
+    {
+      "name": "offline_single_download",
+      "value": "この記事をオフライン用に保存"
+    },
+    {
+      "name": "offline_single_retry",
+      "value": "オフライン保存を再試行"
+    },
+    {
+      "name": "offline_single_clear",
+      "value": "オフラインのコピーを削除"
+    },
+    {
+      "name": "offline_single_cleared",
+      "value": "オフラインのコピーを削除しました"
+    },
+    {
+      "name": "offline_single_failed",
+      "value": "オフライン保存に失敗しました"
+    },
+    {
       "name": "offline_full",
       "value": "Available offline with images"
     },

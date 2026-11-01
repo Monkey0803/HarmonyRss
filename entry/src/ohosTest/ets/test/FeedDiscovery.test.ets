@@ -15,6 +15,16 @@ export default function feedDiscoveryTest() {
       expect(urls[0]).assertEqual('https://example.com/feed.xml');
     });
 
+    it('keeps_distinct_declared_feeds_for_selection', 0, () => {
+      const html: string = '<link rel="alternate" type="application/rss+xml" href="/news.xml">' +
+        '<link rel="alternate" type="application/atom+xml" href="/en.xml">' +
+        '<link rel="alternate" type="application/rss+xml" href="/news.xml">';
+      const urls: string[] = feedDiscovery.candidateUrls(html, 'https://example.com/');
+      expect(urls.length).assertEqual(2);
+      expect(urls[0]).assertEqual('https://example.com/news.xml');
+      expect(urls[1]).assertEqual('https://example.com/en.xml');
+    });
+
     it('resolves_relative_href', 0, () => {
       const html: string = '<link rel="alternate" type="application/atom+xml" href="../atom.xml">';
       const urls: string[] = feedDiscovery.candidateUrls(html, 'https://example.com/posts/');

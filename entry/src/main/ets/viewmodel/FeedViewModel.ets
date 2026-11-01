@@ -1182,45 +1182,50 @@ export class FeedViewModel {
    * 恰好 1 个地址时界面走这条路径；批量添加则内部逐项调用它。
    */
   async previewFeed(url: string): Promise<FeedPreview | undefined> {
+    const previews: FeedPreview[] = await this.previewFeeds(url);
+    return previews.length > 0 ? previews[0] : undefined;
+  }
+
+  /** 网站首页返回全部已验证的订阅源，供单地址添加时选择。 */
+  async previewFeeds(url: string): Promise<FeedPreview[]> {
     const normalized: string = UrlText.normalizeUrlInput(url);
     if (normalized.length === 0) {
       this.errorCode = FeedError.EMPTY_URL;
-      return undefined;
+      return [];
     }
     if (this.hasUrl(this.feeds, normalized)) {
       this.errorCode = FeedError.DUPLICATE_URL;
-      return undefined;
+      return [];
     }
     this.loading = true;
     try {
-      // 可能是 feed 地址，也可能是站点主页 —— 后者要靠自动发现找出真正的 feed。
-      const resolved: ResolvedFeed | undefined = await this.resolveFeed(normalized);
-      if (resolved === undefined) {
-        this.errorCode = FeedError.NOT_A_FEED;
-        return undefined;
+      const resolvedFeeds: ResolvedFeed[] = await this.resolveFeeds(normalized);
+      const previews: FeedPreview[] = [];
+      for (let n = 0; n < resolvedFeeds.length; n += 1) {
+        const resolved: ResolvedFeed = resolvedFeeds[n];
+        if (this.hasUrl(this.feeds, resolved.url)) {
+          continue;
+        }
+        const title: string = resolved.parsed.title.length > 0 ? resolved.parsed.title : resolved.url;
+        const latest: PreviewItem[] = [];
+        const count: number = resolved.parsed.articles.length;
+        const limit: number = count < PREVIEW_ITEM_LIMIT ? count : PREVIEW_ITEM_LIMIT;
+        for (let i = 0; i < limit; i += 1) {
+          const item: ParsedArticle = resolved.parsed.articles[i];
+          latest.push(new PreviewItem(item.title, item.publishedAt));
+        }
+        previews.push(new FeedPreview(normalized, resolved.url, title, resolved.parsed.siteUrl, count, latest,
+          resolved.parsed, resolved.etag, resolved.lastModified,
+          this.duplicateSiteTitleFor(resolved.url, resolved.parsed.siteUrl)));
       }
-      // 发现出来的地址可能已经订阅过（用户贴了主页，而该 feed 已在列表里）。
-      if (this.hasUrl(this.feeds, resolved.url)) {
-        this.errorCode = FeedError.DUPLICATE_URL;
-        return undefined;
-      }
-      const title: string = resolved.parsed.title.length > 0 ? resolved.parsed.title : resolved.url;
-      const latest: PreviewItem[] = [];
-      const count: number = resolved.parsed.articles.length;
-      const limit: number = count < PREVIEW_ITEM_LIMIT ? count : PREVIEW_ITEM_LIMIT;
-      for (let i = 0; i < limit; i += 1) {
-        const item: ParsedArticle = resolved.parsed.articles[i];
-        latest.push(new PreviewItem(item.title, item.publishedAt));
-      }
-      this.errorCode = FeedError.NONE;
-      return new FeedPreview(normalized, resolved.url, title, resolved.parsed.siteUrl, count, latest,
-        resolved.parsed, resolved.etag, resolved.lastModified,
-        this.duplicateSiteTitleFor(resolved.url, resolved.parsed.siteUrl));
+      this.errorCode = previews.length > 0 ? FeedError.NONE :
+        (resolvedFeeds.length > 0 ? FeedError.DUPLICATE_URL : FeedError.NOT_A_FEED);
+      return previews;
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       this.errorCode = errorCodeOf(err);
       console.error('previewFeed failed: ' + describeError(error));
-      return undefined;
+      return [];
     } finally {
       this.loading = false;
     }
@@ -1380,10 +1385,10 @@ export class FeedViewModel {
   /**
    * 把用户输入的地址解析成可订阅的 feed：
    *   1) 先直接当 feed 抓一次（绝大多数情况一次成功）；
-   *   2) 抓回来的是 HTML（站点主页）就从页面里找 <link rel="alternate" …> 候选，逐个试。
-   * 全部失败返回 undefined，由调用方映射成「该地址不是订阅源」。
+   *   2) 抓回来的是 HTML（站点主页）就从页面里找 <link rel="alternate" …> 候选，逐个验证。
+   * 全部失败返回空列表，由调用方映射成「该地址不是订阅源」。
    */
-  private async resolveFeed(url: string): Promise<ResolvedFeed | undefined> {
+  private async resolveFeeds(url: string): Promise<ResolvedFeed[]> {
     let direct: FeedFetchResult;
     try {
       direct = await feedService.fetchFeed(url);
@@ -1393,21 +1398,22 @@ export class FeedViewModel {
       throw error;
     }
     if (direct.parsed !== undefined) {
-      return new ResolvedFeed(url, direct.parsed, direct.etag, direct.lastModified);
+      return [new ResolvedFeed(url, direct.parsed, direct.etag, direct.lastModified)];
     }
     const candidates: string[] = feedDiscovery.candidateUrls(direct.rawBody, url);
+    const resolved: ResolvedFeed[] = [];
     for (let i = 0; i < candidates.length; i += 1) {
       try {
         const result: FeedFetchResult = await feedService.fetchFeed(candidates[i]);
         if (result.parsed !== undefined) {
-          return new ResolvedFeed(candidates[i], result.parsed, result.etag, result.lastModified);
+          resolved.push(new ResolvedFeed(candidates[i], result.parsed, result.etag, result.lastModified));
         }
       } catch (err) {
         // 单个候选失败就试下一个；全部试完仍失败才算「不是订阅源」。
         continue;
       }
     }
-    return undefined;
+    return resolved;
   }
 
   /** 删除订阅源及其文章（含本地缓存）。 */
@@ -1892,6 +1898,35 @@ export class FeedViewModel {
     article.offlineState = html.startsWith('<!--hrv9-->') || html.startsWith('<!--hrv8-->')
       ? 'full' : (html.startsWith('<!--hrv9t-->') ? 'text' : (html.length > 0 ? 'partial' : 'none'));
     return html;
+  }
+
+  async downloadArticleOffline(articleId: string, retry: boolean = false): Promise<string> {
+    const article: Article | undefined = this.findArticle(articleId);
+    if (article === undefined) {
+      return 'none';
+    }
+    const mode: string = article.feedId === WEB_PAGE_FEED_ID ? FullTextMode.AUTO :
+      this.effectiveSettings(article.feedId).fullTextMode;
+    const state: string = await offlineDownloadService.prepareArticle(articleId, mode, retry);
+    article.offlineState = state;
+    if (retry && state !== 'none') {
+      this.bodyLoaded.delete(articleId);
+    }
+    return state;
+  }
+
+  async clearArticleOffline(articleId: string): Promise<boolean> {
+    const cleared: boolean = await offlineDownloadService.clearArticle(articleId);
+    if (cleared) {
+      const article: Article | undefined = this.findArticle(articleId);
+      if (article !== undefined) {
+        article.readerHtml = '';
+        article.offlineState = 'none';
+        article.readerState = ReaderState.NONE;
+      }
+      this.bodyLoaded.delete(articleId);
+    }
+    return cleared;
   }
 
   /**

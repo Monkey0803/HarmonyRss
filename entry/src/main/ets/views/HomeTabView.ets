@@ -527,6 +527,34 @@ export struct HomeTabView {
   @Builder
   SwipeActions(article: Article) {
     Row({ space: $r('app.float.space_s') }) {
+      Button($r('app.string.offline_single_download_short'))
+        .buttonStyle(ButtonStyleMode.NORMAL)
+        .fontSize($r('app.float.font_size_caption'))
+        .fontColor($r('app.color.hm_on_brand'))
+        .backgroundColor($r('app.color.hm_brand'))
+        .height('100%')
+        .onClick(() => {
+          feedViewModel.downloadArticleOffline(article.id, article.offlineState !== 'none').then((state: string) => {
+            ToastUtil.show(this.getUIContext(), state === 'full' ? $r('app.string.offline_full') :
+              (state === 'none' ? $r('app.string.offline_single_failed') : $r('app.string.offline_partial')));
+          }).catch(() => {
+            ToastUtil.show(this.getUIContext(), $r('app.string.offline_single_failed'));
+          });
+        })
+      Button($r('app.string.offline_single_clear_short'))
+        .buttonStyle(ButtonStyleMode.NORMAL)
+        .fontSize($r('app.float.font_size_caption'))
+        .fontColor($r('app.color.hm_on_brand'))
+        .backgroundColor($r('app.color.hm_text_secondary'))
+        .height('100%')
+        .onClick(() => {
+          feedViewModel.clearArticleOffline(article.id).then((ok: boolean) => {
+            ToastUtil.show(this.getUIContext(), ok ? $r('app.string.offline_single_cleared') :
+              $r('app.string.offline_single_failed'));
+          }).catch(() => {
+            ToastUtil.show(this.getUIContext(), $r('app.string.offline_single_failed'));
+          });
+        })
       // 分享：打开统一分享面板，上下文是该行文章
       Button($r('app.string.action_share'))
         .buttonStyle(ButtonStyleMode.NORMAL)

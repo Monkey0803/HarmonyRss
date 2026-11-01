@@ -50,6 +50,57 @@ export class OfflineDownloadService {
     settingsStore.save();
   }
 
+  /** 用户指定单篇下载；已读、稍后读网页和未选中的源均可使用。 */
+  async prepareArticle(id: string, fullTextMode: string, retry: boolean = false): Promise<string> {
+    await articleStore.whenReady();
+    const previous: string = await articleStore.offlineState(id);
+    if (previous === 'full' && !retry) {
+      return previous;
+    }
+    if (!NetworkStatus.isOnline()) {
+      return previous;
+    }
+    this.bytes = await articleStore.offlineCacheBytes();
+    if (this.bytes >= MAX_BYTES) {
+      this.atLimit = true;
+      return previous;
+    }
+    const article: Article | undefined = await articleStore.loadById(id);
+    if (article === undefined) {
+      return 'none';
+    }
+    const oldHtml: string = article.readerHtml;
+    const oldText: string = article.plainText;
+    if (retry && oldHtml.length > 0) {
+      article.readerHtml = '';
+      await articleStore.clearOfflineArticle(id);
+    }
+    try {
+      await articleContentService.ensureReaderHtml(article, fullTextMode);
+      const state: string = await articleStore.offlineState(id);
+      if (state !== 'none') {
+        this.publishState(id, state);
+        this.bytes = await articleStore.offlineCacheBytes();
+        return state;
+      }
+    } catch (err) {
+    }
+    if (retry && oldHtml.length > 0) {
+      articleStore.setReaderHtml(id, oldHtml, oldText);
+      this.publishState(id, previous);
+    }
+    return previous;
+  }
+
+  async clearArticle(id: string): Promise<boolean> {
+    const cleared: boolean = await articleStore.clearOfflineArticle(id);
+    if (cleared) {
+      this.publishState(id, 'none');
+      this.bytes = await articleStore.offlineCacheBytes();
+    }
+    return cleared;
+  }
+
   /** 手动调用绕过 Wi-Fi 开关；总开关关闭时仍须有用户选择的范围。 */
   async prepare(feeds: FeedSource[], manual: boolean = false): Promise<void> {
     if (this.running || (!manual && !appSettings.offlineEnabled) || !NetworkStatus.isOnline() ||

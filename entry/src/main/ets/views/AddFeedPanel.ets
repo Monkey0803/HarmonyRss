@@ -49,6 +49,7 @@ export struct AddFeedPanel {
   @Local previewCount: number = 0;
   @Local previewItems: PreviewItem[] = [];
   @Local previewDuplicate: string = '';
+  @Local previewChoices: FeedPreview[] = [];
   /** 可编辑的标题草稿 / 分组草稿。 */
   @Local draftTitle: string = '';
   @Local draftGroup: string = '';
@@ -84,16 +85,11 @@ export struct AddFeedPanel {
     // 单地址：进入预览确认；多地址：批量添加。
     if (urls.length === 1) {
       this.submitting = true;
-      const preview: FeedPreview | undefined = await feedViewModel.previewFeed(urls[0]);
+      const choices: FeedPreview[] = await feedViewModel.previewFeeds(urls[0]);
       this.submitting = false;
-      if (preview !== undefined) {
-        this.pending = preview;
-        this.hasPreview = true;
-        this.draftTitle = preview.title;
-        this.previewUrl = preview.siteUrl.length > 0 ? preview.siteUrl : preview.resolvedUrl;
-        this.previewCount = preview.itemCount;
-        this.previewItems = preview.latest;
-        this.previewDuplicate = preview.duplicateSiteTitle;
+      if (choices.length > 0) {
+        this.previewChoices = choices;
+        this.selectPreview(choices[0]);
       }
       return;
     }
@@ -106,6 +102,16 @@ export struct AddFeedPanel {
       this.reset();
       this.onSubmitResult(true);
     }
+  }
+
+  private selectPreview(preview: FeedPreview): void {
+    this.pending = preview;
+    this.hasPreview = true;
+    this.draftTitle = preview.title;
+    this.previewUrl = preview.resolvedUrl;
+    this.previewCount = preview.itemCount;
+    this.previewItems = preview.latest;
+    this.previewDuplicate = preview.duplicateSiteTitle;
   }
 
   private async confirm(): Promise<void> {
@@ -126,6 +132,7 @@ export struct AddFeedPanel {
     this.pending = undefined;
     this.hasPreview = false;
     this.previewItems = [];
+    this.previewChoices = [];
     this.groupEdit = false;
     this.draftNewGroup = '';
     feedViewModel.errorCode = FeedError.NONE;
@@ -136,6 +143,7 @@ export struct AddFeedPanel {
     this.pending = undefined;
     this.hasPreview = false;
     this.previewItems = [];
+    this.previewChoices = [];
     this.previewUrl = '';
     this.previewCount = 0;
     this.previewDuplicate = '';
@@ -288,6 +296,40 @@ export struct AddFeedPanel {
         .fontWeight(FontWeight.Medium)
         .fontColor($r('app.color.hm_text_primary'))
         .width('100%')
+
+      if (this.previewChoices.length > 1) {
+        Text($r('app.string.subs_choose_feed'))
+          .fontSize($r('app.float.font_size_caption'))
+          .fontColor($r('app.color.hm_text_secondary'))
+          .width('100%')
+        Scroll() {
+          Column({ space: $r('app.float.space_xs') }) {
+            ForEach(this.previewChoices, (choice: FeedPreview) => {
+              Column() {
+                Text(choice.title)
+                  .fontSize($r('app.float.font_size_body'))
+                  .fontColor($r('app.color.hm_text_primary'))
+                  .maxLines(1)
+                  .textOverflow({ overflow: TextOverflow.Ellipsis })
+                Text(choice.resolvedUrl)
+                  .fontSize($r('app.float.font_size_caption'))
+                  .fontColor($r('app.color.hm_text_secondary'))
+                  .maxLines(1)
+                  .textOverflow({ overflow: TextOverflow.Ellipsis })
+              }
+              .width('100%')
+              .alignItems(HorizontalAlign.Start)
+              .padding($r('app.float.space_s'))
+              .backgroundColor(this.pending?.resolvedUrl === choice.resolvedUrl ?
+                $r('app.color.hm_menu_item_selected') : $r('app.color.hm_value_chip_background'))
+              .borderRadius($r('app.float.radius_chip'))
+              .onClick(() => { this.selectPreview(choice); })
+            }, (choice: FeedPreview) => choice.resolvedUrl)
+          }
+        }
+        .width('100%')
+        .constraintSize({ maxHeight: 180 })
+      }
 
       // 标题可改写（留空则用 feed 自身标题）。
       TextInput({ text: this.draftTitle, placeholder: $r('app.string.subs_rename_hint') })

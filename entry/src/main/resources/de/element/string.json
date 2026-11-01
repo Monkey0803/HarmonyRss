@@ -4317,6 +4317,38 @@
       "value": "Download this group offline"
     },
     {
+      "name": "subs_choose_feed",
+      "value": "Feed auswählen"
+    },
+    {
+      "name": "offline_single_download_short",
+      "value": "Laden/Erneut"
+    },
+    {
+      "name": "offline_single_clear_short",
+      "value": "Offline löschen"
+    },
+    {
+      "name": "offline_single_download",
+      "value": "Artikel offline speichern"
+    },
+    {
+      "name": "offline_single_retry",
+      "value": "Offline-Download wiederholen"
+    },
+    {
+      "name": "offline_single_clear",
+      "value": "Offline-Kopie entfernen"
+    },
+    {
+      "name": "offline_single_cleared",
+      "value": "Offline-Kopie entfernt"
+    },
+    {
+      "name": "offline_single_failed",
+      "value": "Offline-Download fehlgeschlagen"
+    },
+    {
       "name": "offline_full",
       "value": "Available offline with images"
     },

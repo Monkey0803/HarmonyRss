@@ -138,6 +138,7 @@ export struct ArticleDetailView {
   @Local loading: boolean = true;
   /** 提取失败：可退网页原文 / 纯文本。 */
   @Local readerFailed: boolean = false;
+  @Local offlineBusy: boolean = false;
   /** 已提取并净化好的正文片段（由 ViewModel 提供，命中本地缓存时无需联网）。 */
   @Local readerHtml: string = '';
   private readerController: webview.WebviewController = new webview.WebviewController();
@@ -1322,6 +1323,46 @@ export struct ArticleDetailView {
     this.startReader();
   }
 
+  private async downloadCurrentOffline(retry: boolean): Promise<void> {
+    const article: Article | undefined = feedViewModel.currentArticle();
+    if (article === undefined || this.offlineBusy) {
+      return;
+    }
+    this.offlineBusy = true;
+    let state: string = 'none';
+    try {
+      state = await feedViewModel.downloadArticleOffline(article.id, retry);
+    } catch (err) {
+      state = 'none';
+    } finally {
+      this.offlineBusy = false;
+    }
+    if (state === 'full') {
+      this.toast($r('app.string.offline_full'));
+    } else if (state === 'text' || state === 'partial') {
+      this.toast($r('app.string.offline_partial'));
+    } else {
+      this.toast($r('app.string.offline_single_failed'));
+    }
+  }
+
+  private async clearCurrentOffline(): Promise<void> {
+    const article: Article | undefined = feedViewModel.currentArticle();
+    if (article === undefined || this.offlineBusy) {
+      return;
+    }
+    this.offlineBusy = true;
+    let cleared: boolean = false;
+    try {
+      cleared = await feedViewModel.clearArticleOffline(article.id);
+    } catch (err) {
+      cleared = false;
+    } finally {
+      this.offlineBusy = false;
+    }
+    this.toast(cleared ? $r('app.string.offline_single_cleared') : $r('app.string.offline_single_failed'));
+  }
+
   /** 横向滑动：左滑下一篇、右滑上一篇（竖向留给正文滚动）。 */
   private onHorizontalPan(deltaX: number): void {
     // 起手点必须在屏幕中间带：贴左右边缘的滑动优先交给系统返回手势，避免互相抢。
@@ -1388,6 +1429,26 @@ export struct ArticleDetailView {
   @Builder
   ActionsMenu(article: Article) {
     Menu() {
+      MenuItem({
+        content: article.offlineState === 'full' ? $r('app.string.offline_full') :
+          (article.offlineState === 'text' || article.offlineState === 'partial' ?
+            $r('app.string.offline_partial') : $r('app.string.offline_single_download')),
+        symbolStartIcon: this.menuIcon($r('sys.symbol.arrow_down'))
+      })
+        .enabled(!this.offlineBusy && article.offlineState === 'none')
+        .onClick(() => { this.downloadCurrentOffline(false); })
+      if (article.offlineState === 'text' || article.offlineState === 'partial') {
+        MenuItem({ content: $r('app.string.offline_single_retry'),
+          symbolStartIcon: this.menuIcon($r('sys.symbol.arrow_clockwise')) })
+          .enabled(!this.offlineBusy)
+          .onClick(() => { this.downloadCurrentOffline(true); })
+      }
+      if (article.offlineState !== 'none') {
+        MenuItem({ content: $r('app.string.offline_single_clear'),
+          symbolStartIcon: this.menuIcon($r('sys.symbol.trash')) })
+          .enabled(!this.offlineBusy)
+          .onClick(() => { this.clearCurrentOffline(); })
+      }
       MenuItem({
         content: $r('app.string.action_reader_retry'),
         symbolStartIcon: this.menuIcon($r('sys.symbol.arrow_clockwise'))

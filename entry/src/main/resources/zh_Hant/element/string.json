@@ -4317,6 +4317,38 @@
       "value": "离线下载此分组"
     },
     {
+      "name": "subs_choose_feed",
+      "value": "選擇訂閱源"
+    },
+    {
+      "name": "offline_single_download_short",
+      "value": "下載/重試"
+    },
+    {
+      "name": "offline_single_clear_short",
+      "value": "清除離線"
+    },
+    {
+      "name": "offline_single_download",
+      "value": "下載此文章供離線閱讀"
+    },
+    {
+      "name": "offline_single_retry",
+      "value": "重試離線下載"
+    },
+    {
+      "name": "offline_single_clear",
+      "value": "清除此文章的離線副本"
+    },
+    {
+      "name": "offline_single_cleared",
+      "value": "已清除離線副本"
+    },
+    {
+      "name": "offline_single_failed",
+      "value": "離線下載失敗"
+    },
+    {
       "name": "offline_full",
       "value": "正文和图片可离线阅读"
     },
