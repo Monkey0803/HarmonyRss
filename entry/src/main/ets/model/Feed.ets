@@ -208,6 +208,8 @@ export class Article {
    * 换字号 / 栏宽 / 主题后排版会重排，px 会漂，恢复位置以比例为准（px 仅作老数据兜底）。
    */
   @Trace progressRatio: number = 0;
+  /** Reader 正文离线状态：none / text（图片待重试）/ partial / full。 */
+  @Trace offlineState: string = 'none';
   /**
    * 跨源去重：所属主条 id；空串表示本条就是主条（或未参与去重）。
    * 重复项仍留在库里（保留来源与远端映射），只是不进主列表 / 计数 / 检索。

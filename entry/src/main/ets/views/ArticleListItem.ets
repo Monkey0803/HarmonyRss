@@ -178,6 +178,14 @@ export struct ArticleListItem {
               .fontColor([$r('app.color.hm_brand')])
               .accessibilityText($r('app.string.media_video_label'))
           }
+          if (this.article.offlineState !== 'none') {
+            SymbolGlyph($r('sys.symbol.arrow_down_circle'))
+              .fontSize($r('app.float.font_size_caption'))
+              .fontColor([this.article.offlineState === 'full'
+                ? $r('app.color.hm_brand') : $r('app.color.hm_text_secondary')])
+              .accessibilityText(this.article.offlineState === 'full'
+                ? $r('app.string.offline_full') : $r('app.string.offline_partial'))
+          }
           Text(DateUtil.format(this.article.publishedAt))
             .fontSize($r('app.float.font_size_caption'))
             .fontColor($r('app.color.hm_text_secondary'))

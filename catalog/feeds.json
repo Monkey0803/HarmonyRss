@@ -1,0 +1,452 @@
+{
+  "version": 1,
+  "feeds": [
+    {
+      "title": "The Verge",
+      "feedUrl": "https://www.theverge.com/rss/index.xml",
+      "siteUrl": "https://www.theverge.com",
+      "category": "tech",
+      "tags": [
+        "tech",
+        "news"
+      ],
+      "popularity": 96
+    },
+    {
+      "title": "Hacker News",
+      "feedUrl": "https://news.ycombinator.com/rss",
+      "siteUrl": "https://news.ycombinator.com",
+      "category": "tech",
+      "tags": [
+        "tech",
+        "community"
+      ],
+      "popularity": 95
+    },
+    {
+      "title": "Ars Technica",
+      "feedUrl": "https://feeds.arstechnica.com/arstechnica/index",
+      "siteUrl": "https://arstechnica.com",
+      "category": "tech",
+      "tags": [
+        "tech",
+        "research"
+      ],
+      "popularity": 90
+    },
+    {
+      "title": "TechCrunch",
+      "feedUrl": "https://techcrunch.com/feed/",
+      "siteUrl": "https://techcrunch.com",
+      "category": "tech",
+      "tags": [
+        "tech",
+        "startup"
+      ],
+      "popularity": 82
+    },
+    {
+      "title": "Wired",
+      "feedUrl": "https://www.wired.com/feed/rss",
+      "siteUrl": "https://www.wired.com",
+      "category": "tech",
+      "tags": [
+        "tech",
+        "culture"
+      ],
+      "popularity": 80
+    },
+    {
+      "title": "MIT Technology Review",
+      "feedUrl": "https://www.technologyreview.com/feed/",
+      "siteUrl": "https://www.technologyreview.com",
+      "category": "tech",
+      "tags": [
+        "tech",
+        "research"
+      ],
+      "popularity": 78
+    },
+    {
+      "title": "Hacker Noon",
+      "feedUrl": "https://hackernoon.com/feed",
+      "siteUrl": "https://hackernoon.com",
+      "category": "tech",
+      "tags": [
+        "tech",
+        "dev"
+      ],
+      "popularity": 60
+    },
+    {
+      "title": "Smashing Magazine",
+      "feedUrl": "https://www.smashingmagazine.com/feed/",
+      "siteUrl": "https://www.smashingmagazine.com",
+      "category": "design",
+      "tags": [
+        "design",
+        "web"
+      ],
+      "popularity": 75
+    },
+    {
+      "title": "Nielsen Norman Group",
+      "feedUrl": "https://www.nngroup.com/feed/rss/",
+      "siteUrl": "https://www.nngroup.com",
+      "category": "design",
+      "tags": [
+        "design",
+        "ux",
+        "research"
+      ],
+      "popularity": 72
+    },
+    {
+      "title": "UX Collective",
+      "feedUrl": "https://uxdesign.cc/feed",
+      "siteUrl": "https://uxdesign.cc",
+      "category": "design",
+      "tags": [
+        "design",
+        "ux"
+      ],
+      "popularity": 70
+    },
+    {
+      "title": "A List Apart",
+      "feedUrl": "https://alistapart.com/main/feed/",
+      "siteUrl": "https://alistapart.com",
+      "category": "design",
+      "tags": [
+        "design",
+        "web"
+      ],
+      "popularity": 65
+    },
+    {
+      "title": "Fast Company",
+      "feedUrl": "https://www.fastcompany.com/rss",
+      "siteUrl": "https://www.fastcompany.com",
+      "category": "business",
+      "tags": [
+        "business",
+        "culture"
+      ],
+      "popularity": 60
+    },
+    {
+      "title": "Nature",
+      "feedUrl": "https://www.nature.com/nature.rss",
+      "siteUrl": "https://www.nature.com",
+      "category": "science",
+      "tags": [
+        "science",
+        "research"
+      ],
+      "popularity": 85
+    },
+    {
+      "title": "Quanta Magazine",
+      "feedUrl": "https://www.quantamagazine.org/feed/",
+      "siteUrl": "https://www.quantamagazine.org",
+      "category": "science",
+      "tags": [
+        "science",
+        "research"
+      ],
+      "popularity": 78
+    },
+    {
+      "title": "ScienceDaily",
+      "feedUrl": "https://www.sciencedaily.com/rss/all.xml",
+      "siteUrl": "https://www.sciencedaily.com",
+      "category": "science",
+      "tags": [
+        "science"
+      ],
+      "popularity": 60
+    },
+    {
+      "title": "Daring Fireball",
+      "feedUrl": "https://daringfireball.net/feeds/main",
+      "siteUrl": "https://daringfireball.net",
+      "category": "indie",
+      "tags": [
+        "indie",
+        "apple",
+        "tech"
+      ],
+      "popularity": 82
+    },
+    {
+      "title": "Simon Willison",
+      "feedUrl": "https://simonwillison.net/atom/everything/",
+      "siteUrl": "https://simonwillison.net",
+      "category": "indie",
+      "tags": [
+        "indie",
+        "dev",
+        "ai"
+      ],
+      "popularity": 76
+    },
+    {
+      "title": "Julia Evans",
+      "feedUrl": "https://jvns.ca/atom.xml",
+      "siteUrl": "https://jvns.ca",
+      "category": "indie",
+      "tags": [
+        "indie",
+        "dev"
+      ],
+      "popularity": 70
+    },
+    {
+      "title": "Kottke",
+      "feedUrl": "https://feeds.kottke.org/main",
+      "siteUrl": "https://kottke.org",
+      "category": "indie",
+      "tags": [
+        "indie",
+        "culture"
+      ],
+      "popularity": 65
+    },
+    {
+      "title": "Brent Simmons",
+      "feedUrl": "https://inessential.com/feed.json",
+      "siteUrl": "https://inessential.com",
+      "category": "indie",
+      "tags": [
+        "indie",
+        "apple",
+        "dev"
+      ],
+      "popularity": 58
+    },
+    {
+      "title": "少数派",
+      "feedUrl": "https://sspai.com/feed",
+      "siteUrl": "https://sspai.com",
+      "category": "cn",
+      "tags": [
+        "cn",
+        "tech",
+        "productivity"
+      ],
+      "popularity": 88
+    },
+    {
+      "title": "阮一峰的网络日志",
+      "feedUrl": "https://www.ruanyifeng.com/blog/atom.xml",
+      "siteUrl": "https://www.ruanyifeng.com",
+      "category": "cn",
+      "tags": [
+        "cn",
+        "dev",
+        "indie"
+      ],
+      "popularity": 85
+    },
+    {
+      "title": "V2EX",
+      "feedUrl": "https://www.v2ex.com/index.xml",
+      "siteUrl": "https://www.v2ex.com",
+      "category": "cn",
+      "tags": [
+        "cn",
+        "tech",
+        "community"
+      ],
+      "popularity": 72
+    },
+    {
+      "title": "Hacker News 中文",
+      "feedUrl": "https://hn.buzzing.cc/feed.xml",
+      "siteUrl": "https://hn.buzzing.cc",
+      "category": "cn",
+      "tags": [
+        "cn",
+        "tech",
+        "community"
+      ],
+      "popularity": 74
+    },
+    {
+      "title": "爱范儿",
+      "feedUrl": "https://www.ifanr.com/feed",
+      "siteUrl": "https://www.ifanr.com",
+      "category": "cn",
+      "tags": [
+        "cn",
+        "tech"
+      ],
+      "popularity": 65
+    },
+    {
+      "title": "极客公园",
+      "feedUrl": "https://www.geekpark.net/rss",
+      "siteUrl": "https://www.geekpark.net",
+      "category": "cn",
+      "tags": [
+        "cn",
+        "tech",
+        "startup"
+      ],
+      "popularity": 62
+    },
+    {
+      "title": "GitHub Blog",
+      "feedUrl": "https://github.blog/feed/",
+      "siteUrl": "https://github.blog",
+      "category": "tech",
+      "tags": [
+        "tech",
+        "dev"
+      ],
+      "popularity": 78
+    },
+    {
+      "title": "Cloudflare Blog",
+      "feedUrl": "https://blog.cloudflare.com/rss/",
+      "siteUrl": "https://blog.cloudflare.com",
+      "category": "tech",
+      "tags": [
+        "tech",
+        "web",
+        "dev"
+      ],
+      "popularity": 74
+    },
+    {
+      "title": "Mozilla Hacks",
+      "feedUrl": "https://hacks.mozilla.org/feed/",
+      "siteUrl": "https://hacks.mozilla.org",
+      "category": "tech",
+      "tags": [
+        "tech",
+        "web",
+        "dev"
+      ],
+      "popularity": 70
+    },
+    {
+      "title": "The GitHub Changelog",
+      "feedUrl": "https://github.blog/changelog/feed/",
+      "siteUrl": "https://github.blog/changelog",
+      "category": "tech",
+      "tags": [
+        "tech",
+        "dev"
+      ],
+      "popularity": 65
+    },
+    {
+      "title": "9to5Mac",
+      "feedUrl": "https://9to5mac.com/feed/",
+      "siteUrl": "https://9to5mac.com",
+      "category": "tech",
+      "tags": [
+        "tech",
+        "apple"
+      ],
+      "popularity": 68
+    },
+    {
+      "title": "MacRumors",
+      "feedUrl": "https://feeds.macrumors.com/MacRumors-All",
+      "siteUrl": "https://www.macrumors.com",
+      "category": "tech",
+      "tags": [
+        "tech",
+        "apple"
+      ],
+      "popularity": 70
+    },
+    {
+      "title": "Engadget",
+      "feedUrl": "https://www.engadget.com/rss.xml",
+      "siteUrl": "https://www.engadget.com",
+      "category": "tech",
+      "tags": [
+        "tech",
+        "news"
+      ],
+      "popularity": 75
+    },
+    {
+      "title": "BBC World",
+      "feedUrl": "https://feeds.bbci.co.uk/news/world/rss.xml",
+      "siteUrl": "https://www.bbc.com/news/world",
+      "category": "business",
+      "tags": [
+        "news"
+      ],
+      "popularity": 75
+    },
+    {
+      "title": "The Guardian World",
+      "feedUrl": "https://www.theguardian.com/world/rss",
+      "siteUrl": "https://www.theguardian.com/world",
+      "category": "business",
+      "tags": [
+        "news"
+      ],
+      "popularity": 72
+    },
+    {
+      "title": "NPR News",
+      "feedUrl": "https://feeds.npr.org/1001/rss.xml",
+      "siteUrl": "https://www.npr.org",
+      "category": "business",
+      "tags": [
+        "news"
+      ],
+      "popularity": 70
+    },
+    {
+      "title": "NASA",
+      "feedUrl": "https://www.nasa.gov/feed/",
+      "siteUrl": "https://www.nasa.gov",
+      "category": "science",
+      "tags": [
+        "science",
+        "research"
+      ],
+      "popularity": 73
+    },
+    {
+      "title": "ESA Science",
+      "feedUrl": "https://www.esa.int/rssfeed/Our_Activities/Space_Science",
+      "siteUrl": "https://www.esa.int",
+      "category": "science",
+      "tags": [
+        "science",
+        "research"
+      ],
+      "popularity": 65
+    },
+    {
+      "title": "PLOS Blogs",
+      "feedUrl": "https://theplosblog.plos.org/feed/",
+      "siteUrl": "https://theplosblog.plos.org",
+      "category": "science",
+      "tags": [
+        "science",
+        "research"
+      ],
+      "popularity": 58
+    },
+    {
+      "title": "The Marginalian",
+      "feedUrl": "https://www.themarginalian.org/feed/",
+      "siteUrl": "https://www.themarginalian.org",
+      "category": "indie",
+      "tags": [
+        "indie",
+        "culture"
+      ],
+      "popularity": 66
+    }
+  ]
+}

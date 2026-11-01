@@ -4279,6 +4279,74 @@
     {
       "name": "article_offline_body_fallback",
       "value": "Artículo completo no disponible sin conexión; se muestra el contenido del feed"
+    },
+    {
+      "name": "offline_title",
+      "value": "Offline reading"
+    },
+    {
+      "name": "offline_auto",
+      "value": "Auto download selected feeds"
+    },
+    {
+      "name": "offline_wifi",
+      "value": "Auto download on Wi-Fi only"
+    },
+    {
+      "name": "offline_download_now",
+      "value": "Download now"
+    },
+    {
+      "name": "offline_progress",
+      "value": "Downloaded %1$d / %2$d"
+    },
+    {
+      "name": "offline_limit",
+      "value": "200 MB cache limit reached; automatic downloads paused"
+    },
+    {
+      "name": "offline_usage",
+      "value": "Cached content: about %1$d MB / 200 MB"
+    },
+    {
+      "name": "offline_feed",
+      "value": "Download this feed offline"
+    },
+    {
+      "name": "offline_group",
+      "value": "Download this group offline"
+    },
+    {
+      "name": "offline_full",
+      "value": "Available offline with images"
+    },
+    {
+      "name": "offline_partial",
+      "value": "Available offline; some images need network"
+    },
+    {
+      "name": "discover_website_title",
+      "value": "Find feeds on a website"
+    },
+    {
+      "name": "discover_website_hint",
+      "value": "Website or feed URL"
+    },
+    {
+      "name": "discover_website_check",
+      "value": "Check website"
+    },
+    {
+      "name": "discover_no_feed",
+      "value": "No supported feed found for this website"
+    },
+    {
+      "name": "discover_preview",
+      "value": "%1$s · %2$d recent items"
+    },
+    {
+      "name": "discover_catalog_updated",
+      "value": "Catalog updated %1$s"
     }
   ]
 }

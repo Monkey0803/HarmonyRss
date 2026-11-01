@@ -63,6 +63,11 @@ export class AppSettings {
   @Trace readerIndent: string = READER_INDENT_OPTIONS.defaultValue;
   /** 详情页是否预取下一篇正文（WiFi 下、读完停留片刻后触发）。 */
   @Trace prefetchReader: boolean = true;
+  /** 用户主动选择的离线范围；默认不自动下载。 */
+  @Trace offlineEnabled: boolean = false;
+  @Trace offlineWifiOnly: boolean = true;
+  @Trace offlineFeedIds: string[] = [];
+  @Trace offlineGroups: string[] = [];
   /** 后台抓取到新文章时是否发系统通知。 */
   @Trace notifyNewArticles: boolean = false;
   /** 首页列表排序：true = 最新在前（默认），false = 最旧在前。 */

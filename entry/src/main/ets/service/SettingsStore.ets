@@ -87,6 +87,26 @@ function readKeywords(raw: preferences.ValueType, fallback: string[]): string[] 
 export class SettingsStore {
   private store: preferences.Preferences | undefined = undefined;
 
+  private readStringArray(raw: string): string[] {
+    try {
+      const parsed: Object = JSON.parse(raw) as Object;
+      if (!Array.isArray(parsed)) {
+        return [];
+      }
+      const result: string[] = [];
+      const values: Object[] = parsed as Object[];
+      for (let i = 0; i < values.length && result.length < 200; i += 1) {
+        if (typeof values[i] === 'string' && (values[i] as string).length > 0 &&
+          result.indexOf(values[i] as string) < 0) {
+          result.push(values[i] as string);
+        }
+      }
+      return result;
+    } catch (err) {
+      return [];
+    }
+  }
+
   /** 打开偏好库并把已存的值读进 appSettings。首次运行读不到值就保持默认。 */
   async load(context: common.Context): Promise<void> {
     try {
@@ -144,6 +164,14 @@ export class SettingsStore {
         store.getSync(PreferencesConstants.KEY_READER_INDENT, appSettings.readerIndent) as string);
       appSettings.prefetchReader =
         store.getSync(PreferencesConstants.KEY_PREFETCH_READER, appSettings.prefetchReader) as boolean;
+      appSettings.offlineEnabled =
+        store.getSync(PreferencesConstants.KEY_OFFLINE_ENABLED, false) as boolean;
+      appSettings.offlineWifiOnly =
+        store.getSync(PreferencesConstants.KEY_OFFLINE_WIFI_ONLY, true) as boolean;
+      appSettings.offlineFeedIds = this.readStringArray(
+        store.getSync(PreferencesConstants.KEY_OFFLINE_FEED_IDS, '[]') as string);
+      appSettings.offlineGroups = this.readStringArray(
+        store.getSync(PreferencesConstants.KEY_OFFLINE_GROUPS, '[]') as string);
       appSettings.notifyNewArticles =
         store.getSync(PreferencesConstants.KEY_NOTIFY_NEW, appSettings.notifyNewArticles) as boolean;
       appSettings.immersiveOn = store.getSync(PreferencesConstants.KEY_IMMERSIVE_ON, appSettings.immersiveOn) as boolean;
@@ -488,6 +516,10 @@ export class SettingsStore {
       store.putSync(PreferencesConstants.KEY_READER_THEME, appSettings.readerTheme);
       store.putSync(PreferencesConstants.KEY_READER_INDENT, appSettings.readerIndent);
       store.putSync(PreferencesConstants.KEY_PREFETCH_READER, appSettings.prefetchReader);
+      store.putSync(PreferencesConstants.KEY_OFFLINE_ENABLED, appSettings.offlineEnabled);
+      store.putSync(PreferencesConstants.KEY_OFFLINE_WIFI_ONLY, appSettings.offlineWifiOnly);
+      store.putSync(PreferencesConstants.KEY_OFFLINE_FEED_IDS, JSON.stringify(appSettings.offlineFeedIds));
+      store.putSync(PreferencesConstants.KEY_OFFLINE_GROUPS, JSON.stringify(appSettings.offlineGroups));
       store.putSync(PreferencesConstants.KEY_NOTIFY_NEW, appSettings.notifyNewArticles);
       store.putSync(PreferencesConstants.KEY_LIST_NEWEST_FIRST, appSettings.listNewestFirst);
       store.putSync(PreferencesConstants.KEY_LIST_GROUP_MODE, appSettings.listGroupMode);

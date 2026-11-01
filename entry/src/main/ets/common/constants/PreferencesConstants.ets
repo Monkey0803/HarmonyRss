@@ -39,6 +39,12 @@ export class PreferencesConstants {
   static readonly KEY_READER_INDENT: string = 'readerIndent';
   /** 详情页预取下一篇正文（WiFi 下）。 */
   static readonly KEY_PREFETCH_READER: string = 'prefetchReader';
+  static readonly KEY_OFFLINE_ENABLED: string = 'offlineEnabled';
+  static readonly KEY_OFFLINE_WIFI_ONLY: string = 'offlineWifiOnly';
+  static readonly KEY_OFFLINE_FEED_IDS: string = 'offlineFeedIds';
+  static readonly KEY_OFFLINE_GROUPS: string = 'offlineGroups';
+  static readonly KEY_DISCOVER_CATALOG: string = 'discoverCatalogV1';
+  static readonly KEY_DISCOVER_CATALOG_AT: string = 'discoverCatalogAt';
   /** 新文章通知开关。 */
   static readonly KEY_NOTIFY_NEW: string = 'notifyNewArticles';
   static readonly KEY_IMMERSIVE_ON: string = 'immersiveOn';

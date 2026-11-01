@@ -64,6 +64,10 @@ const LIST_COLUMNS: string =
   'a.id, a.feed_id, a.feed_title, a.title, a.link, a.summary, a.published_at, a.is_read, a.is_starred, a.is_saved,' +
   ' a.is_hidden, a.image_url, a.author, a.progress, a.progress_ratio,' +
   ' (CASE WHEN a.reader_html <> \'\' THEN 1 ELSE 0 END) AS has_reader,' +
+  ' (CASE WHEN a.reader_html LIKE \'<!--hrv9-->%\' OR a.reader_html LIKE \'<!--hrv8-->%\' THEN \'full\'' +
+  ' WHEN a.reader_html LIKE \'<!--hrv9p-->%\' THEN \'partial\'' +
+  ' WHEN a.reader_html LIKE \'<!--hrv9t-->%\' THEN \'text\'' +
+  ' ELSE \'none\' END) AS offline_state,' +
   ' a.canonical_id,' +
   // 媒体附件与音频进度：列表显示播客 / 视频标识，详情页恢复播放位置。
   ' a.enclosures, a.media_progress,' +
@@ -1357,6 +1361,7 @@ export class ArticleStore {
     article.readerState = rs.getLong(rs.getColumnIndex('has_reader')) === 1
       ? ReaderState.READY
       : ReaderState.NONE;
+    article.offlineState = rs.getString(rs.getColumnIndex('offline_state'));
     // 跨源去重：canonical_id 空串 = 主条；duplicateCount 是「含自己的组内来源数」。
     article.canonicalId = rs.getString(rs.getColumnIndex('canonical_id'));
     article.duplicateCount = 1 + rs.getLong(rs.getColumnIndex('dup_count'));
@@ -1368,6 +1373,62 @@ export class ArticleStore {
   /** 兼容旧调用：列表读取（轻量列）。 */
   async loadRecent(): Promise<Article[]> {
     return await this.loadForList();
+  }
+
+  /** 每源最近的未读主条；只读轻量列，供用户选定范围后准备离线正文。 */
+  async offlineCandidates(feedId: string, limit: number = 20): Promise<Article[]> {
+    const store: relationalStore.RdbStore | undefined = this.store;
+    if (store === undefined || feedId.length === 0) {
+      return [];
+    }
+    const result: Article[] = [];
+    try {
+      const rs: relationalStore.ResultSet = await store.querySql(
+        'SELECT ' + LIST_COLUMNS + ' FROM ' + ArticleDbConstants.TABLE_ARTICLES + ' a' +
+        ' WHERE a.feed_id = ? AND a.is_read = 0 AND a.is_hidden = 0 AND a.canonical_id = \'\'' +
+        ' ORDER BY a.published_at DESC LIMIT ?', [feedId, Math.max(1, Math.min(20, Math.floor(limit)))]);
+      try {
+        while (rs.goToNextRow()) {
+          result.push(this.articleFromListRow(rs));
+        }
+      } finally {
+        rs.close();
+      }
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.warn(DOMAIN, TAG, 'offline candidates failed: %{public}d', error.code);
+    }
+    return result;
+  }
+
+  /** Reader 缓存状态由持久化标记判定，避免把 feed 摘要误报成完整离线正文。 */
+  async offlineState(id: string): Promise<string> {
+    const store: relationalStore.RdbStore | undefined = this.store;
+    if (store === undefined || id.length === 0) {
+      return 'none';
+    }
+    try {
+      const rs: relationalStore.ResultSet = await store.querySql(
+        'SELECT substr(reader_html, 1, 13) AS marker FROM ' + ArticleDbConstants.TABLE_ARTICLES +
+        ' WHERE id = ?', [id]);
+      try {
+        if (!rs.goToNextRow()) {
+          return 'none';
+        }
+        const marker: string = rs.getString(rs.getColumnIndex('marker'));
+        if (marker.startsWith('<!--hrv9p-->')) {
+          return 'partial';
+        }
+        if (marker.startsWith('<!--hrv9t-->')) {
+          return 'text';
+        }
+        return marker.startsWith('<!--hrv9-->') || marker.startsWith('<!--hrv8-->') ? 'full' : 'none';
+      } finally {
+        rs.close();
+      }
+    } catch (err) {
+      return 'none';
+    }
   }
 
   /** 按 id 读正文相关列；不存在返回 undefined。 */
@@ -3237,8 +3298,30 @@ export class ArticleStore {
     return new CacheStats(0, 0);
   }
 
+  /** 已保存 Reader 正文的实际 UTF-8 字节数，包含内嵌图片。 */
+  async offlineCacheBytes(): Promise<number> {
+    const store: relationalStore.RdbStore | undefined = this.store;
+    if (store === undefined) {
+      return 0;
+    }
+    try {
+      const rs: relationalStore.ResultSet = await store.querySql(
+        'SELECT COALESCE(SUM(LENGTH(CAST(reader_html AS BLOB))), 0) AS bytes FROM ' +
+        ArticleDbConstants.TABLE_ARTICLES + ' WHERE reader_html <> \'\'');
+      try {
+        return rs.goToNextRow() ? rs.getLong(rs.getColumnIndex('bytes')) : 0;
+      } finally {
+        rs.close();
+      }
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.warn(DOMAIN, TAG, 'offline cache size failed: %{public}d', error.code);
+      return 0;
+    }
+  }
+
   /**
-   * 清理正文缓存：清空未收藏文章的 reader_html / content_html / plain_text / 阅读进度，
+   * 清理正文缓存：清空未收藏文章的 reader_html / content_html / plain_text，
    * 列表条目与已读状态保留（收藏的文章不动）。返回清理条数。
    */
   async clearCachedContent(): Promise<number> {
@@ -3260,7 +3343,7 @@ export class ArticleStore {
       }
       await store.executeSql(
         'UPDATE ' + ArticleDbConstants.TABLE_ARTICLES +
-        ' SET reader_html = \'\', content_html = \'\', plain_text = \'\', progress = 0, progress_ratio = 0' +
+        ' SET reader_html = \'\', content_html = \'\', plain_text = \'\'' +
         ' WHERE is_starred = 0 AND (reader_html <> \'\' OR content_html <> \'\' OR plain_text <> \'\')');
       hilog.info(DOMAIN, TAG, 'cleared cached content rows: %{public}d', affected);
       return affected;

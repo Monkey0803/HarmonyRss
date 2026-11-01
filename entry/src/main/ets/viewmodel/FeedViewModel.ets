@@ -41,6 +41,7 @@ import { notifyService } from '../service/NotifyService';
 import { ruleService } from '../service/RuleService';
 import { RuleApplyResult } from '../model/Rule';
 import { diagnostics } from '../service/DiagnosticsService';
+import { offlineDownloadService } from '../service/OfflineDownloadService';
 
 /** 复用一个 Date 实例：日期分桶在列表滚动时会被频繁调用，避免每次都分配对象。 */
 const SCRATCH_DATE: Date = new Date();
@@ -117,6 +118,7 @@ function mergeArticle(target: Article, source: Article): void {
   target.duplicateCount = source.duplicateCount;
   target.progress = source.progress;
   target.progressRatio = source.progressRatio;
+  target.offlineState = source.offlineState;
 }
 
 @ObservedV2
@@ -234,6 +236,14 @@ export class FeedViewModel {
         });
       });
     await articleStore.open(context);
+    offlineDownloadService.bindStatePublisher((id: string, state: string) => {
+      for (let i = 0; i < this.all.length; i += 1) {
+        if (this.all[i].id === id) {
+          this.all[i].offlineState = state;
+          break;
+        }
+      }
+    });
     this.all = await articleStore.loadForList();
     retentionService.configure(context, this.feeds);
     this.publish();
@@ -499,6 +509,7 @@ export class FeedViewModel {
     this.applyRetentionIfDue();
     // 抓取完成也是云同步的触发点：开关 / 仅 Wi-Fi / 最小间隔都由 SyncService 判定。
     this.autoSyncAfterFetch();
+    offlineDownloadService.prepare(this.feeds).catch(() => {});
   }
 
   /**
@@ -1839,7 +1850,10 @@ export class FeedViewModel {
     // 正文是按需加载的：先补齐缓存，否则「离线可读」会退化成重新联网提取。
     await this.ensureBodyLoaded(articleId);
     const mode: string = this.effectiveSettings(article.feedId).fullTextMode;
-    return articleContentService.ensureReaderHtml(article, mode);
+    const html: string = await articleContentService.ensureReaderHtml(article, mode);
+    article.offlineState = html.startsWith('<!--hrv9-->') || html.startsWith('<!--hrv8-->')
+      ? 'full' : (html.startsWith('<!--hrv9t-->') ? 'text' : (html.length > 0 ? 'partial' : 'none'));
+    return html;
   }
 
   /**

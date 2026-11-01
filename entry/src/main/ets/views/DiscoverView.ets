@@ -2,9 +2,9 @@
  * DiscoverView.ets — 「发现与推荐」页（NavDestination 内容，纯状态管理 V2）。
  *
  * 能力：
- *   - 本地精选目录：分类 / 热门榜 / 关键词筛选，一键订阅（点击时才抓取一次）；
+ *   - 本项目维护的精选目录：分类 / 热门榜 / 关键词筛选，在线更新并回退本地目录；
  *   - 相似源推荐：基于已订阅源的主题标签在本地打分，不联网、不上传订阅列表；
- *   - RSSHub 路由助手：把常见站点 / 个人主页地址推导为候选 RSSHub 路由；
+ *   - 网站主页自动发现与预览；RSSHub 路由助手生成候选路由；
  *   - 从剪贴板批量导入书签 / 地址（沿用安全控件授权 + 既有批量校验链路）。
  *
  * 业务逻辑（筛选 / 推荐 / 路由）都在 DiscoverService / RssHubRoutes 纯函数里，本页只做展示与事件上报。
@@ -28,6 +28,10 @@ import { ToastUtil } from '../common/utils/ToastUtil';
 import { FeedErrorText } from '../common/utils/FeedErrorText';
 import { UrlText } from '../common/utils/UrlText';
 import { clipboardService } from '../service/ClipboardService';
+import { discoverCatalogService } from '../service/DiscoverCatalogService';
+import { FeedPreview } from '../model/FeedPreview';
+import { DateUtil } from '../common/utils/DateUtil';
+import { common } from '@kit.AbilityKit';
 
 /** 页面顶部的分类顺序（all / hot 固定在前）。 */
 const CHIP_ORDER: string[] = [
@@ -55,19 +59,74 @@ export struct DiscoverView {
   @Local rsshubBase: string = DEFAULT_RSSHUB_BASE;
   @Local suggestions: RssHubSuggestion[] = [];
   @Local rsshubError: boolean = false;
+  @Local websiteInput: string = '';
+  @Local checkingWebsite: boolean = false;
+  @Local previewTitle: string = '';
+  @Local previewCount: number = 0;
+  @Local catalogRevision: number = 0;
+  private pendingPreview: FeedPreview | undefined = undefined;
 
   aboutToAppear(): void {
     this.rsshubBase = normalizeRssHubBase(appSettings.rsshubBase);
+    const context: common.Context | undefined = this.getUIContext().getHostContext();
+    if (context !== undefined) {
+      discoverCatalogService.open(context).then(() => {
+        this.catalogRevision = discoverCatalogService.revision;
+      });
+    }
   }
 
   /** 当前分类 / 关键词下的目录。 */
   private visibleFeeds(): DiscoverFeed[] {
+    const revision: number = this.catalogRevision;
     return DiscoverService.filter(this.category, this.keyword);
   }
 
   /** 本地相似源推荐（最多 6 条；没有主题信号时为空）。 */
   private recommendedFeeds(): DiscoverFeed[] {
+    const revision: number = this.catalogRevision;
     return DiscoverService.recommendations(feedViewModel.feeds, 6);
+  }
+
+  /** 网站主页与 RSSHub 路由都先真实抓取并预览，再由用户确认订阅。 */
+  private async inspectAddress(address: string): Promise<void> {
+    if (this.checkingWebsite) {
+      return;
+    }
+    this.checkingWebsite = true;
+    this.pendingPreview = undefined;
+    this.previewTitle = '';
+    const preview: FeedPreview | undefined = await feedViewModel.previewFeed(address);
+    this.checkingWebsite = false;
+    if (preview !== undefined) {
+      this.pendingPreview = preview;
+      this.previewTitle = preview.title;
+      this.previewCount = preview.itemCount;
+      this.scroller.scrollTo({ xOffset: 0, yOffset: 0, animation: true });
+      return;
+    }
+    this.rsshubInput = address;
+    this.generateRoutes();
+    if (this.suggestions.length === 0) {
+      ToastUtil.show(this.getUIContext(), $r('app.string.discover_no_feed'));
+    }
+  }
+
+  private async confirmPreview(): Promise<void> {
+    const preview: FeedPreview | undefined = this.pendingPreview;
+    if (preview === undefined || this.checkingWebsite) {
+      return;
+    }
+    this.checkingWebsite = true;
+    const ok: boolean = await feedViewModel.commitFeed(preview, '', '');
+    this.checkingWebsite = false;
+    if (ok) {
+      this.pendingPreview = undefined;
+      this.previewTitle = '';
+      ToastUtil.show(this.getUIContext(), $r('app.string.discover_subscribe_success'));
+    } else {
+      ToastUtil.show(this.getUIContext(), FeedErrorText.of(feedViewModel.errorCode));
+    }
   }
 
   private isSubscribed(feedUrl: string): boolean {
@@ -168,17 +227,34 @@ export struct DiscoverView {
       ToastUtil.show(this.getUIContext(), $r('app.string.discover_subscribe_duplicate'));
       return;
     }
-    this.subscribingUrl = feedUrl;
-    const ok: boolean = await feedViewModel.addFeed(feedUrl);
-    this.subscribingUrl = '';
-    if (ok) {
-      ToastUtil.show(this.getUIContext(),
-        title.length > 0
-          ? $r('app.string.discover_subscribe_ok', title)
-          : $r('app.string.discover_subscribe_success'));
-      return;
+    await this.inspectAddress(feedUrl);
+  }
+
+  @Builder
+  WebsiteCard() {
+    Column({ space: $r('app.float.space_s') }) {
+      Text($r('app.string.discover_website_title'))
+        .fontSize($r('app.float.font_size_section'))
+        .fontColor($r('app.color.hm_text_primary'))
+      TextInput({ text: this.websiteInput, placeholder: $r('app.string.discover_website_hint') })
+        .onChange((value: string) => { this.websiteInput = value; })
+      Button(this.checkingWebsite ? $r('app.string.discover_subscribing') :
+        $r('app.string.discover_website_check'))
+        .enabled(!this.checkingWebsite)
+        .onClick(() => { this.inspectAddress(this.websiteInput); })
+      if (this.previewTitle.length > 0) {
+        Text($r('app.string.discover_preview', this.previewTitle, this.previewCount))
+          .fontSize($r('app.float.font_size_caption'))
+          .fontColor($r('app.color.hm_text_primary'))
+        Button($r('app.string.discover_subscribe'))
+          .onClick(() => { this.confirmPreview(); })
+      }
     }
-    ToastUtil.show(this.getUIContext(), FeedErrorText.of(feedViewModel.errorCode));
+    .width('100%')
+    .padding($r('app.float.space_m'))
+    .backgroundColor($r('app.color.hm_card_background'))
+    .borderRadius($r('app.float.radius_card'))
+    .alignItems(HorizontalAlign.Start)
   }
 
   /** 归一化并持久化 RSSHub 实例（脏值回退默认实例）。 */
@@ -492,6 +568,12 @@ export struct DiscoverView {
           .padding({ top: $r('app.float.space_s') })
 
         this.FilterHeader()
+        this.WebsiteCard()
+        if (discoverCatalogService.updatedAt > 0) {
+          Text($r('app.string.discover_catalog_updated', DateUtil.format(discoverCatalogService.updatedAt)))
+            .fontSize($r('app.float.font_size_caption'))
+            .fontColor($r('app.color.hm_text_secondary'))
+        }
 
         if (this.category === DiscoverCategory.ALL && this.keyword.trim().length === 0) {
           if (this.recommendedFeeds().length > 0) {

@@ -75,17 +75,23 @@ export function displayHost(siteUrl: string, feedUrl: string): string {
 }
 
 export class DiscoverService {
+  private static catalog: DiscoverFeed[] = DiscoverCatalog.FEEDS;
+
+  static setCatalog(feeds: DiscoverFeed[]): void {
+    DiscoverService.catalog = feeds.length > 0 ? feeds : DiscoverCatalog.FEEDS;
+  }
+
   /** 目录全部条目。 */
   static all(): DiscoverFeed[] {
-    return DiscoverCatalog.FEEDS;
+    return DiscoverService.catalog;
   }
 
   /** 某分类（或「全部」/「热门」）+ 关键词下的目录。 */
   static filter(category: string, keyword: string): DiscoverFeed[] {
     const query: string = keyword.trim().toLowerCase();
     const result: DiscoverFeed[] = [];
-    for (let i = 0; i < DiscoverCatalog.FEEDS.length; i += 1) {
-      const feed: DiscoverFeed = DiscoverCatalog.FEEDS[i];
+    for (let i = 0; i < DiscoverService.catalog.length; i += 1) {
+      const feed: DiscoverFeed = DiscoverService.catalog[i];
       if (!DiscoverService.inCategory(feed, category)) {
         continue;
       }
@@ -156,8 +162,8 @@ export class DiscoverService {
       return [];
     }
     const scored: ScoredFeed[] = [];
-    for (let i = 0; i < DiscoverCatalog.FEEDS.length; i += 1) {
-      const feed: DiscoverFeed = DiscoverCatalog.FEEDS[i];
+    for (let i = 0; i < DiscoverService.catalog.length; i += 1) {
+      const feed: DiscoverFeed = DiscoverService.catalog[i];
       if (DiscoverService.isSubscribed(feed.feedUrl, existing)) {
         continue;
       }
@@ -185,8 +191,8 @@ export class DiscoverService {
     for (let i = 0; i < existing.length; i += 1) {
       const source: FeedSource = existing[i];
       const sourceKey: string = normalizeFeedKey(source.url);
-      for (let j = 0; j < DiscoverCatalog.FEEDS.length; j += 1) {
-        const catalogFeed: DiscoverFeed = DiscoverCatalog.FEEDS[j];
+      for (let j = 0; j < DiscoverService.catalog.length; j += 1) {
+        const catalogFeed: DiscoverFeed = DiscoverService.catalog[j];
         if (normalizeFeedKey(catalogFeed.feedUrl) === sourceKey) {
           for (let k = 0; k < catalogFeed.tags.length; k += 1) {
             interests.add(catalogFeed.tags[k]);

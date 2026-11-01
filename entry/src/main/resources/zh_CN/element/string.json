@@ -4279,6 +4279,74 @@
     {
       "name": "article_offline_body_fallback",
       "value": "离线时无法获取全文，已显示可用的订阅内容"
+    },
+    {
+      "name": "offline_title",
+      "value": "离线阅读"
+    },
+    {
+      "name": "offline_auto",
+      "value": "自动下载已选范围"
+    },
+    {
+      "name": "offline_wifi",
+      "value": "仅 Wi-Fi 自动下载"
+    },
+    {
+      "name": "offline_download_now",
+      "value": "立即下载"
+    },
+    {
+      "name": "offline_progress",
+      "value": "已下载 %1$d / %2$d"
+    },
+    {
+      "name": "offline_limit",
+      "value": "已达到 200 MB 缓存上限，自动下载已暂停"
+    },
+    {
+      "name": "offline_usage",
+      "value": "正文缓存约 %1$d MB / 200 MB"
+    },
+    {
+      "name": "offline_feed",
+      "value": "离线下载此订阅源"
+    },
+    {
+      "name": "offline_group",
+      "value": "离线下载此分组"
+    },
+    {
+      "name": "offline_full",
+      "value": "正文和图片可离线阅读"
+    },
+    {
+      "name": "offline_partial",
+      "value": "正文可离线阅读，部分图片仍需联网"
+    },
+    {
+      "name": "discover_website_title",
+      "value": "查找网站订阅源"
+    },
+    {
+      "name": "discover_website_hint",
+      "value": "网站或订阅源地址"
+    },
+    {
+      "name": "discover_website_check",
+      "value": "查找订阅源"
+    },
+    {
+      "name": "discover_no_feed",
+      "value": "未找到可订阅的内容"
+    },
+    {
+      "name": "discover_preview",
+      "value": "%1$s · 最近 %2$d 篇"
+    },
+    {
+      "name": "discover_catalog_updated",
+      "value": "目录更新于 %1$s"
     }
   ]
 }

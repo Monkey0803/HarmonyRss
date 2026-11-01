@@ -26,6 +26,7 @@ import { notifyService } from '../service/NotifyService';
 import { retentionService } from '../service/RetentionService';
 import { ruleService } from '../service/RuleService';
 import { syncService } from '../service/SyncService';
+import { offlineDownloadService } from '../service/OfflineDownloadService';
 import { AutoRefreshMinutes } from '../common/constants/SettingsConstants';
 
 const DOMAIN: number = 0x0000;
@@ -105,6 +106,7 @@ export default class RssWorkScheduler extends WorkSchedulerExtensionAbility {
     }
     // 校验值 / 健康状态变了要落盘，否则下次条件请求拿不到。
     feedStore.save(feeds);
+    await offlineDownloadService.prepare(feeds);
     hilog.info(DOMAIN, TAG, 'background refresh done, fetched: %{public}d', fresh.length);
 
     // 通知：与前台共用 notifyNew（策略过滤 / 免打扰入队 / 分组限流都在里面）。

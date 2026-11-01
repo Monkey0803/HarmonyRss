@@ -16,6 +16,8 @@ import {
   RssHubSuggestion
 } from '../../../main/ets/service/RssHubRoutes';
 import { FeedSource } from '../../../main/ets/model/Feed';
+import { decodeCatalog } from '../../../main/ets/service/DiscoverCatalogService';
+import { selectedForOffline } from '../../../main/ets/service/OfflineDownloadService';
 
 function routeList(input: string): RssHubSuggestion[] {
   return RssHubRoutes.suggest(input, DEFAULT_RSSHUB_BASE);
@@ -39,6 +41,30 @@ function routes(list: RssHubSuggestion[]): string[] {
 
 export default function discoverTest() {
   describe('Discover', () => {
+    it('online_catalog_rejects_partial_and_duplicate_updates', 0, () => {
+      expect(decodeCatalog('{"version":2,"feeds":[]}').length).assertEqual(0);
+      expect(decodeCatalog('{"version":1,"feeds":[]}').length).assertEqual(0);
+      const records: string[] = [];
+      for (let i = 0; i < 30; i += 1) {
+        records.push('{"title":"Feed ' + i + '","feedUrl":"https://example.com/' + i +
+          '","siteUrl":"https://example.com","category":"tech","tags":["tech"],"popularity":50}');
+      }
+      const valid: string = '{"version":1,"feeds":[' + records.join(',') + ']}';
+      expect(decodeCatalog(valid).length).assertEqual(30);
+      records[29] = records[0];
+      expect(decodeCatalog('{"version":1,"feeds":[' + records.join(',') + ']}').length).assertEqual(0);
+    });
+
+    it('offline_selection_follows_group_membership', 0, () => {
+      const feed: FeedSource = new FeedSource('feed-1', 'Feed', 'https://example.com/rss',
+        'https://example.com', 'Technology');
+      expect(selectedForOffline(feed, [], [])).assertFalse();
+      expect(selectedForOffline(feed, ['feed-1'], [])).assertTrue();
+      expect(selectedForOffline(feed, [], ['Technology'])).assertTrue();
+      feed.group = 'News';
+      expect(selectedForOffline(feed, [], ['Technology'])).assertFalse();
+    });
+
     it('catalog_is_valid', 0, () => {
       expect(DiscoverCatalog.FEEDS.length >= 20).assertTrue();
       const seen: Set<string> = new Set();

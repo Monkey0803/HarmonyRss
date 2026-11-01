@@ -22,6 +22,7 @@ import { safeArea } from '../service/SafeAreaController';
 import { MaterialController } from '../service/MaterialController';
 import { DateUtil } from '../common/utils/DateUtil';
 import { ToastUtil } from '../common/utils/ToastUtil';
+import { offlineDownloadService } from '../service/OfflineDownloadService';
 
 /** 下拉选项行（自己按当前 id 取文案并弹 Menu）。 */
 @ComponentV2
@@ -330,6 +331,29 @@ export struct FeedSettingsView {
     .alignItems(HorizontalAlign.Start)
   }
 
+  @Builder
+  OfflineCard(feed: FeedSource) {
+    Row() {
+      Text($r('app.string.offline_feed'))
+        .fontSize($r('app.float.font_size_body'))
+        .fontColor($r('app.color.hm_text_primary'))
+      Blank()
+      Toggle({ type: ToggleType.Switch, isOn: appSettings.offlineFeedIds.indexOf(feed.id) >= 0 })
+        .selectedColor($r('app.color.hm_brand'))
+        .onChange((value: boolean) => {
+          offlineDownloadService.toggleFeed(feed.id, value);
+          if (value) {
+            offlineDownloadService.prepare(feedViewModel.feeds).catch(() => {});
+          }
+        })
+    }
+    .width('100%')
+    .height($r('app.float.row_height'))
+    .padding({ left: $r('app.float.space_m'), right: $r('app.float.space_m') })
+    .backgroundColor($r('app.color.hm_card_background'))
+    .borderRadius($r('app.float.radius_card'))
+  }
+
   build() {
     Scroll(this.scroller) {
       Column() {
@@ -345,6 +369,8 @@ export struct FeedSettingsView {
           this.EnabledCard(this.feed() as FeedSource)
           this.SectionTitle($r('app.string.feed_settings_interval'))
           this.PolicyCard(this.feed() as FeedSource)
+          this.SectionTitle($r('app.string.offline_title'))
+          this.OfflineCard(this.feed() as FeedSource)
           this.SectionTitle($r('app.string.feed_settings_section_health'))
           this.HealthCard(this.feed() as FeedSource)
         }

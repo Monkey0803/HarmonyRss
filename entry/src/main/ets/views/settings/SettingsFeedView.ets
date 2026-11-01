@@ -22,6 +22,9 @@ import {
 import { settingsViewModel } from '../../viewmodel/SettingsViewModel';
 import { feedViewModel } from '../../viewmodel/FeedViewModel';
 import { articleStore } from '../../service/ArticleStore';
+import { offlineDownloadService } from '../../service/OfflineDownloadService';
+import { appSettings } from '../../model/AppSettings';
+import { settingsStore } from '../../service/SettingsStore';
 import { opmlService } from '../../service/OpmlService';
 import { OpmlEntry, parseOpml } from '../../service/OpmlCodec';
 import { RouterConstants } from '../../common/constants/RouterConstants';
@@ -48,6 +51,12 @@ export struct SettingsFeedView {
 
   aboutToAppear(): void {
     this.reloadHighlightCount();
+    this.reloadOfflineUsage();
+  }
+
+  private async reloadOfflineUsage(): Promise<void> {
+    await articleStore.whenReady();
+    offlineDownloadService.bytes = await articleStore.offlineCacheBytes();
   }
 
   private async reloadHighlightCount(): Promise<void> {
@@ -216,6 +225,61 @@ export struct SettingsFeedView {
         .width('100%')
         .backgroundColor($r('app.color.hm_card_background'))
         .borderRadius($r('app.float.radius_card'))
+
+        SettingsSectionTitle({ title: $r('app.string.offline_title') })
+        Column() {
+          Row() {
+            SettingIconTitle({ icon: $r('sys.symbol.arrow_down_circle'), title: $r('app.string.offline_auto') })
+            Blank()
+            Toggle({ type: ToggleType.Switch, isOn: appSettings.offlineEnabled })
+              .selectedColor($r('app.color.hm_brand'))
+              .onChange((value: boolean) => {
+                appSettings.offlineEnabled = value;
+                settingsStore.save();
+                if (value) {
+                  offlineDownloadService.prepare(feedViewModel.feeds).catch(() => {});
+                }
+              })
+          }
+          .height($r('app.float.row_height'))
+          .padding({ left: $r('app.float.space_m'), right: $r('app.float.space_m') })
+          Divider().color($r('app.color.hm_divider'))
+          Row() {
+            SettingIconTitle({ icon: $r('sys.symbol.wifi'), title: $r('app.string.offline_wifi') })
+            Blank()
+            Toggle({ type: ToggleType.Switch, isOn: appSettings.offlineWifiOnly })
+              .selectedColor($r('app.color.hm_brand'))
+              .onChange((value: boolean) => {
+                appSettings.offlineWifiOnly = value;
+                settingsStore.save();
+              })
+          }
+          .height($r('app.float.row_height'))
+          .padding({ left: $r('app.float.space_m'), right: $r('app.float.space_m') })
+          Divider().color($r('app.color.hm_divider'))
+          Row() {
+            SettingIconTitle({ icon: $r('sys.symbol.arrow_down_circle'), title: $r('app.string.offline_download_now') })
+            Blank()
+            Text(offlineDownloadService.running
+              ? $r('app.string.offline_progress', offlineDownloadService.completed, offlineDownloadService.total)
+              : $r('app.string.offline_download_now'))
+              .fontSize($r('app.float.font_size_caption'))
+              .fontColor($r('app.color.hm_brand'))
+          }
+          .height($r('app.float.row_height'))
+          .padding({ left: $r('app.float.space_m'), right: $r('app.float.space_m') })
+          .onClick(() => {
+            offlineDownloadService.prepare(feedViewModel.feeds, true).catch(() => {});
+          })
+        }
+        .width('100%')
+        .backgroundColor($r('app.color.hm_card_background'))
+        .borderRadius($r('app.float.radius_card'))
+        Text(offlineDownloadService.atLimit ? $r('app.string.offline_limit') :
+          $r('app.string.offline_usage', Math.round(offlineDownloadService.bytes / 1024 / 1024)))
+          .fontSize($r('app.float.font_size_caption'))
+          .fontColor($r('app.color.hm_text_secondary'))
+          .margin({ top: $r('app.float.space_s') })
 
         Text($r('app.string.dedupe_switch_desc'))
           .fontSize($r('app.float.font_size_caption'))

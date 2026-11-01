@@ -24,6 +24,7 @@ import { tagViewModel } from '../viewmodel/TagViewModel';
 import { smartFolderViewModel } from '../viewmodel/SmartFolderViewModel';
 import { ruleViewModel } from '../viewmodel/RuleViewModel';
 import { NavSettingRow, SettingsSectionTitle } from './settings/SettingsRows';
+import { offlineDownloadService } from '../service/OfflineDownloadService';
 
 /**
  * 列表头部固定合并成 1 个 ListItem。
@@ -352,6 +353,18 @@ export struct SubscriptionsView {
         .fontSize($r('app.float.font_size_caption'))
         .fontColor($r('app.color.hm_text_secondary'))
       Blank()
+      if (row.groupName.length > 0) {
+        Toggle({ type: ToggleType.Switch,
+          isOn: appSettings.offlineGroups.indexOf(row.groupName) >= 0 })
+          .selectedColor($r('app.color.hm_brand'))
+          .accessibilityText($r('app.string.offline_group'))
+          .onChange((value: boolean) => {
+            offlineDownloadService.toggleGroup(row.groupName, value);
+            if (value) {
+              offlineDownloadService.prepare(feedViewModel.feeds).catch(() => {});
+            }
+          })
+      }
     }
     .width('100%')
     .padding({ left: $r('app.float.space_xs'), right: $r('app.float.space_xs'), top: $r('app.float.space_m') })
