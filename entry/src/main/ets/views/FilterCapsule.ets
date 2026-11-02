@@ -12,6 +12,10 @@
  * 多语言下德 / 法 / 西文案会被截成「Un…」「Un…」，无法完整显示。这里自绘：每项按文字宽度排布，
  * 空间富余时首尾贴边均分缝隙，超出时整条横向可滑动、不截断文字。
  *
+ * 几何：轨道 filter_track_height(40) = 选中片 value_chip_height(32) + 四周 space_xs(4)；
+ * 轨道圆角 radius_filter_track(20) = 选中片 radius_chip(16) + 4，保持同心，轨道端部仍是完整胶囊。
+ * 改高度 / 圆角时两者要一起改，否则选中片会重新贴住轨道的上下边缘。
+ *
  * 为什么是 @ComponentV2 而不是全局 @Builder：调用方各有自己的 ViewModel（阅读页 FeedViewModel、
  * 搜索页 SearchViewModel），选中值必须由 @Param 传进来；多参 @Builder 不随状态刷新
  * （选中态会停在旧值），V2 的 @Param 才能真正跟随 @Trace 源更新。
@@ -64,7 +68,14 @@ export struct FilterCapsule {
       // 文案超出（长语言）时仍按内容自然宽度排布，整条可横向滚动，不截断文字。
       .constraintSize({ minWidth: '100%' })
       .justifyContent(FlexAlign.SpaceBetween)
-      .padding({ left: $r('app.float.space_xs'), right: $r('app.float.space_xs') })
+      // 上下左右同宽的内缩：选中片在轨道内四周各留 4vp，不再顶到轨道的上下边缘。
+      // 每项 Text 的 height('100%') 因此落在 40 - 2 * 4 = 32（药丸高度不变）。
+      .padding({
+        left: $r('app.float.space_xs'),
+        right: $r('app.float.space_xs'),
+        top: $r('app.float.space_xs'),
+        bottom: $r('app.float.space_xs')
+      })
     }
     .scrollable(ScrollDirection.Horizontal)
     .scrollBar(BarState.Off)
@@ -80,8 +91,8 @@ export struct FilterCapsule {
       this.Chips()
     }
     .width('100%')
-    .height($r('app.float.value_chip_height'))
-    .borderRadius($r('app.float.radius_chip'))
+    .height($r('app.float.filter_track_height'))
+    .borderRadius($r('app.float.radius_filter_track'))
     .clip(true)
     .systemMaterial(MaterialController.titleMaterial(appSettings.immersiveOn))
     .alignItems(VerticalAlign.Center)
@@ -94,8 +105,8 @@ export struct FilterCapsule {
       this.Chips()
     }
     .width('100%')
-    .height($r('app.float.value_chip_height'))
-    .borderRadius($r('app.float.radius_chip'))
+    .height($r('app.float.filter_track_height'))
+    .borderRadius($r('app.float.radius_filter_track'))
     .clip(true)
     .backgroundColor($r('app.color.hm_glass_scrim'))
     .backgroundBlurStyle(BlurStyle.COMPONENT_THICK)
@@ -109,8 +120,8 @@ export struct FilterCapsule {
       this.Chips()
     }
     .width('100%')
-    .height($r('app.float.value_chip_height'))
-    .borderRadius($r('app.float.radius_chip'))
+    .height($r('app.float.filter_track_height'))
+    .borderRadius($r('app.float.radius_filter_track'))
     .clip(true)
     .backgroundColor($r('app.color.hm_value_chip_background'))
     .alignItems(VerticalAlign.Center)

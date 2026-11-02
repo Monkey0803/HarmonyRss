@@ -199,6 +199,14 @@
     {
       "name": "menu_width_wide",
       "value": "260"
+    },
+    {
+      "name": "filter_track_height",
+      "value": "40"
+    },
+    {
+      "name": "radius_filter_track",
+      "value": "20"
     }
   ]
 }
