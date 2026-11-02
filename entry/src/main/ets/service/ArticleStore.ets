@@ -1490,6 +1490,33 @@ export class ArticleStore {
     }
   }
 
+  /** 按网页地址查找已有文章，优先返回跨源去重后的主文章。 */
+  async findByUrl(url: string): Promise<Article | undefined> {
+    const store: relationalStore.RdbStore | undefined = this.store;
+    if (store === undefined || url.length === 0) {
+      return undefined;
+    }
+    try {
+      const rs: relationalStore.ResultSet = await store.querySql(
+        'SELECT id, canonical_id FROM ' + ArticleDbConstants.TABLE_ARTICLES +
+        ' WHERE link_key = ? OR link = ?' +
+        ' ORDER BY CASE WHEN canonical_id = \'\' THEN 0 ELSE 1 END, published_at DESC LIMIT 1',
+        [DedupeKeys.urlKey(url), url]);
+      let id: string = '';
+      try {
+        if (rs.goToNextRow()) {
+          const canonical: string = rs.getString(rs.getColumnIndex('canonical_id'));
+          id = canonical.length > 0 ? canonical : rs.getString(rs.getColumnIndex('id'));
+        }
+      } finally {
+        rs.close();
+      }
+      return id.length > 0 ? await this.loadById(id) : undefined;
+    } catch (err) {
+      return undefined;
+    }
+  }
+
   /** 按 id 读一篇文章（列表列 + 正文列）；用于「不在内存里」时的兜底加载。 */
   async loadById(id: string): Promise<Article | undefined> {
     const store: relationalStore.RdbStore | undefined = this.store;

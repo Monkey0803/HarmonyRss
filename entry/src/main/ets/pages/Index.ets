@@ -70,6 +70,11 @@ import { ResponsiveContent } from '../views/ResponsiveContent';
 import { FeedArticlesView } from '../views/FeedArticlesView';
 import { EffectPreviewView } from '../views/EffectPreviewView';
 import { feedViewModel } from '../viewmodel/FeedViewModel';
+import { articleStore } from '../service/ArticleStore';
+import { articleActions } from '../service/ArticleActions';
+import { webPageSaveService } from '../service/WebPageSaveService';
+import { normalizeWebPageUrl } from '../service/WebPageSaveService';
+import { readingContinuation, ContinueRequest } from '../service/ReadingContinuation';
 import { HighlightsView } from '../views/HighlightsView';
 import { SearchView } from '../views/SearchView';
 import { StorageView } from '../views/StorageView';
@@ -111,6 +116,7 @@ struct Index {
   /** 分享进入时预填到添加面板的地址（多行）。 */
   @Local pendingAddText: string = '';
   @Local navPathStack: NavPathStack = new NavPathStack();
+  private continuationReady: boolean = false;
   private tabsController: HdsTabsController = new HdsTabsController();
   /** 每个页签独立的 Scroller：绑定给 HdsNavigation 做滚动联动，互不干扰。 */
   private homeScroller: Scroller = new Scroller();
@@ -148,6 +154,7 @@ struct Index {
   /** 收到 Ability 的深链事件后消费（应用已在前台时点卡片的路径）。 */
   private onDeepLinkEvent: () => void = () => {
     this.consumeDeepLink();
+    this.consumeContinuation();
   };
 
   aboutToAppear(): void {
@@ -159,7 +166,14 @@ struct Index {
       context.eventHub.on(DEEP_LINK_EVENT, this.onDeepLinkEvent);
     }
     settingsViewModel.init(context as common.Context);
-    feedViewModel.init(context as common.Context);
+    feedViewModel.init(context as common.Context).catch(() => {});
+    feedViewModel.whenLocalReady().then(() => {
+      this.continuationReady = true;
+      this.consumeContinuation();
+    }).catch(() => {
+      this.continuationReady = true;
+      this.consumeContinuation();
+    });
     // 恢复上次停留的页签（偏好是异步读出来的，两个触发点都调一次，见 restoreTab）。
     settingsViewModel.whenReady().then(() => {
       this.restoreTab();
@@ -238,6 +252,69 @@ struct Index {
     }
   }
 
+  private consumeContinuation(): void {
+    if (!this.continuationReady) {
+      return;
+    }
+    const request: ContinueRequest | undefined = readingContinuation.take();
+    if (request === undefined) {
+      return;
+    }
+    this.restoreContinuation(request).catch(() => {
+      this.showContinuationFallback(request.url);
+    });
+  }
+
+  private async restoreContinuation(request: ContinueRequest): Promise<void> {
+    await articleStore.whenReady();
+    let articleId: string = request.articleId;
+    const byId = await articleStore.loadById(articleId);
+    if (byId === undefined || normalizeWebPageUrl(byId.link) !== request.url) {
+      const byUrl = await articleStore.findByUrl(request.url);
+      articleId = byUrl === undefined ? '' : byUrl.id;
+    }
+    if (articleId.length === 0) {
+      const preview = await webPageSaveService.preview(request.url);
+      if (preview === undefined) {
+        this.showContinuationFallback(request.url);
+        return;
+      }
+      const saved = await feedViewModel.saveWebPage(preview);
+      if (saved === undefined) {
+        this.showContinuationFallback(request.url);
+        return;
+      }
+      articleId = saved.articleId;
+    }
+    feedViewModel.saveProgress(articleId, 0, request.ratio);
+    if (!await feedViewModel.openArticleById(articleId)) {
+      this.showContinuationFallback(request.url);
+      return;
+    }
+    this.currentTab = TabIndex.HOME;
+    this.titleTab = TabIndex.HOME;
+    this.navPathStack.pushPath(new NavPathInfo(RouterConstants.PAGE_ARTICLE, ''));
+  }
+
+  private showContinuationFallback(url: string): void {
+    AlertDialog.show({
+      message: $r('app.string.continuation_failed'),
+      primaryButton: {
+        value: $r('app.string.action_open_browser'),
+        action: () => {
+          const context: common.Context | undefined = this.getUIContext().getHostContext();
+          if (context !== undefined) {
+            articleActions.openInBrowser(context as common.UIAbilityContext, url);
+          }
+        }
+      },
+      secondaryButton: {
+        value: $r('app.string.dialog_cancel'),
+        action: () => {}
+      }
+    });
+  }
+
   /**
    * 打开深链文章：成功返回 true。
    *
@@ -267,7 +344,11 @@ struct Index {
       feedViewModel.markStarredMany([articleId], true);
       return true;
     }
-    await feedViewModel.openArticleById(articleId);
+    if (action === DeepLinkParams.ACTION_OPEN_READ_ONLY) {
+      await feedViewModel.openArticleWithoutMarkRead(articleId);
+    } else {
+      await feedViewModel.openArticleById(articleId);
+    }
     // 切回「阅读」页签，再压详情页（页面栈是全局的，不切页签会压在设置页上面）。
     this.currentTab = TabIndex.HOME;
     this.titleTab = TabIndex.HOME;
@@ -296,6 +377,7 @@ struct Index {
   /** 回到前台（或页面重新显示）时，按设置的自动刷新间隔决定是否抓取。 */
   onPageShow(): void {
     this.consumeDeepLink();
+    this.consumeContinuation();
     feedViewModel.reloadIfExternalChange().catch(() => {});
     feedViewModel.maybeAutoRefresh();
     // 远端服务：按「账号与服务」里的自动同步间隔判断（默认关）。
@@ -483,10 +565,10 @@ struct Index {
     BrandTitle()
   }
 
-  /** 标题栏 bottomBuilder：阅读页签的筛选条。 */
+  /** 标题栏 bottomBuilder：阅读页签的筛选条（「全部已读」已移到内容区表头，见 HomeTabView）。 */
   @Builder
   HomeFilterBar() {
-    FilterSegmentBar(this.getUIContext())
+    FilterSegmentBar()
   }
 
   /**

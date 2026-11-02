@@ -6,6 +6,7 @@
  */
 
 export class WidgetConstants {
+  static readonly EVENT_ANIMATE: string = 'animate';
   /** 卡片数据里表示尺寸的 key；必须与卡片里 @Local dimension 的变量名同名。 */
   static readonly KEY_DIMENSION: string = 'dimension';
   /** 未读数字段的 key；与卡片 @Local unread 同名。 */

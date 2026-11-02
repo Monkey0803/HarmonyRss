@@ -38,9 +38,12 @@ export class ReaderStyle {
     const topRule: string = topPad > 0
       ? 'padding-top:' + topPad + 'px !important;'
       : '';
-    return 'body,p,li,div,span,article,section{font-size:' + size + 'px !important;line-height:' + line +
+    // 只覆盖可识别的正文容器，避免把站点导航、按钮、卡片和媒体控件一起放大。
+    const content: string = 'article,main,.entry-content,.post-content,.article-content,.post-body,.prose';
+    return ':where(' + content + '){font-size:' + size + 'px !important;line-height:' + line +
       'px !important;' + familyRule + '}' +
-      'img,video,table{max-width:100% !important;height:auto !important;}' +
+      ':where(' + content + ') :where(p,li,blockquote){font-size:inherit !important;line-height:inherit !important;}' +
+      ':where(' + content + ') :where(img,video,table){max-width:100% !important;height:auto !important;}' +
       'body{-webkit-text-size-adjust:100% !important;word-wrap:break-word !important;' +
       topRule +
       'padding-bottom:' + safeArea.contentBottomInsetVp + 'px !important;}';

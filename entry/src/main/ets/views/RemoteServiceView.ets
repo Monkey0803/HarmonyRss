@@ -12,10 +12,13 @@ import { safeArea } from '../service/SafeAreaController';
 import { ToastUtil } from '../common/utils/ToastUtil';
 import { appSettings } from '../model/AppSettings';
 import { settingsStore } from '../service/SettingsStore';
-import { AUTO_REFRESH_OPTIONS, ChoiceOption } from '../model/SettingsOptions';
+import { AUTO_REFRESH_OPTIONS } from '../model/SettingsOptions';
 import { RemoteSyncConstants } from '../common/constants/RssConstants';
 import { MaterialController } from '../service/MaterialController';
 import { RouterConstants } from '../common/constants/RouterConstants';
+import { AppMenu } from '../common/components/AppMenu';
+import { choiceMenu } from '../common/components/ChoiceMenu';
+import { MenuItemSpec, MenuSpec } from '../common/components/MenuSpec';
 
 @ComponentV2
 export struct RemoteServiceView {
@@ -269,21 +272,28 @@ export struct RemoteServiceView {
     .alignItems(HorizontalAlign.Start)
   }
 
-  /** 服务类型菜单。 */
+  /** 服务类型菜单（GReader / Feedbin）。 */
   @Builder
   ServiceTypeMenu() {
-    Menu() {
-      MenuItem({ content: $r('app.string.remote_service_greader') })
-        .onClick(() => {
-          remoteAccountViewModel.chooseService(RemoteSyncConstants.SERVICE_TYPE_GREADER);
-        })
-      MenuItem({ content: $r('app.string.remote_service_feedbin') })
-        .onClick(() => {
-          remoteAccountViewModel.chooseService(RemoteSyncConstants.SERVICE_TYPE_FEEDBIN);
-        })
+    AppMenu(this.serviceTypeMenuSpec());
+  }
+
+  /** 菜单规格：按当前选择的服务类型标选中；展开时现算，读最新状态。 */
+  private serviceTypeMenuSpec(): MenuSpec {
+    const greader: MenuItemSpec = new MenuItemSpec(RemoteSyncConstants.SERVICE_TYPE_GREADER,
+      $r('app.string.remote_service_greader'), (): void => {
+        remoteAccountViewModel.chooseService(RemoteSyncConstants.SERVICE_TYPE_GREADER);
+      });
+    const feedbin: MenuItemSpec = new MenuItemSpec(RemoteSyncConstants.SERVICE_TYPE_FEEDBIN,
+      $r('app.string.remote_service_feedbin'), (): void => {
+        remoteAccountViewModel.chooseService(RemoteSyncConstants.SERVICE_TYPE_FEEDBIN);
+      });
+    if (this.isFeedbin()) {
+      feedbin.markSelected();
+    } else {
+      greader.markSelected();
     }
-    .width($r('app.float.menu_width'))
-    .radius($r('app.float.radius_card'))
+    return MenuSpec.fromItems([greader, feedbin]);
   }
 
   /** 同步状态卡：账号信息 + 同步统计 + 操作。 */
@@ -346,7 +356,7 @@ export struct RemoteServiceView {
       .width('100%')
       .height($r('app.float.row_height'))
       .padding({ left: $r('app.float.space_m'), right: $r('app.float.space_m') })
-      .bindMenu(this.AutoSyncMenu())
+      .bindMenu(this.AutoSyncMenu(), MaterialController.menuOptions({}, appSettings.immersiveOn))
 
       if (remoteSyncService.syncing) {
         Divider().color($r('app.color.hm_divider'))
@@ -386,7 +396,7 @@ export struct RemoteServiceView {
           .buttonStyle(ButtonStyleMode.TEXTUAL)
           .fontSize($r('app.float.font_size_caption'))
           .fontColor($r('app.color.hm_danger'))
-          .bindMenu(this.LogoutMenu())
+          .bindMenu(this.LogoutMenu(), MaterialController.menuOptions({}, appSettings.immersiveOn))
       }
       .width('100%')
       .justifyContent(FlexAlign.End)
@@ -401,34 +411,33 @@ export struct RemoteServiceView {
   /** 自动同步间隔菜单（复用自动刷新的档位：关 / 15 / 30 / 60 分钟）。 */
   @Builder
   AutoSyncMenu() {
-    Menu() {
-      ForEach(AUTO_REFRESH_OPTIONS.options, (option: ChoiceOption) => {
-        MenuItem({ content: option.label })
-          .onClick(() => {
-            appSettings.remoteAutoSync = option.id;
-            settingsStore.save();
-          })
-      }, (option: ChoiceOption) => option.id)
-    }
-    .width($r('app.float.menu_width'))
-    .radius($r('app.float.radius_card'))
+    AppMenu(this.autoSyncMenuSpec());
+  }
+
+  /** 菜单规格：选项表 → 选择型菜单，当前档位标选中。 */
+  private autoSyncMenuSpec(): MenuSpec {
+    return choiceMenu(AUTO_REFRESH_OPTIONS, appSettings.remoteAutoSync, (id: string): void => {
+      appSettings.remoteAutoSync = id;
+      settingsStore.save();
+    });
   }
 
   /** 退出登录菜单：默认保留本地数据，也可清除同步映射 / 队列。 */
   @Builder
   LogoutMenu() {
-    Menu() {
-      MenuItem({ content: $r('app.string.remote_logout_keep') })
-        .onClick(() => {
-          this.confirmLogout(false);
-        })
-      MenuItem({ content: $r('app.string.remote_logout_clear') })
-        .onClick(() => {
-          this.confirmLogout(true);
-        })
-    }
-    .width($r('app.float.menu_width'))
-    .radius($r('app.float.radius_card'))
+    AppMenu(this.logoutMenuSpec());
+  }
+
+  /** 菜单规格：两个动作项，动作与改造前一致。 */
+  private logoutMenuSpec(): MenuSpec {
+    return MenuSpec.fromItems([
+      new MenuItemSpec('logout_keep', $r('app.string.remote_logout_keep'), (): void => {
+        this.confirmLogout(false);
+      }),
+      new MenuItemSpec('logout_clear', $r('app.string.remote_logout_clear'), (): void => {
+        this.confirmLogout(true);
+      }).markDanger()
+    ]);
   }
 
   build() {

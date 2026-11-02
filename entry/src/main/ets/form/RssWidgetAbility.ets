@@ -60,10 +60,34 @@ export default class RssWidgetAbility extends FormExtensionAbility {
       const event: Object | undefined = parsed[WidgetConstants.PARAM_EVENT];
       if (typeof event === 'string' && event === WidgetConstants.EVENT_REFRESH) {
         this.refresh(formId);
+      } else if (typeof event === 'string' && event === WidgetConstants.EVENT_ANIMATE) {
+        this.animate(formId);
       }
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       hilog.error(DOMAIN, TAG, 'onFormEvent parse failed: %{public}d', error.code);
+    }
+  }
+
+  private async animate(formId: string): Promise<void> {
+    try {
+      const rect: formInfo.Rect = await formProvider.getFormRect(formId);
+      if (rect.width <= 0 || rect.height <= 0) {
+        return;
+      }
+      await formProvider.requestOverflow(formId, {
+        area: {
+          left: -rect.width * 0.1,
+          top: -rect.height * 0.2,
+          width: rect.width * 1.2,
+          height: rect.height * 1.4
+        },
+        duration: 1800,
+        useDefaultAnimation: true
+      });
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.warn(DOMAIN, TAG, 'animate failed: %{public}d', error.code);
     }
   }
 

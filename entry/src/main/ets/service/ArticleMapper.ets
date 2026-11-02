@@ -29,7 +29,6 @@ export function toArticles(feed: FeedSource, parsed: ParsedFeed, sink: Article[]
   // 同一批里按 id 去重：feed 里偶发重复条目（同一链接出现两次、guid 与 link 混用）时，
   // 本地库虽然有 INSERT OR IGNORE，但内存列表会重复显示，所以先在这里过滤掉。
   const seen: Set<string> = new Set<string>();
-  let accepted: number = 0;
   for (let i = 0; i < parsed.articles.length; i += 1) {
     const item: ParsedArticle = parsed.articles[i];
     const id: string = buildArticleId(feed.id, item);
@@ -37,10 +36,8 @@ export function toArticles(feed: FeedSource, parsed: ParsedFeed, sink: Article[]
       continue;
     }
     seen.add(id);
-    accepted += 1;
     sink.push(new Article(id, feed.id, feed.title, item.title, item.link,
       item.summary, item.content, item.publishedAt, item.imageUrl, item.author, item.contentHtml,
       item.enclosures));
   }
-  feed.articleCount = accepted;
 }

@@ -17,6 +17,7 @@ import { RouterConstants } from '../common/constants/RouterConstants';
 import { MaterialController } from '../service/MaterialController';
 import { appSettings } from '../model/AppSettings';
 import { ToastUtil } from '../common/utils/ToastUtil';
+import { FilterCapsule } from './FilterCapsule';
 
 /** 片段分片：一段普通文本或一段命中词。 */
 class SnippetSegment {
@@ -242,44 +243,18 @@ export struct SearchView {
     }
   }
 
-  /** 状态筛选 chips 的定义。 */
+  /** 状态筛选的定义：值 + 文案（顺序一致，直接交给 FilterCapsule）。 */
   private stateOptions(): string[] {
     return [SearchState.ALL, SearchState.UNREAD, SearchState.STARRED, SearchState.SAVED];
   }
 
-  private stateLabel(state: string): ResourceStr {
-    if (state === SearchState.UNREAD) {
-      return $r('app.string.search_filter_unread');
-    }
-    if (state === SearchState.STARRED) {
-      return $r('app.string.search_filter_starred');
-    }
-    if (state === SearchState.SAVED) {
-      return $r('app.string.search_filter_saved');
-    }
-    return $r('app.string.search_filter_all');
-  }
-
-  @Builder
-  StateChip(state: string) {
-    Text(this.stateLabel(state))
-      .fontSize($r('app.float.font_size_caption'))
-      .fontColor(searchViewModel.activeState === state
-        ? $r('app.color.hm_on_brand')
-        : $r('app.color.hm_text_primary'))
-      .padding({
-        left: $r('app.float.space_m'),
-        right: $r('app.float.space_m'),
-        top: $r('app.float.space_xs'),
-        bottom: $r('app.float.space_xs')
-      })
-      .backgroundColor(searchViewModel.activeState === state
-        ? $r('app.color.hm_brand')
-        : $r('app.color.hm_value_chip_background'))
-      .borderRadius($r('app.float.radius_chip'))
-      .onClick(() => {
-        searchViewModel.setState(state);
-      })
+  private stateLabels(): ResourceStr[] {
+    return [
+      $r('app.string.search_filter_all'),
+      $r('app.string.search_filter_unread'),
+      $r('app.string.search_filter_starred'),
+      $r('app.string.search_filter_saved')
+    ];
   }
 
   @Builder
@@ -362,14 +337,26 @@ export struct SearchView {
       }
 
       Row({ space: $r('app.float.space_s') }) {
-        ForEach(this.stateOptions(), (state: string) => {
-          this.StateChip(state)
-        }, (state: string) => state)
-        Blank()
+        // 与阅读页标题栏同一个筛选胶囊（views/FilterCapsule.ets），这里用内容区平底色样式
+        Row() {
+          FilterCapsule({
+            options: this.stateOptions(),
+            labels: this.stateLabels(),
+            active: searchViewModel.activeState,
+            onTitleBar: false,
+            onSelect: (value: string) => {
+              searchViewModel.setState(value);
+            }
+          })
+        }
+        .layoutWeight(1)
+
         if (searchViewModel.total > 0) {
           Text($r('app.string.search_result_count', searchViewModel.total))
             .fontSize($r('app.float.font_size_caption'))
             .fontColor($r('app.color.hm_text_secondary'))
+            .maxLines(1)
+            .flexShrink(0)
         }
       }
       .width('100%')

@@ -77,6 +77,10 @@
       "value": "16"
     },
     {
+      "name": "radius_menu",
+      "value": "20"
+    },
+    {
       "name": "image_preview_height",
       "value": "320"
     },
@@ -183,6 +187,18 @@
     {
       "name": "rail_max_width",
       "value": "240"
+    },
+    {
+      "name": "swipe_action_width",
+      "value": "72"
+    },
+    {
+      "name": "swipe_label_font",
+      "value": "11"
+    },
+    {
+      "name": "menu_width_wide",
+      "value": "260"
     }
   ]
 }

@@ -9,6 +9,8 @@ import { SmartFolder } from '../model/Tag';
 import { smartFolderViewModel } from '../viewmodel/SmartFolderViewModel';
 import { SmartFolderError, validateSmartFolder } from '../service/SmartFolderStore';
 import { RouterConstants } from '../common/constants/RouterConstants';
+import { AppMenu } from '../common/components/AppMenu';
+import { MenuItemSpec, MenuSpec } from '../common/components/MenuSpec';
 import { MaterialController } from '../service/MaterialController';
 import { appSettings } from '../model/AppSettings';
 import { safeArea } from '../service/SafeAreaController';
@@ -116,28 +118,28 @@ export struct SmartFoldersView {
     this.getUIContext().showAlertDialog(MaterialController.dialogParams(params, appSettings.immersiveOn));
   }
 
+  /** 行菜单：编辑 / 上移 / 下移 / 移除（移除为危险动作，仍走二次确认）。 */
   @Builder
   FolderMenu(folder: SmartFolder) {
-    Menu() {
-      MenuItem({ content: $r('app.string.smart_folder_edit') })
-        .onClick(() => {
-          this.startEdit(folder);
-        })
-      MenuItem({ content: $r('app.string.smart_folder_move_up') })
-        .onClick(() => {
-          smartFolderViewModel.move(folder.id, -1);
-        })
-      MenuItem({ content: $r('app.string.smart_folder_move_down') })
-        .onClick(() => {
-          smartFolderViewModel.move(folder.id, 1);
-        })
-      MenuItem({ content: $r('app.string.smart_folder_remove') })
-        .contentFontColor($r('app.color.hm_danger'))
-        .onClick(() => {
-          this.confirmRemove(folder);
-        })
-    }
-    .radius($r('app.float.radius_card'))
+    AppMenu(this.folderMenuSpec(folder));
+  }
+
+  /** 菜单规格：顺序与动作和改造前一致。 */
+  private folderMenuSpec(folder: SmartFolder): MenuSpec {
+    return MenuSpec.fromItems([
+      new MenuItemSpec('edit', $r('app.string.smart_folder_edit'), (): void => {
+        this.startEdit(folder);
+      }),
+      new MenuItemSpec('move_up', $r('app.string.smart_folder_move_up'), (): void => {
+        smartFolderViewModel.move(folder.id, -1);
+      }),
+      new MenuItemSpec('move_down', $r('app.string.smart_folder_move_down'), (): void => {
+        smartFolderViewModel.move(folder.id, 1);
+      }),
+      new MenuItemSpec('remove', $r('app.string.smart_folder_remove'), (): void => {
+        this.confirmRemove(folder);
+      }).markDanger()
+    ]);
   }
 
   /** 新建 / 编辑面板。 */

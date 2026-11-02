@@ -18,6 +18,8 @@ import { ShareTargetId, targetById } from '../service/ShareTargets';
 import { shareViewModel } from '../viewmodel/ShareViewModel';
 import { feedViewModel } from '../viewmodel/FeedViewModel';
 import { articleStore } from '../service/ArticleStore';
+import { AppMenu } from '../common/components/AppMenu';
+import { MenuItemSpec, MenuSpec } from '../common/components/MenuSpec';
 import { ToastUtil } from '../common/utils/ToastUtil';
 import { MaterialController } from '../service/MaterialController';
 import { appSettings } from '../model/AppSettings';
@@ -98,19 +100,22 @@ struct ShareTemplateRow {
   @Event onShare: (id: string) => void = () => {
   };
 
+  /** 模板行菜单：复制 / 系统分享（均为普通动作，无危险项）。 */
   @Builder
   TemplateMenu() {
-    Menu() {
-      MenuItem({ content: $r('app.string.tpl_copy') })
-        .onClick(() => {
-          this.onCopy(this.templateId);
-        })
-      MenuItem({ content: $r('app.string.tpl_share') })
-        .onClick(() => {
-          this.onShare(this.templateId);
-        })
-    }
-    .radius($r('app.float.radius_card'))
+    AppMenu(this.templateMenuSpec());
+  }
+
+  /** 菜单规格：顺序与动作和改造前一致。 */
+  private templateMenuSpec(): MenuSpec {
+    return MenuSpec.fromItems([
+      new MenuItemSpec('copy', $r('app.string.tpl_copy'), (): void => {
+        this.onCopy(this.templateId);
+      }),
+      new MenuItemSpec('share', $r('app.string.tpl_share'), (): void => {
+        this.onShare(this.templateId);
+      })
+    ]);
   }
 
   build() {

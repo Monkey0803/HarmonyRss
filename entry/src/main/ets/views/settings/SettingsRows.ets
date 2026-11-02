@@ -9,8 +9,11 @@
  */
 
 import { appSettings } from '../../model/AppSettings';
-import { ChoiceOption, ChoiceSet, THEME_OPTIONS } from '../../model/SettingsOptions';
+import { ChoiceSet, THEME_OPTIONS } from '../../model/SettingsOptions';
 import { MaterialController } from '../../service/MaterialController';
+import { AppMenu } from '../../common/components/AppMenu';
+import { choiceMenu } from '../../common/components/ChoiceMenu';
+import { ChoiceValueChip } from '../../common/components/ChoiceField';
 
 /** 设置页每一行绑定到 appSettings 的哪个字段。 */
 export enum SettingField {
@@ -130,62 +133,12 @@ export struct OptionSelectRow {
   }
 
   /**
-   * 该项下面要不要画分隔线。
-   * 高亮块自身、以及紧邻高亮块的那一段都不画，避免线穿过圆角色块（与参考效果一致）。
+   * 选项菜单：渲染统一走 AppMenu（圆角卡片 + 品牌色高亮块 + 分区/行分隔线），
+   * 这里只把选项表折算成规格；菜单打开时现算，读到最新选中项。
    */
-  private needDivider(index: number, current: string): boolean {
-    const last: number = this.choice.options.length - 1;
-    if (index >= last) {
-      return false;
-    }
-    if (this.choice.options[index].id === current) {
-      return false;
-    }
-    return this.choice.options[index + 1].id !== current;
-  }
-
-  /** 菜单项内容：整行圆角高亮块 + 可选分隔线。 */
-  @Builder
-  MenuItemContent(option: ChoiceOption, selected: boolean, showDivider: boolean) {
-    Stack({ alignContent: Alignment.Bottom }) {
-      Row() {
-        Text(option.label)
-          .fontSize($r('app.float.font_size_body'))
-          .fontWeight(selected ? FontWeight.Medium : FontWeight.Regular)
-          .fontColor(selected ? $r('app.color.hm_brand') : $r('app.color.hm_text_primary'))
-      }
-      .width('100%')
-      .height('100%')
-      .padding({ left: $r('app.float.space_m'), right: $r('app.float.space_m') })
-      .alignItems(VerticalAlign.Center)
-      .backgroundColor(selected ? $r('app.color.hm_menu_item_selected') : $r('app.color.hm_page_transparent'))
-      // 与菜单容器圆角一致，避免内外圆角不一致。
-      .borderRadius($r('app.float.radius_card'))
-
-      if (showDivider) {
-        Divider()
-          .color($r('app.color.hm_divider'))
-          .margin({ left: $r('app.float.space_m'), right: $r('app.float.space_m') })
-      }
-    }
-    .width('100%')
-    .height($r('app.float.menu_item_height'))
-    .onClick(() => {
-      this.onPick(option.id);
-    })
-  }
-
-  /** 一张选项表的系统 Menu：分隔线由每个菜单项自己画，不再用 menuItemDivider。 */
   @Builder
   OptionMenu() {
-    Menu() {
-      ForEach(this.choice.options, (option: ChoiceOption, index: number) => {
-        MenuItem(this.MenuItemContent(option, option.id === this.currentId(), this.needDivider(index, this.currentId())))
-      }, (option: ChoiceOption) => option.id)
-    }
-    // 不设宽度时 Menu 走默认「两列宽度」，弹出来占掉近 90% 屏宽；这里收成一条紧凑菜单。
-    .width($r('app.float.menu_width'))
-    .radius($r('app.float.radius_card'))
+    AppMenu(choiceMenu(this.choice, this.currentId(), this.onPick));
   }
 
   build() {
@@ -194,25 +147,8 @@ export struct OptionSelectRow {
         SettingIconTitle({ icon: this.icon, title: this.title })
       }
       .layoutWeight(1)
-      // 当前值做成「胶囊底 + 实心倒三角」的取值控件（与系统设置页一致）。
-      // 长文案（如德语「Systemeinstellung folgen」）限宽并省略，避免把左侧标题挤没。
-      Row({ space: $r('app.float.space_xs') }) {
-        Text(this.choice.labelOf(this.currentId()))
-          .fontSize($r('app.float.font_size_body'))
-          .fontColor($r('app.color.hm_text_primary'))
-          .maxLines(1)
-          .textOverflow({ overflow: TextOverflow.Ellipsis })
-        SymbolGlyph($r('sys.symbol.arrowtriangle_down_fill'))
-          .fontSize($r('app.float.icon_size_tiny'))
-          .fontColor([$r('app.color.hm_text_primary')])
-          .flexShrink(0)
-      }
-      .constraintSize({ maxWidth: '58%' })
-      .flexShrink(0)
-      .height($r('app.float.value_chip_height'))
-      .padding({ left: $r('app.float.space_l'), right: $r('app.float.space_l') })
-      .backgroundColor($r('app.color.hm_value_chip_background'))
-      .borderRadius($r('app.float.radius_chip'))
+      // 当前值做成「胶囊底 + 实心倒三角」的取值控件（与系统设置页一致），样式见 ChoiceField。
+      ChoiceValueChip({ label: this.choice.labelOf(this.currentId()) })
     }
     .width('100%')
     .height($r('app.float.row_height'))

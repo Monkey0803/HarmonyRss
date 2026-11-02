@@ -6,6 +6,7 @@
  */
 
 import { FullTextMode, TriState } from '../common/constants/SettingsConstants';
+import { FeedError } from '../common/constants/RssConstants';
 import { Enclosure } from './Enclosure';
 
 /** 一个订阅源。 */
@@ -21,7 +22,7 @@ export class FeedSource {
   @Trace siteUrl: string;
   /** 最近一次**成功**抓取的时间戳（毫秒）；失败不更新。 */
   @Trace lastUpdated: number;
-  /** 最近一次抓取到的条目数。 */
+  /** 本地保留的文章数，由 ViewModel 按文章列表重算。 */
   @Trace articleCount: number;
   /** 未读条目数（由 ViewModel 依据缓存计算）。 */
   @Trace unreadCount: number;
@@ -29,6 +30,8 @@ export class FeedSource {
   @Trace group: string;
   /** 最近一次抓取的错误描述；空串表示正常。 */
   @Trace lastError: string;
+  /** 最近一次抓取的错误分类；界面用它映射本地化文案。 */
+  @Trace lastErrorCode: FeedError = FeedError.NONE;
   /**
    * HTTP 条件请求的校验值：上一次响应的 ETag / Last-Modified。
    * 下次抓取带上它们，服务器返回 304 就不用重下整份文档（省流量、省电）。
@@ -64,6 +67,7 @@ export class FeedSource {
     this.unreadCount = 0;
     this.group = group;
     this.lastError = '';
+    this.lastErrorCode = FeedError.NONE;
     this.enabled = true;
     this.fetchIntervalMinutes = 0;
     this.fullTextMode = FullTextMode.GLOBAL;

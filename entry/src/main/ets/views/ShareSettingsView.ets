@@ -16,6 +16,8 @@ import { ShareTemplate } from '../model/Share';
 import { shareTemplates, validate } from '../service/ShareTemplates';
 import { shareViewModel } from '../viewmodel/ShareViewModel';
 import { CommonConstants } from '../common/constants/CommonConstants';
+import { AppMenu } from '../common/components/AppMenu';
+import { MenuItemSpec, MenuSpec } from '../common/components/MenuSpec';
 import { ToastUtil } from '../common/utils/ToastUtil';
 import { safeArea } from '../service/SafeAreaController';
 import { appSettings } from '../model/AppSettings';
@@ -42,27 +44,28 @@ struct TemplateManageRow {
   @Event onDelete: (id: string) => void = () => {
   };
 
+  /** 行菜单：编辑 / 上移 / 下移 / 删除（删除为危险动作，由上层走二次确认）。 */
   @Builder
   RowMenu() {
-    Menu() {
-      MenuItem({ content: $r('app.string.tpl_edit') })
-        .onClick(() => {
-          this.onEdit(this.templateId);
-        })
-      MenuItem({ content: $r('app.string.tpl_move_up') })
-        .onClick(() => {
-          this.onMoveUp(this.templateId);
-        })
-      MenuItem({ content: $r('app.string.tpl_move_down') })
-        .onClick(() => {
-          this.onMoveDown(this.templateId);
-        })
-      MenuItem({ content: $r('app.string.tpl_delete') })
-        .onClick(() => {
-          this.onDelete(this.templateId);
-        })
-    }
-    .radius($r('app.float.radius_card'))
+    AppMenu(this.rowMenuSpec());
+  }
+
+  /** 菜单规格：顺序与动作和改造前一致。 */
+  private rowMenuSpec(): MenuSpec {
+    return MenuSpec.fromItems([
+      new MenuItemSpec('edit', $r('app.string.tpl_edit'), (): void => {
+        this.onEdit(this.templateId);
+      }),
+      new MenuItemSpec('move_up', $r('app.string.tpl_move_up'), (): void => {
+        this.onMoveUp(this.templateId);
+      }),
+      new MenuItemSpec('move_down', $r('app.string.tpl_move_down'), (): void => {
+        this.onMoveDown(this.templateId);
+      }),
+      new MenuItemSpec('delete', $r('app.string.tpl_delete'), (): void => {
+        this.onDelete(this.templateId);
+      }).markDanger()
+    ]);
   }
 
   build() {

@@ -17,6 +17,8 @@ export class DeepLinkParams {
   static readonly ACTION_MARK_READ: string = 'markRead';
   /** 动作值：只把该文章标记收藏，不开详情页。 */
   static readonly ACTION_STAR: string = 'star';
+  /** 系统 Skill 打开页面时不在入口阶段标记已读。 */
+  static readonly ACTION_OPEN_READ_ONLY: string = 'openReadOnly';
 }
 
 /**

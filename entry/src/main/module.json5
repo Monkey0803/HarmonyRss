@@ -11,6 +11,16 @@
     "deliveryWithInstall": true,
     "installationFree": false,
     "pages": "$profile:main_pages",
+    "skillProfiles": [
+      {
+        "name": "xiaohuihu-rss-reader",
+        "abilityName": "EntryAbility",
+        "srcEntries": [
+          "../../skills/xiaohuihu-rss-reader/scripts/RssReaderSkill.ets"
+        ],
+        "version": "1.0.0"
+      }
+    ],
     // 分享目标用 canOpenLink 预判是否已安装：scheme 必须在此声明，否则接口会抛错。
     "querySchemes": [
       "pocket",
@@ -75,6 +85,7 @@
         "backgroundModes": [
           "audioPlayback"
         ],
+        "continuable": true,
         "exported": true,
         "skills": [
           {
@@ -117,6 +128,12 @@
       }
     ],
     "extensionAbilities": [
+      {
+        "name": "RssLiveFormAbility",
+        "srcEntry": "./ets/form/RssLiveFormAbility.ets",
+        "type": "liveForm",
+        "exported": false
+      },
       {
         "name": "RssWorkScheduler",
         "srcEntry": "./ets/workscheduler/RssWorkScheduler.ets",

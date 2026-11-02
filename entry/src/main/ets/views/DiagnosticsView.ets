@@ -22,6 +22,7 @@ import { appSettings } from '../model/AppSettings';
 import { settingsStore } from '../service/SettingsStore';
 import { DateUtil } from '../common/utils/DateUtil';
 import { ToastUtil } from '../common/utils/ToastUtil';
+import { FeedErrorText } from '../common/utils/FeedErrorText';
 import { safeArea } from '../service/SafeAreaController';
 import { RouterConstants } from '../common/constants/RouterConstants';
 import { CommonConstants } from '../common/constants/CommonConstants';
@@ -339,7 +340,7 @@ export struct DiagnosticsView {
             }
             .width('100%')
             if (feed.lastError.length > 0) {
-              Text(feed.lastError)
+              Text(FeedErrorText.of(feed.lastErrorCode))
                 .fontSize($r('app.float.font_size_caption'))
                 .fontColor($r('app.color.hm_text_secondary'))
                 .maxLines(2)

@@ -6,7 +6,7 @@
  */
 
 import { appSettings } from '../model/AppSettings';
-import { ChoiceOption, ChoiceSet, RETENTION_DAYS_OPTIONS, RETENTION_MODE_OPTIONS } from '../model/SettingsOptions';
+import { ChoiceSet, RETENTION_DAYS_OPTIONS, RETENTION_MODE_OPTIONS } from '../model/SettingsOptions';
 import { RetentionMode } from '../common/constants/SettingsConstants';
 import { SearchConstants } from '../common/constants/RssConstants';
 import { FeedStorageStat } from '../model/Search';
@@ -14,6 +14,9 @@ import { storageViewModel } from '../viewmodel/StorageViewModel';
 import { safeArea } from '../service/SafeAreaController';
 import { MaterialController } from '../service/MaterialController';
 import { ToastUtil } from '../common/utils/ToastUtil';
+import { AppMenu } from '../common/components/AppMenu';
+import { choiceMenu } from '../common/components/ChoiceMenu';
+import { ChoiceValueChip } from '../common/components/ChoiceField';
 
 /** 下拉选项行：自己按当前 id 取文案并弹 Menu。 */
 @ComponentV2
@@ -23,43 +26,10 @@ struct StorageOptionRow {
   @Param choice: ChoiceSet = RETENTION_MODE_OPTIONS;
   @Event onPick: (id: string) => void = () => {};
 
-  @Builder
-  ItemContent(option: ChoiceOption) {
-    // 外层 Stack 定高定宽，高亮块只用 width/height 100% 撑满；
-    // 不再叠 margin —— 100% 宽度加外边距会在右侧溢出，左右留白不对称。
-    Stack() {
-      Row() {
-        Text(option.label)
-          .fontSize($r('app.float.font_size_body'))
-          .fontWeight(option.id === this.currentId ? FontWeight.Medium : FontWeight.Regular)
-          .fontColor(option.id === this.currentId ? $r('app.color.hm_brand') : $r('app.color.hm_text_primary'))
-      }
-      .width('100%')
-      .height('100%')
-      .padding({ left: $r('app.float.space_m'), right: $r('app.float.space_m') })
-      .alignItems(VerticalAlign.Center)
-      .backgroundColor(option.id === this.currentId
-        ? $r('app.color.hm_menu_item_selected')
-        : $r('app.color.hm_page_transparent'))
-      // 与菜单容器圆角一致，避免内外圆角不一致。
-      .borderRadius($r('app.float.radius_card'))
-    }
-    .width('100%')
-    .height($r('app.float.menu_item_height'))
-    .onClick(() => {
-      this.onPick(option.id);
-    })
-  }
-
+  /** 选项菜单：渲染统一走 AppMenu，这里只把选项表折算成规格（打开时现算）。 */
   @Builder
   OptionMenu() {
-    Menu() {
-      ForEach(this.choice.options, (option: ChoiceOption) => {
-        MenuItem(this.ItemContent(option))
-      }, (option: ChoiceOption) => option.id)
-    }
-    .width($r('app.float.menu_width'))
-    .radius($r('app.float.radius_card'))
+    AppMenu(choiceMenu(this.choice, this.currentId, this.onPick));
   }
 
   build() {
@@ -68,18 +38,7 @@ struct StorageOptionRow {
         .fontSize($r('app.float.font_size_body'))
         .fontColor($r('app.color.hm_text_primary'))
       Blank()
-      Row({ space: $r('app.float.space_xs') }) {
-        Text(this.choice.labelOf(this.currentId))
-          .fontSize($r('app.float.font_size_body'))
-          .fontColor($r('app.color.hm_text_primary'))
-        SymbolGlyph($r('sys.symbol.arrowtriangle_down_fill'))
-          .fontSize($r('app.float.icon_size_tiny'))
-          .fontColor([$r('app.color.hm_text_primary')])
-      }
-      .height($r('app.float.value_chip_height'))
-      .padding({ left: $r('app.float.space_l'), right: $r('app.float.space_l') })
-      .backgroundColor($r('app.color.hm_value_chip_background'))
-      .borderRadius($r('app.float.radius_chip'))
+      ChoiceValueChip({ label: this.choice.labelOf(this.currentId) })
     }
     .width('100%')
     .height($r('app.float.row_height'))

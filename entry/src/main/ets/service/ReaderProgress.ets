@@ -48,15 +48,15 @@ export function parsePosition(raw: string): ReaderPosition {
 /**
  * 按比例（优先）或 px（兜底）落回位置的脚本。
  *
- * 不能只 scrollTo 一次：SPA 在 onPageEnd 之后还会继续长内容，那时文档还太短，
- * 一次性滚动会被忽略 / 被后续渲染顶掉。所以每 200ms 校正一次，最多 3 秒；
- * 文档高度连续稳定后才提前结束。用户开始触摸、滚轮或键盘操作时立即停止校正，
+ * 不能只 scrollTo 一次：SPA 和懒加载图片会在 onPageEnd 之后继续拉长文档。
+ * 每 200ms 校正一次，持续 5 秒，避免短暂稳定后提前结束。
+ * 用户开始触摸、滚轮或键盘操作时立即停止校正，
  * 避免把主动滚动拉回旧位置。
  */
 export function restorePositionScript(ratio: number, fallbackY: number): string {
   const r: string = (Number.isFinite(ratio) ? ratio : 0).toFixed(6);
   const y: string = Math.max(0, Math.round(Number.isFinite(fallbackY) ? fallbackY : 0)).toString();
-  return '(function(){var r=' + r + ';var y=' + y + ';var n=0;var lastH=0;var stable=0;' +
+  return '(function(){var r=' + r + ';var y=' + y + ';var n=0;' +
     'if(window.__hrRestoreCancel){window.__hrRestoreCancel();}' +
     'var done=function(){clearInterval(iv);window.removeEventListener("touchstart",done);' +
     'window.removeEventListener("wheel",done);window.removeEventListener("keydown",done);' +
@@ -66,6 +66,5 @@ export function restorePositionScript(ratio: number, fallbackY: number): string 
     'var pick=function(){var d=document.documentElement;var h=d?d.scrollHeight:0;' +
     'var vh=window.innerHeight||0;return {h:h,y:(r>0&&h>vh)?Math.round(r*(h-vh)):y};};' +
     'var iv=setInterval(function(){var p=pick();window.scrollTo(0,p.y);n++;' +
-    'stable=p.h===lastH?stable+1:0;lastH=p.h;' +
-    'if(n>=15||(n>=4&&stable>=3&&Math.abs((window.scrollY||0)-p.y)<=4)){done();}},200);})()';
+    'if(n>=25){done();}},200);})()';
 }

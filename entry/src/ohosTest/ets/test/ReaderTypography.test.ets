@@ -12,7 +12,8 @@ import {
   ReaderAlign,
   ReaderTheme
 } from '../../../main/ets/common/constants/SettingsConstants';
-import { readerCss } from '../../../main/ets/service/ReaderDocument';
+import { buildReaderDocument, readerCss } from '../../../main/ets/service/ReaderDocument';
+import { readerStyle } from '../../../main/ets/service/ReaderStyle';
 import { appSettings } from '../../../main/ets/model/AppSettings';
 
 export default function readerTypographyTest() {
@@ -50,6 +51,18 @@ export default function readerTypographyTest() {
   });
 
   describe('ReaderDocument', () => {
+    it('allows_page_zoom', 0, () => {
+      const html: string = buildReaderDocument('<p>Text</p>');
+      expect(html.includes('maximum-scale=1')).assertFalse();
+    });
+
+    it('web_style_is_scoped_to_content', 0, () => {
+      const css: string = readerStyle.buildCss();
+      expect(css.includes('body,p,li,div,span')).assertFalse();
+      expect(css.includes('.entry-content')).assertTrue();
+      expect(css.includes('body{')).assertTrue();
+    });
+
     it('css_reflects_typography_settings', 0, () => {
       const oldTheme: string = appSettings.readerTheme;
       const oldWidth: string = appSettings.readerWidth;

@@ -8,6 +8,7 @@ import { describe, it, expect } from '@ohos/hypium';
 import { decodeFeedRecords, encodeFeeds } from '../../../main/ets/service/FeedStore';
 import { FeedSource } from '../../../main/ets/model/Feed';
 import { FullTextMode, TriState } from '../../../main/ets/common/constants/SettingsConstants';
+import { FeedError } from '../../../main/ets/common/constants/RssConstants';
 
 /** 旧版本（无单源设置字段）的落盘记录。 */
 const LEGACY_JSON: string =
@@ -33,6 +34,7 @@ export default function feedStoreTest() {
       expect(feed.markReadOnScroll).assertEqual(TriState.GLOBAL);
       expect(feed.failureCount).assertEqual(0);
       expect(feed.lastUpdated).assertEqual(0);
+      expect(feed.lastErrorCode).assertEqual(FeedError.NONE);
     });
 
     it('dirty_values_normalized', 0, () => {
@@ -84,6 +86,8 @@ export default function feedStoreTest() {
       feed.notify = TriState.ON;
       feed.markReadOnScroll = TriState.ON;
       feed.failureCount = 2;
+      feed.lastError = 'network: connection refused';
+      feed.lastErrorCode = FeedError.NETWORK_ERROR;
       feed.lastUpdated = 1700000000001;
       const restored: FeedSource = decodeFeedRecords(encodeFeeds([feed]))[0];
       expect(restored.enabled).assertFalse();
@@ -94,7 +98,14 @@ export default function feedStoreTest() {
       expect(restored.notify).assertEqual(TriState.ON);
       expect(restored.markReadOnScroll).assertEqual(TriState.ON);
       expect(restored.failureCount).assertEqual(2);
+      expect(restored.lastErrorCode).assertEqual(FeedError.NETWORK_ERROR);
       expect(restored.lastUpdated).assertEqual(1700000000001);
+    });
+
+    it('old_raw_error_uses_localizable_fallback', 0, () => {
+      const json: string = '[{"title":"x","url":"https://x.com/rss","lastError":"[object Object]network"}]';
+      const feed: FeedSource = decodeFeedRecords(json)[0];
+      expect(feed.lastErrorCode).assertEqual(FeedError.FETCH_FAILED);
     });
 
     it('malformed_json_returns_empty', 0, () => {

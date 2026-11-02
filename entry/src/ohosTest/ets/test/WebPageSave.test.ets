@@ -53,6 +53,7 @@ export default function webPageSaveTest() {
         const rss: Article = new Article(rssId, 'saved-web-test-feed', 'Example', 'Existing RSS', link,
           'Existing summary', '', Date.now());
         articleStore.insertNew([rss]);
+        expect((await articleStore.findByUrl(link))?.id).assertEqual(rssId);
         const shared: Article = new Article(localId, 'local:saved-web', 'example.com', 'Shared page', link,
           'Shared summary', 'Shared body', Date.now());
         shared.readerHtml = '<!--hrv9-->\n<p>Shared body</p>';
@@ -61,6 +62,7 @@ export default function webPageSaveTest() {
         expect(result !== undefined).assertTrue();
         expect(result?.articleId).assertEqual(rssId);
         expect(result?.created).assertFalse();
+        expect((await articleStore.findByUrl(link))?.id).assertEqual(rssId);
         const stored: Article | undefined = await articleStore.loadById(rssId);
         expect(stored !== undefined && stored.saved).assertTrue();
         expect(stored?.readerHtml).assertContain('Shared body');

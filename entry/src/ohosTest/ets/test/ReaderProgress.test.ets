@@ -24,7 +24,7 @@ export default function readerProgressTest() {
       const script: string = restorePositionScript(0.5, 600);
       expect(script.includes('window.__hrRestoreCancel')).assertTrue();
       expect(script.includes('addEventListener("touchstart",done')).assertTrue();
-      expect(script.includes('stable>=3')).assertTrue();
+      expect(script.includes('n>=25')).assertTrue();
     });
   });
 }

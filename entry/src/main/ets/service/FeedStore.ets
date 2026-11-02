@@ -17,6 +17,7 @@ import { UrlText } from '../common/utils/UrlText';
 import { DedupeKeys } from './DedupeKeys';
 import { DEFAULT_FEEDS, FeedSeed } from '../model/DefaultFeeds';
 import { FullTextMode, TriState } from '../common/constants/SettingsConstants';
+import { FeedError } from '../common/constants/RssConstants';
 
 /** 落盘用的扁平结构（新字段可选：旧记录读不到时按默认值处理）。 */
 interface FeedRecord {
@@ -28,6 +29,7 @@ interface FeedRecord {
   lastModified: string;
   lastUpdated?: number;
   lastError?: string;
+  lastErrorCode?: string;
   enabled?: boolean;
   fetchIntervalMinutes?: number;
   fullTextMode?: string;
@@ -78,6 +80,19 @@ export function normalizeFeedTriState(value: string): string {
   return TriState.GLOBAL;
 }
 
+/** 恢复抓取错误分类；旧记录只有原始错误时按通用错误展示。 */
+export function normalizeFeedErrorCode(value: string, hasError: boolean): FeedError {
+  if (!hasError) {
+    return FeedError.NONE;
+  }
+  if (value === FeedError.TIMEOUT || value === FeedError.NETWORK_ERROR || value === FeedError.HTTP_ERROR ||
+    value === FeedError.EMPTY_RESPONSE || value === FeedError.PARSE_ERROR || value === FeedError.NOT_A_FEED ||
+    value === FeedError.FETCH_FAILED) {
+    return value as FeedError;
+  }
+  return FeedError.FETCH_FAILED;
+}
+
 /** 把落盘 JSON 解成订阅源（纯函数，便于单测旧记录兼容与脏值归一）。 */
 export function decodeFeedRecords(text: string): FeedSource[] {
   const feeds: FeedSource[] = [];
@@ -104,6 +119,8 @@ export function decodeFeedRecords(text: string): FeedSource[] {
       feed.lastUpdated = typeof record.lastUpdated === 'number' && record.lastUpdated > 0
         ? record.lastUpdated : 0;
       feed.lastError = typeof record.lastError === 'string' ? record.lastError : '';
+      feed.lastErrorCode = normalizeFeedErrorCode(
+        typeof record.lastErrorCode === 'string' ? record.lastErrorCode : '', feed.lastError.length > 0);
       // 新字段：旧记录一律回退默认（启用以避免升级后「所有源都被停用」）。
       feed.enabled = typeof record.enabled === 'boolean' ? record.enabled : true;
       feed.fetchIntervalMinutes = typeof record.fetchIntervalMinutes === 'number'
@@ -142,6 +159,7 @@ export function encodeFeeds(feeds: FeedSource[]): string {
       lastModified: feed.lastModified,
       lastUpdated: feed.lastUpdated,
       lastError: feed.lastError,
+      lastErrorCode: feed.lastErrorCode,
       enabled: feed.enabled,
       fetchIntervalMinutes: feed.fetchIntervalMinutes,
       fullTextMode: feed.fullTextMode,

@@ -28,6 +28,7 @@ import { ruleService } from '../service/RuleService';
 import { syncService } from '../service/SyncService';
 import { offlineDownloadService } from '../service/OfflineDownloadService';
 import { AutoRefreshMinutes } from '../common/constants/SettingsConstants';
+import { FeedError, FeedFetchError } from '../common/constants/RssConstants';
 
 const DOMAIN: number = 0x0000;
 const TAG: string = 'RssWorkScheduler';
@@ -89,6 +90,7 @@ export default class RssWorkScheduler extends WorkSchedulerExtensionAbility {
           toArticles(feed, result.parsed, fresh);
         }
         feed.lastError = '';
+        feed.lastErrorCode = FeedError.NONE;
         feed.failureCount = 0;
         feed.lastUpdated = Date.now();
       } catch (err) {
@@ -96,6 +98,7 @@ export default class RssWorkScheduler extends WorkSchedulerExtensionAbility {
         hilog.warn(DOMAIN, TAG, 'fetch failed: %{public}s', error.message);
         feed.failureCount = feed.failureCount + 1;
         feed.lastError = error.message;
+        feed.lastErrorCode = err instanceof FeedFetchError ? err.code : FeedError.FETCH_FAILED;
       }
     }
     // 只有真正新插入的文章才执行规则（重复抓取到的历史文章不回溯）。

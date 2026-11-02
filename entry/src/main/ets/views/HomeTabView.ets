@@ -30,6 +30,9 @@ import { shareService } from '../service/ShareService';
 import { shareViewModel } from '../viewmodel/ShareViewModel';
 import { frameRateSampler } from '../service/FrameRateSampler';
 import { KeyCode } from '@kit.InputKit';
+import { AppMenu } from '../common/components/AppMenu';
+import { MenuItemSpec, MenuSectionSpec, MenuSpec } from '../common/components/MenuSpec';
+import { ArticleSwipeBar } from '../common/components/ArticleSwipeBar';
 
 @ComponentV2
 export struct HomeTabView {
@@ -130,7 +133,7 @@ export struct HomeTabView {
   }
 
   /**
-   * 列表首条：刷新 + 未读概览 + 筛选 + 全部已读 + 订阅管理。
+   * 列表首条：刷新 + 同步时间 + 未读数 + 全部已读 + 排序 / 搜索。
    * 这里不使用多参 @Builder —— ArkUI 多参 @Builder 不随状态刷新，筛选选中态会停在旧值。
    */
   @Builder
@@ -162,19 +165,19 @@ export struct HomeTabView {
             .fontSize($r('app.float.font_size_caption'))
             .fontColor($r('app.color.hm_text_secondary'))
             .maxLines(1)
+            // 窄屏只让这一项收缩（省略号），未读数 / 全部已读 / 右侧图标不会被挤出去
+            .textOverflow({ overflow: TextOverflow.Ellipsis })
+            .flexShrink(1)
         }
 
         Text($r('app.string.home_unread_count', feedViewModel.unreadShown))
           .fontSize($r('app.float.font_size_caption'))
           .fontColor($r('app.color.hm_text_primary'))
-          .padding({
-            left: $r('app.float.space_m'),
-            right: $r('app.float.space_m'),
-            top: $r('app.float.space_s'),
-            bottom: $r('app.float.space_s')
-          })
-          .backgroundColor($r('app.color.hm_card_background'))
-          .borderRadius($r('app.float.radius_card'))
+          .maxLines(1)
+          .flexShrink(0)
+
+        // 「全部已读」：紧贴未读计数（同一组语义），从标题栏筛选条移过来 —— 筛选条只留筛选。
+        this.MarkAllReadButton()
 
         Blank()
 
@@ -243,6 +246,60 @@ export struct HomeTabView {
     .alignItems(HorizontalAlign.Start)
   }
 
+  /**
+   * 表头的「全部已读」：图标 + 文案的胶囊按钮，紧贴「N 未读」计数（同一组语义）。
+   * 原先挂在标题栏筛选条右侧，与筛选项混在一行；筛选条只负责筛选，批量动作归到这里。
+   * 没有未读时置灰（保留占位，避免右侧图标左右跳动）。
+   */
+  @Builder
+  MarkAllReadButton() {
+    Button({ type: ButtonType.Capsule, stateEffect: true }) {
+      Row({ space: $r('app.float.space_xs') }) {
+        SymbolGlyph($r('sys.symbol.checkmark_circle'))
+          .fontSize($r('app.float.icon_size_small'))
+          .fontColor([$r('app.color.hm_brand')])
+        Text($r('app.string.home_mark_all_read'))
+          .fontSize($r('app.float.font_size_caption'))
+          .fontColor($r('app.color.hm_brand'))
+          .maxLines(1)
+      }
+      .alignItems(VerticalAlign.Center)
+    }
+    .height($r('app.float.value_chip_height'))
+    .padding({ left: $r('app.float.space_s'), right: $r('app.float.space_m') })
+    .backgroundColor($r('app.color.hm_card_background'))
+    .flexShrink(0)
+    .enabled(feedViewModel.unreadTotal > 0)
+    .accessibilityText($r('app.string.home_mark_all_read'))
+    .onClick(() => {
+      this.confirmMarkAllRead();
+    })
+  }
+
+  /** 全部已读前确认（与列表里的批量删除同一套对话框样式）。 */
+  private confirmMarkAllRead(): void {
+    const cancelButton: AlertDialogButtonBaseOptions = {
+      value: $r('app.string.dialog_cancel'),
+      action: () => {
+      }
+    };
+    const confirmButton: AlertDialogButtonBaseOptions = {
+      value: $r('app.string.dialog_confirm'),
+      fontColor: $r('app.color.hm_brand'),
+      action: () => {
+        feedViewModel.markAllRead();
+      }
+    };
+    const params: AlertDialogParamWithButtons = {
+      title: $r('app.string.mark_all_read_confirm_title'),
+      message: $r('app.string.mark_all_read_confirm_message'),
+      autoCancel: true,
+      primaryButton: cancelButton,
+      secondaryButton: confirmButton
+    };
+    this.getUIContext().showAlertDialog(MaterialController.dialogParams(params, appSettings.immersiveOn));
+  }
+
   @Builder
   EmptyState() {
     Column({ space: $r('app.float.space_m') }) {
@@ -270,57 +327,54 @@ export struct HomeTabView {
     .alignItems(HorizontalAlign.Center)
   }
 
-  /** 排序/分组菜单：两段（排序方向、分组方式），当前项高亮。 */
-  @Builder
-  SortMenu() {
-    Menu() {
-      MenuItem(this.MenuItemRow($r('app.string.sort_newest'), feedViewModel.newestFirst, (): void => {
-        feedViewModel.setSort(true);
-      }))
-      MenuItem(this.MenuItemRow($r('app.string.sort_oldest'), !feedViewModel.newestFirst, (): void => {
-        feedViewModel.setSort(false);
-      }))
-      MenuItem(this.MenuItemRow($r('app.string.group_none'), feedViewModel.groupMode === GroupMode.NONE, (): void => {
-        feedViewModel.setGroupMode(GroupMode.NONE);
-      }))
-      MenuItem(this.MenuItemRow($r('app.string.group_by_feed'), feedViewModel.groupMode === GroupMode.FEED, (): void => {
-        feedViewModel.setGroupMode(GroupMode.FEED);
-      }))
-      MenuItem(this.MenuItemRow($r('app.string.group_by_date'), feedViewModel.groupMode === GroupMode.DATE, (): void => {
-        feedViewModel.setGroupMode(GroupMode.DATE);
-      }))
-    }
-    // 不设宽度时菜单会按「两列栅格」撑得很宽，这里收成一条紧凑菜单。
-    .width($r('app.float.menu_width'))
-    .radius($r('app.float.radius_card'))
-  }
-
   /**
-   * 菜单项内容：选中项用品牌色 + 高亮底。
+   * 排序 / 分组菜单：两个分区（排序方向、分组方式）各带小标题、各只有一个高亮行。
    *
-   * 两个坑：
-   * 1) 高度必须给定值 —— MenuItem 的内容区没有可用的父高度，height('100%') 会被解析成无穷大，
-   *    菜单被撑成一条超出屏幕的长面板（只剩第一项可见）；
-   * 2) 点击要挂在**内容行**上，MenuItem(...) 上挂的 onClick 不会触发（与设置页的选项菜单一致）。
+   * 改造前两组设置挤在一个平铺菜单里，两行同时高亮（图 1）；分区后语义清楚，
+   * 视觉统一走 AppMenu（圆角卡片 + 品牌色高亮块）。
    */
   @Builder
-  MenuItemRow(label: ResourceStr, selected: boolean, action: () => void) {
-    Row() {
-      Text(label)
-        .fontSize($r('app.float.font_size_body'))
-        .fontWeight(selected ? FontWeight.Medium : FontWeight.Regular)
-        .fontColor(selected ? $r('app.color.hm_brand') : $r('app.color.hm_text_primary'))
+  SortMenu() {
+    AppMenu(this.sortMenuSpec());
+  }
+
+  /** 菜单规格：每次展开现算，读到最新的排序方向与分组方式。 */
+  private sortMenuSpec(): MenuSpec {
+    const sortItems: MenuItemSpec[] = [
+      new MenuItemSpec('newest', $r('app.string.sort_newest'), (): void => {
+        feedViewModel.setSort(true);
+      }),
+      new MenuItemSpec('oldest', $r('app.string.sort_oldest'), (): void => {
+        feedViewModel.setSort(false);
+      })
+    ];
+    if (feedViewModel.newestFirst) {
+      sortItems[0].markSelected();
+    } else {
+      sortItems[1].markSelected();
     }
-    .width('100%')
-    .height($r('app.float.menu_item_height'))
-    .padding({ left: $r('app.float.space_m'), right: $r('app.float.space_m') })
-    .alignItems(VerticalAlign.Center)
-    .margin({ left: $r('app.float.space_xs'), right: $r('app.float.space_xs') })
-    .backgroundColor(selected ? $r('app.color.hm_menu_item_selected') : $r('app.color.hm_page_transparent'))
-    .borderRadius($r('app.float.radius_menu_item'))
-    .onClick(() => {
-      action();
-    })
+    const groupItems: MenuItemSpec[] = [
+      new MenuItemSpec('flat', $r('app.string.group_none'), (): void => {
+        feedViewModel.setGroupMode(GroupMode.NONE);
+      }),
+      new MenuItemSpec('by_feed', $r('app.string.group_by_feed'), (): void => {
+        feedViewModel.setGroupMode(GroupMode.FEED);
+      }),
+      new MenuItemSpec('by_date', $r('app.string.group_by_date'), (): void => {
+        feedViewModel.setGroupMode(GroupMode.DATE);
+      })
+    ];
+    if (feedViewModel.groupMode === GroupMode.NONE) {
+      groupItems[0].markSelected();
+    } else if (feedViewModel.groupMode === GroupMode.FEED) {
+      groupItems[1].markSelected();
+    } else {
+      groupItems[2].markSelected();
+    }
+    return MenuSpec.fromSections([
+      new MenuSectionSpec(sortItems, $r('app.string.menu_section_sort')),
+      new MenuSectionSpec(groupItems, $r('app.string.menu_section_group'))
+    ]);
   }
 
   /** 分组视图的组头：组名 + 未读数。 */
@@ -523,88 +577,22 @@ export struct HomeTabView {
     this.getUIContext().showAlertDialog(MaterialController.dialogParams(params, appSettings.immersiveOn));
   }
 
-  /** 列表左滑操作：分享 / 收藏 / 已读切换（ArkUI 原生 swipeAction，V2 组件可用）。 */
+  /**
+   * 列表左滑操作：4 个直达（分享 / 稍后读 / 已读 / 更多），离线动作与「只看该源」收进「更多」菜单。
+   * 原来 7 个动作平铺会超出列表项可用宽度，后面两项被裁掉、点不到；现在收口到
+   * common/components/ArticleSwipeBar.ets，首页与订阅源详情列表共用同一份实现。
+   * 收藏不在左滑里 —— 行内右侧星标已经在切换同一个 starred，不做两处入口。
+   */
   @Builder
   SwipeActions(article: Article) {
-    Row({ space: $r('app.float.space_s') }) {
-      Button($r('app.string.offline_single_download_short'))
-        .buttonStyle(ButtonStyleMode.NORMAL)
-        .fontSize($r('app.float.font_size_caption'))
-        .fontColor($r('app.color.hm_on_brand'))
-        .backgroundColor($r('app.color.hm_brand'))
-        .height('100%')
-        .onClick(() => {
-          feedViewModel.downloadArticleOffline(article.id, article.offlineState !== 'none').then((state: string) => {
-            ToastUtil.show(this.getUIContext(), state === 'full' ? $r('app.string.offline_full') :
-              (state === 'none' ? $r('app.string.offline_single_failed') : $r('app.string.offline_partial')));
-          }).catch(() => {
-            ToastUtil.show(this.getUIContext(), $r('app.string.offline_single_failed'));
-          });
-        })
-      Button($r('app.string.offline_single_clear_short'))
-        .buttonStyle(ButtonStyleMode.NORMAL)
-        .fontSize($r('app.float.font_size_caption'))
-        .fontColor($r('app.color.hm_on_brand'))
-        .backgroundColor($r('app.color.hm_text_secondary'))
-        .height('100%')
-        .onClick(() => {
-          feedViewModel.clearArticleOffline(article.id).then((ok: boolean) => {
-            ToastUtil.show(this.getUIContext(), ok ? $r('app.string.offline_single_cleared') :
-              $r('app.string.offline_single_failed'));
-          }).catch(() => {
-            ToastUtil.show(this.getUIContext(), $r('app.string.offline_single_failed'));
-          });
-        })
-      // 分享：打开统一分享面板，上下文是该行文章
-      Button($r('app.string.action_share'))
-        .buttonStyle(ButtonStyleMode.NORMAL)
-        .fontSize($r('app.float.font_size_caption'))
-        .fontColor($r('app.color.hm_on_brand'))
-        .backgroundColor($r('app.color.hm_brand'))
-        .height('100%')
-        .onClick(() => {
-          this.openShare(article);
-        })
-      Button(article.starred ? $r('app.string.action_unstar') : $r('app.string.action_star'))
-        .buttonStyle(ButtonStyleMode.NORMAL)
-        .fontSize($r('app.float.font_size_caption'))
-        .fontColor($r('app.color.hm_on_brand'))
-        .backgroundColor($r('app.color.hm_brand'))
-        .height('100%')
-        .onClick(() => {
-          feedViewModel.toggleStar(article.id);
-        })
-      Button(article.saved ? $r('app.string.action_unsave') : $r('app.string.action_save'))
-        .buttonStyle(ButtonStyleMode.NORMAL)
-        .fontSize($r('app.float.font_size_caption'))
-        .fontColor($r('app.color.hm_on_brand'))
-        .backgroundColor($r('app.color.hm_brand'))
-        .height('100%')
-        .onClick(() => {
-          feedViewModel.toggleSaved(article.id);
-        })
-      // 只看该源：把首页收敛到这个来源（列表里就能用，不必先进详情页）
-      Button($r('app.string.action_scope_feed'))
-        .buttonStyle(ButtonStyleMode.NORMAL)
-        .fontSize($r('app.float.font_size_caption'))
-        .fontColor($r('app.color.hm_on_brand'))
-        .backgroundColor($r('app.color.hm_text_secondary'))
-        .height('100%')
-        .onClick(() => {
-          feedViewModel.scopeToFeedById(article.feedId);
-        })
-      Button(article.read ? $r('app.string.action_mark_unread') : $r('app.string.action_mark_read'))
-        .buttonStyle(ButtonStyleMode.NORMAL)
-        .fontSize($r('app.float.font_size_caption'))
-        .fontColor($r('app.color.hm_on_brand'))
-        .backgroundColor($r('app.color.hm_text_secondary'))
-        .height('100%')
-        .onClick(() => {
-          feedViewModel.toggleRead(article.id);
-        })
-    }
-    .height('100%')
-    .padding({ left: $r('app.float.space_s') })
+    ArticleSwipeBar({
+      article: article,
+      showShare: true,
+      showScopeFeed: true,
+      onShare: (target: Article) => {
+        this.openShare(target);
+      }
+    })
   }
 
   build() {

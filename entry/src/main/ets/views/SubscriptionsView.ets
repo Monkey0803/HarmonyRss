@@ -25,6 +25,8 @@ import { smartFolderViewModel } from '../viewmodel/SmartFolderViewModel';
 import { ruleViewModel } from '../viewmodel/RuleViewModel';
 import { NavSettingRow, SettingsSectionTitle } from './settings/SettingsRows';
 import { offlineDownloadService } from '../service/OfflineDownloadService';
+import { AppMenu } from '../common/components/AppMenu';
+import { MenuItemSpec, MenuSpec } from '../common/components/MenuSpec';
 
 /**
  * 列表头部固定合并成 1 个 ListItem。
@@ -216,24 +218,32 @@ export struct SubscriptionsView {
     this.getUIContext().showAlertDialog(MaterialController.dialogParams(params, appSettings.immersiveOn));
   }
 
-  /** 批量移动分组的菜单。 */
+  /** 批量移动分组的菜单（统一交给 AppMenu 渲染，规格现算）。 */
   @Builder
   BulkGroupMenu() {
-    Menu() {
-      MenuItem({ content: $r('app.string.group_ungrouped') })
-        .onClick(() => {
-          feedViewModel.setFeedGroupMany(this.selectedIds, '');
-          this.exitSelect();
-        })
-      ForEach(feedViewModel.groupNames(), (name: string) => {
-        MenuItem({ content: name })
-          .onClick(() => {
-            feedViewModel.setFeedGroupMany(this.selectedIds, name);
-            this.exitSelect();
-          })
-      }, (name: string) => name)
+    AppMenu(this.bulkGroupMenuSpec());
+  }
+
+  /**
+   * 批量移动分组的菜单规格：第 1 项「未分组」，随后是现有分组。
+   * 分组项 id 加 'group:' 前缀 —— 菜单内 id 必须唯一，动态分组名可能与固定项撞车。
+   */
+  private bulkGroupMenuSpec(): MenuSpec {
+    const items: MenuItemSpec[] = [
+      new MenuItemSpec('group_ungrouped', $r('app.string.group_ungrouped'), (): void => {
+        feedViewModel.setFeedGroupMany(this.selectedIds, '');
+        this.exitSelect();
+      })
+    ];
+    const names: string[] = feedViewModel.groupNames();
+    for (let i = 0; i < names.length; i += 1) {
+      const name: string = names[i];
+      items.push(new MenuItemSpec('group:' + name, name, (): void => {
+        feedViewModel.setFeedGroupMany(this.selectedIds, name);
+        this.exitSelect();
+      }));
     }
-    .radius($r('app.float.radius_card'))
+    return MenuSpec.fromItems(items);
   }
 
   /** 多选态动作条与页签栏之间的底边距。 */
@@ -395,59 +405,58 @@ export struct SubscriptionsView {
     Row().width(0).height(0)
   }
 
-  /** 行内溢出菜单：重命名 / 移动分组 / 删除。 */
+  /** 行内溢出菜单：设置 / 重命名 / 改地址 / 分组 / 排序 / 批量 / 删除（AppMenu 渲染）。 */
   @Builder
   FeedMenu(feed: FeedSource) {
-    Menu() {
-      MenuItem({ content: $r('app.string.feed_settings_entry') })
-        .onClick(() => {
-          feedViewModel.openFeedSettings(feed);
-          this.navPathStack.pushPath(new NavPathInfo(RouterConstants.PAGE_FEED_SETTINGS, ''));
-        })
-      MenuItem({ content: $r('app.string.subs_rename') })
-        .onClick(() => {
-          this.editingId = feed.id;
-          this.draftTitle = feed.title;
-        })
-      MenuItem({ content: $r('app.string.subs_edit_url') })
-        .onClick(() => {
-          this.urlEditId = feed.id;
-          this.draftUrl = feed.url;
-        })
-      MenuItem({ content: $r('app.string.group_clear') })
-        .onClick(() => {
-          feedViewModel.setFeedGroup(feed.id, '');
-        })
-      ForEach(feedViewModel.groupNames(), (name: string) => {
-        MenuItem({ content: $r('app.string.group_move_to', name) })
-          .onClick(() => {
-            feedViewModel.setFeedGroup(feed.id, name);
-          })
-      }, (name: string) => name)
-      MenuItem({ content: $r('app.string.group_new') })
-        .onClick(() => {
-          this.groupEditId = feed.id;
-          this.draftGroup = feed.group;
-        })
-      MenuItem({ content: $r('app.string.feed_move_up') })
-        .onClick(() => {
-          feedViewModel.moveFeed(feed.id, -1);
-        })
-      MenuItem({ content: $r('app.string.feed_move_down') })
-        .onClick(() => {
-          feedViewModel.moveFeed(feed.id, 1);
-        })
-      MenuItem({ content: $r('app.string.subs_bulk_enter') })
-        .onClick(() => {
-          this.enterSelect(feed.id);
-        })
-      MenuItem({ content: $r('app.string.subs_remove') })
-        .contentFontColor($r('app.color.hm_danger'))
-        .onClick(() => {
-          this.confirmRemove(feed);
-        })
+    AppMenu(this.feedMenuSpec(feed));
+  }
+
+  /**
+   * 行内溢出菜单的规格：条目与顺序与改造前逐条一致，不许增删或重排。
+   * 分组项 id 加 'group:' 前缀保证菜单内唯一；末项删除标危险色。
+   */
+  private feedMenuSpec(feed: FeedSource): MenuSpec {
+    const items: MenuItemSpec[] = [
+      new MenuItemSpec('feed_settings', $r('app.string.feed_settings_entry'), (): void => {
+        feedViewModel.openFeedSettings(feed);
+        this.navPathStack.pushPath(new NavPathInfo(RouterConstants.PAGE_FEED_SETTINGS, ''));
+      }),
+      new MenuItemSpec('rename', $r('app.string.subs_rename'), (): void => {
+        this.editingId = feed.id;
+        this.draftTitle = feed.title;
+      }),
+      new MenuItemSpec('edit_url', $r('app.string.subs_edit_url'), (): void => {
+        this.urlEditId = feed.id;
+        this.draftUrl = feed.url;
+      }),
+      new MenuItemSpec('group_clear', $r('app.string.group_clear'), (): void => {
+        feedViewModel.setFeedGroup(feed.id, '');
+      })
+    ];
+    const names: string[] = feedViewModel.groupNames();
+    for (let i = 0; i < names.length; i += 1) {
+      const name: string = names[i];
+      items.push(new MenuItemSpec('group:' + name, $r('app.string.group_move_to', name), (): void => {
+        feedViewModel.setFeedGroup(feed.id, name);
+      }));
     }
-    .radius($r('app.float.radius_card'))
+    items.push(new MenuItemSpec('group_new', $r('app.string.group_new'), (): void => {
+      this.groupEditId = feed.id;
+      this.draftGroup = feed.group;
+    }));
+    items.push(new MenuItemSpec('move_up', $r('app.string.feed_move_up'), (): void => {
+      feedViewModel.moveFeed(feed.id, -1);
+    }));
+    items.push(new MenuItemSpec('move_down', $r('app.string.feed_move_down'), (): void => {
+      feedViewModel.moveFeed(feed.id, 1);
+    }));
+    items.push(new MenuItemSpec('bulk_select', $r('app.string.subs_bulk_enter'), (): void => {
+      this.enterSelect(feed.id);
+    }));
+    items.push(new MenuItemSpec('remove', $r('app.string.subs_remove'), (): void => {
+      this.confirmRemove(feed);
+    }).markDanger());
+    return MenuSpec.fromItems(items);
   }
 
   /** 未读数徽标；没有未读时退回文章总数（弱化展示）。 */
@@ -601,7 +610,7 @@ export struct SubscriptionsView {
 
         // 抓取错误：只保留一行，详情去单源设置页看。
         if (feed.lastError.length > 0) {
-          Text($r('app.string.subs_error_prefix') + feed.lastError)
+          Text(FeedErrorText.of(feed.lastErrorCode))
             .fontSize($r('app.float.font_size_caption'))
             .fontColor($r('app.color.hm_danger'))
             .maxLines(1)

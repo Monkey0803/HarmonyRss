@@ -18,6 +18,8 @@ import { DateUtil } from '../common/utils/DateUtil';
 import { clipboardService } from '../service/ClipboardService';
 import { MaterialController } from '../service/MaterialController';
 import { appSettings } from '../model/AppSettings';
+import { AppMenu } from '../common/components/AppMenu';
+import { MenuItemSpec, MenuSectionSpec, MenuSpec } from '../common/components/MenuSpec';
 
 @ComponentV2
 export struct AddFeedPanel {
@@ -158,25 +160,46 @@ export struct AddFeedPanel {
     return this.draftGroup.length > 0 ? this.draftGroup : $r('app.string.group_ungrouped');
   }
 
+  /**
+   * 分组菜单：两个分区（分区头都是空，靠菜单分组分隔线区分）——
+   * 分区 1「未分组 + 已有分组」，分区 2「新建分组」。
+   */
   @Builder
   GroupMenu() {
-    Menu() {
-      MenuItem({ content: $r('app.string.group_ungrouped') })
-        .onClick(() => {
-          this.draftGroup = '';
-        })
-      ForEach(feedViewModel.groupNames(), (name: string) => {
-        MenuItem({ content: name })
-          .onClick(() => {
-            this.draftGroup = name;
-          })
-      }, (name: string) => name)
-      MenuItem({ content: $r('app.string.group_new') })
-        .onClick(() => {
-          this.groupEdit = true;
-        })
+    AppMenu(this.groupMenuSpec());
+  }
+
+  /**
+   * 菜单规格：当前草稿分组对应的项标选中。
+   * 动态分组项的 id 必须加 'group:' 前缀，否则会与『未分组』/『新建分组』的固定 id 撞键。
+   */
+  private groupMenuSpec(): MenuSpec {
+    const groupItems: MenuItemSpec[] = [
+      new MenuItemSpec('ungrouped', $r('app.string.group_ungrouped'), (): void => {
+        this.draftGroup = '';
+      })
+    ];
+    if (this.draftGroup.length === 0) {
+      groupItems[0].markSelected();
     }
-    .radius($r('app.float.radius_card'))
+    feedViewModel.groupNames().forEach((name: string) => {
+      const item: MenuItemSpec = new MenuItemSpec('group:' + name, name, (): void => {
+        this.draftGroup = name;
+      });
+      if (name === this.draftGroup) {
+        item.markSelected();
+      }
+      groupItems.push(item);
+    });
+    const createItems: MenuItemSpec[] = [
+      new MenuItemSpec('group_new', $r('app.string.group_new'), (): void => {
+        this.groupEdit = true;
+      })
+    ];
+    return MenuSpec.fromSections([
+      new MenuSectionSpec(groupItems),
+      new MenuSectionSpec(createItems)
+    ]);
   }
 
   /** 分组选择器：默认显示当前分组（点开菜单），或就地新建分组。 */

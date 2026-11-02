@@ -11,13 +11,10 @@ import { feedViewModel } from '../viewmodel/FeedViewModel';
 import { ArticleDataSource, articleRowKey } from '../viewmodel/ArticleDataSource';
 import { ArticleListItem } from './ArticleListItem';
 import { FeedError } from '../common/constants/RssConstants';
-import { appSettings } from '../model/AppSettings';
-import { MaterialController } from '../service/MaterialController';
 import { FeedErrorText } from '../common/utils/FeedErrorText';
 import { RouterConstants } from '../common/constants/RouterConstants';
-import { CommonConstants } from '../common/constants/CommonConstants';
 import { safeArea } from '../service/SafeAreaController';
-import { ToastUtil } from '../common/utils/ToastUtil';
+import { ArticleSwipeBar } from '../common/components/ArticleSwipeBar';
 
 @ComponentV2
 export struct FeedArticlesView {
@@ -66,59 +63,18 @@ export struct FeedArticlesView {
     this.navPathStack.pushPath(new NavPathInfo(RouterConstants.PAGE_ARTICLE, ''));
   }
 
-  /** 列表左滑操作：收藏 / 已读切换（ArkUI 原生 swipeAction，V2 组件可用）。 */
+  /**
+   * 列表左滑操作：3 个直达（稍后读 / 已读 / 更多），离线动作进「更多」菜单。
+   * 与首页共用 common/components/ArticleSwipeBar.ets；源内列表没有分享面板（少一块分享），
+   * 也不做「只看该源」；收藏仍用行内星标。
+   */
   @Builder
   SwipeActions(article: Article) {
-    Row({ space: $r('app.float.space_s') }) {
-      Button($r('app.string.offline_single_download_short'))
-        .buttonStyle(ButtonStyleMode.NORMAL)
-        .fontSize($r('app.float.font_size_caption'))
-        .fontColor($r('app.color.hm_on_brand'))
-        .backgroundColor($r('app.color.hm_brand'))
-        .height('100%')
-        .onClick(() => {
-          feedViewModel.downloadArticleOffline(article.id, article.offlineState !== 'none').then((state: string) => {
-            ToastUtil.show(this.getUIContext(), state === 'full' ? $r('app.string.offline_full') :
-              (state === 'none' ? $r('app.string.offline_single_failed') : $r('app.string.offline_partial')));
-          }).catch(() => {
-            ToastUtil.show(this.getUIContext(), $r('app.string.offline_single_failed'));
-          });
-        })
-      Button($r('app.string.offline_single_clear_short'))
-        .buttonStyle(ButtonStyleMode.NORMAL)
-        .fontSize($r('app.float.font_size_caption'))
-        .fontColor($r('app.color.hm_on_brand'))
-        .backgroundColor($r('app.color.hm_text_secondary'))
-        .height('100%')
-        .onClick(() => {
-          feedViewModel.clearArticleOffline(article.id).then((ok: boolean) => {
-            ToastUtil.show(this.getUIContext(), ok ? $r('app.string.offline_single_cleared') :
-              $r('app.string.offline_single_failed'));
-          }).catch(() => {
-            ToastUtil.show(this.getUIContext(), $r('app.string.offline_single_failed'));
-          });
-        })
-      Button(article.starred ? $r('app.string.action_unstar') : $r('app.string.action_star'))
-        .buttonStyle(ButtonStyleMode.NORMAL)
-        .fontSize($r('app.float.font_size_caption'))
-        .fontColor($r('app.color.hm_on_brand'))
-        .backgroundColor($r('app.color.hm_brand'))
-        .height('100%')
-        .onClick(() => {
-          feedViewModel.toggleStar(article.id);
-        })
-      Button(article.read ? $r('app.string.action_mark_unread') : $r('app.string.action_mark_read'))
-        .buttonStyle(ButtonStyleMode.NORMAL)
-        .fontSize($r('app.float.font_size_caption'))
-        .fontColor($r('app.color.hm_on_brand'))
-        .backgroundColor($r('app.color.hm_text_secondary'))
-        .height('100%')
-        .onClick(() => {
-          feedViewModel.toggleRead(article.id);
-        })
-    }
-    .height('100%')
-    .padding({ left: $r('app.float.space_s') })
+    ArticleSwipeBar({
+      article: article,
+      showShare: false,
+      showScopeFeed: false
+    })
   }
 
   /** 顶部信息行：透明标题栏占位 + 订阅源标题 + 文章数 + 时间排序切换（随列表一起滚动）。 */

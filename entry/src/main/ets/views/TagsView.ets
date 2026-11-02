@@ -9,6 +9,8 @@
 import { TagWithCount } from '../model/Tag';
 import { tagViewModel } from '../viewmodel/TagViewModel';
 import { RouterConstants } from '../common/constants/RouterConstants';
+import { AppMenu } from '../common/components/AppMenu';
+import { MenuItemSpec, MenuSpec } from '../common/components/MenuSpec';
 import { MaterialController } from '../service/MaterialController';
 import { appSettings } from '../model/AppSettings';
 import { safeArea } from '../service/SafeAreaController';
@@ -105,21 +107,23 @@ export struct TagsView {
     this.navPathStack.pushPath(new NavPathInfo(RouterConstants.PAGE_TAG_ARTICLES, ''));
   }
 
+  /** 行菜单：重命名 / 移除（移除为危险动作，仍走二次确认）。 */
   @Builder
   TagMenu(tag: TagWithCount) {
-    Menu() {
-      MenuItem({ content: $r('app.string.tag_rename') })
-        .onClick(() => {
-          this.renameId = tag.id;
-          this.renameDraft = tag.name;
-        })
-      MenuItem({ content: $r('app.string.tag_remove') })
-        .contentFontColor($r('app.color.hm_danger'))
-        .onClick(() => {
-          this.confirmRemove(tag);
-        })
-    }
-    .radius($r('app.float.radius_card'))
+    AppMenu(this.tagMenuSpec(tag));
+  }
+
+  /** 菜单规格：顺序与动作和改造前一致。 */
+  private tagMenuSpec(tag: TagWithCount): MenuSpec {
+    return MenuSpec.fromItems([
+      new MenuItemSpec('rename', $r('app.string.tag_rename'), (): void => {
+        this.renameId = tag.id;
+        this.renameDraft = tag.name;
+      }),
+      new MenuItemSpec('remove', $r('app.string.tag_remove'), (): void => {
+        this.confirmRemove(tag);
+      }).markDanger()
+    ]);
   }
 
   @Builder

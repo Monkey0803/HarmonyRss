@@ -60,6 +60,8 @@ import cloudBackupTest from './CloudBackup.test';
 import cloudRelayTest from './CloudRelay.test';
 import materialLevelTest from './MaterialLevel.test';
 import webPageSaveTest from './WebPageSave.test';
+import menuSpecTest from './MenuSpec.test';
+import swipeActionPlanTest from './SwipeActionPlan.test';
 
 export default function testsuite() {
   htmlDomTest();
@@ -114,4 +116,6 @@ export default function testsuite() {
   cloudRelayTest();
   materialLevelTest();
   webPageSaveTest();
+  menuSpecTest();
+  swipeActionPlanTest();
 }
