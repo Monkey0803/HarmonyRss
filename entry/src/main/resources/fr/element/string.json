@@ -313,6 +313,14 @@
       "value": "%d non lus"
     },
     {
+      "name": "menu_section_sort",
+      "value": "Tri"
+    },
+    {
+      "name": "menu_section_group",
+      "value": "Regroupement"
+    },
+    {
       "name": "sort_newest",
       "value": "Plus récents d'abord"
     },
@@ -499,6 +507,14 @@
     {
       "name": "widget_refresh",
       "value": "Actualiser les données de la carte"
+    },
+    {
+      "name": "continuation_failed",
+      "value": "Impossible de restaurer cet article sur cet appareil. Ouvrir la page d’origine ?"
+    },
+    {
+      "name": "widget_animate",
+      "value": "Lire l’animation de la carte"
     },
     {
       "name": "notify_action_mark_read",
@@ -805,6 +821,14 @@
       "value": "Réextraire l'article"
     },
     {
+      "name": "action_extract_rendered",
+      "value": "Extraire l'article de cette page"
+    },
+    {
+      "name": "article_reader_ready",
+      "value": "Article extrait. Passage au mode lecture."
+    },
+    {
       "name": "action_copy_link",
       "value": "Copier le lien"
     },
@@ -1045,12 +1069,20 @@
       "value": "Mode lecture"
     },
     {
+      "name": "article_web_load_failed",
+      "value": "Impossible de charger la page."
+    },
+    {
       "name": "article_reader_failed",
       "value": "Impossible d'extraire l'article. Affichage de la page d'origine."
     },
     {
       "name": "article_reader_placeholder",
       "value": "Cette page nécessite JavaScript. Affichage de la page d'origine."
+    },
+    {
+      "name": "reader_short_body_hint",
+      "value": "Ceci n'est peut-être qu'un résumé. La page d'origine contient peut-être davantage."
     },
     {
       "name": "article_prev",

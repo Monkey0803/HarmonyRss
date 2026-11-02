@@ -2,7 +2,7 @@ import { describe, it, expect } from '@ohos/hypium';
 import { Article } from '../../../main/ets/model/Feed';
 import { FullTextMode } from '../../../main/ets/common/constants/SettingsConstants';
 import { ArticleContentService } from '../../../main/ets/service/ArticleContentService';
-import { isReaderPlaceholder } from '../../../main/ets/service/ReaderContentGuard';
+import { isReaderPlaceholder, isSpaShellHtml } from '../../../main/ets/service/ReaderContentGuard';
 import { extractReadable } from '../../../main/ets/service/Readability';
 
 const MASTODON: string = '<p>To use the Mastodon web application, please enable JavaScript.</p>' +
@@ -45,6 +45,28 @@ export default function readerContentGuardTest() {
       expect(isReaderPlaceholder(YOUTUBE_FOOTER, 'https://example.com/article')).assertFalse();
       expect(isReaderPlaceholder('<p>A video review of YouTube terms and Google LLC.</p>',
         YOUTUBE_URL)).assertFalse();
+    });
+
+    it('recognizes_spa_shell_page', 0, () => {
+      // wikihack.netlify.app 这类：只有挂载容器 + 打包脚本，没有正文也没有 noscript 提示。
+      const shell: string = '<!doctype html><html><head><meta charset="UTF-8" />' +
+        '<script type="module" crossorigin src="/assets/index-DLp7HKnT.js"></script>' +
+        '<link rel="stylesheet" href="/assets/index-x.css" /></head>' +
+        '<body><div id="root"></div></body></html>';
+      expect(isSpaShellHtml(shell)).assertTrue();
+      expect(isSpaShellHtml('<html><body><div id="app"></div><script src="/main.js"></script></body></html>'))
+        .assertTrue();
+    });
+
+    it('keeps_pages_with_real_content', 0, () => {
+      // 静态页已带足够正文：即使挂了框架容器和脚本，也不能当成空壳。
+      const content: string = '<p>' + POST + '</p><p>' + POST + '</p><p>' + POST + '</p>' +
+        '<p>' + POST + '</p><p>' + POST + '</p>';
+      expect(isSpaShellHtml('<html><body><div id="root"></div><script src="/main.js"></script>' +
+        '<article>' + content + '</article></body></html>')).assertFalse();
+      // 没有外链脚本 / 没有挂载容器，都不算空壳。
+      expect(isSpaShellHtml('<html><body><div id="root"></div></body></html>')).assertFalse();
+      expect(isSpaShellHtml('<html><body><script src="/main.js"></script></body></html>')).assertFalse();
     });
 
     it('reextracts_instead_of_returning_bad_cache', 0, async () => {

@@ -313,6 +313,14 @@
       "value": "%d 未讀"
     },
     {
+      "name": "menu_section_sort",
+      "value": "排序"
+    },
+    {
+      "name": "menu_section_group",
+      "value": "分組"
+    },
+    {
       "name": "sort_newest",
       "value": "最新在前"
     },
@@ -499,6 +507,14 @@
     {
       "name": "widget_refresh",
       "value": "重新整理卡片資料"
+    },
+    {
+      "name": "continuation_failed",
+      "value": "無法在此裝置還原文章。是否開啟原始網頁？"
+    },
+    {
+      "name": "widget_animate",
+      "value": "播放卡片動效"
     },
     {
       "name": "notify_action_mark_read",
@@ -805,6 +821,14 @@
       "value": "重新提取正文"
     },
     {
+      "name": "action_extract_rendered",
+      "value": "擷取此頁正文"
+    },
+    {
+      "name": "article_reader_ready",
+      "value": "已擷取正文，切回閱讀模式。"
+    },
+    {
       "name": "action_copy_link",
       "value": "複製連結"
     },
@@ -1045,12 +1069,20 @@
       "value": "閱讀模式"
     },
     {
+      "name": "article_web_load_failed",
+      "value": "網頁載入失敗"
+    },
+    {
       "name": "article_reader_failed",
       "value": "正文提取失敗，已為你開啟網頁原文。"
     },
     {
       "name": "article_reader_placeholder",
       "value": "原文需要 JavaScript，已為你開啟網頁原文。"
+    },
+    {
+      "name": "reader_short_body_hint",
+      "value": "這段內容可能只是摘要，原網頁或許還有更多。"
     },
     {
       "name": "article_prev",

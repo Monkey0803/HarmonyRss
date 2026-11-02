@@ -13,7 +13,7 @@
 import { HtmlNode, parseHtml, textContent, findFirst, hasVisibleContent, DROP_WITH_CONTENT } from './HtmlDom';
 import { sanitizeNode, sanitizeFragment } from './HtmlSanitizer';
 import { toPlainText } from '../common/utils/HtmlText';
-import { ReaderConstants } from '../common/constants/RssConstants';
+import { FeedBodyKind, ReaderConstants } from '../common/constants/RssConstants';
 
 /** 参与打分的块级标签。 */
 const BLOCK_TAGS: string[] = ['p', 'div', 'section', 'article', 'blockquote', 'pre', 'td', 'li', 'main'];
@@ -414,21 +414,70 @@ function linkTextLengthOf(html: string, limit: number): number {
   return total;
 }
 
+/** 统计某个标签的开标签数量（只看 `<tag` 后跟空白 / `>` / `/`，避免 `<param>` 误判）。 */
+function countOpenTags(html: string, tag: string): number {
+  const needle: string = '<' + tag;
+  const lower: string = html.toLowerCase();
+  let count: number = 0;
+  let from: number = 0;
+  while (from < lower.length) {
+    const at: number = lower.indexOf(needle, from);
+    if (at < 0) {
+      break;
+    }
+    const next: string = lower.charAt(at + needle.length);
+    if (next === '>' || next === '/' || next === ' ' || next === '\n' || next === '\r' || next === '\t') {
+      count += 1;
+    }
+    from = at + needle.length;
+  }
+  return count;
+}
+
 /**
  * 判断 feed 自带 HTML 是否值得直接当正文：需要有块级结构，且链接文本占比不高。
  * Hacker News（hnrss）的 description 只有 "Article URL / Comments URL / Points" 这类
  * 链接堆，不能当正文用，否则阅读器里只剩几个链接、看不到原文内容。
  */
 export function hasBodyContent(html: string): boolean {
+  return feedBodyKind(html) !== FeedBodyKind.NONE;
+}
+
+/**
+ * feed 自带正文的用途分类（纯函数，可单测）。
+ *
+ * 只有「够长 / 段落够多 / 结构够丰富」才算完整正文；一段两百字的投稿说明（Show HN）
+ * 过去会被当成正文，导致阅读器只显示这一段、永远不去抓真实页面 —— 这里把这种情况
+ * 归为 SUMMARY，交给调用方联网抓原文，抓不到时再用它兜底。
+ */
+export function feedBodyKind(html: string): FeedBodyKind {
   if (html.length === 0 || !hasBlockMarkup(html)) {
-    return false;
+    return FeedBodyKind.NONE;
   }
-  const plain: string = toPlainText(html);
+  const plain: string = toPlainText(html).trim();
   if (plain.length < ReaderConstants.MIN_FEED_BODY_CHARS) {
-    return false;
+    return FeedBodyKind.NONE;
   }
   const limit: number = plain.length * ReaderConstants.MAX_FEED_BODY_LINK_RATIO;
-  return linkTextLengthOf(html, limit) <= limit;
+  if (linkTextLengthOf(html, limit) > limit) {
+    return FeedBodyKind.NONE;
+  }
+  if (plain.length >= ReaderConstants.MIN_FULL_FEED_BODY_CHARS) {
+    return FeedBodyKind.FULL;
+  }
+  const paragraphs: number = countOpenTags(html, 'p');
+  if (paragraphs >= ReaderConstants.MIN_FULL_FEED_BODY_PARAGRAPHS &&
+    plain.length >= ReaderConstants.MIN_FULL_FEED_BODY_STRUCTURED_CHARS) {
+    return FeedBodyKind.FULL;
+  }
+  const rich: number = countOpenTags(html, 'h2') + countOpenTags(html, 'h3') + countOpenTags(html, 'h4') +
+    countOpenTags(html, 'ul') + countOpenTags(html, 'ol') + countOpenTags(html, 'blockquote') +
+    countOpenTags(html, 'pre') + countOpenTags(html, 'figure') + countOpenTags(html, 'img') +
+    countOpenTags(html, 'table');
+  if (paragraphs >= 2 && rich >= 2 && plain.length >= ReaderConstants.MIN_FULL_FEED_BODY_RICH_CHARS) {
+    return FeedBodyKind.FULL;
+  }
+  return FeedBodyKind.SUMMARY;
 }
 
 /**

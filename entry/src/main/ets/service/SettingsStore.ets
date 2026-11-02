@@ -84,8 +84,13 @@ function readKeywords(raw: preferences.ValueType, fallback: string[]): string[] 
   return decodeKeywords(raw);
 }
 
+/** 只能靠 JS 渲染的站点上限：只保留最近记录的这些，避免偏好库无限增长。 */
+const MAX_READER_WEB_SITES: number = 300;
+
 export class SettingsStore {
   private store: preferences.Preferences | undefined = undefined;
+  /** 正文提取失败过、下次应直接进网页原文的站点（host，小写）。 */
+  private readerWebSites: Set<string> = new Set<string>();
 
   private readStringArray(raw: string): string[] {
     try {
@@ -185,6 +190,16 @@ export class SettingsStore {
         store.getSync(PreferencesConstants.KEY_HOME_FILTER, appSettings.homeFilter) as string);
       appSettings.readerViewMode = normalizeReaderViewMode(
         store.getSync(PreferencesConstants.KEY_READER_VIEW_MODE, appSettings.readerViewMode) as string);
+      // 记录「只能靠 JS 渲染」的站点：脏值一律忽略，读回后只保留 host 形态的项。
+      this.readerWebSites.clear();
+      const siteModes: string[] = this.readStringArray(
+        store.getSync(PreferencesConstants.KEY_READER_SITE_MODES, '[]') as string);
+      for (let i = 0; i < siteModes.length; i += 1) {
+        const host: string = siteModes[i].trim().toLowerCase();
+        if (host.length > 0 && host.indexOf(' ') < 0 && host.indexOf('/') < 0) {
+          this.readerWebSites.add(host);
+        }
+      }
       appSettings.lastTabIndex = store.getSync(PreferencesConstants.KEY_LAST_TAB, appSettings.lastTabIndex) as number;
       appSettings.listRowLayout = ROW_LAYOUT_OPTIONS.normalize(
         store.getSync(PreferencesConstants.KEY_ROW_LAYOUT, appSettings.listRowLayout) as string);
@@ -566,6 +581,56 @@ export class SettingsStore {
     }
     const raw: preferences.ValueType = store.getSync(PreferencesConstants.KEY_CONTENT_RULES_VERSION, 0);
     return typeof raw === 'number' && raw > 0 ? Math.floor(raw) : 0;
+  }
+
+  // ---- 站点级阅读模式（哪些站点的正文只能靠 JS 渲染） ----
+
+  /** 该站点是否应直接进网页原文（之前正文提取失败过）。 */
+  isReaderSiteWebPreferred(host: string): boolean {
+    return host.length > 0 && this.readerWebSites.has(host.toLowerCase());
+  }
+
+  /** 记住「这个站点需要网页原文」：下次打开直接进 Web，省掉一次必然失败的抓取 + 提取。 */
+  rememberReaderSiteWeb(host: string): void {
+    const key: string = host.trim().toLowerCase();
+    if (key.length === 0 || this.readerWebSites.has(key)) {
+      return;
+    }
+    if (this.readerWebSites.size >= MAX_READER_WEB_SITES) {
+      this.readerWebSites.clear();
+    }
+    this.readerWebSites.add(key);
+    this.persistReaderWebSites();
+  }
+
+  /** 该站点重新可用（提取成功 / 用户手动切回正文）：忘掉记录。 */
+  preferReaderSite(host: string): void {
+    const key: string = host.trim().toLowerCase();
+    if (key.length === 0 || !this.readerWebSites.has(key)) {
+      return;
+    }
+    this.readerWebSites.delete(key);
+    this.persistReaderWebSites();
+  }
+
+  private persistReaderWebSites(): void {
+    const store: preferences.Preferences | undefined = this.store;
+    if (store === undefined) {
+      return;
+    }
+    const list: string[] = [];
+    this.readerWebSites.forEach((host: string) => {
+      list.push(host);
+    });
+    try {
+      store.putSync(PreferencesConstants.KEY_READER_SITE_MODES, JSON.stringify(list));
+      store.flush().catch((err: BusinessError) => {
+        console.error('SettingsStore.flush failed: ' + err.code.toString());
+      });
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      console.error('SettingsStore.readerSiteModes failed: ' + error.code.toString());
+    }
   }
 
   /** 记录已应用的内容规则版本（迁移完成后调用一次）。 */

@@ -88,7 +88,8 @@ function elementRules(p: ReaderPalette, topPad: number, bottomPad: number): stri
   const indent: string = appSettings.readerIndent === ReaderIndent.TWO
     ? '.reader p{text-indent:2em;}' +
       '.reader p:has(>img:first-child),.reader p:has(>a:first-child>img:first-child),' +
-      '.reader p:has(>picture:first-child),.reader p:has(>video:first-child)' +
+      '.reader p:has(>picture:first-child),.reader p:has(>video:first-child),' +
+      '.reader .hr-feed-summary p' +
       '{text-indent:0;}'
     : '';
   return '.reader{max-width:' + width + 'px;margin:0 auto;padding:' + (16 + topPad) + 'px 20px ' +
@@ -101,7 +102,12 @@ function elementRules(p: ReaderPalette, topPad: number, bottomPad: number): stri
     '.reader blockquote{margin:1em 0;padding:.2em 1em;border-left:3px solid ' + p.quoteBorder + ';color:' + p.quoteFg + ';}' +
     '.reader td,.reader th{border:1px solid ' + p.border + ';padding:6px 8px;text-align:left;}' +
     '.reader hr{border:none;border-top:1px solid ' + p.border + ';margin:1.6em 0;}' +
-    '.reader figcaption{font-size:.85em;color:' + p.captionFg + ';text-align:center;margin-top:6px;}';
+    '.reader figcaption{font-size:.85em;color:' + p.captionFg + ';text-align:center;margin-top:6px;}' +
+    // feed 简介卡片（Show HN 这类「一句话投稿说明」）：与正文区分开，但仍可读。
+    '.reader .hr-feed-summary{margin:0 0 1.8em;padding:12px 14px;border-radius:10px;background:' + p.codeBg +
+    ';border-left:3px solid ' + p.quoteBorder + ';color:' + p.quoteFg + ';font-size:.94em;}' +
+    '.reader .hr-feed-summary p{margin:0 0 .5em;}.reader .hr-feed-summary p:last-child{margin-bottom:0;}' +
+    '.reader .hr-feed-summary a{color:' + p.link + ';}';
 }
 
 /** 与主题无关的固定排版（图片 / 列表 / 标题 / 表格）。 */
@@ -135,6 +141,10 @@ function darkOverride(): string {
     '.reader td,.reader th{border-color:' + DARK.border + ';}' +
     '.reader hr{border-top-color:' + DARK.border + ';}' +
     '.reader figcaption{color:' + DARK.captionFg + ';}' +
+    // 简介卡片也跟随深色：底色 / 文字 / 引用边线全部换成深色一套。
+    '.reader .hr-feed-summary{background:' + DARK.codeBg + ';color:' + DARK.quoteFg +
+    ';border-left-color:' + DARK.quoteBorder + ';}' +
+    '.reader .hr-feed-summary a{color:' + DARK.link + ';}' +
     '}';
 }
 
@@ -163,7 +173,7 @@ export const READER_STYLE_ID: string = 'hr-reader-style';
 export function buildReaderDocument(bodyHtml: string, topPad: number = 0, bottomPad: number = 0): string {
   return '<!DOCTYPE html><html><head>' +
     '<meta charset="utf-8">' +
-    '<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">' +
+    '<meta name="viewport" content="width=device-width, initial-scale=1">' +
     '<style id="' + READER_STYLE_ID + '">' + readerCss(topPad, bottomPad) + '</style>' +
     '</head><body><article class="reader">' + bodyHtml + '</article></body></html>';
 }

@@ -3,9 +3,11 @@
  *
  * 数据来源优先级：
  *   1. 本地库已有的 reader_html（离线可读，命中即返回）；
- *   2. feed 自带的结构化正文 contentHtml（含块级标签时直接提取，省一次网络请求）；
+ *   2. feed 自带的结构化正文 contentHtml —— 只有「够长 / 段落够多」才算完整正文（FeedBodyKind.FULL），
+ *      一句简介（SUMMARY）不再直接当正文，而是联网抓原文后作为顶部摘要卡片；
  *   3. 联网抓 article.link 的 HTML 再提取。
- * 抓取失败 / 提取为空时抛出 FeedFetchError，由上层决定退网页原文。
+ * 抓取失败 / 提取为空 / 只是 SPA 空壳时抛出 FeedFetchError，由上层决定退网页原文。
+ * 网页原文渲染完成后，调用方还可把 DOM 交回 adoptRenderedHtml() 再提取一次（SPA 兜底）。
  *
  * 三级缓存标记（补图不阻塞正文首屏）：
  *   hrv9t：文本已就绪，失败图片下次联网打开可重试；
@@ -18,12 +20,24 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import { Article } from '../model/Feed';
 import { articleStore } from './ArticleStore';
 import { toPlainText } from '../common/utils/HtmlText';
-import { extractReadable, hasBodyContent } from './Readability';
-import { isReaderPlaceholder, ReaderPlaceholderError } from './ReaderContentGuard';
+import { extractReadable, feedBodyKind } from './Readability';
+import {
+  isReaderPlaceholder,
+  isSpaShellHtml,
+  ReaderNeedsJsError,
+  ReaderPlaceholderError
+} from './ReaderContentGuard';
 import { imageCache, InlineImagesResult } from './ImageCache';
 import { ReaderBudget } from './ReaderBudget';
 import { NetworkStatus } from './NetworkStatus';
-import { ReaderState, RssConstants, FeedError, FeedFetchError } from '../common/constants/RssConstants';
+import {
+  ReaderState,
+  RssConstants,
+  ReaderConstants,
+  FeedBodyKind,
+  FeedError,
+  FeedFetchError
+} from '../common/constants/RssConstants';
 import { FullTextMode } from '../common/constants/SettingsConstants';
 import {
   HttpError,
@@ -55,6 +69,29 @@ const LEGACY_READER_MARKER: string = '<!--hrv8-->';
 const LEGACY_READER_MARKER_TEXT: string = '<!--hrv8t-->';
 /** 首屏渲染完成后再开始补图（避免与 Web 首次加载抢带宽与主线程）。 */
 const INLINE_DELAY_MS: number = 2000;
+/** 正文顶部「feed 简介」卡片的类名（配 ReaderDocument 里的 CSS）。 */
+export const FEED_SUMMARY_CLASS: string = 'hr-feed-summary';
+
+/** 去掉缓存标记，取出正文片段。 */
+function readerBodyOf(cached: string): string {
+  const markers: string[] = [READER_MARKER, READER_MARKER_PARTIAL, READER_MARKER_TEXT,
+    LEGACY_READER_MARKER, LEGACY_READER_MARKER_TEXT];
+  for (let i = 0; i < markers.length; i += 1) {
+    if (cached.startsWith(markers[i])) {
+      return cached.substring(markers[i].length);
+    }
+  }
+  return cached;
+}
+
+/**
+ * feed 自带的简介做成正文顶部的摘要卡片。
+ * 真实页面抓到后，把「一句话投稿说明」作为引子保留，读者既知道这是什么，也能往下读全文。
+ */
+export function feedSummaryCard(summaryHtml: string): string {
+  const body: string = summaryHtml.trim();
+  return body.length > 0 ? '<aside class="' + FEED_SUMMARY_CLASS + '">' + body + '</aside>' : '';
+}
 
 /** 网络失败保留重试入口；预算受限只标为部分缓存；全数落本地才标完整。 */
 export function readerImageCacheMarker(remainingRemote: number, retryable: number,
@@ -195,17 +232,23 @@ export class ArticleContentService {
       cached = upgraded;
       this.persist(article, upgraded, article.plainText);
     }
-    if (cached.length > 0 && cached.startsWith(READER_MARKER)) {
+    // 旧版本把 feed 的「一句简介」当正文缓存了（典型：Show HN 的投稿说明）：
+    // 按未命中处理，重新联网抓真实页面。cached 仍作为抓取失败时的兜底，不清库。
+    const staleSummary: boolean = this.isFeedSummaryCache(article, cached);
+    if (staleSummary) {
+      hilog.info(DOMAIN, TAG, 'reader cache holds feed summary, re-extracting');
+    }
+    if (!staleSummary && cached.length > 0 && cached.startsWith(READER_MARKER)) {
       article.readerState = ReaderState.READY;
       hilog.info(DOMAIN, TAG, 'reader cache hit (%{public}d chars)', cached.length);
       return cached;
     }
-    if (cached.length > 0 && cached.startsWith(READER_MARKER_PARTIAL)) {
+    if (!staleSummary && cached.length > 0 && cached.startsWith(READER_MARKER_PARTIAL)) {
       article.readerState = ReaderState.READY;
       hilog.info(DOMAIN, TAG, 'reader partial cache hit (%{public}d chars)', cached.length);
       return cached;
     }
-    if (cached.length > 0 && cached.startsWith(READER_MARKER_TEXT)) {
+    if (!staleSummary && cached.length > 0 && cached.startsWith(READER_MARKER_TEXT)) {
       // 文本已就绪：先把正文给到界面，图片交给后台补（不阻塞首屏）。
       article.readerState = ReaderState.READY;
       hilog.info(DOMAIN, TAG, 'reader text cache hit (%{public}d chars)', cached.length);
@@ -217,7 +260,7 @@ export class ArticleContentService {
     if (running !== undefined) {
       return await running;
     }
-    const task: Promise<string> = this.buildReaderHtml(article, fullTextMode, cached);
+    const task: Promise<string> = this.buildReaderHtml(article, fullTextMode, cached, staleSummary);
     this.inFlight.set(article.id, task);
     try {
       return await task;
@@ -226,12 +269,47 @@ export class ArticleContentService {
     }
   }
 
+  /**
+   * 缓存里存的其实就是 feed 那句简介（旧版本的错误行为）。
+   * 判据：feed 正文当前判为 SUMMARY，且缓存正文与简介长度接近、开头一致。
+   */
+  private isFeedSummaryCache(article: Article, cached: string): boolean {
+    if (cached.length === 0 || article.contentHtml.length === 0) {
+      return false;
+    }
+    if (feedBodyKind(article.contentHtml) !== FeedBodyKind.SUMMARY) {
+      return false;
+    }
+    const plain: string = toPlainText(readerBodyOf(cached)).trim();
+    if (plain.length === 0) {
+      return false;
+    }
+    const summary: string = toPlainText(extractReadable(article.contentHtml, article.link)).trim();
+    if (summary.length === 0) {
+      return false;
+    }
+    // 缓存比简介长出很多 → 已经是「简介卡片 + 真实正文」或完整正文，不再算过期。
+    const slack: number = Math.max(120, Math.floor(summary.length * 0.3));
+    if (plain.length > summary.length + slack) {
+      return false;
+    }
+    const head: string = summary.substring(0, Math.min(60, summary.length));
+    const plainHead: string = plain.substring(0, Math.min(40, plain.length));
+    return plain.indexOf(head) === 0 || summary.indexOf(plainHead) === 0;
+  }
+
   /** 真正生成正文：取素材 → 提取 → 立即落「文本版」→ 排队补图。 */
-  private async buildReaderHtml(article: Article, fullTextMode: string, cached: string): Promise<string> {
+  private async buildReaderHtml(article: Article, fullTextMode: string, cached: string,
+    staleSummary: boolean = false): Promise<string> {
     article.readerState = ReaderState.LOADING;
     const baseUrl: string = article.link;
-    const useFeedBody: boolean = fullTextMode !== FullTextMode.ALWAYS && hasBodyContent(article.contentHtml);
+    const kind: FeedBodyKind = feedBodyKind(article.contentHtml);
     const allowNetwork: boolean = fullTextMode !== FullTextMode.NEVER;
+    // 只有「够长 / 结构够丰富」的 feed 正文才直接当正文用；
+    // 一句简介（SUMMARY）即使能联网也要去抓真实页面，否则阅读器里只剩一段话。
+    const useFeedBody: boolean = fullTextMode !== FullTextMode.ALWAYS && kind === FeedBodyKind.FULL;
+    const summaryHtml: string = kind === FeedBodyKind.SUMMARY
+      ? extractReadable(article.contentHtml, baseUrl) : '';
 
     // 生成一份新的正文片段（按全文策略决定 feed 自带正文 / 联网抓原文）。
     let fresh: string = '';
@@ -256,9 +334,40 @@ export class ArticleContentService {
         const started: number = Date.now();
         fresh = extractReadable(page.html, baseUrl);
         extractMs = Date.now() - started;
+        // 页面只是 SPA 空壳：正文要等 JS 渲染，静态提取拿不到。给出可区分的失败原因，
+        // 上层据此提示「需要 JavaScript」并自动切网页原文。
+        if (isSpaShellHtml(page.html) &&
+          toPlainText(fresh).trim().length < ReaderConstants.MAX_SPA_SHELL_TEXT_CHARS) {
+          throw new ReaderNeedsJsError();
+        }
+        if (summaryHtml.length > 0) {
+          // 抓到真实正文：把 feed 简介作为顶部摘要卡片，而不是丢掉。
+          fresh = feedSummaryCard(summaryHtml) + fresh;
+        }
+      } else {
+        // 离线 / 只用 feed 正文：简介就是能拿到的全部内容。
+        fresh = summaryHtml;
       }
     } catch (err) {
+      if (err instanceof ReaderNeedsJsError) {
+        // 旧缓存如果只是那句简介，不值得当作正文返回；否则离线时仍优先保住可读内容。
+        if (cached.length > 0 && !staleSummary) {
+          article.readerState = ReaderState.READY;
+          return cached;
+        }
+        article.readerState = ReaderState.FAILED;
+        throw err;
+      }
       // 抓取失败（多为离线）：已有旧缓存就先用着，不打断阅读。
+      if (cached.length > 0 && !staleSummary) {
+        article.readerState = ReaderState.READY;
+        return cached;
+      }
+      if (summaryHtml.length > 0) {
+        const summaryPlain: string = toPlainText(summaryHtml);
+        this.persist(article, READER_MARKER_TEXT + summaryHtml, summaryPlain);
+        return article.readerHtml;
+      }
       if (cached.length > 0) {
         article.readerState = ReaderState.READY;
         return cached;
@@ -296,6 +405,29 @@ export class ArticleContentService {
     hilog.info(DOMAIN, TAG, 'perf fetch=%{public}dms extract=%{public}dms persist=%{public}dms chars=%{public}d',
       fetchMs, extractMs, Date.now() - persistStart, fresh.length);
     this.scheduleInline(article, fresh, plain);
+    return article.readerHtml;
+  }
+
+  /**
+   * 采用「已渲染 DOM」再提取：SPA 页面只有 JS 跑完才有正文。
+   * 由网页原文模式把 `document.documentElement.outerHTML` 传进来，提取成功就落库并返回正文片段；
+   * 提取不到返回空串（不改动已有缓存，调用方给失败提示即可）。
+   */
+  adoptRenderedHtml(article: Article, html: string): string {
+    if (html.length === 0) {
+      return '';
+    }
+    const fresh: string = extractReadable(html, article.link);
+    if (fresh.length === 0 || isReaderPlaceholder(fresh, article.link)) {
+      return '';
+    }
+    const plain: string = toPlainText(fresh);
+    if (plain.trim().length < ReaderConstants.MIN_CONTENT_SCORE) {
+      return '';
+    }
+    this.persist(article, READER_MARKER_TEXT + fresh, plain);
+    this.scheduleInline(article, fresh, plain);
+    hilog.info(DOMAIN, TAG, 'adopted rendered dom (%{public}d chars)', fresh.length);
     return article.readerHtml;
   }
 

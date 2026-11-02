@@ -313,6 +313,14 @@
       "value": "%d 未读"
     },
     {
+      "name": "menu_section_sort",
+      "value": "排序"
+    },
+    {
+      "name": "menu_section_group",
+      "value": "分组"
+    },
+    {
       "name": "sort_newest",
       "value": "最新在前"
     },
@@ -499,6 +507,14 @@
     {
       "name": "widget_refresh",
       "value": "刷新卡片数据"
+    },
+    {
+      "name": "continuation_failed",
+      "value": "无法在此设备恢复文章。是否打开原网页？"
+    },
+    {
+      "name": "widget_animate",
+      "value": "播放卡片动效"
     },
     {
       "name": "notify_action_mark_read",
@@ -805,6 +821,14 @@
       "value": "重新提取正文"
     },
     {
+      "name": "action_extract_rendered",
+      "value": "提取此页正文"
+    },
+    {
+      "name": "article_reader_ready",
+      "value": "已提取正文，切回阅读模式。"
+    },
+    {
       "name": "action_copy_link",
       "value": "复制链接"
     },
@@ -1045,12 +1069,20 @@
       "value": "阅读模式"
     },
     {
+      "name": "article_web_load_failed",
+      "value": "网页加载失败"
+    },
+    {
       "name": "article_reader_failed",
       "value": "正文提取失败，已为你打开网页原文。"
     },
     {
       "name": "article_reader_placeholder",
       "value": "原文需要 JavaScript，已为你打开网页原文。"
+    },
+    {
+      "name": "reader_short_body_hint",
+      "value": "这段内容可能只是摘要，原网页或许还有更多。"
     },
     {
       "name": "article_prev",

@@ -313,6 +313,14 @@
       "value": "%d unread"
     },
     {
+      "name": "menu_section_sort",
+      "value": "Sort"
+    },
+    {
+      "name": "menu_section_group",
+      "value": "Grouping"
+    },
+    {
       "name": "sort_newest",
       "value": "Newest first"
     },
@@ -499,6 +507,14 @@
     {
       "name": "widget_refresh",
       "value": "Refresh card data"
+    },
+    {
+      "name": "continuation_failed",
+      "value": "This article could not be restored on this device. Open the original page?"
+    },
+    {
+      "name": "widget_animate",
+      "value": "Play card animation"
     },
     {
       "name": "notify_action_mark_read",
@@ -805,6 +821,14 @@
       "value": "Re-extract article"
     },
     {
+      "name": "action_extract_rendered",
+      "value": "Extract article from this page"
+    },
+    {
+      "name": "article_reader_ready",
+      "value": "Article extracted. Switched to reading mode."
+    },
+    {
       "name": "action_copy_link",
       "value": "Copy link"
     },
@@ -1045,12 +1069,20 @@
       "value": "Reading mode"
     },
     {
+      "name": "article_web_load_failed",
+      "value": "Couldn't load this page."
+    },
+    {
       "name": "article_reader_failed",
       "value": "Couldn't extract the article. Showing the original page."
     },
     {
       "name": "article_reader_placeholder",
       "value": "This page needs JavaScript. Showing the original page."
+    },
+    {
+      "name": "reader_short_body_hint",
+      "value": "This page may have more than what was extracted."
     },
     {
       "name": "article_prev",

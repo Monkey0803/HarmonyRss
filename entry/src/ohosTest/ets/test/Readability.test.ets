@@ -3,7 +3,9 @@
  */
 
 import { describe, it, expect } from '@ohos/hypium';
-import { extractReadable, hasBodyContent } from '../../../main/ets/service/Readability';
+import { extractReadable, feedBodyKind, hasBodyContent } from '../../../main/ets/service/Readability';
+import { FeedBodyKind } from '../../../main/ets/common/constants/RssConstants';
+import { FEED_SUMMARY_CLASS, feedSummaryCard } from '../../../main/ets/service/ArticleContentService';
 
 const LONG: string =
   'The quick brown fox jumps over the lazy dog, and then it runs away, quietly, into the forest.';
@@ -92,6 +94,32 @@ export default function readabilityTest() {
 
     it('rejects_plain_text_description', 0, () => {
       expect(hasBodyContent(LONG + LONG2)).assertFalse();
+    });
+
+    it('classifies_short_feed_body_as_summary', 0, () => {
+      // Show HN 的投稿说明：一段两百字左右的介绍，不能当正文（否则阅读器只有这一段）。
+      const summary: string = '<p>I scraped all mentions of wikipedia on hackernews and ranked them, and turn ' +
+        'them into a scrollable feed to make it a bit more easy to digest / interact with. You can see where ' +
+        'people submitted the articles and where people mentioned it in comments.</p>';
+      expect(feedBodyKind(summary)).assertEqual(FeedBodyKind.SUMMARY);
+      expect(hasBodyContent(summary)).assertTrue();
+      // 两小段仍然只是简介。
+      expect(feedBodyKind('<p>' + LONG + '</p><p>' + LONG2 + '</p>')).assertEqual(FeedBodyKind.SUMMARY);
+    });
+
+    it('classifies_long_or_structured_feed_body_as_full', 0, () => {
+      expect(feedBodyKind(paragraphs(LONG2, 12))).assertEqual(FeedBodyKind.FULL);
+      const structured: string = '<h2>Intro</h2><p>' + LONG + '</p>' +
+        '<ul><li>' + LONG + '</li><li>' + LONG + '</li><li>' + LONG + '</li></ul><p>' + LONG2 + '</p>';
+      expect(feedBodyKind(structured)).assertEqual(FeedBodyKind.FULL);
+      expect(feedBodyKind('')).assertEqual(FeedBodyKind.NONE);
+    });
+
+    it('wraps_feed_summary_as_card', 0, () => {
+      const card: string = feedSummaryCard('<p>' + LONG + '</p>');
+      expect(card.indexOf(FEED_SUMMARY_CLASS) > 0).assertTrue();
+      expect(card).assertContain(LONG);
+      expect(feedSummaryCard('   ').length).assertEqual(0);
     });
 
     it('prefers_semantic_article_container', 0, () => {

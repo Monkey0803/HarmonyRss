@@ -196,6 +196,8 @@ export class FeedViewModel {
   private started: boolean = false;
   /** 是否已完成「完整启动装配」（回填 + 联网抓取），避免重复触发。 */
   private initialized: boolean = false;
+  /** 本地文章装配完成即可恢复接续，无需等待联网刷新。 */
+  private localReadyTask: Promise<void> | undefined = undefined;
   /** 最近一次批量抓取中，最后一个失败源的错误码（用于全量失败时上报）。 */
   private lastFailureCode: FeedError = FeedError.FETCH_FAILED;
   /** 宿主上下文（打开库 / 触发后台清理用）。 */
@@ -259,7 +261,8 @@ export class FeedViewModel {
       return;
     }
     this.initialized = true;
-    await this.ensureReady(context);
+    this.localReadyTask = this.ensureReady(context);
+    await this.localReadyTask;
     // 老数据补一次正文纯文本（有上限）：让检索能命中「之前已提取过正文」的那些文章。
     await articleStore.backfillPlainText(BACKFILL_PLAIN_TEXT_LIMIT);
     // 摘要清洗规则升级：按新规则重算库里已有摘要（正文由 Reader 缓存版本触发按需重提取）。
@@ -273,6 +276,10 @@ export class FeedViewModel {
     this.applyRetentionIfDue();
     // 冷启动是用户动作：force=true 保证首屏能拿到内容（仍不抓停用源）。
     await this.refreshAll(true);
+  }
+
+  whenLocalReady(): Promise<void> {
+    return this.localReadyTask ?? Promise.resolve();
   }
 
   /**
@@ -444,6 +451,7 @@ export class FeedViewModel {
   /** 抓取成功：清空连续失败计数，刷新「最近成功时间」。 */
   private markFeedSuccess(feed: FeedSource): void {
     feed.lastError = '';
+    feed.lastErrorCode = FeedError.NONE;
     feed.failureCount = 0;
     feed.lastUpdated = Date.now();
   }
@@ -452,6 +460,7 @@ export class FeedViewModel {
   private markFeedFailure(feed: FeedSource, message: string, code: FeedError): void {
     feed.failureCount = feed.failureCount + 1;
     feed.lastError = message;
+    feed.lastErrorCode = code;
     this.lastFailureCode = code;
   }
 
@@ -720,6 +729,18 @@ export class FeedViewModel {
       return false;
     }
     this.openArticle(articleId);
+    return true;
+  }
+
+  /** 系统 Skill 只定位文章；阅读状态仍由用户进入后的正常阅读操作决定。 */
+  async openArticleWithoutMarkRead(articleId: string): Promise<boolean> {
+    const ok: boolean = await this.ensureArticleLoaded(articleId);
+    if (!ok) {
+      return false;
+    }
+    this.currentArticleId = articleId;
+    retentionService.setProtectedArticle(articleId);
+    this.publish();
     return true;
   }
 
@@ -1951,6 +1972,23 @@ export class FeedViewModel {
     }
   }
 
+  /**
+   * 采用网页原文里已渲染的 DOM 再提取一次（SPA 兜底）。
+   * 返回正文片段；提取不到返回空串。成功会落库，之后切回正文模式 / 离线都能直接读。
+   */
+  adoptRenderedHtml(articleId: string, html: string): string {
+    const article: Article | undefined = this.findArticle(articleId);
+    if (article === undefined || html.length === 0) {
+      return '';
+    }
+    const fragment: string = articleContentService.adoptRenderedHtml(article, html);
+    if (fragment.length > 0) {
+      article.offlineState = fragment.startsWith('<!--hrv9-->') || fragment.startsWith('<!--hrv8-->')
+        ? 'full' : 'text';
+    }
+    return fragment;
+  }
+
   /** 清空某篇的 Reader 缓存，迫使下次重新提取（详情页「重新提取」用）。 */
   clearReaderHtml(articleId: string): void {
     for (let i = 0; i < this.all.length; i += 1) {
@@ -2319,10 +2357,13 @@ export class FeedViewModel {
 
   private recomputeUnread(): void {
     const counts: Map<string, number> = new Map<string, number>();
+    const articleCounts: Map<string, number> = new Map<string, number>();
     let total: number = 0;
     let shown: number = 0;
     for (let i = 0; i < this.all.length; i += 1) {
       const item: Article = this.all[i];
+      const articleCount: number | undefined = articleCounts.get(item.feedId);
+      articleCounts.set(item.feedId, (articleCount === undefined ? 0 : articleCount) + 1);
       // 隐藏文章不参与未读统计（主列表 / 分组 / 订阅源角标口径一致）。
       if (item.hidden || item.read) {
         continue;
@@ -2338,6 +2379,8 @@ export class FeedViewModel {
       const feed: FeedSource = this.feeds[i];
       const count: number | undefined = counts.get(feed.id);
       feed.unreadCount = count === undefined ? 0 : count;
+      const articleCount: number | undefined = articleCounts.get(feed.id);
+      feed.articleCount = articleCount === undefined ? 0 : articleCount;
     }
     this.unreadTotal = total;
     this.unreadShown = shown;

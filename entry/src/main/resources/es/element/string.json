@@ -313,6 +313,14 @@
       "value": "%d sin leer"
     },
     {
+      "name": "menu_section_sort",
+      "value": "Ordenación"
+    },
+    {
+      "name": "menu_section_group",
+      "value": "Agrupación"
+    },
+    {
       "name": "sort_newest",
       "value": "Más recientes primero"
     },
@@ -499,6 +507,14 @@
     {
       "name": "widget_refresh",
       "value": "Actualizar datos de la tarjeta"
+    },
+    {
+      "name": "continuation_failed",
+      "value": "No se pudo restaurar el artículo en este dispositivo. ¿Abrir la página original?"
+    },
+    {
+      "name": "widget_animate",
+      "value": "Reproducir animación de la tarjeta"
     },
     {
       "name": "notify_action_mark_read",
@@ -805,6 +821,14 @@
       "value": "Volver a extraer el artículo"
     },
     {
+      "name": "action_extract_rendered",
+      "value": "Extraer el artículo de esta página"
+    },
+    {
+      "name": "article_reader_ready",
+      "value": "Artículo extraído. Se cambió al modo lectura."
+    },
+    {
       "name": "action_copy_link",
       "value": "Copiar enlace"
     },
@@ -1045,12 +1069,20 @@
       "value": "Modo lectura"
     },
     {
+      "name": "article_web_load_failed",
+      "value": "No se pudo cargar la página."
+    },
+    {
       "name": "article_reader_failed",
       "value": "No se pudo extraer el artículo. Se muestra la página original."
     },
     {
       "name": "article_reader_placeholder",
       "value": "Esta página necesita JavaScript. Se muestra la página original."
+    },
+    {
+      "name": "reader_short_body_hint",
+      "value": "Puede que esto sea solo un resumen. La página original puede tener más contenido."
     },
     {
       "name": "article_prev",

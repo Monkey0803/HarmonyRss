@@ -26,7 +26,7 @@ import {
   HdsTabsFloatingStyle,
   HdsBarWidthRangeOptions
 } from '@kit.UIDesignKit';
-import { display, SymbolGlyphModifier } from '@kit.ArkUI';
+import { display } from '@kit.ArkUI';
 import { KeyCode } from '@kit.InputKit';
 import { Article } from '../model/Feed';
 import { GroupSource } from '../model/Dedupe';
@@ -40,6 +40,7 @@ import { settingsViewModel } from '../viewmodel/SettingsViewModel';
 import { ReadSettingsSheet } from './ReadSettingsSheet';
 import { ToastUtil } from '../common/utils/ToastUtil';
 import { toPlainText } from '../common/utils/HtmlText';
+import { UrlText } from '../common/utils/UrlText';
 import { screenAwake } from '../service/ScreenAwake';
 import { readerSpeech, SpeechProgress, SpeechStatus } from '../service/ReaderSpeech';
 import { speechLanguageOf } from '../service/ReaderSpeechLanguage';
@@ -60,7 +61,7 @@ import {
   runFindScript
 } from '../service/ReaderFind';
 import { readerStyle } from '../service/ReaderStyle';
-import { ReaderPlaceholderError } from '../service/ReaderContentGuard';
+import { ReaderNeedsJsError, ReaderPlaceholderError } from '../service/ReaderContentGuard';
 import { TocEntry, collectTocScript, gotoHeadingScript } from '../service/ReaderToc';
 import { imageAtPointScript } from '../service/ReaderImage';
 import { readerImageSave } from '../service/ReaderImageSave';
@@ -79,6 +80,7 @@ import {
 } from '../service/ReaderHighlight';
 import { Highlight, HighlightColor } from '../model/Highlight';
 import { articleStore } from '../service/ArticleStore';
+import { readingContinuation } from '../service/ReadingContinuation';
 import {
   parsePosition,
   ReaderPosition,
@@ -105,6 +107,8 @@ import {
   MEDIA_PLAYING,
   mediaPlayerService
 } from '../service/MediaPlayerService';
+import { AppMenu } from '../common/components/AppMenu';
+import { MenuItemSpec, MenuSpec } from '../common/components/MenuSpec';
 
 const DOMAIN: number = 0x0000;
 const TAG: string = 'ArticleDetailView';
@@ -118,8 +122,37 @@ const MODE_WEB: string = ReaderViewMode.WEB;
 const SWIPE_DISTANCE_VP: number = 60;
 /** 过度滚动触发「触底检测」的最小位移（vp）。 */
 const OVERSCROLL_TRIGGER_VP: number = 24;
+/** 正文纯文本短于这个字符数时，认为可能只取到了摘要，给一个「网页原文」提示入口。 */
+const SHORT_BODY_HINT_CHARS: number = 500;
 /** 标题下方标签条的固定高度（vp）：正文整体下移同样高度，chips 才不会压住首行文字。 */
 const TAG_STRIP_VP: number = 44;
+
+/** 网页原文渲染后抓快照的延迟（毫秒）：等首屏排版 / 懒加载图片稳定后再取 DOM。 */
+const WEB_SNAPSHOT_DELAY_MS: number = 1800;
+
+/**
+ * 解出 runJavaScript 回传的字符串。
+ * ArkWeb 可能把结果 JSON 序列化一次（甚至两次），这里最多剥两层引号包裹再返回。
+ */
+function decodeJsResultString(raw: string): string {
+  let value: string = raw;
+  for (let i = 0; i < 2; i += 1) {
+    const trimmed: string = value.trim();
+    if (trimmed.length === 0 || trimmed.charAt(0) !== '"') {
+      break;
+    }
+    try {
+      const parsed: string = JSON.parse(trimmed) as string;
+      if (typeof parsed !== 'string') {
+        break;
+      }
+      value = parsed;
+    } catch (err) {
+      break;
+    }
+  }
+  return value;
+}
 
 /** 目录采集脚本回传的原始项（只读，逐字段校验后再转 TocEntry）。 */
 interface TocRaw {
@@ -136,6 +169,8 @@ export struct ArticleDetailView {
   /** 当前阅读模式。 */
   @Local viewMode: string = appSettings.readerViewMode;
   @Local loading: boolean = true;
+  /** 网页原文主文档加载失败；子资源失败不遮住可读正文。 */
+  @Local webFailed: boolean = false;
   /** 提取失败：可退网页原文 / 纯文本。 */
   @Local readerFailed: boolean = false;
   @Local offlineBusy: boolean = false;
@@ -152,6 +187,10 @@ export struct ArticleDetailView {
   private finished: boolean = false;
   /** 触底检测在途标记（避免过度滚动事件重复触发 runJavaScript）。 */
   private bottomCheckPending: boolean = false;
+  /** 网页原文渲染后的快照在途标记（SPA 站点：抓一次 DOM 存成离线正文）。 */
+  private webSnapshotPending: boolean = false;
+  /** 已经抓过快照的文章 id：同一篇只抓一次，避免翻页时反复执行脚本。 */
+  private webSnapshotArticleId: string = '';
   /** 「阅读排版」半模态面板显隐。 */
   /**
    * 半模态面板当前显示哪一种内容：'' 关闭 / 'read' 阅读排版 / 'hlList' 标注列表 / 'hlEdit' 标注编辑 /
@@ -171,6 +210,8 @@ export struct ArticleDetailView {
   private lastPolledY: number = -1;
   private pendingProgress: ReaderPosition | undefined = undefined;
   private pendingProgressArticleId: string = '';
+  /** 当前会话内分别记住 Reader 与网页原文的位置，切回原模式时不复用另一种排版的坐标。 */
+  private modePositions: Map<string, ReaderPosition> = new Map<string, ReaderPosition>();
   /** 正文里选中的文本（Web 的 onTextSelectionChange 回调）；非空时显示「复制/分享选段」浮条。 */
   @Local selectedText: string = '';
   /** 当前文章的标注（本地库读出；正文里靠注入脚本重放高亮）。 */
@@ -210,6 +251,8 @@ export struct ArticleDetailView {
   });
   /** 沉浸阅读：只隐藏页内底部操作条（点按正文中部切换；标题栏由外壳的滚动显隐控制）。 */
   @Local bottomBarHidden: boolean = false;
+  /** 短正文提示是否已被用户关掉（切文时复位；提示本身按当前文章内容实时判断）。 */
+  @Local shortBodyHintClosed: boolean = false;
   /** 横向手势的起手点（px），用于避让系统边缘返回手势。 */
   private panStartX: number = -1;
   /** 导航栈：「只看该源」要退回首页列表（范围 chip 在首页顶部）。 */
@@ -366,11 +409,22 @@ export struct ArticleDetailView {
     }
     this.finished = true;
     this.clearQueuedProgress();
+    this.clearModePositions(article.id);
     feedViewModel.markFinished(article.id);
+  }
+
+  private positionKey(articleId: string, mode: string): string {
+    return articleId + '|' + mode;
+  }
+
+  private clearModePositions(articleId: string): void {
+    this.modePositions.delete(this.positionKey(articleId, MODE_READER));
+    this.modePositions.delete(this.positionKey(articleId, MODE_WEB));
   }
 
   /** 滚动时最多每 1.2 秒写一次；切文和离开页面时立即冲刷最后的位置。 */
   private queueProgress(articleId: string, position: ReaderPosition): void {
+    this.modePositions.set(this.positionKey(articleId, this.viewMode), position);
     this.pendingProgressArticleId = articleId;
     this.pendingProgress = position;
     if (this.progressSaveTimer >= 0) {
@@ -769,7 +823,12 @@ export struct ArticleDetailView {
       if (html.length > 0) {
         this.readerHtml = html;
         this.viewMode = MODE_READER;
-        if (!NetworkStatus.isOnline() && /<img\b[^>]*\bsrc="https?:/i.test(html)) {
+        // 提取成功说明这个站点不再需要「只用网页原文」：清掉站点记忆，下次照常走阅读器。
+        if (article.link.length > 0) {
+          settingsStore.preferReaderSite(UrlText.host(article.link));
+        }
+        const hasRemoteImage: boolean = /<img\b[^>]*\bsrc="https?:/i.test(html);
+        if (hasRemoteImage && (html.startsWith('<!--hrv9p-->') || !NetworkStatus.isOnline())) {
           this.toast($r('app.string.article_offline_images_pending'));
         }
         if (webMounted) {
@@ -786,7 +845,7 @@ export struct ArticleDetailView {
       }
       const error: BusinessError = err as BusinessError;
       hilog.warn(DOMAIN, TAG, 'reader extract failed: %{public}d', error.code);
-      this.onReaderFailed(err instanceof ReaderPlaceholderError);
+      this.onReaderFailed(err instanceof ReaderPlaceholderError || err instanceof ReaderNeedsJsError);
     }
   }
 
@@ -874,7 +933,7 @@ export struct ArticleDetailView {
   }
 
   /** 提取失败：有链接就退网页原文，否则退纯文本（loading 由对应视图的 onPageEnd 收尾）。 */
-  private onReaderFailed(placeholder: boolean = false): void {
+  private onReaderFailed(needsWebRender: boolean = false): void {
     this.readerFailed = true;
     const article: Article | undefined = feedViewModel.currentArticle();
     if (!NetworkStatus.isOnline()) {
@@ -885,9 +944,12 @@ export struct ArticleDetailView {
       return;
     }
     if (article !== undefined && article.link.length > 0) {
+      // 记住这个站点：正文需要 JS 渲染 / 静态提取失败，下次直接进网页原文。
+      settingsStore.rememberReaderSiteWeb(UrlText.host(article.link));
       this.viewMode = MODE_WEB;
+      this.webFailed = false;
       this.loading = true;
-      this.toast(placeholder ? $r('app.string.article_reader_placeholder') : $r('app.string.article_reader_failed'));
+      this.toast(needsWebRender ? $r('app.string.article_reader_placeholder') : $r('app.string.article_reader_failed'));
     } else {
       this.viewMode = MODE_READER;
       this.readerHtml = '';
@@ -903,6 +965,18 @@ export struct ArticleDetailView {
     this.viewMode = mode;
     appSettings.readerViewMode = mode;
     settingsStore.save();
+    // 同时记住「这个站点」的选择：网页原文 → 下次该站直接进 Web；
+    // 正文 → 忘掉之前「需要 JS」的记录。
+    const article: Article | undefined = feedViewModel.currentArticle();
+    if (article === undefined || article.link.length === 0) {
+      return;
+    }
+    const host: string = UrlText.host(article.link);
+    if (mode === MODE_WEB) {
+      settingsStore.rememberReaderSiteWeb(host);
+    } else {
+      settingsStore.preferReaderSite(host);
+    }
   }
 
   // ---- 标签（标题下方 chips） ----
@@ -1178,6 +1252,7 @@ export struct ArticleDetailView {
     this.speechSegmentId = -1;
     if (this.viewMode === MODE_READER) {
       this.applyViewMode(MODE_WEB);
+      this.webFailed = false;
       this.loading = true;
     } else {
       this.applyViewMode(MODE_READER);
@@ -1278,6 +1353,8 @@ export struct ArticleDetailView {
     this.findCount = 0;
     this.findIndex = 0;
     this.readerFailed = false;
+    this.webFailed = false;
+    this.shortBodyHintClosed = false;
     this.webProgressRestored = false;
     this.readerProgressRestored = false;
     // 新文章的 chips 可能不同：顶部让位需要按新文章重新注入。
@@ -1323,6 +1400,103 @@ export struct ArticleDetailView {
     this.startReader();
   }
 
+  /**
+   * 网页原文 → 正文：把已渲染的 DOM 交回提取器。
+   * Tabs / 远程数据渲染完的页面，静态 HTML 里没有正文，只有这一步能拿到。
+   */
+  private async extractRenderedPage(): Promise<void> {
+    const article: Article | undefined = feedViewModel.currentArticle();
+    if (article === undefined || article.link.length === 0) {
+      return;
+    }
+    const articleId: string = article.id;
+    let raw: string = '';
+    try {
+      raw = await this.webController.runJavaScript('JSON.stringify(document.documentElement.outerHTML)');
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.warn(DOMAIN, TAG, 'read rendered dom failed: %{public}d', error.code);
+      this.toast($r('app.string.article_reader_failed'));
+      return;
+    }
+    const html: string = decodeJsResultString(raw);
+    if (html.length === 0) {
+      this.toast($r('app.string.article_reader_failed'));
+      return;
+    }
+    const fragment: string = feedViewModel.adoptRenderedHtml(articleId, html);
+    if (fragment.length === 0) {
+      this.toast($r('app.string.article_reader_failed'));
+      return;
+    }
+    if (feedViewModel.currentArticle()?.id !== articleId) {
+      return;
+    }
+    this.stopProgressPolling();
+    this.persistWebProgress();
+    this.readerHtml = fragment;
+    this.readerFailed = false;
+    this.webFailed = false;
+    this.readerProgressRestored = false;
+    this.shortBodyHintClosed = false;
+    // 用户主动选择正文 → 记住该站点，并把全局偏好也切回阅读器。
+    this.applyViewMode(MODE_READER);
+    this.toast($r('app.string.article_reader_ready'));
+  }
+
+  /**
+   * SPA 站点进入网页原文后，等页面渲染稳定再抓一次 DOM 存成正文（离线可读）。
+   * 只对「之前提取失败过」的 host 执行，普通站点不额外跑脚本。
+   */
+  private scheduleWebSnapshot(): void {
+    const article: Article | undefined = feedViewModel.currentArticle();
+    if (article === undefined || article.link.length === 0 || this.webSnapshotPending) {
+      return;
+    }
+    if (article.readerHtml.length > 0 || this.webSnapshotArticleId === article.id) {
+      return;
+    }
+    if (!NetworkStatus.isOnline() || !settingsStore.isReaderSiteWebPreferred(UrlText.host(article.link))) {
+      return;
+    }
+    const articleId: string = article.id;
+    this.webSnapshotPending = true;
+    setTimeout(() => {
+      this.webSnapshotPending = false;
+      this.captureWebSnapshot(articleId).catch((err: BusinessError) => {
+        hilog.warn(DOMAIN, TAG, 'web snapshot failed: %{public}d', err.code);
+      });
+    }, WEB_SNAPSHOT_DELAY_MS);
+  }
+
+  /** 抓网页原文的 DOM 存成正文缓存（不切模式，静默失败）。 */
+  private async captureWebSnapshot(articleId: string): Promise<void> {
+    const article: Article | undefined = feedViewModel.currentArticle();
+    if (article === undefined || article.id !== articleId || this.viewMode !== MODE_WEB) {
+      return;
+    }
+    if (this.webSnapshotArticleId === articleId) {
+      return;
+    }
+    this.webSnapshotArticleId = articleId;
+    let raw: string = '';
+    try {
+      raw = await this.webController.runJavaScript('JSON.stringify(document.documentElement.outerHTML)');
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.warn(DOMAIN, TAG, 'snapshot read dom failed: %{public}d', error.code);
+      return;
+    }
+    const html: string = decodeJsResultString(raw);
+    if (html.length === 0) {
+      return;
+    }
+    const fragment: string = feedViewModel.adoptRenderedHtml(articleId, html);
+    if (fragment.length > 0) {
+      hilog.info(DOMAIN, TAG, 'web snapshot cached (%{public}d chars)', fragment.length);
+    }
+  }
+
   private async downloadCurrentOffline(retry: boolean): Promise<void> {
     const article: Article | undefined = feedViewModel.currentArticle();
     if (article === undefined || this.offlineBusy) {
@@ -1363,6 +1537,28 @@ export struct ArticleDetailView {
     this.toast(cleared ? $r('app.string.offline_single_cleared') : $r('app.string.offline_single_failed'));
   }
 
+  /** 重载失败的网页原文，不重置文章的阅读位置。 */
+  private retryWeb(): void {
+    this.webFailed = false;
+    this.loading = true;
+    this.webProgressRestored = false;
+    try {
+      this.webController.refresh();
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.warn(DOMAIN, TAG, 'reload web failed: %{public}d', error.code);
+      this.webFailed = true;
+      this.loading = false;
+    }
+  }
+
+  /** 只将顶层页面的加载错误显示为错误页。 */
+  private failWeb(): void {
+    this.stopProgressPolling();
+    this.webFailed = true;
+    this.loading = false;
+  }
+
   /** 横向滑动：左滑下一篇、右滑上一篇（竖向留给正文滚动）。 */
   private onHorizontalPan(deltaX: number): void {
     // 起手点必须在屏幕中间带：贴左右边缘的滑动优先交给系统返回手势，避免互相抢。
@@ -1396,6 +1592,10 @@ export struct ArticleDetailView {
     if (this.finished || this.bottomCheckPending) {
       return;
     }
+    const articleId: string = feedViewModel.currentArticle()?.id ?? '';
+    if (articleId.length === 0) {
+      return;
+    }
     this.bottomCheckPending = true;
     controller.runJavaScript(
       '(window.scrollY + window.innerHeight >= document.body.scrollHeight - 8) ? "1" : "0"',
@@ -1407,167 +1607,119 @@ export struct ArticleDetailView {
         if (value.indexOf('1') < 0) {
           return;
         }
-        const article: Article | undefined = feedViewModel.currentArticle();
-        if (article !== undefined) {
+        if (feedViewModel.currentArticle()?.id === articleId) {
           this.finished = true;
-          feedViewModel.markFinished(article.id);
+          this.clearModePositions(articleId);
+          feedViewModel.markFinished(articleId);
         }
       });
   }
 
-  /**
-   * 菜单项前置图标：HM Symbol 必须走 symbolStartIcon（startIcon 不支持符号图标）。
-   * 尺寸与页面里其它图标一致。
-   */
-  private menuIcon(icon: Resource): SymbolGlyphModifier {
-    const modifier: SymbolGlyphModifier = new SymbolGlyphModifier(icon);
-    modifier.fontSize($r('app.float.icon_size'));
-    return modifier;
-  }
-
-  /** 溢出菜单：重新提取 / 复制链接 / 浏览器打开 / 分享。 */
+  /** 溢出菜单：重新提取 / 复制链接 / 浏览器打开 / 分享（统一交给 AppMenu 渲染，规格现算）。 */
   @Builder
   ActionsMenu(article: Article) {
-    Menu() {
-      MenuItem({
-        content: article.offlineState === 'full' ? $r('app.string.offline_full') :
-          (article.offlineState === 'text' || article.offlineState === 'partial' ?
-            $r('app.string.offline_partial') : $r('app.string.offline_single_download')),
-        symbolStartIcon: this.menuIcon($r('sys.symbol.arrow_down'))
-      })
-        .enabled(!this.offlineBusy && article.offlineState === 'none')
-        .onClick(() => { this.downloadCurrentOffline(false); })
-      if (article.offlineState === 'text' || article.offlineState === 'partial') {
-        MenuItem({ content: $r('app.string.offline_single_retry'),
-          symbolStartIcon: this.menuIcon($r('sys.symbol.arrow_clockwise')) })
-          .enabled(!this.offlineBusy)
-          .onClick(() => { this.downloadCurrentOffline(true); })
-      }
-      if (article.offlineState !== 'none') {
-        MenuItem({ content: $r('app.string.offline_single_clear'),
-          symbolStartIcon: this.menuIcon($r('sys.symbol.trash')) })
-          .enabled(!this.offlineBusy)
-          .onClick(() => { this.clearCurrentOffline(); })
-      }
-      MenuItem({
-        content: $r('app.string.action_reader_retry'),
-        symbolStartIcon: this.menuIcon($r('sys.symbol.arrow_clockwise'))
-      })
-        .onClick(() => {
-          this.retryReader();
-        })
-      MenuItem({
-        content: this.speaking ? $r('app.string.action_stop_speech') : $r('app.string.action_start_speech'),
-        symbolStartIcon: this.menuIcon(this.speaking ? $r('sys.symbol.stop_circle') : $r('sys.symbol.speaker'))
-      })
-        .onClick(() => {
-          this.toggleSpeech();
-        })
-      if (this.audioOf(article) !== undefined) {
-        MenuItem({
-          content: $r('app.string.media_play_audio_feed'),
-          symbolStartIcon: this.menuIcon($r('sys.symbol.headphones'))
-        })
-          .onClick(() => {
-            this.playAudio(false);
-          })
-        MenuItem({
-          content: $r('app.string.media_play_audio_all'),
-          symbolStartIcon: this.menuIcon($r('sys.symbol.headphones'))
-        })
-          .onClick(() => {
-            this.playAudio(true);
-          })
-      }
-      if (this.videoOf(article) !== undefined) {
-        MenuItem({
-          content: $r('app.string.media_open_video'),
-          symbolStartIcon: this.menuIcon($r('sys.symbol.play_video'))
-        })
-          .onClick(() => {
-            this.openVideo();
-          })
-      }
-      MenuItem({
-        content: $r('app.string.action_toc'),
-        symbolStartIcon: this.menuIcon($r('sys.symbol.text_alignleft'))
-      })
-        .onClick(() => {
-          this.openToc();
-        })
-      MenuItem({
-        content: $r('app.string.action_find_in_article'),
-        symbolStartIcon: this.menuIcon($r('sys.symbol.magnifyingglass'))
-      })
-        .onClick(() => {
-          this.openFind();
-        })
-      MenuItem({
-        content: $r('app.string.translate_action_full'),
-        symbolStartIcon: this.menuIcon($r('sys.symbol.translate'))
-      })
-        .onClick(() => {
-          this.openTranslation();
-        })
-      MenuItem({
-        content: $r('app.string.action_copy_body'),
-        symbolStartIcon: this.menuIcon($r('sys.symbol.text_clipboard'))
-      })
-        .onClick(() => {
-          this.copyBody();
-        })
-      MenuItem({
-        content: $r('app.string.action_share_body'),
-        symbolStartIcon: this.menuIcon($r('sys.symbol.share'))
-      })
-        .onClick(() => {
-          this.shareBody();
-        })
-      MenuItem({
-        content: $r('app.string.action_copy_link'),
-        symbolStartIcon: this.menuIcon($r('sys.symbol.link'))
-      })
-        .onClick(() => {
-          this.copyLink(article);
-        })
-      MenuItem({
-        content: $r('app.string.hl_panel_entry'),
-        symbolStartIcon: this.menuIcon($r('sys.symbol.paintpalette'))
-      })
-        .onClick(() => {
-          this.openSheet('hlList');
-        })
-      MenuItem({
-        content: $r('app.string.action_scope_feed'),
-        symbolStartIcon: this.menuIcon($r('sys.symbol.folder'))
-      })
-        .onClick(() => {
-          this.scopeToThisFeed(article);
-        })
-      MenuItem({
-        content: $r('app.string.action_open_browser'),
-        symbolStartIcon: this.menuIcon($r('sys.symbol.arrow_right_up_and_square'))
-      })
-        .onClick(() => {
-          this.openInBrowser(article);
-        })
-      MenuItem({
-        content: $r('app.string.action_share'),
-        symbolStartIcon: this.menuIcon($r('sys.symbol.share'))
-      })
-        .onClick(() => {
-          this.openSharePanel();
-        })
+    AppMenu(this.actionsMenuSpec(article));
+  }
+
+  /**
+   * 溢出菜单的规格：条目、条件分支与顺序与改造前逐条一致，不许增删或重排。
+   * 图标走 withIcon（HM Symbol），下载中置灰走 withEnabled，
+   * 「清除离线缓存」是删除动作标危险色。
+   */
+  private actionsMenuSpec(article: Article): MenuSpec {
+    const items: MenuItemSpec[] = [];
+    // 离线状态文案：已存全量 / 仅文本 / 未存；只有「未存」且空闲时可点。
+    const offlineLabel: ResourceStr = article.offlineState === 'full' ? $r('app.string.offline_full') :
+      (article.offlineState === 'text' || article.offlineState === 'partial' ?
+        $r('app.string.offline_partial') : $r('app.string.offline_single_download'));
+    items.push(new MenuItemSpec('offline_download', offlineLabel, (): void => {
+      this.downloadCurrentOffline(false);
+    }).withIcon($r('sys.symbol.arrow_down'))
+      .withEnabled(!this.offlineBusy && article.offlineState === 'none'));
+    if (article.offlineState === 'text' || article.offlineState === 'partial') {
+      items.push(new MenuItemSpec('offline_retry', $r('app.string.offline_single_retry'), (): void => {
+        this.downloadCurrentOffline(true);
+      }).withIcon($r('sys.symbol.arrow_clockwise'))
+        .withEnabled(!this.offlineBusy));
     }
-    .radius($r('app.float.radius_card'))
+    if (article.offlineState !== 'none') {
+      items.push(new MenuItemSpec('offline_clear', $r('app.string.offline_single_clear'), (): void => {
+        this.clearCurrentOffline();
+      }).withIcon($r('sys.symbol.trash'))
+        .withEnabled(!this.offlineBusy)
+        .markDanger());
+    }
+    items.push(new MenuItemSpec('reader_retry', $r('app.string.action_reader_retry'), (): void => {
+      this.retryReader();
+    }).withIcon($r('sys.symbol.arrow_clockwise')));
+    // 网页原文模式：把已渲染的 DOM 再提取一次（SPA 站点只有 JS 跑完才有正文）。
+    if (this.viewMode === MODE_WEB && article.link.length > 0) {
+      items.push(new MenuItemSpec('render_extract', $r('app.string.action_extract_rendered'), (): void => {
+        this.extractRenderedPage();
+      }).withIcon($r('sys.symbol.magnifyingglass')));
+    }
+    items.push(new MenuItemSpec('speech',
+      this.speaking ? $r('app.string.action_stop_speech') : $r('app.string.action_start_speech'), (): void => {
+        this.toggleSpeech();
+      }).withIcon(this.speaking ? $r('sys.symbol.stop_circle') : $r('sys.symbol.speaker')));
+    if (this.audioOf(article) !== undefined) {
+      items.push(new MenuItemSpec('audio_feed', $r('app.string.media_play_audio_feed'), (): void => {
+        this.playAudio(false);
+      }).withIcon($r('sys.symbol.headphones')));
+      items.push(new MenuItemSpec('audio_all', $r('app.string.media_play_audio_all'), (): void => {
+        this.playAudio(true);
+      }).withIcon($r('sys.symbol.headphones')));
+    }
+    if (this.videoOf(article) !== undefined) {
+      items.push(new MenuItemSpec('video', $r('app.string.media_open_video'), (): void => {
+        this.openVideo();
+      }).withIcon($r('sys.symbol.play_video')));
+    }
+    items.push(new MenuItemSpec('toc', $r('app.string.action_toc'), (): void => {
+      this.openToc();
+    }).withIcon($r('sys.symbol.text_alignleft')));
+    items.push(new MenuItemSpec('find', $r('app.string.action_find_in_article'), (): void => {
+      this.openFind();
+    }).withIcon($r('sys.symbol.magnifyingglass')));
+    items.push(new MenuItemSpec('translate', $r('app.string.translate_action_full'), (): void => {
+      this.openTranslation();
+    }).withIcon($r('sys.symbol.translate')));
+    items.push(new MenuItemSpec('copy_body', $r('app.string.action_copy_body'), (): void => {
+      this.copyBody();
+    }).withIcon($r('sys.symbol.text_clipboard')));
+    items.push(new MenuItemSpec('share_body', $r('app.string.action_share_body'), (): void => {
+      this.shareBody();
+    }).withIcon($r('sys.symbol.share')));
+    items.push(new MenuItemSpec('copy_link', $r('app.string.action_copy_link'), (): void => {
+      this.copyLink(article);
+    }).withIcon($r('sys.symbol.link')));
+    items.push(new MenuItemSpec('highlight_list', $r('app.string.hl_panel_entry'), (): void => {
+      this.openSheet('hlList');
+    }).withIcon($r('sys.symbol.paintpalette')));
+    items.push(new MenuItemSpec('scope_feed', $r('app.string.action_scope_feed'), (): void => {
+      this.scopeToThisFeed(article);
+    }).withIcon($r('sys.symbol.folder')));
+    items.push(new MenuItemSpec('open_browser', $r('app.string.action_open_browser'), (): void => {
+      this.openInBrowser(article);
+    }).withIcon($r('sys.symbol.arrow_right_up_and_square')));
+    items.push(new MenuItemSpec('share', $r('app.string.action_share'), (): void => {
+      this.openSharePanel();
+    }).withIcon($r('sys.symbol.share')));
+    return MenuSpec.fromItems(items);
   }
 
   aboutToAppear(): void {
+    readingContinuation.setDetailVisible(true);
     // 恢复上次用的阅读模式：上次停在「网页原文」时直接进 Web，
     // 不能再跑一遍 startReader()（它会无条件把 viewMode 拽回阅读器）。
     const article: Article | undefined = feedViewModel.currentArticle();
     this.progressRatio = article?.progressRatio ?? 0;
-    if (appSettings.readerViewMode === MODE_WEB && article !== undefined && article.link.length > 0) {
+    // 站点记忆：该 host 之前正文提取失败过（SPA 空壳），直接进网页原文，
+    // 不再每篇都白跑一次「抓 HTML → 提取失败 → 回退」。
+    const siteNeedsWeb: boolean = article !== undefined && article.link.length > 0 &&
+      settingsStore.isReaderSiteWebPreferred(UrlText.host(article.link));
+    if ((appSettings.readerViewMode === MODE_WEB || siteNeedsWeb) &&
+      article !== undefined && article.link.length > 0) {
       this.viewMode = MODE_WEB;
       this.loading = true;
     } else {
@@ -1584,6 +1736,7 @@ export struct ArticleDetailView {
 
   /** 离开详情页：恢复系统息屏策略，并按当前模式取一次滚动位置写回。 */
   aboutToDisappear(): void {
+    readingContinuation.setDetailVisible(false);
     if (this.prefetchTimer >= 0) {
       clearTimeout(this.prefetchTimer);
       this.prefetchTimer = -1;
@@ -1613,18 +1766,23 @@ export struct ArticleDetailView {
    *
    * 注意不能只 scrollTo 一次：SPA 在 onPageEnd 之后还会继续长内容，那时文档还太短，
    * 一次性滚动会被忽略 / 被后续渲染顶掉。所以注入一段带重试的脚本，每 250ms 校正一次，
-   * 最多 3 秒，或者一旦真的落到目标位置就停。
+   * 持续 5 秒以覆盖图片晚加载；用户主动操作会立即停止校正。
    */
   private restoreScrollProgress(controller: webview.WebviewController, restored: boolean): void {
     if (restored) {
       return;
     }
     const article: Article | undefined = feedViewModel.currentArticle();
-    if (article === undefined || (article.progress <= 0 && article.progressRatio <= 0)) {
+    if (article === undefined) {
       return;
     }
-    this.progressReadyAt = Date.now() + 3200;
-    this.runRestore(controller, new ReaderPosition(article.progress, article.progressRatio));
+    const position: ReaderPosition = this.modePositions.get(this.positionKey(article.id, this.viewMode)) ??
+      new ReaderPosition(article.progress, article.progressRatio);
+    if (position.y <= 0 && position.ratio <= 0) {
+      return;
+    }
+    this.progressReadyAt = Date.now() + 5200;
+    this.runRestore(controller, position);
   }
 
   /**
@@ -1744,6 +1902,8 @@ export struct ArticleDetailView {
    */
   private handleBodyTouch(event: TouchEvent): void {
     if (event.type === TouchType.Down) {
+      // 用户主动触摸会取消文档内的恢复脚本，下一次轮询可立即记住新位置。
+      this.progressReadyAt = 0;
       if (event.touches.length > 0) {
         // 组件内坐标（vp）用于图片命中；窗口坐标保留给「点按屏幕中部」的沉浸判定。
         this.tapLocalX = event.touches[0].x;
@@ -1822,7 +1982,7 @@ export struct ArticleDetailView {
     if (article === undefined || article.link.length === 0 || this.finished) {
       return;
     }
-    this.readScrollY(this.webController, article.id);
+    this.readScrollY(this.webController, article.id, MODE_WEB);
   }
 
   private persistReaderProgress(): void {
@@ -1830,11 +1990,11 @@ export struct ArticleDetailView {
     if (article === undefined || this.readerHtml.length === 0 || this.finished) {
       return;
     }
-    this.readScrollY(this.readerController, article.id);
+    this.readScrollY(this.readerController, article.id, MODE_READER);
   }
 
   /** 读一次文档位置（px + 比例）并写回本地库。 */
-  private readScrollY(controller: webview.WebviewController, articleId: string): void {
+  private readScrollY(controller: webview.WebviewController, articleId: string, mode: string): void {
     controller.runJavaScript(readPositionScript(), (err: BusinessError, value: string) => {
       if (err) {
         hilog.warn(DOMAIN, TAG, 'read scroll position failed: %{public}d', err.code);
@@ -1847,6 +2007,7 @@ export struct ArticleDetailView {
         return;
       }
       const position: ReaderPosition = parsePosition(value);
+      this.modePositions.set(this.positionKey(articleId, mode), position);
       feedViewModel.saveProgress(articleId, position.y, position.ratio);
     });
   }
@@ -2614,7 +2775,7 @@ export struct ArticleDetailView {
               this.loading = false;
               const article: Article | undefined = feedViewModel.currentArticle();
               this.progressReadyAt = article !== undefined &&
-                (article.progress > 0 || article.progressRatio > 0) ? Date.now() + 3200 : 0;
+                (article.progress > 0 || article.progressRatio > 0) ? Date.now() + 5200 : 0;
               this.startProgressPolling(this.readerController);
               this.readerController.runJavaScript(speechManualScrollScript()).catch(() => {});
               this.replayHighlights(this.readerController);
@@ -2682,6 +2843,16 @@ export struct ArticleDetailView {
           .onLoadIntercept((event: OnLoadInterceptEvent) => {
             return this.handleLinkIntercept(event);
           })
+          .onErrorReceive((event: OnErrorReceiveEvent) => {
+            if (event.request.isMainFrame()) {
+              this.failWeb();
+            }
+          })
+          .onHttpErrorReceive((event: OnHttpErrorReceiveEvent) => {
+            if (event.request.isMainFrame()) {
+              this.failWeb();
+            }
+          })
           .onTextSelectionChange((selectionText: string) => {
             if (this.selectedText !== selectionText) {
               this.selectedText = selectionText;
@@ -2692,10 +2863,13 @@ export struct ArticleDetailView {
             this.handleBodyTouch(event);
           })
           .onPageEnd(() => {
+            if (this.webFailed) {
+              return;
+            }
             this.loading = false;
             const article: Article | undefined = feedViewModel.currentArticle();
             this.progressReadyAt = article !== undefined &&
-              (article.progress > 0 || article.progressRatio > 0) ? Date.now() + 3200 : 0;
+              (article.progress > 0 || article.progressRatio > 0) ? Date.now() + 5200 : 0;
             // 网页原文的排版只能靠注入：按设置覆盖正文字号 / 行距 / 字体族 + 顶部 / 底部让位。
             const topPad: number = this.readerTopPad();
             this.appliedTopPad = topPad;
@@ -2709,6 +2883,8 @@ export struct ArticleDetailView {
               this.restoreWebProgress();
             }
             this.schedulePrefetch();
+            // SPA 站点：渲染稳定后抓一次 DOM 存成正文，离线也能读。
+            this.scheduleWebSnapshot();
           })
           .onOverScroll((event: OnOverScrollEvent) => {
             if (Math.abs(event.yOffset) >= OVERSCROLL_TRIGGER_VP) {
@@ -2731,12 +2907,36 @@ export struct ArticleDetailView {
         if (this.loading) {
           this.LoadingVeil()
         }
+        if (this.webFailed) {
+          this.WebErrorState()
+        }
       }
       .width('100%')
       .height('100%')
       .backgroundColor($r('app.color.hm_web_surface'))
       .clip(true)
     }
+  }
+
+  /** 网页原文不可用时给出明确的恢复路径。 */
+  @Builder
+  WebErrorState() {
+    Column({ space: $r('app.float.space_m') }) {
+      Text($r('app.string.article_web_load_failed'))
+        .fontSize($r('app.float.font_size_body'))
+        .fontColor($r('app.color.hm_text_primary'))
+        .textAlign(TextAlign.Center)
+      Row({ space: $r('app.float.space_s') }) {
+        Button($r('app.string.action_retry'))
+          .onClick(() => { this.retryWeb(); })
+        Button($r('app.string.action_open_browser'))
+          .onClick(() => { this.openInBrowser(this.cur()); })
+      }
+    }
+    .width('100%')
+    .height('100%')
+    .justifyContent(FlexAlign.Center)
+    .backgroundColor($r('app.color.hm_web_surface'))
   }
 
   /** 提取正文兜底：feed 里能拿到的纯文本 + 原文链接。 */
@@ -2865,6 +3065,96 @@ export struct ArticleDetailView {
         bottom: $r('app.float.space_s')
       })
       .margin({ left: $r('app.float.space_l'), right: $r('app.float.space_l'), top: $r('app.float.space_s') })
+      .backgroundColor($r('app.color.hm_card_background'))
+      .borderRadius($r('app.float.radius_card'))
+      .alignItems(VerticalAlign.Center)
+    }
+  }
+
+  /**
+   * 正文纯文本长度（字符）。
+   * 优先用落库的 plainText；缺失时用当前正文现算，但对内联过大图（base64）的文档跳过，
+   * 避免每次 build 都去正则扫几 MB 的字符串。
+   */
+  private readerBodyChars(): number {
+    const plain: string = this.cur().plainText;
+    if (plain.length > 0) {
+      return plain.trim().length;
+    }
+    if (this.readerHtml.length > 0 && this.readerHtml.length < 262144) {
+      return toPlainText(this.readerHtml).trim().length;
+    }
+    return 0;
+  }
+
+  /**
+   * 是否提示「这段可能只是摘要」：正文本就短、文章有外链、用户还没关掉过这个提示。
+   * 典型场景：Show HN 这类投稿，feed 自带正文只有一段介绍，真实内容在需要 JS 渲染的站点上，
+   * 静态提取拿不到（例如 wikihack.netlify.app 的 HTML 只有 <div id="root"></div>）。
+   */
+  private shouldHintShortBody(): boolean {
+    if (this.viewMode !== MODE_READER || this.shortBodyHintClosed || !this.hasArticle()) {
+      return false;
+    }
+    const link: string = this.cur().link;
+    if (!/^https?:\/\//i.test(link)) {
+      return false;
+    }
+    const chars: number = this.readerBodyChars();
+    return chars > 0 && chars < SHORT_BODY_HINT_CHARS;
+  }
+
+  /** 提示里的动作：切到网页原文（真实内容常由页面 JS 渲染，只有网页原文能看到）。 */
+  private openWebForShortBody(): void {
+    this.shortBodyHintClosed = true;
+    if (this.viewMode === MODE_READER) {
+      this.switchMode();
+    }
+  }
+
+  /** 正文偏短提示条：贴在底栏上方，说明可能只取到摘要，并给一键切网页原文的入口。 */
+  @Builder
+  ShortBodyHint() {
+    if (this.shouldHintShortBody()) {
+      Row({ space: $r('app.float.space_xs') }) {
+        SymbolGlyph($r('sys.symbol.exclamationmark_circle'))
+          .fontSize($r('app.float.icon_size_small'))
+          .fontColor([$r('app.color.hm_text_secondary')])
+        Text($r('app.string.reader_short_body_hint'))
+          .fontSize($r('app.float.font_size_caption'))
+          .fontColor($r('app.color.hm_text_secondary'))
+          .maxLines(2)
+          .textOverflow({ overflow: TextOverflow.Ellipsis })
+          .layoutWeight(1)
+        Button($r('app.string.article_mode_web'))
+          .buttonStyle(ButtonStyleMode.TEXTUAL)
+          .fontSize($r('app.float.font_size_caption'))
+          .fontColor($r('app.color.hm_brand'))
+          .padding({ left: $r('app.float.space_xxs'), right: $r('app.float.space_xxs') })
+          .onClick(() => {
+            this.openWebForShortBody();
+          })
+        SymbolGlyph($r('sys.symbol.xmark'))
+          .fontSize($r('app.float.icon_size_small'))
+          .fontColor([$r('app.color.hm_text_secondary')])
+          .padding($r('app.float.space_xxs'))
+          .accessibilityText($r('app.string.dialog_cancel'))
+          .onClick(() => {
+            this.shortBodyHintClosed = true;
+          })
+      }
+      .width('100%')
+      .padding({
+        left: $r('app.float.space_l'),
+        right: $r('app.float.space_m'),
+        top: $r('app.float.space_s'),
+        bottom: $r('app.float.space_s')
+      })
+      .margin({
+        left: $r('app.float.space_l'),
+        right: $r('app.float.space_l'),
+        bottom: $r('app.float.space_s')
+      })
       .backgroundColor($r('app.color.hm_card_background'))
       .borderRadius($r('app.float.radius_card'))
       .alignItems(VerticalAlign.Center)
@@ -3138,7 +3428,7 @@ export struct ArticleDetailView {
       .margin({
         left: $r('app.float.space_l'),
         right: $r('app.float.space_l'),
-        bottom: $r('app.float.selection_bar_gap')
+        bottom: $r('app.float.space_s')
       })
       .backgroundColor($r('app.color.hm_card_background'))
       .borderRadius($r('app.float.radius_card'))
@@ -3340,27 +3630,20 @@ export struct ArticleDetailView {
       // 只做底衬，标题与返回键仍由 HDS 原生标题栏绘制（不在上面再画一层栏）。
       this.TopScrim()
 
-      // 底栏：沉浸态下收起（高度 + 透明度动画；内容底部预留是固定的，收起后只是多点留白）
-      Column() {
-        this.FloatingBar()
-      }
-      .width('100%')
-      .height(this.bottomBarHidden ? 0 : this.barStripHeight())
-      .opacity(this.bottomBarHidden ? 0 : 1)
-      .clip(true)
-      .animation({ duration: 180, curve: Curve.Friction })
-
       Column() {
         Blank()
+          .hitTestBehavior(HitTestMode.None)
         this.ProgressBadge()
       }
       .width('100%')
       .height('100%')
       .hitTestBehavior(HitTestMode.None)
 
-      // 底部浮层：朗读条 + 选段条（都贴在底栏上方）
+      // 底部浮层：短正文提示 + 朗读条 + 选段条，都排在「底栏上方」那一段（padding 让出底栏高度）
       Column() {
         Blank()
+          .hitTestBehavior(HitTestMode.None)
+        this.ShortBodyHint()
         this.MediaBar()
         this.SpeechBar()
         this.SelectionBar()
@@ -3369,6 +3652,10 @@ export struct ArticleDetailView {
       .height('100%')
       .justifyContent(FlexAlign.End)
       .alignItems(HorizontalAlign.Center)
+      // 让出底栏那一条：这些浮条贴在底栏之上，不再和悬浮操作栏重叠（重叠会被底栏盖住）。
+      .padding({ bottom: this.barStripHeight() })
+      // 这里必须是 Transparent 而不是 None：None 会让整层（含里面的提示卡 / 播放条）不参与命中，
+      // 点按会穿透到正文，表现为「提示条上的按钮点不动」。
       .hitTestBehavior(HitTestMode.Transparent)
 
       // 查找条层：贴标题栏下方（只占自身高度，不挡正文滚动）
@@ -3383,7 +3670,7 @@ export struct ArticleDetailView {
       .justifyContent(FlexAlign.Start)
       .alignItems(HorizontalAlign.Start)
       // 只让查找条自己吃手势，空白区域透传给正文（否则整层会挡住 Web 滚动与点按）。
-      .hitTestBehavior(HitTestMode.Transparent)
+      .hitTestBehavior(HitTestMode.None)
 
       // 进度条层：铺满整页、内容贴顶，但不吃手势（正文滚动 / 点按照常）。
       Column() {
@@ -3409,7 +3696,27 @@ export struct ArticleDetailView {
       .height('100%')
       .justifyContent(FlexAlign.Start)
       .alignItems(HorizontalAlign.Start)
-      .hitTestBehavior(HitTestMode.Transparent)
+      .hitTestBehavior(HitTestMode.None)
+
+      /**
+       * 底栏：必须画在所有「铺满整页」的浮层（进度徽标 / 朗读条 / 查找条 / 进度线 / 标签条）之上，
+       * 只让图片全屏查看器压在它上面。
+       *
+       * 为什么顺序要紧：这些浮层即使自身是 HitTestMode.None / Transparent，层里铺满全屏的
+       * Blank / Row 占位仍会参与触摸测试，而它们和底栏是同一个 Stack 的兄弟节点 —— 命中判定先落在
+       * 上面那层，底栏整棵子树就再也收不到 touch（表现为：底栏图标全部点不动，只能透传给正文）。
+       * 所以底栏放在浮层之后、查看器之前，是这里唯一正确的层次。
+       *
+       * 沉浸态下收起（高度 + 透明度动画；内容底部预留是固定的，收起后只是多点留白）。
+       */
+      Column() {
+        this.FloatingBar()
+      }
+      .width('100%')
+      .height(this.bottomBarHidden ? 0 : this.barStripHeight())
+      .opacity(this.bottomBarHidden ? 0 : 1)
+      .clip(true)
+      .animation({ duration: 180, curve: Curve.Friction })
 
       // 图片全屏查看器：盖在最上层，自带黑色背景与保存控件。
       if (this.viewerOpen && this.viewerSrc.length > 0) {

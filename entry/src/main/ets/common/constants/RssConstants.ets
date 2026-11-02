@@ -281,6 +281,18 @@ export enum ReaderState {
   FAILED = 'failed'
 }
 
+/**
+ * feed 自带正文的用途分类。
+ *   FULL    —— 段落 / 结构足够，可直接当正文；
+ *   SUMMARY —— 只是一句简介（典型：Show HN 帖子的投稿说明），应联网抓原文；
+ *   NONE    —— 空 / 纯链接堆，不能用。
+ */
+export enum FeedBodyKind {
+  FULL = 'full',
+  SUMMARY = 'summary',
+  NONE = 'none'
+}
+
 /** 正文提取 / 抓取的阈值（纯逻辑常量）。 */
 export class ReaderConstants {
   /** 单篇 Reader HTML 长度上限，防止超长文档拖慢 Web 渲染。 */
@@ -296,6 +308,22 @@ export class ReaderConstants {
   static readonly MIN_FEED_BODY_CHARS: number = 160;
   /** feed 自带正文里链接文本的占比上限：超过说明是链接列表，不是正文。 */
   static readonly MAX_FEED_BODY_LINK_RATIO: number = 0.5;
+  /**
+   * feed 自带正文被当作「完整正文」的最小纯文本量（字符）。
+   * 低于此值即使有段落也只是一段简介（Show HN / 投稿说明），应联网抓原文；
+   * 抓不到时仍用简介兜底，界面上会提示「可能只是摘要」。
+   */
+  static readonly MIN_FULL_FEED_BODY_CHARS: number = 1200;
+  /** 结构化判定：至少这么多段落才算正文（配合 MIN_FULL_FEED_BODY_STRUCTURED_CHARS）。 */
+  static readonly MIN_FULL_FEED_BODY_PARAGRAPHS: number = 3;
+  /** 段落够多时仍需的最小纯文本量（字符）。 */
+  static readonly MIN_FULL_FEED_BODY_STRUCTURED_CHARS: number = 600;
+  /** 结构丰富（标题 / 列表 / 图片等）时的最小纯文本量（字符）。 */
+  static readonly MIN_FULL_FEED_BODY_RICH_CHARS: number = 400;
+  /** 判定「页面只是 SPA 空壳」时允许的最大原始 HTML（字符）：再大就不像是空壳了。 */
+  static readonly MAX_SPA_SHELL_HTML_CHARS: number = 300 * 1024;
+  /** SPA 空壳里允许的最大可见文本（字符）：多于此值说明静态页至少还有内容。 */
+  static readonly MAX_SPA_SHELL_TEXT_CHARS: number = 400;
   /** 单篇内联图片的 base64 字符上限（约 240KB 原图），超过则保留远程链接不缓存。 */
   static readonly MAX_INLINE_IMAGE_CHARS: number = 320 * 1024;
   /** 单篇内联图片总量上限（所有 data URI 合计）。 */

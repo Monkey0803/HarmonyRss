@@ -313,6 +313,14 @@
       "value": "未読 %d 件"
     },
     {
+      "name": "menu_section_sort",
+      "value": "並べ替え"
+    },
+    {
+      "name": "menu_section_group",
+      "value": "グループ化"
+    },
+    {
       "name": "sort_newest",
       "value": "新しい順"
     },
@@ -499,6 +507,14 @@
     {
       "name": "widget_refresh",
       "value": "カードを更新"
+    },
+    {
+      "name": "continuation_failed",
+      "value": "この端末で記事を復元できませんでした。元のページを開きますか？"
+    },
+    {
+      "name": "widget_animate",
+      "value": "カードのアニメーションを再生"
     },
     {
       "name": "notify_action_mark_read",
@@ -805,6 +821,14 @@
       "value": "記事を再抽出"
     },
     {
+      "name": "action_extract_rendered",
+      "value": "このページから本文を抽出"
+    },
+    {
+      "name": "article_reader_ready",
+      "value": "本文を抽出しました。リーダーモードに切り替えました。"
+    },
+    {
       "name": "action_copy_link",
       "value": "リンクをコピー"
     },
@@ -1045,12 +1069,20 @@
       "value": "リーダーモード"
     },
     {
+      "name": "article_web_load_failed",
+      "value": "ページを読み込めませんでした。"
+    },
+    {
       "name": "article_reader_failed",
       "value": "本文を抽出できませんでした。原文ページを表示します。"
     },
     {
       "name": "article_reader_placeholder",
       "value": "このページには JavaScript が必要です。原文ページを表示します。"
+    },
+    {
+      "name": "reader_short_body_hint",
+      "value": "要約のみの可能性があります。元のページにさらに内容があるかもしれません。"
     },
     {
       "name": "article_prev",
