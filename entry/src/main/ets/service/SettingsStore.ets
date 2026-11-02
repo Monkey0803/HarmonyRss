@@ -87,10 +87,50 @@ function readKeywords(raw: preferences.ValueType, fallback: string[]): string[] 
 /** 只能靠 JS 渲染的站点上限：只保留最近记录的这些，避免偏好库无限增长。 */
 const MAX_READER_WEB_SITES: number = 300;
 
+/**
+ * 站点记忆的有效期：超时后重新尝试静态正文提取。
+ * 一次偶发失败（超时 / 断网）不应该让某个站点永久停在加载更慢的网页原文。
+ */
+const READER_WEB_SITE_TTL_MS: number = 7 * 24 * 60 * 60 * 1000;
+
+/** 偏好库里的站点记忆条目（host + 记录时间）。旧版本只有 host 字符串。 */
+interface ReaderWebSiteMemoRaw {
+  host: string;
+  at: number;
+}
+
 export class SettingsStore {
   private store: preferences.Preferences | undefined = undefined;
-  /** 正文提取失败过、下次应直接进网页原文的站点（host，小写）。 */
-  private readerWebSites: Set<string> = new Set<string>();
+  /** 正文提取失败过、下次应直接进网页原文的站点（host → 记录时间，小写）。 */
+  private readerWebSites: Map<string, number> = new Map<string, number>();
+
+  /** 解析站点记忆：兼容旧的纯字符串数组（没有时间戳，按过期处理）。 */
+  private readReaderWebSiteMemos(raw: string): ReaderWebSiteMemoRaw[] {
+    const result: ReaderWebSiteMemoRaw[] = [];
+    try {
+      const parsed: Object = JSON.parse(raw) as Object;
+      if (!Array.isArray(parsed)) {
+        return result;
+      }
+      const values: Object[] = parsed as Object[];
+      for (let i = 0; i < values.length && result.length < MAX_READER_WEB_SITES; i += 1) {
+        const item: Object = values[i];
+        if (typeof item === 'string') {
+          result.push({ host: item as string, at: 0 });
+          continue;
+        }
+        const memo: ReaderWebSiteMemoRaw = item as ReaderWebSiteMemoRaw;
+        const host: string = typeof memo.host === 'string' ? memo.host : '';
+        const at: number = typeof memo.at === 'number' && Number.isFinite(memo.at) ? memo.at : 0;
+        if (host.length > 0) {
+          result.push({ host: host, at: at });
+        }
+      }
+    } catch (err) {
+      return result;
+    }
+    return result;
+  }
 
   private readStringArray(raw: string): string[] {
     try {
@@ -190,14 +230,20 @@ export class SettingsStore {
         store.getSync(PreferencesConstants.KEY_HOME_FILTER, appSettings.homeFilter) as string);
       appSettings.readerViewMode = normalizeReaderViewMode(
         store.getSync(PreferencesConstants.KEY_READER_VIEW_MODE, appSettings.readerViewMode) as string);
-      // 记录「只能靠 JS 渲染」的站点：脏值一律忽略，读回后只保留 host 形态的项。
+      // 记录「只能靠 JS 渲染」的站点：脏值一律忽略，读回后只保留 host 形态且未过期的项。
       this.readerWebSites.clear();
-      const siteModes: string[] = this.readStringArray(
+      const siteMemos: ReaderWebSiteMemoRaw[] = this.readReaderWebSiteMemos(
         store.getSync(PreferencesConstants.KEY_READER_SITE_MODES, '[]') as string);
-      for (let i = 0; i < siteModes.length; i += 1) {
-        const host: string = siteModes[i].trim().toLowerCase();
+      const now: number = Date.now();
+      for (let i = 0; i < siteMemos.length; i += 1) {
+        const host: string = siteMemos[i].host.trim().toLowerCase();
+        const recordedAt: number = siteMemos[i].at;
+        // 旧格式没有时间戳（0）：视为已过期，让站点重新尝试一次正文提取。
+        if (recordedAt <= 0 || now - recordedAt > READER_WEB_SITE_TTL_MS) {
+          continue;
+        }
         if (host.length > 0 && host.indexOf(' ') < 0 && host.indexOf('/') < 0) {
-          this.readerWebSites.add(host);
+          this.readerWebSites.set(host, recordedAt);
         }
       }
       appSettings.lastTabIndex = store.getSync(PreferencesConstants.KEY_LAST_TAB, appSettings.lastTabIndex) as number;
@@ -585,21 +631,34 @@ export class SettingsStore {
 
   // ---- 站点级阅读模式（哪些站点的正文只能靠 JS 渲染） ----
 
-  /** 该站点是否应直接进网页原文（之前正文提取失败过）。 */
+  /** 该站点是否应直接进网页原文（之前正文提取失败过，且记忆还没过期）。 */
   isReaderSiteWebPreferred(host: string): boolean {
-    return host.length > 0 && this.readerWebSites.has(host.toLowerCase());
+    const key: string = host.trim().toLowerCase();
+    if (key.length === 0) {
+      return false;
+    }
+    const recordedAt: number | undefined = this.readerWebSites.get(key);
+    if (recordedAt === undefined) {
+      return false;
+    }
+    return Date.now() - recordedAt <= READER_WEB_SITE_TTL_MS;
   }
 
   /** 记住「这个站点需要网页原文」：下次打开直接进 Web，省掉一次必然失败的抓取 + 提取。 */
   rememberReaderSiteWeb(host: string): void {
     const key: string = host.trim().toLowerCase();
-    if (key.length === 0 || this.readerWebSites.has(key)) {
+    if (key.length === 0) {
+      return;
+    }
+    const now: number = Date.now();
+    const recordedAt: number | undefined = this.readerWebSites.get(key);
+    if (recordedAt !== undefined && now - recordedAt <= READER_WEB_SITE_TTL_MS) {
       return;
     }
     if (this.readerWebSites.size >= MAX_READER_WEB_SITES) {
       this.readerWebSites.clear();
     }
-    this.readerWebSites.add(key);
+    this.readerWebSites.set(key, now);
     this.persistReaderWebSites();
   }
 
@@ -618,9 +677,9 @@ export class SettingsStore {
     if (store === undefined) {
       return;
     }
-    const list: string[] = [];
-    this.readerWebSites.forEach((host: string) => {
-      list.push(host);
+    const list: ReaderWebSiteMemoRaw[] = [];
+    this.readerWebSites.forEach((recordedAt: number, host: string) => {
+      list.push({ host: host, at: recordedAt });
     });
     try {
       store.putSync(PreferencesConstants.KEY_READER_SITE_MODES, JSON.stringify(list));

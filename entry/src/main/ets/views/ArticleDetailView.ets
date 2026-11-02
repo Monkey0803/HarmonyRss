@@ -944,8 +944,11 @@ export struct ArticleDetailView {
       return;
     }
     if (article !== undefined && article.link.length > 0) {
-      // 记住这个站点：正文需要 JS 渲染 / 静态提取失败，下次直接进网页原文。
-      settingsStore.rememberReaderSiteWeb(UrlText.host(article.link));
+      // 只在「确定性失败」（SPA 空壳 / 占位内容）时记住站点；
+      // 超时 / 断网 / 解析异常是一次性的，不能把站点永久锁进加载更慢的网页原文。
+      if (needsWebRender) {
+        settingsStore.rememberReaderSiteWeb(UrlText.host(article.link));
+      }
       this.viewMode = MODE_WEB;
       this.webFailed = false;
       this.loading = true;
@@ -1708,6 +1711,25 @@ export struct ArticleDetailView {
     return MenuSpec.fromItems(items);
   }
 
+  /**
+   * 站点被记为「需要网页原文」时：先确认这篇有没有 Reader 缓存。
+   * 有缓存就仍走正文（缓存命中不发请求），没有才进网页原文。
+   */
+  private async openSiteMemoArticle(article: Article): Promise<void> {
+    this.viewMode = MODE_READER;
+    this.loading = true;
+    await feedViewModel.ensureBodyLoaded(article.id);
+    if (feedViewModel.currentArticle()?.id !== article.id) {
+      return;
+    }
+    if (article.readerHtml.length > 0) {
+      this.startReader();
+      return;
+    }
+    this.viewMode = MODE_WEB;
+    this.loading = true;
+  }
+
   aboutToAppear(): void {
     readingContinuation.setDetailVisible(true);
     // 恢复上次用的阅读模式：上次停在「网页原文」时直接进 Web，
@@ -1716,12 +1738,18 @@ export struct ArticleDetailView {
     this.progressRatio = article?.progressRatio ?? 0;
     // 站点记忆：该 host 之前正文提取失败过（SPA 空壳），直接进网页原文，
     // 不再每篇都白跑一次「抓 HTML → 提取失败 → 回退」。
+    // 但这篇若已有 Reader 缓存，仍然优先正文：网页原文只会更慢，还浪费已缓存的内容。
     const siteNeedsWeb: boolean = article !== undefined && article.link.length > 0 &&
       settingsStore.isReaderSiteWebPreferred(UrlText.host(article.link));
-    if ((appSettings.readerViewMode === MODE_WEB || siteNeedsWeb) &&
-      article !== undefined && article.link.length > 0) {
+    if (appSettings.readerViewMode === MODE_WEB && article !== undefined && article.link.length > 0) {
       this.viewMode = MODE_WEB;
       this.loading = true;
+    } else if (siteNeedsWeb && article !== undefined) {
+      this.openSiteMemoArticle(article).catch((err: BusinessError) => {
+        hilog.warn(DOMAIN, TAG, 'open site memo article failed: %{public}d', err.code);
+        this.viewMode = MODE_WEB;
+        this.loading = true;
+      });
     } else {
       this.viewMode = MODE_READER;
       this.startReader();
