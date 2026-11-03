@@ -85,7 +85,7 @@ export struct LibraryQuickAccess {
         }
       })
       LibraryTile({
-        icon: $r('sys.symbol.checkmark_circle'),
+        icon: $r('sys.symbol.label'),
         label: $r('app.string.tag_title'),
         count: this.countOf('tags'),
         onOpen: () => {
