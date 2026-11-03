@@ -26,7 +26,7 @@ export class ReaderStyle {
    * 首行被推到标题栏下沿之外，滚动时正文继续从状态栏 / 标题栏下方穿过。
    * 底部也要补，否则文末文字会被悬浮操作栏挡住。
    */
-  buildCss(topPad: number = 0): string {
+  buildCss(topPad: number = 0, bottomPad: number = safeArea.contentBottomInsetVp): string {
     const size: number = ReaderTypography.fontSizePx(appSettings.readerFontScale);
     const line: number = size * ReaderTypography.lineHeightOf(appSettings.readerLineScale);
     // 网页原文模式只能覆盖文本容器：字号 / 行距 / 字体族 + 图片自适应 + 浮层让位内边距。
@@ -46,12 +46,13 @@ export class ReaderStyle {
       ':where(' + content + ') :where(img,video,table){max-width:100% !important;height:auto !important;}' +
       'body{-webkit-text-size-adjust:100% !important;word-wrap:break-word !important;' +
       topRule +
-      'padding-bottom:' + safeArea.contentBottomInsetVp + 'px !important;}';
+      'padding-bottom:' + bottomPad + 'px !important;}';
   }
 
   /** 注入（幂等：重复调用只更新同一条 style 的内容）。 */
-  apply(controller: webview.WebviewController, topPad: number = 0): void {
-    const escapedCss: string = JSON.stringify(this.buildCss(topPad));
+  apply(controller: webview.WebviewController, topPad: number = 0,
+    bottomPad: number = safeArea.contentBottomInsetVp): void {
+    const escapedCss: string = JSON.stringify(this.buildCss(topPad, bottomPad));
     const script: string = '(function(){var d=document;var s=d.getElementById("' + STYLE_ID + '");' +
       'if(!s){s=d.createElement("style");s.id="' + STYLE_ID + '";(d.head||d.documentElement).appendChild(s);}' +
       's.textContent=' + escapedCss + ';})()';

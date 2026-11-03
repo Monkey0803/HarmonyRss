@@ -26,7 +26,7 @@ import {
   HdsTabsFloatingStyle,
   HdsBarWidthRangeOptions
 } from '@kit.UIDesignKit';
-import { display } from '@kit.ArkUI';
+import { display, KeyboardAvoidMode } from '@kit.ArkUI';
 import { KeyCode } from '@kit.InputKit';
 import { Article } from '../model/Feed';
 import { GroupSource } from '../model/Dedupe';
@@ -139,6 +139,9 @@ const OVERSCROLL_TRIGGER_VP: number = 24;
 const SHORT_BODY_HINT_CHARS: number = 500;
 /** 标题下方标签条的固定高度（vp）：正文整体下移同样高度，chips 才不会压住首行文字。 */
 const TAG_STRIP_VP: number = 44;
+/** 底部双行查找面板：40vp 输入行 + 40vp 操作行 + 4vp 行距 + 16vp 上下内边距。 */
+const FIND_BAR_HEIGHT_VP: number = 100;
+const FIND_CONTROL_HEIGHT_VP: number = 40;
 
 /** 网页原文渲染后抓快照的延迟（毫秒）：等首屏排版 / 懒加载图片稳定后再取 DOM。 */
 const WEB_SNAPSHOT_DELAY_MS: number = 1800;
@@ -273,6 +276,8 @@ export struct ArticleDetailView {
   @Local findQuery: string = '';
   @Local findCount: number = 0;
   @Local findIndex: number = 0;
+  @Local findInputActivated: boolean = false;
+  private previousKeyboardAvoidMode: KeyboardAvoidMode | undefined = undefined;
   /** 当前文章纯文本缓存（复制正文 / 分享正文 / 朗读用）：按文章 id 失效。 */
   private plainTextCache: string = '';
   private plainTextCacheId: string = '';
@@ -351,12 +356,23 @@ export struct ArticleDetailView {
     return this.viewMode === MODE_WEB ? this.webController : this.readerController;
   }
 
-  /** 打开查找条：注入高亮支持（幂等），并聚焦输入框由用户输入。 */
-  private openFind(): void {
+  /** 进入底部查找模式；输入框由用户点按后才唤起键盘。 */
+  private enterFindMode(): void {
+    this.findInputActivated = false;
+    if (this.previousKeyboardAvoidMode === undefined) {
+      this.previousKeyboardAvoidMode = this.getUIContext().getKeyboardAvoidMode();
+      this.getUIContext().setKeyboardAvoidMode(KeyboardAvoidMode.RESIZE);
+    }
     this.findOpen = true;
+    this.syncFindBottomInset();
+  }
+
+  /** 打开查找条：注入高亮支持（幂等），不自动弹键盘。 */
+  private openFind(): void {
     this.findQuery = '';
     this.findCount = 0;
     this.findIndex = 0;
+    this.enterFindMode();
     this.bodyController()
       .runJavaScript(findSupportScript())
       .catch((err: BusinessError) => {
@@ -398,7 +414,7 @@ export struct ArticleDetailView {
       return false;
     }
     feedViewModel.pendingSearchTerm = '';
-    this.findOpen = true;
+    this.enterFindMode();
     this.applyFind(term);
     return true;
   }
@@ -491,7 +507,15 @@ export struct ArticleDetailView {
   /** 关闭查找条：清掉高亮。 */
   private closeFind(): void {
     this.findOpen = false;
+    this.findInputActivated = false;
+    this.getUIContext().getFocusController().clearFocus();
+    const previous: KeyboardAvoidMode | undefined = this.previousKeyboardAvoidMode;
+    if (previous !== undefined) {
+      this.getUIContext().setKeyboardAvoidMode(previous);
+      this.previousKeyboardAvoidMode = undefined;
+    }
     this.clearFind();
+    this.syncFindBottomInset();
   }
 
   private clearFind(): void {
@@ -869,7 +893,7 @@ export struct ArticleDetailView {
     const start: number = Date.now();
     const topPad: number = this.readerTopPad();
     this.appliedTopPad = topPad;
-    const doc: string = buildReaderDocument(this.readerHtml, topPad, safeArea.contentBottomInsetVp);
+    const doc: string = buildReaderDocument(this.readerHtml, topPad, this.contentBottomInsetVp());
     try {
       this.readerController.loadData(doc, 'text/html', 'UTF-8', article.link);
       hilog.info(DOMAIN, TAG, 'perf docbuild=%{public}dms size=%{public}d',
@@ -891,6 +915,30 @@ export struct ArticleDetailView {
       + (this.hasTopChips() ? TAG_STRIP_VP : 0);
   }
 
+  /** 正文末尾留白跟随当前底栏高度，查找时可滚到双行面板上方。 */
+  private contentBottomInsetVp(): number {
+    return safeArea.contentBottomInsetVp +
+      (this.findOpen ? FIND_BAR_HEIGHT_VP - CommonConstants.TAB_BAR_HEIGHT_VP : 0);
+  }
+
+  /** 切换查找模式时原地更新已加载正文的底部留白。 */
+  private syncFindBottomInset(): void {
+    const topPad: number = this.readerTopPad();
+    const bottomPad: number = this.contentBottomInsetVp();
+    if (this.viewMode === MODE_WEB) {
+      readerStyle.apply(this.webController, topPad, bottomPad);
+    } else if (this.readerHtml.length > 0) {
+      try {
+        this.readerController.runJavaScript(readerStyleScript(topPad, bottomPad)).catch((err: BusinessError) => {
+          hilog.warn(DOMAIN, TAG, 'find inset inject failed: %{public}d', err.code);
+        });
+      } catch (err) {
+        const error: BusinessError = err as BusinessError;
+        hilog.warn(DOMAIN, TAG, 'find inset before attach failed: %{public}d', error.code);
+      }
+    }
+  }
+
   /** chips 异步就绪 / 变化后重新注入顶部让位（幂等：值没变直接返回）。 */
   private syncReaderInset(): void {
     const next: number = this.readerTopPad();
@@ -899,7 +947,7 @@ export struct ArticleDetailView {
     }
     if (this.viewMode === MODE_WEB) {
       this.appliedTopPad = next;
-      readerStyle.apply(this.webController, next);
+      readerStyle.apply(this.webController, next, this.contentBottomInsetVp());
       return;
     }
     if (this.readerHtml.length === 0) {
@@ -908,7 +956,7 @@ export struct ArticleDetailView {
     this.appliedTopPad = next;
     try {
       this.readerController
-        .runJavaScript(readerStyleScript(next, safeArea.contentBottomInsetVp))
+        .runJavaScript(readerStyleScript(next, this.contentBottomInsetVp()))
         .catch((err: BusinessError) => {
           hilog.warn(DOMAIN, TAG, 'inset inject failed: %{public}d', err.code);
         });
@@ -1350,6 +1398,10 @@ export struct ArticleDetailView {
       clearTimeout(this.prefetchTimer);
       this.prefetchTimer = -1;
     }
+    // 先结束旧文的查找，避免清理脚本误作用于新文档。
+    if (this.findOpen) {
+      this.closeFind();
+    }
     feedViewModel.openArticle(id);
     // 不重置 readerHtml：保持 Reader Web 挂载，随后直接换文档，避免 controller 失效。
     this.progressRatio = feedViewModel.currentArticle()?.progressRatio ?? 0;
@@ -1358,8 +1410,7 @@ export struct ArticleDetailView {
     readerSpeech.stop();
     this.speechFollow = true;
     this.speechSegmentId = -1;
-    // 查找条复位（新文章从完整界面开始）
-    this.findOpen = false;
+    // 新文章从完整界面开始。
     this.findQuery = '';
     this.findCount = 0;
     this.findIndex = 0;
@@ -1773,6 +1824,9 @@ export struct ArticleDetailView {
   /** 离开详情页：恢复系统息屏策略，并按当前模式取一次滚动位置写回。 */
   aboutToDisappear(): void {
     readingContinuation.setDetailVisible(false);
+    if (this.findOpen) {
+      this.closeFind();
+    }
     if (this.prefetchTimer >= 0) {
       clearTimeout(this.prefetchTimer);
       this.prefetchTimer = -1;
@@ -2350,7 +2404,7 @@ export struct ArticleDetailView {
       const topPad: number = this.readerTopPad();
       this.appliedTopPad = topPad;
       this.readerController
-        .runJavaScript(readerStyleScript(topPad, safeArea.contentBottomInsetVp))
+        .runJavaScript(readerStyleScript(topPad, this.contentBottomInsetVp()))
         .catch((err: BusinessError) => {
           // 文档还没就绪（或控制器失效）时注入会失败：退回整篇重建，保证排版最终生效。
           hilog.warn(DOMAIN, TAG, 'typography inject failed: %{public}d', err.code);
@@ -2361,22 +2415,22 @@ export struct ArticleDetailView {
     if (this.viewMode === MODE_WEB) {
       const webTopPad: number = this.readerTopPad();
       this.appliedTopPad = webTopPad;
-      readerStyle.apply(this.webController, webTopPad);
+      readerStyle.apply(this.webController, webTopPad, this.contentBottomInsetVp());
     }
   }
 
-  /**
-   * 操作栏（HdsTabs）在页面里占的条带高度：悬浮页签栏高度 + 系统导航条避让。
-   * 只占底部这一条，空页签内容不会盖住正文、也不会吃掉正文的手势。
-   */
+  /** 当前底栏高度：普通模式是 HdsTabs，查找模式是双行面板。 */
   private barStripHeight(): number {
-    return safeArea.bottomInsetVp + CommonConstants.TAB_BAR_HEIGHT_VP;
+    return safeArea.bottomInsetVp + (this.findOpen ? FIND_BAR_HEIGHT_VP : CommonConstants.TAB_BAR_HEIGHT_VP);
   }
 
   @Builder
   FloatingBar() {
     if (this.hasArticle()) {
-      ArticleActionBar({
+      if (this.findOpen) {
+        this.FindBar()
+      } else {
+        ArticleActionBar({
         canPrev: feedViewModel.prevArticleId().length > 0,
         canNext: feedViewModel.nextArticleId().length > 0,
         canNextUnread: feedViewModel.nextUnreadId().length > 0,
@@ -2393,7 +2447,8 @@ export struct ArticleDetailView {
         onMode: (): void => this.switchMode(),
         onStar: (): void => feedViewModel.toggleStar(this.cur().id),
         onTag: (): void => this.openTagSheet()
-      })
+        })
+      }
     }
   }
 
@@ -2443,7 +2498,7 @@ export struct ArticleDetailView {
       (article.progress > 0 || article.progressRatio > 0) ? Date.now() + 5200 : 0;
     const topPad: number = this.readerTopPad();
     this.appliedTopPad = topPad;
-    readerStyle.apply(this.webController, topPad);
+    readerStyle.apply(this.webController, topPad, this.contentBottomInsetVp());
     this.startProgressPolling(this.webController);
     this.replayHighlights(this.webController);
     if (this.consumePendingSearch()) {
@@ -2602,7 +2657,7 @@ export struct ArticleDetailView {
           left: $r('app.float.space_l'),
           right: $r('app.float.space_l'),
           // 底部预留：让文末文字能滚到悬浮底栏之上（含系统导航条避让）。
-          bottom: safeArea.contentBottomInsetVp
+          bottom: this.contentBottomInsetVp()
         })
         .alignItems(HorizontalAlign.Start)
       }
@@ -2639,29 +2694,66 @@ export struct ArticleDetailView {
     }
   }
 
-  /** 文内查找条：贴标题栏下方，输入即查、可上/下跳转。 */
+  /** 底部双行查找面板：输入与操作分行，暂时替换阅读工具栏。 */
   @Builder
   FindBar() {
-    if (this.findOpen) {
+    Row() {
+      Column({ space: $r('app.float.space_xs') }) {
       Row({ space: $r('app.float.space_s') }) {
         TextInput({ text: this.findQuery, placeholder: $r('app.string.find_hint') })
+          .id('articleFindInput')
           .type(InputType.Normal)
           .fontSize($r('app.float.font_size_caption'))
+          .height(FIND_CONTROL_HEIGHT_VP)
           .layoutWeight(1)
+          .focusable(this.findInputActivated)
+          .onClick(() => {
+            if (!this.findInputActivated) {
+              this.findInputActivated = true;
+              setTimeout(() => {
+                if (!this.findOpen || !this.findInputActivated) {
+                  return;
+                }
+                try {
+                  this.getUIContext().getFocusController().requestFocus('articleFindInput');
+                } catch (err) {
+                  const error: BusinessError = err as BusinessError;
+                  hilog.warn(DOMAIN, TAG, 'find input focus failed: %{public}d', error.code);
+                }
+              }, 80);
+            }
+          })
           .onChange((value: string) => {
             this.applyFind(value);
           })
 
-        Text(this.findCount > 0
+        SymbolGlyph($r('sys.symbol.xmark'))
+          .fontSize($r('app.float.icon_size_small'))
+          .fontColor([$r('app.color.hm_text_secondary')])
+          .width(FIND_CONTROL_HEIGHT_VP)
+          .height(FIND_CONTROL_HEIGHT_VP)
+          .accessibilityText($r('app.string.a11y_find_close'))
+          .onClick(() => {
+            this.closeFind();
+          })
+      }
+      .width('100%')
+      .height(FIND_CONTROL_HEIGHT_VP)
+
+      Row() {
+        Text(this.findQuery.length === 0 ? '' : (this.findCount > 0
           ? $r('app.string.find_count', this.findIndex + 1, this.findCount)
-          : $r('app.string.find_none'))
+          : $r('app.string.find_none')))
           .fontSize($r('app.float.font_size_caption'))
           .fontColor($r('app.color.hm_text_secondary'))
           .maxLines(1)
+          .layoutWeight(1)
 
         SymbolGlyph($r('sys.symbol.chevron_up'))
           .fontSize($r('app.float.icon_size_small'))
           .fontColor([this.findCount > 0 ? themePalette.accent() : $r('app.color.hm_text_secondary')])
+          .width(FIND_CONTROL_HEIGHT_VP)
+          .height(FIND_CONTROL_HEIGHT_VP)
           .accessibilityText($r('app.string.a11y_find_prev'))
           .enabled(this.findCount > 0)
           .onClick(() => {
@@ -2671,32 +2763,28 @@ export struct ArticleDetailView {
         SymbolGlyph($r('sys.symbol.chevron_down'))
           .fontSize($r('app.float.icon_size_small'))
           .fontColor([this.findCount > 0 ? themePalette.accent() : $r('app.color.hm_text_secondary')])
+          .width(FIND_CONTROL_HEIGHT_VP)
+          .height(FIND_CONTROL_HEIGHT_VP)
           .accessibilityText($r('app.string.a11y_find_next'))
           .enabled(this.findCount > 0)
           .onClick(() => {
             this.stepFind(1);
           })
-
-        SymbolGlyph($r('sys.symbol.xmark'))
-          .fontSize($r('app.float.icon_size_small'))
-          .fontColor([$r('app.color.hm_text_secondary')])
-          .accessibilityText($r('app.string.a11y_find_close'))
-          .onClick(() => {
-            this.closeFind();
-          })
       }
       .width('100%')
-      .padding({
-        left: $r('app.float.space_l'),
-        right: $r('app.float.space_l'),
-        top: $r('app.float.space_s'),
-        bottom: $r('app.float.space_s')
-      })
-      .margin({ left: $r('app.float.space_l'), right: $r('app.float.space_l'), top: $r('app.float.space_s') })
+      .height(FIND_CONTROL_HEIGHT_VP)
+      }
+      .width('100%')
+      .height(FIND_BAR_HEIGHT_VP)
+      .padding({ left: $r('app.float.space_l'), right: $r('app.float.space_l'),
+        top: $r('app.float.space_s'), bottom: $r('app.float.space_s') })
       .backgroundColor($r('app.color.hm_card_background'))
       .borderRadius($r('app.float.radius_card'))
-      .alignItems(VerticalAlign.Center)
     }
+    .width('100%')
+    .height(this.barStripHeight())
+    .padding({ left: $r('app.float.space_l'), right: $r('app.float.space_l'),
+      bottom: safeArea.bottomInsetVp })
   }
 
   /**
@@ -3286,20 +3374,6 @@ export struct ArticleDetailView {
       // 点按会穿透到正文，表现为「提示条上的按钮点不动」。
       .hitTestBehavior(HitTestMode.Transparent)
 
-      // 查找条层：贴标题栏下方（只占自身高度，不挡正文滚动）
-      Column() {
-        Row()
-          .width('100%')
-          .height(safeArea.contentTopInsetVp)
-        this.FindBar()
-      }
-      .width('100%')
-      .height('100%')
-      .justifyContent(FlexAlign.Start)
-      .alignItems(HorizontalAlign.Start)
-      // 只让查找条自己吃手势，空白区域透传给正文（否则整层会挡住 Web 滚动与点按）。
-      .hitTestBehavior(HitTestMode.None)
-
       // 进度条层：铺满整页、内容贴顶，但不吃手势（正文滚动 / 点按照常）。
       Column() {
         Row()
@@ -3327,7 +3401,7 @@ export struct ArticleDetailView {
       .hitTestBehavior(HitTestMode.None)
 
       /**
-       * 底栏：必须画在所有「铺满整页」的浮层（进度徽标 / 朗读条 / 查找条 / 进度线 / 标签条）之上，
+       * 底栏：必须画在所有「铺满整页」的浮层（进度徽标 / 朗读条 / 进度线 / 标签条）之上，
        * 只让图片全屏查看器压在它上面。
        *
        * 为什么顺序要紧：这些浮层即使自身是 HitTestMode.None / Transparent，层里铺满全屏的
