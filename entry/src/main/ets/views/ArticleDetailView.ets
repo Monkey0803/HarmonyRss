@@ -66,6 +66,17 @@ import { TocEntry, collectTocScript, gotoHeadingScript } from '../service/Reader
 import { imageAtPointScript } from '../service/ReaderImage';
 import { readerImageSave } from '../service/ReaderImageSave';
 import { ReaderImageViewer } from './ReaderImageViewer';
+import { ReaderBodyView } from './reader/ReaderBodyView';
+import { WebBodyView } from './reader/WebBodyView';
+import { ArticleActionBar } from './reader/ArticleActionBar';
+import {
+  ReadSheetView,
+  ShareSheetView,
+  SourcesPanelView,
+  TagSheetView,
+  TocSheetView,
+  TranslateSheetView
+} from './reader/DetailSheets';
 import { settingsStore } from '../service/SettingsStore';
 import { ReaderViewMode } from '../common/constants/RssConstants';
 import { buildReaderDocument, readerStyleScript } from '../service/ReaderDocument';
@@ -2012,67 +2023,6 @@ export struct ArticleDetailView {
     });
   }
 
-  /**
-   * 阅读导航：上一篇（在当前筛选范围内原地切换）。
-   * 图标化后把文字挪到无障碍标签，读屏仍能念出「上一篇 / 下一篇 / 下一条未读」。
-   */
-  @Builder
-  PrevNav() {
-    SymbolGlyph($r('sys.symbol.chevron_left'))
-      .fontSize($r('app.float.icon_size'))
-      .fontColor([feedViewModel.prevArticleId().length > 0
-        ? themePalette.accent() : $r('sys.color.font_tertiary')])
-      .padding($r('app.float.space_xs'))
-      .enabled(feedViewModel.prevArticleId().length > 0)
-      .accessibilityText($r('app.string.article_prev'))
-      .onClick(() => {
-        this.openRelative(feedViewModel.prevArticleId(), -1);
-      })
-  }
-
-  /** 阅读导航：下一篇。 */
-  @Builder
-  NextNav() {
-    SymbolGlyph($r('sys.symbol.chevron_right'))
-      .fontSize($r('app.float.icon_size'))
-      .fontColor([feedViewModel.nextArticleId().length > 0
-        ? themePalette.accent() : $r('sys.color.font_tertiary')])
-      .padding($r('app.float.space_xs'))
-      .enabled(feedViewModel.nextArticleId().length > 0)
-      .accessibilityText($r('app.string.article_next'))
-      .onClick(() => {
-        this.openRelative(feedViewModel.nextArticleId());
-      })
-  }
-
-  /** 阅读导航：下一条未读（底栏的主操作，随握持手镜像左右）。信封 + 未读点。 */
-  @Builder
-  NextUnreadNav() {
-    SymbolGlyph($r('sys.symbol.envelope_badge_dot'))
-      .fontSize($r('app.float.icon_size'))
-      .fontColor([feedViewModel.nextUnreadId().length > 0
-        ? themePalette.accent() : $r('sys.color.font_tertiary')])
-      .padding($r('app.float.space_xs'))
-      .enabled(feedViewModel.nextUnreadId().length > 0)
-      .accessibilityText($r('app.string.article_next_unread'))
-      .onClick(() => {
-        this.openRelative(feedViewModel.nextUnreadId());
-      })
-  }
-
-  /** 底栏操作：阅读排版（打开半模态面板：字号/行距连续可调 + 栏宽/对齐/主题/字体）。 */
-  @Builder
-  FontAction() {
-    SymbolGlyph($r('sys.symbol.textformat'))
-      .fontSize($r('app.float.icon_size'))
-      .fontColor([$r('sys.color.font_primary')])
-      .padding($r('app.float.space_xs'))
-      .accessibilityText($r('app.string.row_reader_font'))
-      .onClick(() => {
-        this.openSheet('read');
-      })
-  }
-
   /** 打开半模态并指定内容类型（'' 之外都要走这里，保证显隐与内容同步）。 */
   private openSheet(mode: string): void {
     this.sheetMode = mode;
@@ -2093,46 +2043,50 @@ export struct ArticleDetailView {
     } else if (this.sheetMode === 'hlEdit') {
       this.HighlightEditor()
     } else if (this.sheetMode === 'tags') {
-      this.TagSheet()
+      TagSheetView({
+        selectedTagIds: this.tagIds(),
+        onConfirm: (ids: string[]): void => {
+          this.applyTagSelection(ids);
+          this.closeSheet();
+        }
+      })
     } else if (this.sheetMode === 'sources') {
-      this.SourcesPanel()
+      SourcesPanelView({
+        sources: this.groupSources,
+        currentId: this.cur().id,
+        onOpen: (source: GroupSource): void => this.openSource(source)
+      })
     } else if (this.sheetMode === 'share') {
-      this.SharePanel()
+      ShareSheetView({
+        ability: this.hostContext(),
+        onClose: (): void => {
+          this.closeSheet();
+          shareViewModel.close();
+        }
+      })
     } else if (this.sheetMode === 'translate') {
-      this.TranslatePanel()
+      TranslateSheetView({
+        onClose: (): void => {
+          translationViewModel.close();
+          this.closeSheet();
+        },
+        onOpenSettings: (): void => {
+          translationViewModel.close();
+          this.closeSheet();
+          this.navPathStack.pushPath(new NavPathInfo(RouterConstants.PAGE_TRANSLATE_SETTINGS, ''));
+        }
+      })
     } else if (this.sheetMode === 'toc') {
-      this.TocSheet()
+      TocSheetView({
+        toc: this.toc,
+        onGoto: (index: number): void => this.gotoHeading(index)
+      })
     } else {
-      this.ReadSheet()
+      ReadSheetView({
+        webMode: this.viewMode === MODE_WEB,
+        onApply: (): void => this.applyTypography()
+      })
     }
-  }
-
-  /** 统一分享面板（上下文已在 openSharePanel 里写入 ShareViewModel）。 */
-  @Builder
-  SharePanel() {
-    ShareSheet({
-      ability: this.hostContext(),
-      onClose: () => {
-        this.closeSheet();
-        shareViewModel.close();
-      }
-    })
-  }
-
-  /** 正文翻译面板：打开时即有（缓存或刚刚发起）的结果。 */
-  @Builder
-  TranslatePanel() {
-    TranslateSheet({
-      onClose: () => {
-        translationViewModel.close();
-        this.closeSheet();
-      },
-      onOpenSettings: () => {
-        translationViewModel.close();
-        this.closeSheet();
-        this.navPathStack.pushPath(new NavPathInfo(RouterConstants.PAGE_TRANSLATE_SETTINGS, ''));
-      }
-    })
   }
 
   /** 打开目录：先从正文里采集标题，没有标题就给即时提示。 */
@@ -2183,142 +2137,6 @@ export struct ArticleDetailView {
       return [];
     }
     return result;
-  }
-
-  /** 目录面板：h1–h4 按层级缩进，点一条跳过去。 */
-  @Builder
-  TocSheet() {
-    Column({ space: $r('app.float.space_m') }) {
-      Text($r('app.string.toc_title'))
-        .fontSize($r('app.float.font_size_section'))
-        .fontWeight(FontWeight.Medium)
-        .fontColor($r('app.color.hm_text_primary'))
-        .width('100%')
-
-      List() {
-        ForEach(this.toc, (entry: TocEntry) => {
-          ListItem() {
-            Row({ space: $r('app.float.space_s') }) {
-              Row()
-                .width(Math.max(0, entry.level - 1) * 14)
-                .height(1)
-              Text(entry.text)
-                .fontSize(entry.level <= 2
-                  ? $r('app.float.font_size_body') : $r('app.float.font_size_caption'))
-                .fontWeight(entry.level === 2 ? FontWeight.Medium : FontWeight.Regular)
-                .fontColor($r('app.color.hm_text_primary'))
-                .maxLines(2)
-                .textOverflow({ overflow: TextOverflow.Ellipsis })
-                .layoutWeight(1)
-            }
-            .width('100%')
-            .padding({ top: $r('app.float.space_s'), bottom: $r('app.float.space_s') })
-            .alignItems(VerticalAlign.Center)
-            .onClick(() => {
-              this.gotoHeading(entry.index);
-            })
-          }
-        }, (entry: TocEntry) => entry.index.toString() + '_' + entry.text)
-      }
-      .width('100%')
-      .layoutWeight(1)
-      .scrollBar(BarState.Off)
-    }
-    .width('100%')
-    .height('100%')
-    .padding({
-      left: $r('app.float.space_l'),
-      right: $r('app.float.space_l'),
-      top: $r('app.float.space_m')
-    })
-    .alignItems(HorizontalAlign.Start)
-  }
-
-  /** 来源面板：列出合并组里的全部来源，点一条用系统浏览器打开对应链接。 */
-  @Builder
-  SourcesPanel() {
-    Column({ space: $r('app.float.space_m') }) {
-      Text($r('app.string.dedupe_sources_title'))
-        .fontSize($r('app.float.font_size_section'))
-        .fontWeight(FontWeight.Medium)
-        .fontColor($r('app.color.hm_text_primary'))
-        .width('100%')
-
-      if (this.groupSources.length === 0) {
-        Text($r('app.string.dedupe_group_empty'))
-          .fontSize($r('app.float.font_size_caption'))
-          .fontColor($r('app.color.hm_text_secondary'))
-          .width('100%')
-      } else {
-        // List 的 space 只收 string|number，间距放在条目 margin 上。
-        List() {
-          ForEach(this.groupSources, (source: GroupSource) => {
-            ListItem() {
-              Column({ space: $r('app.float.space_xs') }) {
-                Row({ space: $r('app.float.space_s') }) {
-                  Text(source.feedTitle.length > 0
-                    ? source.feedTitle
-                    : $r('app.string.dedupe_source_label'))
-                    .fontSize($r('app.float.font_size_body'))
-                    .fontColor($r('app.color.hm_text_primary'))
-                    .maxLines(1)
-                    .textOverflow({ overflow: TextOverflow.Ellipsis })
-                    .layoutWeight(1)
-
-                  if (source.articleId === this.cur().id) {
-                    Text($r('app.string.dedupe_source_current'))
-                      .fontSize($r('app.float.font_size_caption'))
-                      .fontColor(themePalette.accent())
-                      .height($r('app.float.value_chip_height'))
-                      .padding({ left: $r('app.float.space_s'), right: $r('app.float.space_s') })
-                      .backgroundColor($r('app.color.hm_value_chip_background'))
-                      .borderRadius($r('app.float.radius_chip'))
-                  }
-                }
-                .width('100%')
-
-                if (source.link.length > 0) {
-                  Text(source.link)
-                    .fontSize($r('app.float.font_size_caption'))
-                    .fontColor(themePalette.accent())
-                    .maxLines(1)
-                    .textOverflow({ overflow: TextOverflow.Ellipsis })
-                    .width('100%')
-                }
-              }
-              .width('100%')
-              .padding($r('app.float.space_m'))
-              .backgroundColor($r('app.color.hm_card_background'))
-              .borderRadius($r('app.float.radius_card'))
-              .alignItems(HorizontalAlign.Start)
-              .onClick(() => {
-                this.openSource(source);
-              })
-            }
-            .margin({ bottom: $r('app.float.space_s') })
-          }, (source: GroupSource) => source.articleId)
-        }
-        .width('100%')
-        .layoutWeight(1)
-        .scrollBar(BarState.Off)
-      }
-    }
-    .width('100%')
-    .height('100%')
-    .padding($r('app.float.space_l'))
-    .alignItems(HorizontalAlign.Start)
-  }
-
-  /** 标签选择器面板：复用 TagPickerSheet（详情页 / 批量打标同一套）。 */
-  @Builder
-  TagSheet() {
-    TagPickerSheet({
-      selectedTagIds: this.tagIds(),
-      onConfirm: (ids: string[]) => {
-        this.applyTagSelection(ids);
-        this.closeSheet();
-      }
-    })
   }
 
   /** 标注面板：列出本文全部标注，点一条跳过去，右侧「改色 / 备注 / 删除」。 */
@@ -2523,17 +2341,6 @@ export struct ArticleDetailView {
     return item === undefined ? '' : item.color;
   }
 
-  /** 排版面板内容（半模态：系统材质与三挡高度由统一宿主 AppSheet 注入）。 */
-  @Builder
-  ReadSheet() {
-    ReadSettingsSheet({
-      webMode: this.viewMode === MODE_WEB,
-      onApply: () => {
-        this.applyTypography();
-      }
-    })
-  }
-
   /**
    * 应用排版改动：Reader 模式原地替换文档里的 <style>（不重建文档，位置保持不变），
    * 网页原文模式只需重新注入覆盖样式（幂等）。
@@ -2558,131 +2365,6 @@ export struct ArticleDetailView {
     }
   }
 
-  /** 底栏操作：溢出菜单（重新提取 / 复制链接 / 浏览器打开 / 分享）。 */
-  @Builder
-  MoreAction() {
-    SymbolGlyph($r('sys.symbol.more'))
-      .fontSize($r('app.float.icon_size'))
-      .fontColor([$r('sys.color.font_primary')])
-      .padding($r('app.float.space_xs'))
-      .accessibilityText($r('app.string.action_more'))
-      .bindMenu(this.ActionsMenu(this.cur()), MaterialController.menuOptions({}, appSettings.immersiveOn))
-  }
-
-  /** 底栏操作：阅读模式切换（Reader ↔ 网页原文）。 */
-  @Builder
-  ModeAction() {
-    SymbolGlyph(this.viewMode === MODE_READER ? $r('sys.symbol.link') : $r('sys.symbol.doc_text'))
-      .fontSize($r('app.float.icon_size'))
-      .fontColor([$r('sys.color.font_primary')])
-      .padding($r('app.float.space_xs'))
-      .accessibilityText(this.viewMode === MODE_READER
-        ? $r('app.string.article_mode_web')
-        : $r('app.string.article_mode_reader'))
-      .onClick(() => {
-        this.switchMode();
-      })
-  }
-
-  /** 底栏操作：收藏（实心星 = 已收藏）。 */
-  @Builder
-  StarAction() {
-    SymbolGlyph(this.cur().starred ? $r('sys.symbol.star_fill') : $r('sys.symbol.star'))
-      .fontSize($r('app.float.icon_size'))
-      .fontColor([this.cur().starred ? themePalette.accent() : $r('sys.color.font_primary')])
-      .padding($r('app.float.space_xs'))
-      .accessibilityText(this.cur().starred ? $r('app.string.action_unstar') : $r('app.string.action_star'))
-      .onClick(() => {
-        feedViewModel.toggleStar(this.cur().id);
-      })
-  }
-
-  /** 底栏操作：打标签（打开标签选择器面板）。 */
-  @Builder
-  TagAction() {
-    SymbolGlyph($r('sys.symbol.plus'))
-      .fontSize($r('app.float.icon_size'))
-      .fontColor([themePalette.accent()])
-      .padding($r('app.float.space_xs'))
-      .accessibilityText($r('app.string.tag_picker_title'))
-      .onClick(() => {
-        this.openTagSheet();
-      })
-  }
-
-  /**
-   * 悬浮操作栏：阅读导航（上一篇 / 下一篇 / 下一条未读）+ 文章操作
-   * （更多 / 排版 / 模式切换 / 收藏 / 打标签），一行铺在 HDS 悬浮页签栏里。
-   *
-   * 为什么是「页签栏」：沉浸光感是区域级能力 —— 只有 Navigation/NavDestination 标题栏与
-   * Tabs 的底部 TabBar 属于生效区域，内容区里给普通容器挂 systemMaterial 会静默失效
-   * （系统日志：Material inactive: out of scope）。所以这里用 HdsTabs 的悬浮页签栏承载，
-   * 材质走 HDS 轨道（systemMaterialEffect，6.1.0(23) 起），与首页页签栏同一套参数与观感。
-   *
-   * 智感握姿：交给 HdsTabsFloatingStyle.adaptToHandedness（与首页页签栏同一个原生开关），
-   * 整条悬浮栏在左右之间平移 —— 因此栏宽要留出侧移余量，见 barWidthVp。
-   */
-  @Builder
-  BarContent() {
-    Row({ space: $r('app.float.space_xs') }) {
-      this.PrevNav()
-      this.NextNav()
-      this.NextUnreadNav()
-      Blank()
-      this.MoreAction()
-      this.FontAction()
-      this.ModeAction()
-      this.StarAction()
-      this.TagAction()
-    }
-    .width('100%')
-    .height('100%')
-  }
-
-  /**
-   * 悬浮操作栏样式：与首页悬浮页签栏同一套（沉浸光感材质 + 智感握姿 + 底部避让）。
-   *
-   * barWidth 三个断点必须显式锁成同一个值：不设的话系统会按断点套默认宽度，
-   * 悬浮栏（及其玻璃背板）会比内容窄，图标就露在背板外面。
-   */
-  private barFloatingStyle(): HdsTabsFloatingStyle {
-    const width: number = this.barWidthVp();
-    // 三个断点锁成同一个值（同一个值也要各自写全，对象字面量必须对应声明类型）。
-    const widths: HdsBarWidthRangeOptions = {
-      smallWidth: width,
-      mediumWidth: width,
-      largeWidth: width
-    };
-    const style: HdsTabsFloatingStyle = {
-      barWidth: widths,
-      adaptToHandedness: appSettings.gripEnabled,
-      barBottomMargin: safeArea.bottomInsetVp,
-      systemMaterialEffect: MaterialController.params(appSettings.materialType,
-        appSettings.materialLevel, appSettings.immersiveOn)
-    };
-    return style;
-  }
-
-  /**
-   * 悬浮操作栏宽度（vp）：页面宽度减去两侧留白，再额外留出跟手侧移的余量。
-   *
-   * 智感握姿是「整条悬浮栏左右平移」（adaptToHandedness）；若宽度锁成「页宽 - 2×留白」，
-   * 栏就贴满两侧、没有可平移的余量，跟手看不出效果。内容本身 9 个图标（含打标签）约 300vp，
-   * 收窄后靠中间的 Blank 吃掉余量即可。
-   */
-  private barWidthVp(): number {
-    try {
-      const screenPx: number = display.getDefaultDisplaySync().width;
-      return this.getUIContext().px2vp(screenPx)
-        - 2 * CommonConstants.BAR_SIDE_MARGIN_VP
-        - CommonConstants.BAR_HANDEDNESS_ROOM_VP;
-    } catch (err) {
-      const error: BusinessError = err as BusinessError;
-      hilog.warn(DOMAIN, TAG, 'display info failed: %{public}d', error.code);
-      return 0;
-    }
-  }
-
   /**
    * 操作栏（HdsTabs）在页面里占的条带高度：悬浮页签栏高度 + 系统导航条避让。
    * 只占底部这一条，空页签内容不会盖住正文、也不会吃掉正文的手势。
@@ -2694,20 +2376,24 @@ export struct ArticleDetailView {
   @Builder
   FloatingBar() {
     if (this.hasArticle()) {
-      HdsTabs({ controller: this.barTabsController }) {
-        // 唯一页签：内容为空 —— 这里只借「底部悬浮页签栏」这个沉浸光感生效区域承载操作栏。
-        TabContent() {
-        }
-        .tabBar(this.BarContent())
-      }
-      .barPosition(BarPosition.End)
-      .barOverlap(true)
-      .vertical(false)
-      // 禁用左右滑动切页签：页签栏只是容器。
-      .scrollable(false)
-      .barFloatingStyle(this.barFloatingStyle())
-      .width('100%')
-      .height(this.barStripHeight())
+      ArticleActionBar({
+        canPrev: feedViewModel.prevArticleId().length > 0,
+        canNext: feedViewModel.nextArticleId().length > 0,
+        canNextUnread: feedViewModel.nextUnreadId().length > 0,
+        starred: this.cur().starred,
+        webMode: this.viewMode === MODE_WEB,
+        accent: themePalette.accent(),
+        menuProvider: (): MenuSpec => this.actionsMenuSpec(this.cur()),
+        onPrev: (): void => {
+          this.openRelative(feedViewModel.prevArticleId(), -1);
+        },
+        onNext: (): void => this.openRelative(feedViewModel.nextArticleId()),
+        onNextUnread: (): void => this.openRelative(feedViewModel.nextUnreadId()),
+        onFont: (): void => this.openSheet('read'),
+        onMode: (): void => this.switchMode(),
+        onStar: (): void => feedViewModel.toggleStar(this.cur().id),
+        onTag: (): void => this.openTagSheet()
+      })
     }
   }
 
@@ -2726,86 +2412,81 @@ export struct ArticleDetailView {
     .backgroundColor($r('app.color.hm_web_surface'))
   }
 
+  /** Reader 文档加载完成：收 loading、重放标注、恢复进度、预取下一篇。 */
+  private onReaderPageEnd(): void {
+    this.loading = false;
+    const article: Article | undefined = feedViewModel.currentArticle();
+    this.progressReadyAt = article !== undefined &&
+      (article.progress > 0 || article.progressRatio > 0) ? Date.now() + 5200 : 0;
+    this.startProgressPolling(this.readerController);
+    this.readerController.runJavaScript(speechManualScrollScript()).catch(() => {
+    });
+    this.replayHighlights(this.readerController);
+    this.syncReaderInset();
+    if (this.consumePendingSearch()) {
+      this.readerProgressRestored = true;
+      this.schedulePrefetch();
+      return;
+    }
+    this.restoreReaderProgress();
+    this.schedulePrefetch();
+  }
+
+  /** 网页原文加载完成：注入排版、恢复进度，SPA 站点再抓一次 DOM 快照。 */
+  private onWebPageEnd(): void {
+    if (this.webFailed) {
+      return;
+    }
+    this.loading = false;
+    const article: Article | undefined = feedViewModel.currentArticle();
+    this.progressReadyAt = article !== undefined &&
+      (article.progress > 0 || article.progressRatio > 0) ? Date.now() + 5200 : 0;
+    const topPad: number = this.readerTopPad();
+    this.appliedTopPad = topPad;
+    readerStyle.apply(this.webController, topPad);
+    this.startProgressPolling(this.webController);
+    this.replayHighlights(this.webController);
+    if (this.consumePendingSearch()) {
+      this.webProgressRestored = true;
+    } else {
+      this.restoreWebProgress();
+    }
+    this.schedulePrefetch();
+    this.scheduleWebSnapshot();
+  }
+
   /** Reader 模式：结构化正文文档（提取失败时展示重试 / 退网页原文）。 */
   @Builder
   ReaderBody() {
     if (this.hasArticle()) {
       Stack() {
         if (this.readerHtml.length > 0) {
-          Web({ src: '', controller: this.readerController })
-            .width('100%')
-            .height('100%')
-            // Reader Web 通常会拿到焦点：在这里也挂快捷键，避免只依赖页面根节点焦点。
-            .onKeyEvent((event: KeyEvent): boolean => {
-              return this.handleShortcut(event);
-            })
-            .darkMode(WebDarkMode.Auto)
-            .javaScriptAccess(true)
-            .domStorageAccess(false)
-            .horizontalScrollBarAccess(false)
-            .javaScriptProxy({
-              object: this.speechScrollBridge,
-              name: 'hrSpeechScroll',
-              methodList: ['onManualScroll'],
-              controller: this.readerController
-            })
-            // 文档内点标注：window.__hrHlCb.onHlClick(id)
-            .javaScriptProxy({
-              object: this.hlBridge,
-              name: '__hrHlCb',
-              methodList: ['onHlClick'],
-              controller: this.readerController
-            })
-            .onLoadIntercept((event: OnLoadInterceptEvent) => {
-              return this.handleLinkIntercept(event);
-            })
-            .onTextSelectionChange((selectionText: string) => {
-              if (this.selectedText !== selectionText) {
-                this.selectedText = selectionText;
+          ReaderBodyView({
+            html: this.readerHtml,
+            controller: this.readerController,
+            speechBridge: this.speechScrollBridge,
+            highlightBridge: this.hlBridge,
+            swipeDistance: SWIPE_DISTANCE_VP,
+            onKey: (event: KeyEvent): boolean => this.handleShortcut(event),
+            onSelection: (text: string): void => {
+              if (this.selectedText !== text) {
+                this.selectedText = text;
               }
-            })
-            // 点按 / 长按正文：命中图片时打开大图（ArkWeb 里 DOM click 不一定触发，改在 ArkTS 侧判定）
-            .onTouch((event: TouchEvent) => {
-              this.handleBodyTouch(event);
-            })
-            .onControllerAttached(() => {
-              this.loadReaderDocIntoWeb();
-            })
-            .onPageEnd(() => {
-              this.loading = false;
-              const article: Article | undefined = feedViewModel.currentArticle();
-              this.progressReadyAt = article !== undefined &&
-                (article.progress > 0 || article.progressRatio > 0) ? Date.now() + 5200 : 0;
-              this.startProgressPolling(this.readerController);
-              this.readerController.runJavaScript(speechManualScrollScript()).catch(() => {});
-              this.replayHighlights(this.readerController);
-              // 冷启动 / 旋转后 safe-area 可能晚于文档构建就绪：按当前值补一次顶部让位。
-              this.syncReaderInset();
-              // 搜索命中定位优先于进度恢复（用户是来找那一段的）。
-              if (this.consumePendingSearch()) {
-                this.readerProgressRestored = true;
-                this.schedulePrefetch();
-                return;
-              }
-              this.restoreReaderProgress();
-              this.schedulePrefetch();
-            })
-            .onOverScroll((event: OnOverScrollEvent) => {
+            },
+            onTouchEvent: (event: TouchEvent): void => this.handleBodyTouch(event),
+            onAttached: (): void => this.loadReaderDocIntoWeb(),
+            onPageEnd: (): void => this.onReaderPageEnd(),
+            onOverScroll: (event: OnOverScrollEvent): void => {
               if (Math.abs(event.yOffset) >= OVERSCROLL_TRIGGER_VP) {
                 this.checkReachedBottom(this.readerController);
               }
-            })
-            // 横向滑动切文：priorityGesture + IgnoreInternal 才能抢在 ArkWeb 内部手势之前。
-            .priorityGesture(
-              PanGesture({ direction: PanDirection.Horizontal, distance: SWIPE_DISTANCE_VP })
-                .onActionStart((event: GestureEvent) => {
-                  this.panStartX = event.fingerList.length > 0 ? event.fingerList[0].globalX : -1;
-                })
-                .onActionEnd((event: GestureEvent) => {
-                  this.onHorizontalPan(event.offsetX);
-                }),
-              GestureMask.IgnoreInternal
-            )
+            },
+            onLoadIntercept: (event: OnLoadInterceptEvent): boolean => this.handleLinkIntercept(event),
+            onPanStart: (event: GestureEvent): void => {
+              this.panStartX = event.fingerList.length > 0 ? event.fingerList[0].globalX : -1;
+            },
+            onPanEnd: (event: GestureEvent): void => this.onHorizontalPan(event.offsetX)
+          })
         } else {
           // 无正文可读（提取失败且无链接）：退纯文本。
           this.TextBody()
@@ -2827,83 +2508,30 @@ export struct ArticleDetailView {
   WebBody() {
     if (this.hasArticle()) {
       Stack() {
-        Web({ src: this.cur().link, controller: this.webController })
-          .width('100%')
-          .height('100%')
-          .darkMode(WebDarkMode.Auto)
-          .javaScriptAccess(true)
-          .domStorageAccess(true)
-          // 文档内点标注：window.__hrHlCb.onHlClick(id)
-          .javaScriptProxy({
-            object: this.hlBridge,
-            name: '__hrHlCb',
-            methodList: ['onHlClick'],
-            controller: this.webController
-          })
-          .onLoadIntercept((event: OnLoadInterceptEvent) => {
-            return this.handleLinkIntercept(event);
-          })
-          .onErrorReceive((event: OnErrorReceiveEvent) => {
-            if (event.request.isMainFrame()) {
-              this.failWeb();
+        WebBodyView({
+          link: this.cur().link,
+          controller: this.webController,
+          highlightBridge: this.hlBridge,
+          swipeDistance: SWIPE_DISTANCE_VP,
+          onLoadIntercept: (event: OnLoadInterceptEvent): boolean => this.handleLinkIntercept(event),
+          onMainFrameError: (): void => this.failWeb(),
+          onSelection: (text: string): void => {
+            if (this.selectedText !== text) {
+              this.selectedText = text;
             }
-          })
-          .onHttpErrorReceive((event: OnHttpErrorReceiveEvent) => {
-            if (event.request.isMainFrame()) {
-              this.failWeb();
-            }
-          })
-          .onTextSelectionChange((selectionText: string) => {
-            if (this.selectedText !== selectionText) {
-              this.selectedText = selectionText;
-            }
-          })
-          // 点按 / 长按正文：命中图片时打开大图（ArkWeb 里 DOM click 不一定触发，改在 ArkTS 侧判定）
-          .onTouch((event: TouchEvent) => {
-            this.handleBodyTouch(event);
-          })
-          .onPageEnd(() => {
-            if (this.webFailed) {
-              return;
-            }
-            this.loading = false;
-            const article: Article | undefined = feedViewModel.currentArticle();
-            this.progressReadyAt = article !== undefined &&
-              (article.progress > 0 || article.progressRatio > 0) ? Date.now() + 5200 : 0;
-            // 网页原文的排版只能靠注入：按设置覆盖正文字号 / 行距 / 字体族 + 顶部 / 底部让位。
-            const topPad: number = this.readerTopPad();
-            this.appliedTopPad = topPad;
-            readerStyle.apply(this.webController, topPad);
-            this.startProgressPolling(this.webController);
-            this.replayHighlights(this.webController);
-            // 搜索命中定位优先；否则排版注入完成后再恢复进度，避免字号变化导致落点偏移。
-            if (this.consumePendingSearch()) {
-              this.webProgressRestored = true;
-            } else {
-              this.restoreWebProgress();
-            }
-            this.schedulePrefetch();
-            // SPA 站点：渲染稳定后抓一次 DOM 存成正文，离线也能读。
-            this.scheduleWebSnapshot();
-          })
-          .onOverScroll((event: OnOverScrollEvent) => {
+          },
+          onTouchEvent: (event: TouchEvent): void => this.handleBodyTouch(event),
+          onPageEnd: (): void => this.onWebPageEnd(),
+          onOverScroll: (event: OnOverScrollEvent): void => {
             if (Math.abs(event.yOffset) >= OVERSCROLL_TRIGGER_VP) {
               this.checkReachedBottom(this.webController);
             }
-          })
-          // 横向滑动切上一篇/下一篇：绑在 Web 上（横向不与 Web 竖向滚动竞争）。
-          // 横向滑动切文：priorityGesture + IgnoreInternal 才能抢在 ArkWeb 内部手势之前。
-          .priorityGesture(
-            PanGesture({ direction: PanDirection.Horizontal, distance: SWIPE_DISTANCE_VP })
-              .onActionStart((event: GestureEvent) => {
-                this.panStartX = event.fingerList.length > 0 ? event.fingerList[0].globalX : -1;
-              })
-              .onActionEnd((event: GestureEvent) => {
-                this.onHorizontalPan(event.offsetX);
-              }),
-            GestureMask.IgnoreInternal
-          )
-
+          },
+          onPanStart: (event: GestureEvent): void => {
+            this.panStartX = event.fingerList.length > 0 ? event.fingerList[0].globalX : -1;
+          },
+          onPanEnd: (event: GestureEvent): void => this.onHorizontalPan(event.offsetX)
+        })
         if (this.loading) {
           this.LoadingVeil()
         }
