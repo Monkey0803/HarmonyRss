@@ -13,6 +13,7 @@
  * 订阅源行支持就地改名 / 分组 / 地址、长按拖拽排序、批量管理（移动分组 / 删除）。
  */
 
+import { LengthMetrics } from '@kit.ArkUI';
 import { FeedListItem, FeedSource } from '../model/Feed';
 import { feedViewModel } from '../viewmodel/FeedViewModel';
 import { isLastFeedInGroup } from '../viewmodel/FeedRowBuilder';
@@ -230,25 +231,45 @@ export struct SubscriptionsView {
   }
 
   /**
-   * 批量移动分组的菜单规格：第 1 项「未分组」，随后是现有分组。
+   * 批量移动分组的菜单规格：跳过所有选中源都已属于的分组，其他项顺序不变。
    * 分组项 id 加 'group:' 前缀 —— 菜单内 id 必须唯一，动态分组名可能与固定项撞车。
    */
   private bulkGroupMenuSpec(): MenuSpec {
-    const items: MenuItemSpec[] = [
-      new MenuItemSpec('group_ungrouped', $r('app.string.group_ungrouped'), (): void => {
+    let currentGroup: string | undefined = undefined;
+    for (let i = 0; i < this.selectedIds.length; i += 1) {
+      const id: string = this.selectedIds[i];
+      const feed: FeedSource | undefined = feedViewModel.feeds.find((item: FeedSource) => item.id === id);
+      if (feed === undefined || (currentGroup !== undefined && currentGroup !== feed.group)) {
+        currentGroup = undefined;
+        break;
+      }
+      currentGroup = feed.group;
+    }
+
+    const items: MenuItemSpec[] = [];
+    if (currentGroup !== '') {
+      items.push(new MenuItemSpec('group_ungrouped', $r('app.string.group_ungrouped'), (): void => {
         feedViewModel.setFeedGroupMany(this.selectedIds, '');
         this.exitSelect();
-      })
-    ];
+      }));
+    }
     const names: string[] = feedViewModel.groupNames();
     for (let i = 0; i < names.length; i += 1) {
       const name: string = names[i];
+      if (name === currentGroup) {
+        continue;
+      }
       items.push(new MenuItemSpec('group:' + name, name, (): void => {
         feedViewModel.setFeedGroupMany(this.selectedIds, name);
         this.exitSelect();
       }));
     }
     return MenuSpec.fromItems(items);
+  }
+
+  /** 没有可移动的目标分组时，不弹出空菜单。 */
+  private canMoveSelectedGroup(): boolean {
+    return this.selectedIds.length > 0 && this.bulkGroupMenuSpec().sections[0].items.length > 0;
   }
 
   /** 多选态动作条与页签栏之间的底边距。 */
@@ -274,9 +295,9 @@ export struct SubscriptionsView {
           .fontSize($r('app.float.icon_size'))
           .fontColor([themePalette.accent()])
           .padding($r('app.float.space_s'))
-          .opacity(this.selectedIds.length > 0 ? 1 : 0.4)
+          .opacity(this.canMoveSelectedGroup() ? 1 : 0.4)
           .accessibilityText($r('app.string.subs_bulk_move'))
-          .enabled(this.selectedIds.length > 0)
+          .enabled(this.canMoveSelectedGroup())
           // 动作条贴着屏幕底部，菜单必须向上弹，否则会被屏底裁掉。
           .bindMenu(this.BulkGroupMenu(),
             MaterialController.menuOptions({ placement: Placement.TopRight }, appSettings.immersiveOn))
@@ -383,7 +404,7 @@ export struct SubscriptionsView {
   }
 
   /**
-   * 行内溢出菜单的规格：条目与顺序与改造前逐条一致，不许增删或重排。
+   * 行内溢出菜单的规格：跳过当前分组的无效移动项，其他条目顺序不变。
    * 分组项 id 加 'group:' 前缀保证菜单内唯一；末项删除标危险色。
    */
   private feedMenuSpec(feed: FeedSource): MenuSpec {
@@ -399,14 +420,19 @@ export struct SubscriptionsView {
       new MenuItemSpec('edit_url', $r('app.string.subs_edit_url'), (): void => {
         this.urlEditId = feed.id;
         this.draftUrl = feed.url;
-      }),
-      new MenuItemSpec('group_clear', $r('app.string.group_clear'), (): void => {
-        feedViewModel.setFeedGroup(feed.id, '');
       })
     ];
+    if (feed.group.length > 0) {
+      items.push(new MenuItemSpec('group_clear', $r('app.string.group_clear'), (): void => {
+        feedViewModel.setFeedGroup(feed.id, '');
+      }));
+    }
     const names: string[] = feedViewModel.groupNames();
     for (let i = 0; i < names.length; i += 1) {
       const name: string = names[i];
+      if (name === feed.group) {
+        continue;
+      }
       items.push(new MenuItemSpec('group:' + name, $r('app.string.group_move_to', name), (): void => {
         feedViewModel.setFeedGroup(feed.id, name);
       }));
@@ -648,7 +674,11 @@ export struct SubscriptionsView {
           .height(40)
           .justifyContent(FlexAlign.Center)
           .accessibilityText($r('app.string.action_more'))
-          .bindMenu(this.FeedMenu(feed), MaterialController.menuOptions({}, appSettings.immersiveOn))
+          .bindMenu(this.FeedMenu(feed),
+            MaterialController.menuOptions({
+              placement: Placement.TopRight,
+              maxHeight: LengthMetrics.resource($r('app.float.feed_menu_max_height'))
+            }, appSettings.immersiveOn))
         }
       }
       .width('100%')
@@ -755,12 +785,11 @@ export struct SubscriptionsView {
             }
           }
 
-          // 底部避让：悬浮页签栏叠在内容之上，避让高度必须作为「可滚动」的末尾留白，
-          // 不能用 List 的 padding —— padding 会让内容在页签栏上方就被裁掉，
-          // 列表没滚到底时底部就出现一条永远填不满的空白。
-          ListItem() {
-            Row().width('100%').height(safeArea.contentBottomInsetVp)
-          }
+        }
+
+        // 底部避让：包括空态在内都要留出可滚动的末尾空间，供内容越过悬浮页签栏。
+        ListItem() {
+          Row().width('100%').height(safeArea.contentBottomInsetVp)
         }
       }
       .width('100%')

@@ -94,7 +94,7 @@
     },
     {
       "name": "tab_clearance",
-      "value": "40"
+      "value": "64"
     },
     {
       "name": "radius_menu_item",
@@ -139,6 +139,10 @@
     {
       "name": "menu_item_height",
       "value": "48"
+    },
+    {
+      "name": "feed_menu_max_height",
+      "value": "256"
     },
     {
       "name": "menu_width",
