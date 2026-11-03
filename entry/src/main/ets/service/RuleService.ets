@@ -14,7 +14,7 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import { Article } from '../model/Feed';
 import { Rule, RuleApplyResult, RulePlan, RuleTestResult } from '../model/Rule';
 import { RuleConstants } from '../common/constants/RssConstants';
-import { articleStore } from './ArticleStore';
+import { articleRepository } from './ArticleServices';
 import { dedupeService } from './DedupeService';
 import { ruleStore } from './RuleStore';
 import { matches, plan } from './RuleEngine';
@@ -62,13 +62,13 @@ export class RuleService {
       const hiddenIds: string[] = await dedupeService.expandIds(result.hiddenIds);
       // 1) 批量状态动作（逐条 UPDATE，与用户手动批量操作的语义一致）。
       if (readIds.length > 0) {
-        articleStore.setReadMany(readIds, true);
+        articleRepository.setReadMany(readIds, true);
       }
       if (starredIds.length > 0) {
-        articleStore.setStarredMany(starredIds, true);
+        articleRepository.setStarredMany(starredIds, true);
       }
       if (hiddenIds.length > 0) {
-        articleStore.setHiddenMany(hiddenIds, true);
+        articleRepository.setHiddenMany(hiddenIds, true);
       }
       // 2) 标签动作（每个标签一次事务，重复添加不产生重复关联；applyTag 内部再展开一次，幂等）。
       for (let i = 0; i < result.tagIds.length; i += 1) {

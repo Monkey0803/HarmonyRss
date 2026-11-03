@@ -6,7 +6,7 @@
  */
 
 import { HighlightLibraryItem } from '../model/Highlight';
-import { articleStore } from '../service/ArticleStore';
+import { highlightStore } from '../service/ArticleServices';
 import { feedViewModel } from '../viewmodel/FeedViewModel';
 import { articleActions } from '../service/ArticleActions';
 import { toJson, toMarkdown } from '../service/HighlightExport';
@@ -40,7 +40,7 @@ export struct HighlightsView {
 
   private async reload(): Promise<void> {
     this.loading = true;
-    this.items = await articleStore.listAllHighlights();
+    this.items = await highlightStore.listAllHighlights();
     this.loading = false;
   }
 

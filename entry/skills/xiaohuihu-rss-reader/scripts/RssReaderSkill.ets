@@ -1,5 +1,5 @@
 import { common, scriptManager, Want } from '@kit.AbilityKit';
-import { articleStore } from '../../../src/main/ets/service/ArticleStore';
+import { articleSearchStore, articleDatabase, articleRepository } from '../../../src/main/ets/service/ArticleServices';
 import { SearchHit, SearchPage, SearchQuery, SearchState } from '../../../src/main/ets/model/Search';
 import { DeepLinkParams } from '../../../src/main/ets/service/DeepLink';
 
@@ -28,13 +28,13 @@ export default class RssReaderSkill {
       return;
     }
     try {
-      await articleStore.open(info.context);
+      await articleDatabase.open(info.context);
       const query: SearchQuery = new SearchQuery(keyword);
       query.state = state;
       if (keyword.length > 0) {
         query.terms = keyword.split(' ').filter((word: string): boolean => word.length > 0);
       }
-      const page: SearchPage = await articleStore.search(query, 0, 20);
+      const page: SearchPage = await articleSearchStore.search(query, 0, 20);
       if (page.hits.length === 0) {
         await this.report(info, -1, this.failed('ERR_NOT_FOUND'));
         return;
@@ -42,7 +42,7 @@ export default class RssReaderSkill {
       const items: Array<Record<string, Object>> = [];
       for (let i = 0; i < page.hits.length && items.length < 5; i += 1) {
         const hit: SearchHit = page.hits[i];
-        const article = await articleStore.loadById(hit.articleId);
+        const article = await articleRepository.loadById(hit.articleId);
         if (article === undefined || article.hidden) {
           continue;
         }
@@ -76,8 +76,8 @@ export default class RssReaderSkill {
       return;
     }
     try {
-      await articleStore.open(info.context);
-      const article = await articleStore.loadById(articleId);
+      await articleDatabase.open(info.context);
+      const article = await articleRepository.loadById(articleId);
       if (article === undefined || article.hidden) {
         await this.report(info, -1, this.failed('ERR_NOT_FOUND'));
         return;

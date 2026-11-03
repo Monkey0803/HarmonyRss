@@ -2,7 +2,7 @@
 import { FeedSource, Article } from '../model/Feed';
 import { appSettings } from '../model/AppSettings';
 import { FullTextMode } from '../common/constants/SettingsConstants';
-import { articleStore } from './ArticleStore';
+import { articleDatabase, articleRepository } from './ArticleServices';
 import { articleContentService } from './ArticleContentService';
 import { NetworkStatus } from './NetworkStatus';
 import { settingsStore } from './SettingsStore';
@@ -52,20 +52,20 @@ export class OfflineDownloadService {
 
   /** 用户指定单篇下载；已读、稍后读网页和未选中的源均可使用。 */
   async prepareArticle(id: string, fullTextMode: string, retry: boolean = false): Promise<string> {
-    await articleStore.whenReady();
-    const previous: string = await articleStore.offlineState(id);
+    await articleDatabase.whenReady();
+    const previous: string = await articleRepository.offlineState(id);
     if (previous === 'full' && !retry) {
       return previous;
     }
     if (!NetworkStatus.isOnline()) {
       return previous;
     }
-    this.bytes = await articleStore.offlineCacheBytes();
+    this.bytes = await articleRepository.offlineCacheBytes();
     if (this.bytes >= MAX_BYTES) {
       this.atLimit = true;
       return previous;
     }
-    const article: Article | undefined = await articleStore.loadById(id);
+    const article: Article | undefined = await articleRepository.loadById(id);
     if (article === undefined) {
       return 'none';
     }
@@ -73,30 +73,30 @@ export class OfflineDownloadService {
     const oldText: string = article.plainText;
     if (retry && oldHtml.length > 0) {
       article.readerHtml = '';
-      await articleStore.clearOfflineArticle(id);
+      await articleRepository.clearOfflineArticle(id);
     }
     try {
       await articleContentService.ensureReaderHtml(article, fullTextMode);
-      const state: string = await articleStore.offlineState(id);
+      const state: string = await articleRepository.offlineState(id);
       if (state !== 'none') {
         this.publishState(id, state);
-        this.bytes = await articleStore.offlineCacheBytes();
+        this.bytes = await articleRepository.offlineCacheBytes();
         return state;
       }
     } catch (err) {
     }
     if (retry && oldHtml.length > 0) {
-      articleStore.setReaderHtml(id, oldHtml, oldText);
+      articleRepository.setReaderHtml(id, oldHtml, oldText);
       this.publishState(id, previous);
     }
     return previous;
   }
 
   async clearArticle(id: string): Promise<boolean> {
-    const cleared: boolean = await articleStore.clearOfflineArticle(id);
+    const cleared: boolean = await articleRepository.clearOfflineArticle(id);
     if (cleared) {
       this.publishState(id, 'none');
-      this.bytes = await articleStore.offlineCacheBytes();
+      this.bytes = await articleRepository.offlineCacheBytes();
     }
     return cleared;
   }
@@ -113,7 +113,7 @@ export class OfflineDownloadService {
     this.failed = 0;
     this.atLimit = false;
     try {
-      await articleStore.whenReady();
+      await articleDatabase.whenReady();
       const selected: FeedSource[] = feeds.filter((feed: FeedSource) =>
         (manual || feed.enabled) && this.isSelected(feed));
       const queue: Article[] = [];
@@ -121,9 +121,9 @@ export class OfflineDownloadService {
       for (let i = 0; i < selected.length; i += 1) {
         const feed: FeedSource = selected[i];
         modes.set(feed.id, feed.fullTextMode === FullTextMode.GLOBAL ? FullTextMode.AUTO : feed.fullTextMode);
-        const candidates: Article[] = await articleStore.offlineCandidates(feed.id, 20);
+        const candidates: Article[] = await articleRepository.offlineCandidates(feed.id, 20);
         for (let j = 0; j < candidates.length; j += 1) {
-          const state: string = await articleStore.offlineState(candidates[j].id);
+          const state: string = await articleRepository.offlineState(candidates[j].id);
           if (state === 'none' || state === 'text') {
             queue.push(candidates[j]);
           }
@@ -135,19 +135,19 @@ export class OfflineDownloadService {
           (!manual && !appSettings.offlineEnabled)) {
           break;
         }
-        this.bytes = await articleStore.offlineCacheBytes();
+        this.bytes = await articleRepository.offlineCacheBytes();
         if (this.bytes >= MAX_BYTES) {
           this.atLimit = true;
           break;
         }
-        const article: Article | undefined = await articleStore.loadById(queue[i].id);
+        const article: Article | undefined = await articleRepository.loadById(queue[i].id);
         if (article === undefined) {
           this.failed++;
           continue;
         }
         try {
           await articleContentService.ensureReaderHtml(article, modes.get(article.feedId) || FullTextMode.AUTO);
-          const state: string = await articleStore.offlineState(article.id);
+          const state: string = await articleRepository.offlineState(article.id);
           if (state === 'none') {
             this.failed++;
           } else {
@@ -158,7 +158,7 @@ export class OfflineDownloadService {
           this.failed++;
         }
       }
-      this.bytes = await articleStore.offlineCacheBytes();
+      this.bytes = await articleRepository.offlineCacheBytes();
     } finally {
       this.running = false;
     }

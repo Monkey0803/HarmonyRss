@@ -4,7 +4,7 @@ import { abilityDelegatorRegistry } from '@kit.TestKit';
 import { common } from '@kit.AbilityKit';
 import { Article } from '../../../main/ets/model/Feed';
 import { BackupArticle } from '../../../main/ets/model/Backup';
-import { articleStore, SavedWebPageResult } from '../../../main/ets/service/ArticleStore';
+import { articleDatabase, articleRepository, SavedWebPageResult } from '../../../main/ets/service/ArticleServices';
 import {
   normalizeWebPageUrl,
   parseWebPagePreview,
@@ -43,8 +43,8 @@ export default function webPageSaveTest() {
       const injected: common.UIAbilityContext | undefined = TestContext.value;
       const context: common.Context = injected !== undefined
         ? injected : abilityDelegatorRegistry.getAbilityDelegator().getAppContext();
-      await articleStore.open(context);
-      expect(articleStore.dataVersion() > 0).assertTrue();
+      await articleDatabase.open(context);
+      expect(articleRepository.dataVersion() > 0).assertTrue();
       const stamp: string = Date.now().toString();
       const link: string = 'https://example.com/saved-web-test/' + stamp;
       const rssId: string = 'saved-web-test-feed|' + link;
@@ -52,23 +52,23 @@ export default function webPageSaveTest() {
       try {
         const rss: Article = new Article(rssId, 'saved-web-test-feed', 'Example', 'Existing RSS', link,
           'Existing summary', '', Date.now());
-        articleStore.insertNew([rss]);
-        expect((await articleStore.findByUrl(link))?.id).assertEqual(rssId);
+        articleRepository.insertNew([rss]);
+        expect((await articleRepository.findByUrl(link))?.id).assertEqual(rssId);
         const shared: Article = new Article(localId, 'local:saved-web', 'example.com', 'Shared page', link,
           'Shared summary', 'Shared body', Date.now());
         shared.readerHtml = '<!--hrv9-->\n<p>Shared body</p>';
         shared.plainText = 'Shared body';
-        const result: SavedWebPageResult | undefined = articleStore.saveWebPage(shared);
+        const result: SavedWebPageResult | undefined = articleRepository.saveWebPage(shared);
         expect(result !== undefined).assertTrue();
         expect(result?.articleId).assertEqual(rssId);
         expect(result?.created).assertFalse();
-        expect((await articleStore.findByUrl(link))?.id).assertEqual(rssId);
-        const stored: Article | undefined = await articleStore.loadById(rssId);
+        expect((await articleRepository.findByUrl(link))?.id).assertEqual(rssId);
+        const stored: Article | undefined = await articleRepository.loadById(rssId);
         expect(stored !== undefined && stored.saved).assertTrue();
         expect(stored?.readerHtml).assertContain('Shared body');
-        expect(await articleStore.loadById(localId)).assertEqual(undefined);
+        expect(await articleRepository.loadById(localId)).assertEqual(undefined);
       } finally {
-        articleStore.deleteMany([rssId, localId]);
+        articleRepository.deleteMany([rssId, localId]);
       }
     });
 
@@ -76,31 +76,31 @@ export default function webPageSaveTest() {
       const injected: common.UIAbilityContext | undefined = TestContext.value;
       const context: common.Context = injected !== undefined
         ? injected : abilityDelegatorRegistry.getAbilityDelegator().getAppContext();
-      await articleStore.open(context);
+      await articleDatabase.open(context);
       const link: string = 'https://example.com/standalone/' + Date.now().toString() +
         '-' + Math.random().toString();
       const id: string = 'saved-web|' + link;
       try {
-        expect(await articleStore.loadById(id)).assertEqual(undefined);
+        expect(await articleRepository.loadById(id)).assertEqual(undefined);
         const article: Article = new Article(id, 'local:saved-web', 'example.com', 'Standalone', link,
           'Summary', 'Body', Date.now());
         article.readerHtml = '<!--hrv9--><p>Body</p>';
         article.plainText = 'Body';
-        const first: SavedWebPageResult | undefined = articleStore.saveWebPage(article);
+        const first: SavedWebPageResult | undefined = articleRepository.saveWebPage(article);
         expect(first?.articleId).assertEqual(id);
-        const stored: Article | undefined = await articleStore.loadById(id);
+        const stored: Article | undefined = await articleRepository.loadById(id);
         expect(stored?.title).assertEqual('Standalone');
         expect(stored !== undefined && stored.saved).assertTrue();
         expect(first?.created).assertTrue();
         expect(stored?.readerHtml).assertContain('Body');
         const duplicate: Article = new Article('another-id', 'local:saved-web', 'example.com',
           'Standalone copy', link + '?utm_source=share', '', '', Date.now());
-        const second: SavedWebPageResult | undefined = articleStore.saveWebPage(duplicate);
+        const second: SavedWebPageResult | undefined = articleRepository.saveWebPage(duplicate);
         expect(second?.created).assertFalse();
         expect(second?.articleId).assertEqual(id);
-        expect(await articleStore.loadById('another-id')).assertEqual(undefined);
+        expect(await articleRepository.loadById('another-id')).assertEqual(undefined);
       } finally {
-        articleStore.deleteMany([id, 'another-id']);
+        articleRepository.deleteMany([id, 'another-id']);
       }
     });
 
@@ -108,19 +108,19 @@ export default function webPageSaveTest() {
       const injected: common.UIAbilityContext | undefined = TestContext.value;
       const context: common.Context = injected !== undefined
         ? injected : abilityDelegatorRegistry.getAbilityDelegator().getAppContext();
-      await articleStore.open(context);
+      await articleDatabase.open(context);
       const link: string = 'https://example.com/restore/' + Date.now().toString();
       const id: string = 'saved-web|' + link;
       try {
         const backup: BackupArticle = new BackupArticle(id, WEB_PAGE_FEED_ID, 'example.com',
           'Restored web page', link, 'Summary', '', Date.now(), '', false, false, true);
-        const merged = await articleStore.mergeArticlesForBackup([backup], []);
+        const merged = await articleRepository.mergeArticlesForBackup([backup], []);
         expect(merged.added).assertEqual(1);
-        const restored: Article | undefined = await articleStore.loadById(id);
+        const restored: Article | undefined = await articleRepository.loadById(id);
         expect(restored?.title).assertEqual('Restored web page');
         expect(restored?.saved).assertTrue();
       } finally {
-        articleStore.deleteMany([id]);
+        articleRepository.deleteMany([id]);
       }
     });
   });

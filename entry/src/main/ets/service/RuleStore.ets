@@ -17,7 +17,7 @@ import { Article } from '../model/Feed';
 import { BackupRule } from '../model/Backup';
 import { Rule, RuleAction, RuleDraft, RuleError, RuleField } from '../model/Rule';
 import { ArticleDbConstants, RuleConstants } from '../common/constants/RssConstants';
-import { articleStore } from './ArticleStore';
+import { articleDatabase } from './ArticleServices';
 import { validateDraft } from './RuleEngine';
 
 const DOMAIN: number = 0x0000;
@@ -108,8 +108,8 @@ function movedIndex(index: number, delta: number, length: number): number {
 export class RuleStore {
   /** 全部规则（按 priority 升序；同优先级按创建时间）。库不可用时返回空数组。 */
   async list(): Promise<Rule[]> {
-    await articleStore.whenReady();
-    const store: relationalStore.RdbStore | undefined = articleStore.getStore();
+    await articleDatabase.whenReady();
+    const store: relationalStore.RdbStore | undefined = articleDatabase.getStore();
     const result: Rule[] = [];
     if (store === undefined) {
       return result;
@@ -138,7 +138,7 @@ export class RuleStore {
    * 返回 undefined 表示失败（调用方用 validateDraft 的结果提示具体原因）。
    */
   async create(draft: RuleDraft): Promise<Rule | undefined> {
-    const store: relationalStore.RdbStore | undefined = articleStore.getStore();
+    const store: relationalStore.RdbStore | undefined = articleDatabase.getStore();
     if (store === undefined) {
       return undefined;
     }
@@ -182,7 +182,7 @@ export class RuleStore {
 
   /** 编辑规则（保留 priority / 命中统计 / 创建时间）。 */
   async update(id: string, draft: RuleDraft): Promise<boolean> {
-    const store: relationalStore.RdbStore | undefined = articleStore.getStore();
+    const store: relationalStore.RdbStore | undefined = articleDatabase.getStore();
     if (store === undefined || id.length === 0) {
       return false;
     }
@@ -208,7 +208,7 @@ export class RuleStore {
 
   /** 删除规则（已执行过的文章动作不回滚）。 */
   async remove(id: string): Promise<void> {
-    const store: relationalStore.RdbStore | undefined = articleStore.getStore();
+    const store: relationalStore.RdbStore | undefined = articleDatabase.getStore();
     if (store === undefined || id.length === 0) {
       return;
     }
@@ -222,7 +222,7 @@ export class RuleStore {
 
   /** 启停。 */
   async setEnabled(id: string, enabled: boolean): Promise<void> {
-    const store: relationalStore.RdbStore | undefined = articleStore.getStore();
+    const store: relationalStore.RdbStore | undefined = articleDatabase.getStore();
     if (store === undefined || id.length === 0) {
       return;
     }
@@ -240,7 +240,7 @@ export class RuleStore {
    * 保证历史数据里的重复排序位被顺带修正。
    */
   async move(id: string, delta: number): Promise<void> {
-    const store: relationalStore.RdbStore | undefined = articleStore.getStore();
+    const store: relationalStore.RdbStore | undefined = articleDatabase.getStore();
     if (store === undefined || id.length === 0 || delta === 0) {
       return;
     }
@@ -286,7 +286,7 @@ export class RuleStore {
    * 只处理 count > 0 的规则；同一事务内完成，避免中途失败留下半套统计。
    */
   async recordHits(hits: Map<string, number>, at: number): Promise<void> {
-    const store: relationalStore.RdbStore | undefined = articleStore.getStore();
+    const store: relationalStore.RdbStore | undefined = articleDatabase.getStore();
     if (store === undefined || hits.size === 0) {
       return;
     }
@@ -317,7 +317,7 @@ export class RuleStore {
    * 只读，不修改任何状态。
    */
   async sampleArticles(limit: number): Promise<Article[]> {
-    const store: relationalStore.RdbStore | undefined = articleStore.getStore();
+    const store: relationalStore.RdbStore | undefined = articleDatabase.getStore();
     const result: Article[] = [];
     if (store === undefined || limit <= 0) {
       return result;
@@ -367,8 +367,8 @@ export class RuleStore {
    * keywords / feedIds / tagIds 解成数组，fields / actions 解成合法值数组。
    */
   async allForBackup(): Promise<BackupRule[]> {
-    await articleStore.whenReady();
-    const store: relationalStore.RdbStore | undefined = articleStore.getStore();
+    await articleDatabase.whenReady();
+    const store: relationalStore.RdbStore | undefined = articleDatabase.getStore();
     const result: BackupRule[] = [];
     if (store === undefined) {
       return result;
@@ -414,8 +414,8 @@ export class RuleStore {
     if (records.length === 0) {
       return 0;
     }
-    await articleStore.whenReady();
-    const store: relationalStore.RdbStore | undefined = articleStore.getStore();
+    await articleDatabase.whenReady();
+    const store: relationalStore.RdbStore | undefined = articleDatabase.getStore();
     if (store === undefined) {
       return 0;
     }
@@ -506,7 +506,7 @@ export class RuleStore {
 
   /** 最近一条语句影响的行数（INSERT OR IGNORE 是否真的插入）。 */
   private lastChanges(): number {
-    const store: relationalStore.RdbStore | undefined = articleStore.getStore();
+    const store: relationalStore.RdbStore | undefined = articleDatabase.getStore();
     if (store === undefined) {
       return 0;
     }

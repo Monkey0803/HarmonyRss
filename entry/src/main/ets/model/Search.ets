@@ -1,7 +1,7 @@
 /*
  * Search.ets — 全文检索与存储统计的领域模型（纯数据结构，不含行为）。
  *
- * SearchQuery 由 SearchQueryParser 解析出来（纯函数），交给 ArticleStore 翻译成 SQL；
+ * SearchQuery 由 SearchQueryParser 解析出来（纯函数），交给 ArticleSearchStore 翻译成 SQL；
  * 视图只消费 SearchHit / SearchPage / StorageStats，不接触 SQL。
  */
 

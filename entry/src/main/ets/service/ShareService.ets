@@ -1,7 +1,7 @@
 /*
  * ShareService.ets — 分享上下文构建、目标执行与高亮导出（编排层）。
  *
- * 只依赖 ArticleActions / TagStore / ArticleStore / HighlightExport，**不依赖任何 ViewModel**：
+ * 只依赖 ArticleActions / TagStore / ArticleRepository / HighlightExport，**不依赖任何 ViewModel**：
  * 「加入稍后读」等应用内动作以 INTERNAL 结果返回，由宿主自行处理，避免服务层反向依赖 UI 状态。
  *
  * 失败策略（与 FR-004 一致）：
@@ -19,7 +19,7 @@ import { Highlight, HighlightLibraryItem } from '../model/Highlight';
 import { ShareContext, ShareKind, ShareResult, ShareTarget } from '../model/Share';
 import { articleActions } from './ArticleActions';
 import { tagStore } from './TagStore';
-import { articleStore } from './ArticleStore';
+import { highlightStore } from './ArticleServices';
 import { toMarkdown } from './HighlightExport';
 import { buildUri, ShareTargetId, targetById } from './ShareTargets';
 import { CommonConstants } from '../common/constants/CommonConstants';
@@ -173,7 +173,7 @@ export class ShareService {
    */
   async exportArticleHighlights(articleId: string, title: string, link: string, feedTitle: string,
     ability: common.UIAbilityContext): Promise<ShareResult> {
-    const highlights: Highlight[] = await articleStore.listHighlights(articleId);
+    const highlights: Highlight[] = await highlightStore.listHighlights(articleId);
     if (highlights.length === 0) {
       return new ShareResult(false, ShareTargetId.COPY_BODY, false, 'share_disabled_no_highlights');
     }
@@ -192,7 +192,7 @@ export class ShareService {
 
   /** 导出全部高亮为 Markdown（按文章分组）并交给系统分享。 */
   async exportAllHighlights(ability: common.UIAbilityContext): Promise<ShareResult> {
-    const items: HighlightLibraryItem[] = await articleStore.listAllHighlights();
+    const items: HighlightLibraryItem[] = await highlightStore.listAllHighlights();
     if (items.length === 0) {
       return new ShareResult(false, ShareTargetId.COPY_BODY, false, 'share_export_empty');
     }

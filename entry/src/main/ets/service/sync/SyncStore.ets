@@ -1,7 +1,7 @@
 /*
  * SyncStore.ets — 云同步记录表的读写（Model 层：屏蔽 SQL）。
  *
- * 复用 ArticleStore 打开的同一个 RdbStore（同进程不重复打开同名库）。
+ * 复用 ArticleDatabase 打开的同一个 RdbStore（同进程不重复打开同名库）。
  * 一行 = 一个实体的本地副本：
  *   - dirty = 1：本地改过、待推送；
  *   - rev：已经拉到的远端版本（只作诊断，不做比较）；
@@ -15,7 +15,7 @@ import { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { ArticleDbConstants } from '../../common/constants/RssConstants';
 import { SyncKinds, SyncRecord } from '../../model/Sync';
-import { articleStore } from '../ArticleStore';
+import { articleDatabase } from '../ArticleServices';
 
 const DOMAIN: number = 0x0000;
 const TAG: string = 'SyncStore';
@@ -80,7 +80,7 @@ export interface SyncRecordStore {
 export class SyncStore implements SyncRecordStore {
   /** 同步表是否可用（库没打开时返回空态，不抛错）。 */
   private db(): relationalStore.RdbStore | undefined {
-    return articleStore.getStore();
+    return articleDatabase.getStore();
   }
 
   /** 读某一类记录（差量采集时与当前快照比对）。 */

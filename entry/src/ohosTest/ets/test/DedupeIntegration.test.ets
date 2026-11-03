@@ -13,7 +13,7 @@
 import { describe, it, expect } from '@ohos/hypium';
 import { abilityDelegatorRegistry } from '@kit.TestKit';
 import { common } from '@kit.AbilityKit';
-import { articleStore } from '../../../main/ets/service/ArticleStore';
+import { articleDatabase, articleRepository } from '../../../main/ets/service/ArticleServices';
 import { dedupeService } from '../../../main/ets/service/DedupeService';
 import { Article } from '../../../main/ets/model/Feed';
 import { TestContext } from './TestContext';
@@ -25,7 +25,7 @@ export default function dedupeIntegrationTest() {
       const context: common.Context = injected !== undefined
         ? injected
         : abilityDelegatorRegistry.getAbilityDelegator().getAppContext();
-      await articleStore.open(context);
+      await articleDatabase.open(context);
 
       const stamp: string = Date.now().toString();
       const feedA: string = 'dedupe_test_a_' + stamp;
@@ -40,9 +40,9 @@ export default function dedupeIntegrationTest() {
           'summary a', 'content a', now, '', 'tester');
         const b: Article = new Article(idB, feedB, 'Dedupe B', 'Dedupe B title', link,
           'summary b', 'content b', now - 1000, '', 'tester');
-        articleStore.insertNew([a, b]);
+        articleRepository.insertNew([a, b]);
 
-        const loadedB: Article | undefined = await articleStore.loadById(idB);
+        const loadedB: Article | undefined = await articleRepository.loadById(idB);
         expect(loadedB !== undefined).assertTrue();
         if (loadedB === undefined) {
           return;
@@ -51,23 +51,23 @@ export default function dedupeIntegrationTest() {
 
         // 组内已读同步
         await dedupeService.applyRead([idA], true);
-        const readA: Article | undefined = await articleStore.loadById(idA);
-        const readB: Article | undefined = await articleStore.loadById(idB);
+        const readA: Article | undefined = await articleRepository.loadById(idA);
+        const readB: Article | undefined = await articleRepository.loadById(idB);
         expect(readA !== undefined && readA.read).assertTrue();
         expect(readB !== undefined && readB.read).assertTrue();
 
         // 删除主条 → 另一篇提升为主条
-        articleStore.deleteMany([idA]);
-        const promoted: Article | undefined = await articleStore.loadById(idB);
+        articleRepository.deleteMany([idA]);
+        const promoted: Article | undefined = await articleRepository.loadById(idB);
         expect(promoted !== undefined).assertTrue();
         if (promoted !== undefined) {
           expect(promoted.canonicalId).assertEqual('');
           expect(promoted.read).assertTrue();
         }
-        const gone: Article | undefined = await articleStore.loadById(idA);
+        const gone: Article | undefined = await articleRepository.loadById(idA);
         expect(gone === undefined).assertTrue();
       } finally {
-        articleStore.deleteMany([idA, idB]);
+        articleRepository.deleteMany([idA, idB]);
       }
     });
   });

@@ -16,7 +16,7 @@
 import { relationalStore } from '@kit.ArkData';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { DedupeCandidate } from '../model/Dedupe';
-import { articleStore } from './ArticleStore';
+import { articleDatabase } from './ArticleServices';
 import { tagStore } from './TagStore';
 import { sameTitleWindow } from './DedupeKeys';
 
@@ -163,7 +163,7 @@ export class DedupeService {
     if (articleId.length === 0) {
       return result;
     }
-    const store: relationalStore.RdbStore | undefined = articleStore.getStore();
+    const store: relationalStore.RdbStore | undefined = articleDatabase.getStore();
     if (store === undefined) {
       result.push(articleId);
       return result;
@@ -273,7 +273,7 @@ export class DedupeService {
       if (expanded.length === 0) {
         return 0;
       }
-      const store: relationalStore.RdbStore | undefined = articleStore.getStore();
+      const store: relationalStore.RdbStore | undefined = articleDatabase.getStore();
       if (store === undefined) {
         return 0;
       }

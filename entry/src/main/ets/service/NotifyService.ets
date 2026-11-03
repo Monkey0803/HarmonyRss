@@ -33,7 +33,7 @@ import {
   stableNotificationId
 } from './NotifyPolicy';
 import { notifyStore } from './NotifyStore';
-import { articleStore } from './ArticleStore';
+import { articleRepository } from './ArticleServices';
 import { feedStore } from './FeedStore';
 
 const DOMAIN: number = 0x0000;
@@ -272,7 +272,7 @@ export class NotifyService {
       const title: string = context.resourceManager.getStringSync(
         $r('app.string.notify_dnd_flush_title').id, queue.length);
       let text: string = '';
-      const first: Article | undefined = await articleStore.loadById(queue[0].articleId);
+      const first: Article | undefined = await articleRepository.loadById(queue[0].articleId);
       if (first !== undefined) {
         text = first.title;
       }
@@ -293,7 +293,7 @@ export class NotifyService {
 
   /**
    * 每日摘要：开启 + 已到设定小时 + 今天还没发过 → 用当日新文章发一条摘要。
-   * 数据源是 articleStore.articlesFetchedSince(当天 00:00)，再走同一套策略过滤。
+   * 数据源是 articleRepository.articlesFetchedSince(当天 00:00)，再走同一套策略过滤。
    */
   async maybeSendDigest(context: common.Context): Promise<void> {
     if (!this.isEnabled()) {
@@ -308,7 +308,7 @@ export class NotifyService {
       }
       const dayStart: Date = new Date(now);
       dayStart.setHours(0, 0, 0, 0);
-      const articles: Article[] = await articleStore.articlesFetchedSince(dayStart.getTime());
+      const articles: Article[] = await articleRepository.articlesFetchedSince(dayStart.getTime());
       if (articles.length === 0) {
         return;
       }

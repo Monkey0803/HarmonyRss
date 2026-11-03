@@ -21,7 +21,7 @@ import {
 } from '../../model/SettingsOptions';
 import { settingsViewModel } from '../../viewmodel/SettingsViewModel';
 import { feedViewModel } from '../../viewmodel/FeedViewModel';
-import { articleStore } from '../../service/ArticleStore';
+import { highlightStore, articleDatabase, articleRepository } from '../../service/ArticleServices';
 import { offlineDownloadService } from '../../service/OfflineDownloadService';
 import { appSettings } from '../../model/AppSettings';
 import { settingsStore } from '../../service/SettingsStore';
@@ -56,12 +56,12 @@ export struct SettingsFeedView {
   }
 
   private async reloadOfflineUsage(): Promise<void> {
-    await articleStore.whenReady();
-    offlineDownloadService.bytes = await articleStore.offlineCacheBytes();
+    await articleDatabase.whenReady();
+    offlineDownloadService.bytes = await articleRepository.offlineCacheBytes();
   }
 
   private async reloadHighlightCount(): Promise<void> {
-    this.highlightCount = await articleStore.countHighlights();
+    this.highlightCount = await highlightStore.countHighlights();
   }
 
   private hostContext(): common.UIAbilityContext {

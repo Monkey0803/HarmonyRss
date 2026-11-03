@@ -30,7 +30,7 @@ import { Article, FeedSource } from '../../model/Feed';
 import { RemoteSyncConstants } from '../../common/constants/RssConstants';
 import { buildArticleId } from '../ArticleMapper';
 import { ParsedArticle } from '../RssParser';
-import { articleStore } from '../ArticleStore';
+import { articleRepository } from '../ArticleServices';
 import { dedupeService } from '../DedupeService';
 import { ruleService } from '../RuleService';
 import { RuleApplyResult } from '../../model/Rule';
@@ -454,7 +454,7 @@ export class RemoteSyncService {
         continuation = page.continuation;
       }
       if (articles.length > 0) {
-        const inserted: Article[] = await articleStore.insertRemote(articles, mappings);
+        const inserted: Article[] = await articleRepository.insertRemote(articles, mappings);
         result.articlesAdded += inserted.length;
         // 新入库的远端文章同样执行本地规则；规则失败不影响入库与同步（applyToNew 内部兜底）。
         // 只对真正新增的文章执行：重复同步同一篇不重复计数、不回溯历史文章。
@@ -592,7 +592,7 @@ export class RemoteSyncService {
     for (let i = 0; i < mappings.length; i += 1) {
       ids.push(mappings[i].articleId);
     }
-    const states: ArticleState[] = await articleStore.loadStates(ids);
+    const states: ArticleState[] = await articleRepository.loadStates(ids);
     const stateById: Map<string, ArticleState> = new Map<string, ArticleState>();
     for (let i = 0; i < states.length; i += 1) {
       stateById.set(states[i].articleId, states[i]);

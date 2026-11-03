@@ -19,7 +19,7 @@ import { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { Article } from '../model/Feed';
 import { Enclosure, firstAudio } from '../model/Enclosure';
-import { articleStore } from './ArticleStore';
+import { articleRepository } from './ArticleServices';
 import { readerSpeech } from './ReaderSpeech';
 
 const DOMAIN: number = 0x0000;
@@ -445,7 +445,7 @@ export class MediaPlayerService {
 
   /** 读上次播放位置（秒）。 */
   private async loadProgress(articleId: string): Promise<number> {
-    const article: Article | undefined = await articleStore.loadById(articleId);
+    const article: Article | undefined = await articleRepository.loadById(articleId);
     return article !== undefined ? article.mediaProgress : 0;
   }
 
@@ -455,7 +455,7 @@ export class MediaPlayerService {
     if (track === undefined) {
       return;
     }
-    await articleStore.setMediaProgress(track.articleId, this.positionSeconds);
+    await articleRepository.setMediaProgress(track.articleId, this.positionSeconds);
   }
 
   /** 释放 AVPlayer（切歌用，会话保留）。 */

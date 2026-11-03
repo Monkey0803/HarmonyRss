@@ -9,7 +9,7 @@ import { Article, FeedSource } from '../model/Feed';
 import { ParsedArticle, ParsedFeed } from './RssParser';
 import { ARTICLE_ID_SEPARATOR } from '../common/constants/RssConstants';
 import { UrlText } from '../common/utils/UrlText';
-import { articleStore } from './ArticleStore';
+import { articleRepository } from './ArticleServices';
 
 /** 文章 id：订阅源 id + 链接（没有链接时退化为标题）。 */
 export function buildArticleId(feedId: string, item: ParsedArticle): string {
@@ -21,7 +21,7 @@ export function buildArticleId(feedId: string, item: ParsedArticle): string {
 export function toArticles(feed: FeedSource, parsed: ParsedFeed, sink: Article[]): void {
   if (parsed.title.length > 0 && parsed.title !== feed.title) {
     feed.title = parsed.title;
-    articleStore.updateFeedTitle(feed.id, parsed.title);
+    articleRepository.updateFeedTitle(feed.id, parsed.title);
   }
   if (parsed.siteUrl.length > 0) {
     feed.siteUrl = parsed.siteUrl;

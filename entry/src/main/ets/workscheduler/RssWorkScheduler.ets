@@ -18,7 +18,7 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import { Article, FeedSource } from '../model/Feed';
 import { feedStore } from '../service/FeedStore';
 import { feedService, FeedFetchResult } from '../service/FeedService';
-import { articleStore } from '../service/ArticleStore';
+import { articleDatabase, articleRepository } from '../service/ArticleServices';
 import { toArticles } from '../service/ArticleMapper';
 import { settingsStore } from '../service/SettingsStore';
 import { appSettings } from '../model/AppSettings';
@@ -71,7 +71,7 @@ export default class RssWorkScheduler extends WorkSchedulerExtensionAbility {
     if (feeds.length === 0) {
       return;
     }
-    await articleStore.open(context);
+    await articleDatabase.open(context);
     // 通知 / 抓取间隔 / 保留策略都存在偏好库里：扩展与界面可能不是同一份模块状态，这里自己读一次。
     await settingsStore.load(context);
     const fresh: Article[] = [];
@@ -102,7 +102,7 @@ export default class RssWorkScheduler extends WorkSchedulerExtensionAbility {
       }
     }
     // 只有真正新插入的文章才执行规则（重复抓取到的历史文章不回溯）。
-    const inserted: Article[] = articleStore.insertNew(fresh);
+    const inserted: Article[] = articleRepository.insertNew(fresh);
     if (inserted.length > 0) {
       // 后台抓取同样要跑本地规则；失败只记日志，不影响入库与通知。
       await ruleService.applyToNew(inserted);

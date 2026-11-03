@@ -16,7 +16,7 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import { SmartFolder } from '../model/Tag';
 import { BackupSmartFolder } from '../model/Backup';
 import { ArticleDbConstants, TagConstants } from '../common/constants/RssConstants';
-import { articleStore } from './ArticleStore';
+import { articleDatabase } from './ArticleServices';
 import { emptyQuery } from './SearchQueryParser';
 
 const DOMAIN: number = 0x0000;
@@ -95,8 +95,8 @@ export class SmartFolderStore {
   /** 全部智能文件夹（按 sort_order 升序）。库不可用时返回空数组。 */
   async list(): Promise<SmartFolder[]> {
     // 冷启动时订阅页可能早于 open() 完成就读取计数：先等库就绪，避免首屏显示 0。
-    await articleStore.whenReady();
-    const store: relationalStore.RdbStore | undefined = articleStore.getStore();
+    await articleDatabase.whenReady();
+    const store: relationalStore.RdbStore | undefined = articleDatabase.getStore();
     const result: SmartFolder[] = [];
     if (store === undefined) {
       return result;
@@ -124,7 +124,7 @@ export class SmartFolderStore {
    * 失败返回 undefined（调用方用 validate 的结果提示原因）。
    */
   async create(name: string, query: string): Promise<SmartFolder | undefined> {
-    const store: relationalStore.RdbStore | undefined = articleStore.getStore();
+    const store: relationalStore.RdbStore | undefined = articleDatabase.getStore();
     if (store === undefined) {
       return undefined;
     }
@@ -154,7 +154,7 @@ export class SmartFolderStore {
 
   /** 编辑名称 / 查询串（校验同创建，但不检查数量上限）。 */
   async update(id: string, name: string, query: string): Promise<boolean> {
-    const store: relationalStore.RdbStore | undefined = articleStore.getStore();
+    const store: relationalStore.RdbStore | undefined = articleDatabase.getStore();
     if (store === undefined || id.length === 0) {
       return false;
     }
@@ -175,7 +175,7 @@ export class SmartFolderStore {
 
   /** 删除智能文件夹（只删保存的查询，文章不受影响）。 */
   async remove(id: string): Promise<void> {
-    const store: relationalStore.RdbStore | undefined = articleStore.getStore();
+    const store: relationalStore.RdbStore | undefined = articleDatabase.getStore();
     if (store === undefined || id.length === 0) {
       return;
     }
@@ -192,7 +192,7 @@ export class SmartFolderStore {
    * 交换后统一写回连续的 sort_order（0..n-1），避免历史数据里出现重复排序位。
    */
   async move(id: string, delta: number): Promise<void> {
-    const store: relationalStore.RdbStore | undefined = articleStore.getStore();
+    const store: relationalStore.RdbStore | undefined = articleDatabase.getStore();
     if (store === undefined || id.length === 0 || delta === 0) {
       return;
     }
@@ -238,8 +238,8 @@ export class SmartFolderStore {
    * 库不可用时返回空数组。
    */
   async allForBackup(): Promise<BackupSmartFolder[]> {
-    await articleStore.whenReady();
-    const store: relationalStore.RdbStore | undefined = articleStore.getStore();
+    await articleDatabase.whenReady();
+    const store: relationalStore.RdbStore | undefined = articleDatabase.getStore();
     const result: BackupSmartFolder[] = [];
     if (store === undefined) {
       return result;
@@ -275,8 +275,8 @@ export class SmartFolderStore {
     if (records.length === 0) {
       return 0;
     }
-    await articleStore.whenReady();
-    const store: relationalStore.RdbStore | undefined = articleStore.getStore();
+    await articleDatabase.whenReady();
+    const store: relationalStore.RdbStore | undefined = articleDatabase.getStore();
     if (store === undefined) {
       return 0;
     }
@@ -327,7 +327,7 @@ export class SmartFolderStore {
 
   /** 最近一条语句影响的行数（INSERT OR IGNORE 是否真的插入）。 */
   private lastChanges(): number {
-    const store: relationalStore.RdbStore | undefined = articleStore.getStore();
+    const store: relationalStore.RdbStore | undefined = articleDatabase.getStore();
     if (store === undefined) {
       return 0;
     }

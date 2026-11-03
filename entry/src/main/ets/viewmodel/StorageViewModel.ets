@@ -7,7 +7,7 @@
 
 import { BusinessError } from '@kit.BasicServicesKit';
 import { SearchDiagnostics, StorageStats } from '../model/Search';
-import { articleStore } from '../service/ArticleStore';
+import { articleSearchStore, articleRepository } from '../service/ArticleServices';
 import { retentionService } from '../service/RetentionService';
 import { feedViewModel } from './FeedViewModel';
 import { settingsViewModel } from './SettingsViewModel';
@@ -46,7 +46,7 @@ export class StorageViewModel {
       // 源级保留天数参与估算，先把订阅源同步给保留服务。
       retentionService.setFeeds(feedViewModel.feeds);
       this.cleanable = await retentionService.estimate();
-      this.stats = await articleStore.storageStats(this.cleanable);
+      this.stats = await articleRepository.storageStats(this.cleanable);
       // 统计期间索引可能被后台重建，收尾再刷一次保证与页面一致。
       await this.refreshDiagnostics();
     } catch (err) {
@@ -63,7 +63,7 @@ export class StorageViewModel {
   /** 刷新检索索引诊断（存储页展示「检索索引」分组）。 */
   async refreshDiagnostics(): Promise<void> {
     try {
-      this.diagnostics = await articleStore.diagnostics();
+      this.diagnostics = await articleSearchStore.diagnostics();
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       console.warn('storage diagnostics failed: ' + error.message);
@@ -121,11 +121,11 @@ export class StorageViewModel {
     this.rebuildDone = 0;
     this.rebuildTotal = 0;
     try {
-      await articleStore.rebuildSearchIndex((done: number, total: number) => {
+      await articleSearchStore.rebuildSearchIndex((done: number, total: number) => {
         this.rebuildDone = done;
         this.rebuildTotal = total;
       });
-      await articleStore.rebuildCjkIndex((done: number, total: number) => {
+      await articleSearchStore.rebuildCjkIndex((done: number, total: number) => {
         this.rebuildDone = done;
         this.rebuildTotal = total;
       });

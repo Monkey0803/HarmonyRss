@@ -45,7 +45,7 @@ import {
   writeCloudBackup,
   writeSnapshot
 } from './BackupFiles';
-import { articleStore, BackupMergeCount } from './ArticleStore';
+import { highlightStore, articleSearchStore, articleDatabase, articleRepository, BackupMergeCount } from './ArticleServices';
 import { feedStore, mergeFeedsForBackup } from './FeedStore';
 import { TagMergeResult, tagStore } from './TagStore';
 import { smartFolderStore } from './SmartFolderStore';
@@ -282,7 +282,7 @@ export class BackupService {
     restoreSettings: boolean): Promise<BackupSummary> {
     const summary: BackupSummary = BackupSummary.empty();
     // 冷启动 / 分享扩展等入口可能还没打开库：先等就绪，拿不到库时各段自然降级为空操作。
-    await articleStore.whenReady();
+    await articleDatabase.whenReady();
 
     // 1) 订阅：按归一化 URL 合并，保留本地独有源与本地抓取状态。
     let mergedFeeds: FeedSource[] = [];
@@ -302,7 +302,7 @@ export class BackupService {
 
     // 2) 文章：按 id 合并，状态取并集；feed 不在集合里的条目由 Store 计为 skipped。
     try {
-      const counts: BackupMergeCount = await articleStore.mergeArticlesForBackup(doc.articles, validFeedIds);
+      const counts: BackupMergeCount = await articleRepository.mergeArticlesForBackup(doc.articles, validFeedIds);
       summary.articlesAdded = counts.added;
       summary.articlesUpdated = counts.updated;
       summary.skipped += counts.skipped;
@@ -325,7 +325,7 @@ export class BackupService {
         }
         accepted.push(item);
       }
-      summary.highlightsAdded = await articleStore.mergeHighlightsForBackup(accepted);
+      summary.highlightsAdded = await highlightStore.mergeHighlightsForBackup(accepted);
     } catch (err) {
       logFailure('applyHighlights', err as Object);
       summary.failed += 1;
@@ -354,7 +354,7 @@ export class BackupService {
         }
         links.push(new BackupArticleTag(item.articleId, mappedTagId));
       }
-      const linksAdded: number = await articleStore.mergeArticleTagsForBackup(links);
+      const linksAdded: number = await tagStore.mergeArticleTagsForBackup(links);
       // BackupSummary 没有标签关联字段：只记日志，避免为它改动对外的统计契约。
       hilog.info(DOMAIN, TAG, 'article tags merged: %{public}d', linksAdded);
     } catch (err) {
@@ -571,17 +571,17 @@ export class BackupService {
    * 设置只取白名单键（BackupCodec.settingsWhitelist）。
    */
   private async collect(context: common.Context): Promise<BackupDocument> {
-    await articleStore.whenReady();
+    await articleDatabase.whenReady();
     const doc: BackupDocument = new BackupDocument();
     doc.exportedAt = Date.now();
     const feeds: FeedSource[] = await feedStore.load(context, false);
     for (let i = 0; i < feeds.length; i += 1) {
       doc.feeds.push(sanitizeFeed(feeds[i]));
     }
-    doc.articles = await articleStore.allArticlesForBackup();
-    doc.highlights = await articleStore.allHighlightsForBackup();
+    doc.articles = await articleRepository.allArticlesForBackup();
+    doc.highlights = await highlightStore.allHighlightsForBackup();
     doc.tags = await tagStore.allForBackup();
-    doc.articleTags = await articleStore.allArticleTagsForBackup();
+    doc.articleTags = await tagStore.allArticleTagsForBackup();
     doc.smartFolders = await smartFolderStore.allForBackup();
     doc.rules = await ruleStore.allForBackup();
     await shareTemplates.open(context);
@@ -597,7 +597,7 @@ export class BackupService {
   /** 现有文章 id 集合（直接查主键列，比拉全量元数据轻得多）。 */
   private async existingArticleIds(): Promise<Set<string>> {
     const ids: Set<string> = new Set<string>();
-    const store: relationalStore.RdbStore | undefined = articleStore.getStore();
+    const store: relationalStore.RdbStore | undefined = articleDatabase.getStore();
     if (store === undefined) {
       return ids;
     }
@@ -632,10 +632,10 @@ export class BackupService {
     try {
       do {
         this.rebuildPending = false;
-        await articleStore.rebuildSearchIndex((done: number, total: number): void => {
+        await articleSearchStore.rebuildSearchIndex((done: number, total: number): void => {
           // 无界面进度：导入结果已返回，索引在后台追赶。
         });
-        await articleStore.rebuildCjkIndex((done: number, total: number): void => {
+        await articleSearchStore.rebuildCjkIndex((done: number, total: number): void => {
           // 同上。
         });
       } while (this.rebuildPending);

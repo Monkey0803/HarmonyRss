@@ -17,7 +17,7 @@ import { FeedSource } from '../model/Feed';
 import { FeedFetchSample, ExitReasonKind, exitReasonKind, averageDuration } from '../model/Diagnostics';
 import { diagnostics } from '../service/DiagnosticsService';
 import { feedViewModel } from '../viewmodel/FeedViewModel';
-import { articleStore, CacheStats } from '../service/ArticleStore';
+import { articleRepository, CacheStats } from '../service/ArticleServices';
 import { appSettings } from '../model/AppSettings';
 import { settingsStore } from '../service/SettingsStore';
 import { DateUtil } from '../common/utils/DateUtil';
@@ -47,8 +47,8 @@ export struct DiagnosticsView {
   }
 
   private async loadStorageStats(): Promise<void> {
-    this.articleCount = await articleStore.countAll();
-    const stats: CacheStats = await articleStore.cacheStats();
+    this.articleCount = await articleRepository.countAll();
+    const stats: CacheStats = await articleRepository.cacheStats();
     this.cachedArticles = stats.articles;
     this.cachedChars = stats.bytes;
   }

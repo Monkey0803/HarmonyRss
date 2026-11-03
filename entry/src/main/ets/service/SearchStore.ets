@@ -1,7 +1,7 @@
 /*
  * SearchStore.ets — 检索入口与搜索历史（偏好库）。
  *
- * 检索本身下沉到 ArticleStore（FTS / LIKE 降级），这里只做：
+ * 检索本身下沉到 ArticleSearchStore（FTS / LIKE 降级），这里只做：
  *   1. 统一入口（视图 / ViewModel 不直接依赖 SQL 层）；
  *   2. 搜索历史（JSON 字符串数组，最多 20 条、去重、最新在前；读写失败静默降级）。
  */
@@ -11,7 +11,7 @@ import { common } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { SearchPage, SearchQuery } from '../model/Search';
-import { articleStore } from './ArticleStore';
+import { articleSearchStore } from './ArticleServices';
 import { PreferencesConstants } from '../common/constants/PreferencesConstants';
 import { SearchConstants } from '../common/constants/RssConstants';
 
@@ -37,17 +37,17 @@ export class SearchStore {
 
   /** 执行检索（分页）。 */
   async search(query: SearchQuery, offset: number, limit: number): Promise<SearchPage> {
-    return await articleStore.search(query, offset, limit);
+    return await articleSearchStore.search(query, offset, limit);
   }
 
   /** 检索索引是否可用（false 时是 LIKE 降级，功能仍可用）。 */
   isFtsReady(): boolean {
-    return articleStore.isFtsReady();
+    return articleSearchStore.isFtsReady();
   }
 
   /** 检索链路是否走索引：主索引（纯英文）或中文索引任一可用即不算降级。 */
   isIndexAvailable(): boolean {
-    return articleStore.isFtsReady() || articleStore.isCjkIndexReady();
+    return articleSearchStore.isFtsReady() || articleSearchStore.isCjkIndexReady();
   }
 
   /** 最近搜索历史（最新在前）。 */

@@ -18,7 +18,7 @@ import { DedupeKeys } from './DedupeKeys';
 import { DEFAULT_FEEDS, FeedSeed } from '../model/DefaultFeeds';
 import { FullTextMode, TriState } from '../common/constants/SettingsConstants';
 import { ArticleDbConstants, FeedError } from '../common/constants/RssConstants';
-import { articleStore } from './ArticleStore';
+import { articleDatabase } from './ArticleServices';
 
 /** 落盘用的扁平结构（新字段可选：旧记录读不到时按默认值处理）。 */
 interface FeedRecord {
@@ -247,7 +247,7 @@ export class FeedStore {
    * 库不可用 / 表还没建时返回空数组，调用方回退偏好库。
    */
   private readFromDb(): FeedSource[] {
-    const store: relationalStore.RdbStore | undefined = articleStore.getStore();
+    const store: relationalStore.RdbStore | undefined = articleDatabase.getStore();
     const feeds: FeedSource[] = [];
     if (store === undefined) {
       return feeds;
@@ -298,7 +298,7 @@ export class FeedStore {
 
   /** 全量写 RDB（订阅量级是几百条，整体替换比逐条 diff 简单可靠）。 */
   private writeDb(feeds: FeedSource[]): void {
-    const store: relationalStore.RdbStore | undefined = articleStore.getStore();
+    const store: relationalStore.RdbStore | undefined = articleDatabase.getStore();
     if (store === undefined) {
       return;
     }

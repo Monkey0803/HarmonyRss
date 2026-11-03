@@ -17,7 +17,7 @@ import { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { PreferencesConstants } from '../common/constants/PreferencesConstants';
 import { SyncConflict, SyncSummary } from '../model/Sync';
-import { articleStore } from './ArticleStore';
+import { articleDatabase } from './ArticleServices';
 import { NetworkStatus } from './NetworkStatus';
 import { AutoSyncPolicy } from './sync/AutoSyncPolicy';
 import { SyncCollector } from './sync/SyncCollector';
@@ -347,7 +347,7 @@ export class SyncService {
     const lastAt: number = store !== undefined
       ? this.readNumber(store, PreferencesConstants.KEY_CLOUD_SYNC_LAST_AT) : 0;
     const wifiOnly: boolean = store !== undefined ? this.readWifiOnly(store) : true;
-    await articleStore.whenReady();
+    await articleDatabase.whenReady();
     const pending: number = await syncStore.pendingCount();
     const records: number = await syncStore.recordCount();
     const conflicts: number = store !== undefined
@@ -377,7 +377,7 @@ export class SyncService {
     }
     this.syncingFlag = true;
     try {
-      await articleStore.whenReady();
+      await articleDatabase.whenReady();
       const origin: string = await this.nodeId(context);
       const collector: SyncCollector = new SyncCollector(syncStore, origin);
       await collector.collect(context, Date.now());

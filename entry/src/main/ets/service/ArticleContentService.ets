@@ -18,7 +18,7 @@
 import { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { Article } from '../model/Feed';
-import { articleStore } from './ArticleStore';
+import { articleRepository } from './ArticleServices';
 import { toPlainText } from '../common/utils/HtmlText';
 import { extractReadable, feedBodyKind } from './Readability';
 import {
@@ -221,7 +221,7 @@ export class ArticleContentService {
       article.plainText = '';
       article.readerState = ReaderState.NONE;
       try {
-        articleStore.setReaderHtml(article.id, '', '');
+        articleRepository.setReaderHtml(article.id, '', '');
       } catch (err) {
         const error: BusinessError = err as BusinessError;
         hilog.warn(DOMAIN, TAG, 'clear invalid reader cache failed: %{public}d', error.code);
@@ -329,7 +329,7 @@ export class ArticleContentService {
         if (page.etag !== article.pageEtag || page.lastModified !== article.pageLastModified) {
           article.pageEtag = page.etag;
           article.pageLastModified = page.lastModified;
-          articleStore.setPageValidators(article.id, page.etag, page.lastModified);
+          articleRepository.setPageValidators(article.id, page.etag, page.lastModified);
         }
         const started: number = Date.now();
         fresh = extractReadable(page.html, baseUrl);
@@ -490,7 +490,7 @@ export class ArticleContentService {
     const text: string = plain.length > 0 ? plain : article.plainText;
     article.plainText = text;
     try {
-      articleStore.setReaderHtml(article.id, fragment, text);
+      articleRepository.setReaderHtml(article.id, fragment, text);
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       hilog.warn(DOMAIN, TAG, 'persist reader html failed: %{public}d', error.code);

@@ -3,7 +3,7 @@
  *
  * 数据流：本地库（缓存 + 已读/收藏）是唯一事实来源 —— 冷启动先出缓存列表（离线可读），
  * 再联网抓取并把新条目写回本地库，最后重新读库生成界面列表。已读 / 收藏只写在本地库，
- * 抓取过程不会覆盖（ArticleStore.insertNew 只做 INSERT OR IGNORE）。
+ * 抓取过程不会覆盖（ArticleRepository.insertNew 只做 INSERT OR IGNORE）。
  */
 
 import { common } from '@kit.AbilityKit';
@@ -19,7 +19,7 @@ import {
 } from '../service/FeedStore';
 import { feedService, FeedFetchResult, ResolvedFeed } from '../service/FeedService';
 import { feedDiscovery } from '../service/FeedDiscovery';
-import { articleStore, CacheStats, SavedWebPageResult } from '../service/ArticleStore';
+import { articleDatabase, articleRepository, CacheStats, SavedWebPageResult } from '../service/ArticleServices';
 import { WebPagePreview, WEB_PAGE_FEED_ID } from '../model/WebPagePreview';
 import { DedupeKeys } from '../service/DedupeKeys';
 import { dedupeService } from '../service/DedupeService';
@@ -230,7 +230,7 @@ export class FeedViewModel {
     this.groupMode = appSettings.listGroupMode;
     this.filter = appSettings.homeFilter;
     // 先开库再读订阅：v10 起订阅源以 RDB 为准，库没开时会回退偏好库并覆盖回来。
-    await articleStore.open(context);
+    await articleDatabase.open(context);
     this.feeds = await feedStore.load(context);
     // 远端同步通过回调读写订阅源与文章列表（避免 Service 反向依赖 ViewModel）。
     remoteSyncService.bindFeedSource(
@@ -253,8 +253,8 @@ export class FeedViewModel {
         }
       }
     });
-    this.all = await articleStore.loadForList();
-    this.observedDataVersion = articleStore.dataVersion();
+    this.all = await articleRepository.loadForList();
+    this.observedDataVersion = articleRepository.dataVersion();
     retentionService.configure(context, this.feeds);
     this.publish();
   }
@@ -268,10 +268,10 @@ export class FeedViewModel {
     this.localReadyTask = this.ensureReady(context);
     await this.localReadyTask;
     // 老数据补一次正文纯文本（有上限）：让检索能命中「之前已提取过正文」的那些文章。
-    await articleStore.backfillPlainText(BACKFILL_PLAIN_TEXT_LIMIT);
+    await articleRepository.backfillPlainText(BACKFILL_PLAIN_TEXT_LIMIT);
     // 摘要清洗规则升级：按新规则重算库里已有摘要（正文由 Reader 缓存版本触发按需重提取）。
     await this.applyContentRulesMigration();
-    this.all = await articleStore.loadForList();
+    this.all = await articleRepository.loadForList();
     this.publish();
     // 老数据补一次去重键（分批、上限 10 批）：让升级前入库的文章也能参与后续合并判定。
     // 异步启动，绝不 await —— 补键只是让「以后的新文章」能匹配上旧文章，不阻塞首屏与抓取。
@@ -295,7 +295,7 @@ export class FeedViewModel {
     if (settingsStore.contentRulesVersion() >= SUMMARY_RULES_VERSION) {
       return;
     }
-    const changed: number = await articleStore.resummarizeAll();
+    const changed: number = await articleRepository.resummarizeAll();
     // 失败（-1）不推进版本：下次启动再试，回填本身是幂等的。
     if (changed < 0) {
       return;
@@ -316,7 +316,7 @@ export class FeedViewModel {
 
   private async runDedupeBackfill(): Promise<void> {
     for (let i = 0; i < DEDUPE_BACKFILL_MAX_BATCHES; i += 1) {
-      const done: number = await articleStore.backfillDedupeKeys(DEDUPE_BACKFILL_BATCH);
+      const done: number = await articleRepository.backfillDedupeKeys(DEDUPE_BACKFILL_BATCH);
       if (done < DEDUPE_BACKFILL_BATCH) {
         return;
       }
@@ -479,7 +479,7 @@ export class FeedViewModel {
    * 这样界面上已建立的列表项绑定不会被换掉的实例切断（见 mergeArticle 的说明）。
    */
   private async reloadFromStore(): Promise<void> {
-    const loaded: Article[] = await articleStore.loadForList();
+    const loaded: Article[] = await articleRepository.loadForList();
     const previous: Map<string, Article> = new Map<string, Article>();
     for (let i = 0; i < this.all.length; i += 1) {
       previous.set(this.all[i].id, this.all[i]);
@@ -505,7 +505,7 @@ export class FeedViewModel {
     this.resetPaging();
     // 只有真正新插入的文章才执行规则：重复抓取到的历史文章不回溯（否则命中数虚增、
     // 用户手动取消隐藏的文章会被下一次刷新重新隐藏）。
-    const inserted: Article[] = articleStore.insertNew(fresh);
+    const inserted: Article[] = articleRepository.insertNew(fresh);
     // 规则只处理新入库文章；失败只记日志，绝不影响入库与列表刷新（见 runRules）。
     await this.runRules(inserted);
     await this.reloadFromStore();
@@ -570,7 +570,7 @@ export class FeedViewModel {
   }
 
   /**
-   * 异步触发保留清理：清理完成后把列表与统计刷新一次（清理走了回收站，索引同步已由 ArticleStore 处理）。
+   * 异步触发保留清理：清理完成后把列表与统计刷新一次（清理走了回收站，索引同步已由 ArticleRepository 处理）。
    * 任何失败都只记日志 —— 清理是低优先级后台动作。
    */
   applyRetentionIfDue(): void {
@@ -602,7 +602,7 @@ export class FeedViewModel {
     this.context = context;
     this.feeds = await feedStore.load(context, false);
     retentionService.configure(context, this.feeds);
-    await articleStore.whenReady();
+    await articleDatabase.whenReady();
     await this.reloadFromStore();
     this.publish();
   }
@@ -753,7 +753,7 @@ export class FeedViewModel {
     if (this.findArticle(articleId) !== undefined) {
       return true;
     }
-    const loaded: Article | undefined = await articleStore.loadById(articleId);
+    const loaded: Article | undefined = await articleRepository.loadById(articleId);
     if (loaded === undefined) {
       return false;
     }
@@ -923,7 +923,7 @@ export class FeedViewModel {
     if (this.scopeFeedId === feedId) {
       this.scopeTitle = next;
     }
-    articleStore.updateFeedTitle(feedId, next);
+    articleRepository.updateFeedTitle(feedId, next);
     feedStore.save(this.feeds);
     this.publish();
   }
@@ -1295,26 +1295,26 @@ export class FeedViewModel {
 
   /** 用户确认保存独立网页；已有 RSS 条目复用原文章，不产生第二份列表记录。 */
   async saveWebPage(preview: WebPagePreview): Promise<SavedWebPageResult | undefined> {
-    await articleStore.whenReady();
+    await articleDatabase.whenReady();
     const article: Article = new Article('saved-web|' + DedupeKeys.urlKey(preview.url),
       WEB_PAGE_FEED_ID, preview.source, preview.title, preview.url,
       preview.summary, preview.plainText, Date.now());
     article.saved = true;
     article.readerHtml = preview.readerHtml;
     article.plainText = preview.plainText;
-    const result: SavedWebPageResult | undefined = articleStore.saveWebPage(article);
+    const result: SavedWebPageResult | undefined = articleRepository.saveWebPage(article);
     if (result === undefined) {
       return undefined;
     }
     await this.reloadFromStore();
-    this.observedDataVersion = articleStore.dataVersion();
+    this.observedDataVersion = articleRepository.dataVersion();
     this.publish();
     return result;
   }
 
   /** 返回主界面时只在分享扩展等其它数据库连接写入后刷新列表。 */
   async reloadIfExternalChange(): Promise<void> {
-    const version: number = articleStore.dataVersion();
+    const version: number = articleRepository.dataVersion();
     if (version === 0 || this.observedDataVersion === 0) {
       this.observedDataVersion = version;
       return;
@@ -1323,7 +1323,7 @@ export class FeedViewModel {
       return;
     }
     await this.reloadFromStore();
-    this.observedDataVersion = articleStore.dataVersion();
+    this.observedDataVersion = articleRepository.dataVersion();
     this.publish();
   }
 
@@ -1398,11 +1398,11 @@ export class FeedViewModel {
     this.normalizeOrder();
     const fresh: Article[] = [];
     toArticles(feed, resolved.parsed, fresh);
-    const inserted: Article[] = articleStore.insertNew(fresh);
+    const inserted: Article[] = articleRepository.insertNew(fresh);
     // toArticles 可能把 feed 标题改成了 feed 自身标题；用户自定义标题要盖回去（源 + 文章行）。
     if (customTitle.length > 0 && feed.title !== customTitle) {
       feed.title = customTitle;
-      articleStore.updateFeedTitle(feed.id, customTitle);
+      articleRepository.updateFeedTitle(feed.id, customTitle);
     }
     // 新增订阅源时导入的首批文章同样视为「新文章」：执行规则（失败不影响入库）。
     await this.runRules(inserted);
@@ -1477,7 +1477,7 @@ export class FeedViewModel {
     }
     this.feeds = nextFeeds;
     this.all = nextAll;
-    articleStore.deleteByFeed(feedId);
+    articleRepository.deleteByFeed(feedId);
     this.publish();
     feedStore.save(this.feeds);
   }
@@ -1599,7 +1599,7 @@ export class FeedViewModel {
       if (this.all[i].id === articleId) {
         const next: boolean = !this.all[i].starred;
         this.all[i].starred = next;
-        articleStore.setStarred(articleId, next);
+        articleRepository.setStarred(articleId, next);
         remoteSyncService.enqueueGroupState(articleId, undefined, next);
         // 组内其它来源同步收藏（主条变化即整组变化）。
         this.syncGroupStarred([articleId], next);
@@ -1625,7 +1625,7 @@ export class FeedViewModel {
       if (this.all[i].id === articleId) {
         const next: boolean = !this.all[i].saved;
         this.all[i].saved = next;
-        articleStore.setSaved(articleId, next);
+        articleRepository.setSaved(articleId, next);
         break;
       }
     }
@@ -1643,7 +1643,7 @@ export class FeedViewModel {
         this.all[i].read = read;
       }
     }
-    articleStore.setReadMany(ids, read);
+    articleRepository.setReadMany(ids, read);
     // 组内同步：一次多选可能跨多个合并组，交给 DedupeService 逐个展开。
     this.syncGroupRead(ids, read);
     for (let i = 0; i < ids.length; i += 1) {
@@ -1664,7 +1664,7 @@ export class FeedViewModel {
         this.all[i].starred = starred;
       }
     }
-    articleStore.setStarredMany(ids, starred);
+    articleRepository.setStarredMany(ids, starred);
     // 组内同步收藏。
     this.syncGroupStarred(ids, starred);
     for (let i = 0; i < ids.length; i += 1) {
@@ -1685,7 +1685,7 @@ export class FeedViewModel {
         this.all[i].saved = saved;
       }
     }
-    articleStore.setSavedMany(ids, saved);
+    articleRepository.setSavedMany(ids, saved);
     this.exitSelect();
     this.publish();
   }
@@ -1707,7 +1707,7 @@ export class FeedViewModel {
       }
     }
     this.all = kept;
-    articleStore.deleteMany(ids);
+    articleRepository.deleteMany(ids);
     this.exitSelect();
     this.publish();
     this.reloadAfterGroupChange();
@@ -1750,7 +1750,7 @@ export class FeedViewModel {
       }
     }
     if (ids.length > 0) {
-      articleStore.setReadMany(ids, true);
+      articleRepository.setReadMany(ids, true);
       // 组内同步：一次标记可能跨多个合并组，交给 DedupeService 逐个展开。
       this.syncGroupRead(ids, true);
       for (let i = 0; i < ids.length; i += 1) {
@@ -1804,7 +1804,7 @@ export class FeedViewModel {
         changed.push(this.all[i].id);
       }
     }
-    articleStore.markAllRead();
+    articleRepository.markAllRead();
     // 存储层是整表更新（含不在内存里的重复项），组内状态天然一致；这里再按组展开一次，
     // 兜住「重复项已被独立改写」的脏数据，保证主条与成员口径始终一致。
     this.syncGroupRead(changed, true);
@@ -1820,7 +1820,7 @@ export class FeedViewModel {
       if (this.all[i].id === articleId) {
         const next: boolean = !this.all[i].read;
         this.all[i].read = next;
-        articleStore.setRead(articleId, next);
+        articleRepository.setRead(articleId, next);
         remoteSyncService.enqueueGroupState(articleId, next, undefined);
         // 组内其它来源同步已读（未读计数只按主条算，因此计数只变 1）。
         this.syncGroupRead([articleId], next);
@@ -1842,7 +1842,7 @@ export class FeedViewModel {
         break;
       }
     }
-    articleStore.setProgress(articleId, progress, ratio);
+    articleRepository.setProgress(articleId, progress, ratio);
   }
 
   /** 正文缓存占用（设置页展示）：条数 + 字符量。 */
@@ -1851,7 +1851,7 @@ export class FeedViewModel {
 
   /** 刷新缓存占用统计。 */
   async refreshCacheStats(): Promise<void> {
-    const stats: CacheStats = await articleStore.cacheStats();
+    const stats: CacheStats = await articleRepository.cacheStats();
     this.cachedArticles = stats.articles;
     this.cachedChars = stats.bytes;
     this.publish();
@@ -1859,7 +1859,7 @@ export class FeedViewModel {
 
   /** 清理未收藏文章的正文缓存，返回清理条数；内存里的正文一并失效。 */
   async clearCachedContent(): Promise<number> {
-    const cleared: number = await articleStore.clearCachedContent();
+    const cleared: number = await articleRepository.clearCachedContent();
     for (let i = 0; i < this.all.length; i += 1) {
       const item: Article = this.all[i];
       if (!item.starred) {
@@ -1880,7 +1880,7 @@ export class FeedViewModel {
 
   /** 播客队列：主条、未隐藏、带音频附件的文章（按源 / 全部未听由调用方决定）。 */
   async mediaQueue(feedId: string, allFeeds: boolean, onlyUnplayed: boolean): Promise<Article[]> {
-    return await articleStore.loadMediaQueue(feedId, allFeeds, onlyUnplayed, 50);
+    return await articleRepository.loadMediaQueue(feedId, allFeeds, onlyUnplayed, 50);
   }
 
   /**
@@ -1910,7 +1910,7 @@ export class FeedViewModel {
     if (this.bodyLoaded.has(articleId)) {
       return true;
     }
-    const body = await articleStore.loadBody(articleId);
+    const body = await articleRepository.loadBody(articleId);
     if (body === undefined) {
       return false;
     }
@@ -2020,7 +2020,7 @@ export class FeedViewModel {
         this.all[i].readerHtml = '';
         this.all[i].readerState = ReaderState.NONE;
         this.all[i].plainText = '';
-        articleStore.setReaderHtml(articleId, '', '');
+        articleRepository.setReaderHtml(articleId, '', '');
         return;
       }
     }
@@ -2041,7 +2041,7 @@ export class FeedViewModel {
       if (this.all[i].id === articleId) {
         if (!this.all[i].read) {
           this.all[i].read = true;
-          articleStore.setRead(articleId, true);
+          articleRepository.setRead(articleId, true);
           remoteSyncService.enqueueGroupState(articleId, true, undefined);
         }
         // 无论内存里是否已读，都把整组置已读（幂等）；覆盖「主条已读但成员未读」的历史脏数据。
@@ -2318,7 +2318,7 @@ export class FeedViewModel {
         this.all[i].hidden = hidden;
       }
     }
-    articleStore.setHiddenMany(ids, hidden);
+    articleRepository.setHiddenMany(ids, hidden);
     // 组内同步隐藏 / 取消隐藏：只改展示口径，绝不删除文章内容。
     this.syncGroupHidden(ids, hidden);
     this.publish();

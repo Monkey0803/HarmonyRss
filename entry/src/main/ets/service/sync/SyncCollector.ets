@@ -54,7 +54,7 @@ import {
   latestFieldAt
 } from '../../model/Sync';
 import { ArticleDbConstants } from '../../common/constants/RssConstants';
-import { articleStore } from '../ArticleStore';
+import { highlightStore, articleDatabase, articleRepository } from '../ArticleServices';
 import { feedMergeKey, feedStore } from '../FeedStore';
 import { normalizeTagName, tagNameKey, tagStore } from '../TagStore';
 import { smartFolderStore } from '../SmartFolderStore';
@@ -212,7 +212,7 @@ export class SyncCollector {
   async collect(context: common.Context, now: number): Promise<number> {
     // 冷启动时 autoSync 可能早于文章库打开：此时文章 / 高亮 / 标签 / 网页的快照全是空的，
     // 继续比对会把「本机还没读到」误判成删除，给对端发墓碑并删掉对方的真实数据。
-    if (articleStore.getStore() === undefined) {
+    if (articleDatabase.getStore() === undefined) {
       hilog.info(DOMAIN, TAG, 'collect skipped: article store not ready');
       return 0;
     }
@@ -274,7 +274,7 @@ export class SyncCollector {
    * 正文由各端按需重新提取，所以这里绝不把 reader_html 放进 payload。
    */
   private async collectWebPages(now: number): Promise<number> {
-    const pages: WebPagePayload[] = await articleStore.listSavedWebPages();
+    const pages: WebPagePayload[] = await articleRepository.listSavedWebPages();
     const existing: SyncRecord[] = await this.store.listByKind(SyncKinds.WEB_PAGE);
     const known: Map<string, SyncRecord> = new Map<string, SyncRecord>();
     for (let i = 0; i < existing.length; i += 1) {
@@ -412,7 +412,7 @@ export class SyncCollector {
         nameById.set(tags[i].id, normalizeTagName(tags[i].name));
       }
     }
-    const links: BackupArticleTag[] = await articleStore.allArticleTagsForBackup();
+    const links: BackupArticleTag[] = await tagStore.allArticleTagsForBackup();
     for (let i = 0; i < links.length; i += 1) {
       const link: BackupArticleTag = links[i];
       const nameKey: string | undefined = nameKeyById.get(link.tagId);
@@ -543,7 +543,7 @@ export class SyncCollector {
 
   /** 全表读高亮（复用备份导出，避免再写一份 SQL）。 */
   private async loadHighlights(): Promise<Highlight[]> {
-    const rows: BackupHighlight[] = await articleStore.allHighlightsForBackup();
+    const rows: BackupHighlight[] = await highlightStore.allHighlightsForBackup();
     const result: Highlight[] = [];
     for (let i = 0; i < rows.length; i += 1) {
       const row: BackupHighlight = rows[i];
@@ -556,7 +556,7 @@ export class SyncCollector {
   /** 全表读文章状态（含重复项：它们的状态同样要同步出去）。 */
   private async loadArticleRows(): Promise<ArticleSyncRow[]> {
     const rows: ArticleSyncRow[] = [];
-    const store: relationalStore.RdbStore | undefined = articleStore.getStore();
+    const store: relationalStore.RdbStore | undefined = articleDatabase.getStore();
     if (store === undefined) {
       return rows;
     }
@@ -684,7 +684,7 @@ export class SyncCollector {
     if (records.length === 0) {
       return 0;
     }
-    const local: WebPagePayload[] = await articleStore.listSavedWebPages();
+    const local: WebPagePayload[] = await articleRepository.listSavedWebPages();
     const localKeys: Set<string> = new Set<string>();
     for (let i = 0; i < local.length; i += 1) {
       localKeys.add(DedupeKeys.urlKey(local[i].url));
@@ -700,7 +700,7 @@ export class SyncCollector {
         continue;
       }
       if (record.deleted) {
-        if (articleStore.deleteSyncedWebPage(urlKey)) {
+        if (articleRepository.deleteSyncedWebPage(urlKey)) {
           applied += 1;
         }
         continue;
@@ -712,7 +712,7 @@ export class SyncCollector {
       if (payload === undefined) {
         continue;
       }
-      if (articleStore.insertSyncedWebPage(urlKey, payload)) {
+      if (articleRepository.insertSyncedWebPage(urlKey, payload)) {
         applied += 1;
       }
     }
@@ -755,15 +755,15 @@ export class SyncCollector {
       const saved: boolean = payload.saved.value === '1';
       // 进度只在记录里保留：写回需要秒数，留给下一批随阅读进度同步一起接。
       if (row.read !== read) {
-        articleStore.setRead(ids[i], read);
+        articleRepository.setRead(ids[i], read);
         applied += 1;
       }
       if (row.starred !== starred) {
-        articleStore.setStarred(ids[i], starred);
+        articleRepository.setStarred(ids[i], starred);
         applied += 1;
       }
       if (row.saved !== saved) {
-        articleStore.setSaved(ids[i], saved);
+        articleRepository.setSaved(ids[i], saved);
         applied += 1;
       }
     }
@@ -794,7 +794,7 @@ export class SyncCollector {
       const id: string = record.key.substring(SyncKeys.HIGHLIGHT.length);
       if (record.deleted) {
         if (localById.has(id)) {
-          articleStore.deleteHighlight(id);
+          highlightStore.deleteHighlight(id);
           applied += 1;
         }
         continue;
@@ -815,7 +815,7 @@ export class SyncCollector {
       if (localById.get(payload.id) === encodeHighlightPayload(payload)) {
         continue;
       }
-      articleStore.addHighlight(new Highlight(payload.id, payload.articleId, payload.quote,
+      highlightStore.addHighlight(new Highlight(payload.id, payload.articleId, payload.quote,
         payload.note, payload.color, payload.createdAt, payload.anchorText, payload.anchorRatio));
       applied += 1;
     }
@@ -1146,7 +1146,7 @@ export class SyncCollector {
 
   private async loadRowsByIds(ids: string[]): Promise<Map<string, ArticleSyncRow>> {
     const result: Map<string, ArticleSyncRow> = new Map<string, ArticleSyncRow>();
-    const store: relationalStore.RdbStore | undefined = articleStore.getStore();
+    const store: relationalStore.RdbStore | undefined = articleDatabase.getStore();
     if (store === undefined || ids.length === 0) {
       return result;
     }

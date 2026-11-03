@@ -1,7 +1,7 @@
 /*
  * TagStore.ets — 标签的本地存储（Model 层：屏蔽 SQL）。
  *
- * 复用 ArticleStore 打开的同一个 RdbStore（同进程不重复打开同名库）。
+ * 复用 ArticleDatabase 打开的同一个 RdbStore（同进程不重复打开同名库）。
  * 设计要点：
  *   1. 名称归一：trim + 连续空白折叠为单空格 + 截断到 32 字符；name_key = 归一后小写，
  *      作为 UNIQUE 去重键（大小写不敏感），重命名只改 name / name_key，关联表不动。
@@ -15,15 +15,16 @@ import { relationalStore } from '@kit.ArkData';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { Article } from '../model/Feed';
-import { BackupTag } from '../model/Backup';
+import { BackupTag, BackupArticleTag } from '../model/Backup';
 import { TagWithCount } from '../model/Tag';
 import { ArticleDbConstants, ReaderState, TagConstants } from '../common/constants/RssConstants';
-import { articleStore } from './ArticleStore';
+import { articleDatabase } from './ArticleServices';
+import { BACKUP_BATCH_SIZE, SQL_SELECT_BACKUP_ARTICLE_TAGS, SQL_INSERT_BACKUP_ARTICLE_TAG } from './ArticleSchema';
 
 const DOMAIN: number = 0x0000;
 const TAG: string = 'TagStore';
 
-/** 轻量列表列（与 ArticleStore.loadForList 完全一致：不含正文 / HTML / 纯文本）。 */
+/** 轻量列表列（与 ArticleRepository.loadForList 完全一致：不含正文 / HTML / 纯文本）。 */
 const LIST_COLUMNS: string =
   'a.id, a.feed_id, a.feed_title, a.title, a.link, a.summary, a.published_at, a.is_read,' +
   ' a.is_starred, a.is_saved, a.image_url, a.author, a.progress, a.progress_ratio,' +
@@ -107,8 +108,8 @@ export class TagStore {
   /** 标签列表 + 关联文章数，按名称排序（大小写不敏感）。库不可用时返回空数组。 */
   async listTags(): Promise<TagWithCount[]> {
     // 冷启动时订阅页可能早于 open() 完成就读取计数：先等库就绪，避免首屏显示 0。
-    await articleStore.whenReady();
-    const store: relationalStore.RdbStore | undefined = articleStore.getStore();
+    await articleDatabase.whenReady();
+    const store: relationalStore.RdbStore | undefined = articleDatabase.getStore();
     const result: TagWithCount[] = [];
     if (store === undefined) {
       return result;
@@ -143,7 +144,7 @@ export class TagStore {
    * 归一后为空也返回 undefined（视图据此提示）。
    */
   async create(name: string): Promise<TagWithCount | undefined> {
-    const store: relationalStore.RdbStore | undefined = articleStore.getStore();
+    const store: relationalStore.RdbStore | undefined = articleDatabase.getStore();
     if (store === undefined) {
       return undefined;
     }
@@ -176,7 +177,7 @@ export class TagStore {
 
   /** 重命名：归一后为空或与其它标签重名时返回 false（失败不产生悬挂关联）。 */
   async rename(id: string, name: string): Promise<boolean> {
-    const store: relationalStore.RdbStore | undefined = articleStore.getStore();
+    const store: relationalStore.RdbStore | undefined = articleDatabase.getStore();
     if (store === undefined || id.length === 0) {
       return false;
     }
@@ -202,7 +203,7 @@ export class TagStore {
 
   /** 删除标签（连同关联行）；文章本身不受影响。 */
   async remove(id: string): Promise<void> {
-    const store: relationalStore.RdbStore | undefined = articleStore.getStore();
+    const store: relationalStore.RdbStore | undefined = articleDatabase.getStore();
     if (store === undefined || id.length === 0) {
       return;
     }
@@ -225,7 +226,7 @@ export class TagStore {
 
   /** 批量打标（事务 + INSERT OR IGNORE）：返回新增的关联条数，重复添加不产生重复行。 */
   async addToArticles(tagId: string, ids: string[]): Promise<number> {
-    const store: relationalStore.RdbStore | undefined = articleStore.getStore();
+    const store: relationalStore.RdbStore | undefined = articleDatabase.getStore();
     if (store === undefined || tagId.length === 0 || ids.length === 0) {
       return 0;
     }
@@ -255,7 +256,7 @@ export class TagStore {
 
   /** 从单篇文章移除一个标签。 */
   async removeFromArticle(tagId: string, articleId: string): Promise<void> {
-    const store: relationalStore.RdbStore | undefined = articleStore.getStore();
+    const store: relationalStore.RdbStore | undefined = articleDatabase.getStore();
     if (store === undefined || tagId.length === 0 || articleId.length === 0) {
       return;
     }
@@ -270,7 +271,7 @@ export class TagStore {
 
   /** 一篇文章的标签（含计数，供详情页 chips 展示）。 */
   async tagsOfArticle(articleId: string): Promise<TagWithCount[]> {
-    const store: relationalStore.RdbStore | undefined = articleStore.getStore();
+    const store: relationalStore.RdbStore | undefined = articleDatabase.getStore();
     const result: TagWithCount[] = [];
     if (store === undefined || articleId.length === 0) {
       return result;
@@ -302,10 +303,10 @@ export class TagStore {
 
   /**
    * 多标签 AND 查询：只显示**同时具备**全部标签的文章，按发布时间倒序分页。
-   * 只取轻量列 —— 打开文章时再由 FeedViewModel / ArticleStore 补正文。
+   * 只取轻量列 —— 打开文章时再由 FeedViewModel / ArticleRepository 补正文。
    */
   async articlesByTags(tagIds: string[], offset: number, limit: number): Promise<Article[]> {
-    const store: relationalStore.RdbStore | undefined = articleStore.getStore();
+    const store: relationalStore.RdbStore | undefined = articleDatabase.getStore();
     const result: Article[] = [];
     if (store === undefined || tagIds.length === 0 || limit <= 0) {
       return result;
@@ -338,7 +339,7 @@ export class TagStore {
 
   /** 多标签 AND 命中的文章总数（分页 / 空态用）。 */
   async countByTags(tagIds: string[]): Promise<number> {
-    const store: relationalStore.RdbStore | undefined = articleStore.getStore();
+    const store: relationalStore.RdbStore | undefined = articleDatabase.getStore();
     if (store === undefined || tagIds.length === 0) {
       return 0;
     }
@@ -367,7 +368,7 @@ export class TagStore {
 
   /** 标签总数（入口计数 / 软上限判断）。 */
   async countTags(): Promise<number> {
-    const store: relationalStore.RdbStore | undefined = articleStore.getStore();
+    const store: relationalStore.RdbStore | undefined = articleDatabase.getStore();
     if (store === undefined) {
       return 0;
     }
@@ -393,8 +394,8 @@ export class TagStore {
    * 只读轻量列，库不可用时返回空数组。
    */
   async allForBackup(): Promise<BackupTag[]> {
-    await articleStore.whenReady();
-    const store: relationalStore.RdbStore | undefined = articleStore.getStore();
+    await articleDatabase.whenReady();
+    const store: relationalStore.RdbStore | undefined = articleDatabase.getStore();
     const result: BackupTag[] = [];
     if (store === undefined) {
       return result;
@@ -433,8 +434,8 @@ export class TagStore {
     if (records.length === 0) {
       return new TagMergeResult(mapping, added);
     }
-    await articleStore.whenReady();
-    const store: relationalStore.RdbStore | undefined = articleStore.getStore();
+    await articleDatabase.whenReady();
+    const store: relationalStore.RdbStore | undefined = articleDatabase.getStore();
     if (store === undefined) {
       return new TagMergeResult(mapping, added);
     }
@@ -484,7 +485,7 @@ export class TagStore {
 
   /** 按 name_key 查已有标签（去重 / 重命名冲突检查）。 */
   private async findByKey(key: string): Promise<TagWithCount | undefined> {
-    const store: relationalStore.RdbStore | undefined = articleStore.getStore();
+    const store: relationalStore.RdbStore | undefined = articleDatabase.getStore();
     if (store === undefined || key.length === 0) {
       return undefined;
     }
@@ -513,7 +514,7 @@ export class TagStore {
     return undefined;
   }
 
-  /** 轻量行 → Article（与 ArticleStore.loadForList 的字段映射保持一致）。 */
+  /** 轻量行 → Article（与 ArticleRepository.loadForList 的字段映射保持一致）。 */
   private articleFromRow(rs: relationalStore.ResultSet): Article {
     const article: Article = new Article(
       rs.getString(rs.getColumnIndex('id')),
@@ -537,9 +538,71 @@ export class TagStore {
     return article;
   }
 
+  /** 导出文章 ↔ 标签关联（全表）。 */
+  async allArticleTagsForBackup(): Promise<BackupArticleTag[]> {
+    const store: relationalStore.RdbStore | undefined = articleDatabase.getStore();
+    const result: BackupArticleTag[] = [];
+    if (store === undefined) {
+      return result;
+    }
+    try {
+      const rs: relationalStore.ResultSet = await store.querySql(SQL_SELECT_BACKUP_ARTICLE_TAGS);
+      try {
+        while (rs.goToNextRow()) {
+          result.push(new BackupArticleTag(
+            rs.getString(rs.getColumnIndex('article_id')),
+            rs.getString(rs.getColumnIndex('tag_id'))));
+        }
+      } finally {
+        rs.close();
+      }
+    } catch (err) {
+      const message: string = err instanceof Error ? err.message : 'unknown error';
+      hilog.error(DOMAIN, TAG, 'allArticleTagsForBackup failed: %{public}s', message);
+    }
+    return result;
+  }
+
+  /** 导入关联：INSERT OR IGNORE，返回实际新增条数（联合主键已存在不计）。 */
+  async mergeArticleTagsForBackup(records: BackupArticleTag[]): Promise<number> {
+    const store: relationalStore.RdbStore | undefined = articleDatabase.getStore();
+    if (store === undefined || records.length === 0) {
+      return 0;
+    }
+    let added: number = 0;
+    for (let start = 0; start < records.length; start += BACKUP_BATCH_SIZE) {
+      const end: number = Math.min(start + BACKUP_BATCH_SIZE, records.length);
+      let batchAdded: number = 0;
+      try {
+        store.beginTransaction();
+        try {
+          for (let i = start; i < end; i += 1) {
+            const item: BackupArticleTag = records[i];
+            if (item.articleId.length === 0 || item.tagId.length === 0) {
+              continue;
+            }
+            store.executeSync(SQL_INSERT_BACKUP_ARTICLE_TAG, [item.articleId, item.tagId]);
+            if (this.lastChanges() > 0) {
+              batchAdded += 1;
+            }
+          }
+          store.commit();
+        } catch (inner) {
+          store.rollBack();
+          throw inner as Error;
+        }
+        added += batchAdded;
+      } catch (err) {
+        const message: string = err instanceof Error ? err.message : 'unknown error';
+        hilog.error(DOMAIN, TAG, 'mergeArticleTagsForBackup batch failed: %{public}s', message);
+      }
+    }
+    return added;
+  }
+
   /** 最近一条语句影响的行数（INSERT OR IGNORE 是否真的插入）。 */
   private lastChanges(): number {
-    const store: relationalStore.RdbStore | undefined = articleStore.getStore();
+    const store: relationalStore.RdbStore | undefined = articleDatabase.getStore();
     if (store === undefined) {
       return 0;
     }

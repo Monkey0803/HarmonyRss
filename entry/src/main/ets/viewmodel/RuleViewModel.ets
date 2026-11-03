@@ -2,7 +2,7 @@
  * RuleViewModel.ets — 规则列表 / 编辑 / 试运行 / 已隐藏列表的编排（@ObservedV2）。
  *
  * 页面只与本 ViewModel 交互：校验在这里做（返回 RuleError 常量），落库交给 RuleStore，
- * 试运行交给 RuleService（只读），已隐藏列表直接读 ArticleStore 的专用查询。
+ * 试运行交给 RuleService（只读），已隐藏列表直接读 ArticleRepository 的专用查询。
  */
 
 import { Article } from '../model/Feed';
@@ -10,7 +10,7 @@ import { Rule, RuleAction, RuleDraft, RuleError, RuleField, RuleTestResult, draf
 import { RuleConstants } from '../common/constants/RssConstants';
 import { ruleStore } from '../service/RuleStore';
 import { ruleService } from '../service/RuleService';
-import { articleStore } from '../service/ArticleStore';
+import { articleRepository } from '../service/ArticleServices';
 import { dedupeService } from '../service/DedupeService';
 import { validateDraft } from '../service/RuleEngine';
 
@@ -186,8 +186,8 @@ export class RuleViewModel {
   /** 读取已隐藏文章列表与数量。 */
   async loadHidden(): Promise<void> {
     try {
-      const articles: Article[] = await articleStore.loadHidden();
-      const total: number = await articleStore.countHidden();
+      const articles: Article[] = await articleRepository.loadHidden();
+      const total: number = await articleRepository.countHidden();
       this.hiddenArticles = articles;
       this.hiddenCount = total;
       this.revision += 1;
@@ -200,7 +200,7 @@ export class RuleViewModel {
   /** 刷新已隐藏计数（规则页入口用，不加载整份列表）。 */
   async refreshHiddenCount(): Promise<void> {
     try {
-      this.hiddenCount = await articleStore.countHidden();
+      this.hiddenCount = await articleRepository.countHidden();
     } catch (err) {
       this.hiddenCount = 0;
     }

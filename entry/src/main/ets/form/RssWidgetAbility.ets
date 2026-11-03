@@ -15,7 +15,7 @@ import { formBindingData, formInfo, FormExtensionAbility, formProvider } from '@
 import { Configuration, ConfigurationConstant, Want } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { articleStore, WidgetSnapshot } from '../service/ArticleStore';
+import { articleDatabase, articleRepository, WidgetSnapshot } from '../service/ArticleServices';
 import { WidgetConstants } from '../common/constants/WidgetConstants';
 import { DateUtil } from '../common/utils/DateUtil';
 import { ThemeColorPrefs } from '../service/ThemeColorPrefs';
@@ -111,8 +111,8 @@ export default class RssWidgetAbility extends FormExtensionAbility {
       const count: number = dimension === WidgetConstants.DIMENSION_SMALL
         ? WidgetConstants.SMALL_TITLE_COUNT
         : WidgetConstants.LARGE_TITLE_COUNT;
-      await articleStore.open(this.context);
-      const snapshot: WidgetSnapshot = await articleStore.widgetSnapshot(count);
+      await articleDatabase.open(this.context);
+      const snapshot: WidgetSnapshot = await articleRepository.widgetSnapshot(count);
       const themeColor: string = await ThemeColorPrefs.read(this.context);
       const isDark: boolean =
         this.context.config.colorMode === ConfigurationConstant.ColorMode.COLOR_MODE_DARK;

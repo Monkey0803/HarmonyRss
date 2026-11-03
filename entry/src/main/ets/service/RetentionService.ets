@@ -14,7 +14,7 @@ import { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { FeedSource } from '../model/Feed';
 import { RetentionCandidate } from '../model/Search';
-import { articleStore } from './ArticleStore';
+import { articleRepository } from './ArticleServices';
 import { appSettings } from '../model/AppSettings';
 import { PreferencesConstants } from '../common/constants/PreferencesConstants';
 import { RetentionConstants } from '../common/constants/RssConstants';
@@ -80,7 +80,7 @@ export class RetentionService {
     if (this.protectedArticleId.length > 0) {
       protectedIds.push(this.protectedArticleId);
     }
-    return await articleStore.retentionCandidates(appSettings.retentionMode,
+    return await articleRepository.retentionCandidates(appSettings.retentionMode,
       RetentionDaysValue.of(appSettings.retentionDays), this.feedDays(), protectedIds);
   }
 
@@ -101,7 +101,7 @@ export class RetentionService {
     for (let i = 0; i < candidates.length; i += 1) {
       ids.push(candidates[i].id);
     }
-    const moved: number = await articleStore.archiveToTrash(ids);
+    const moved: number = await articleRepository.archiveToTrash(ids);
     await this.markRun();
     hilog.info(DOMAIN, TAG, 'retention cleaned %{public}d articles', moved);
     return moved;
@@ -119,16 +119,16 @@ export class RetentionService {
 
   /** 恢复回收站全部文章（7 天内的撤销入口）。 */
   async restoreAll(): Promise<number> {
-    const ids: string[] = await articleStore.trashIds();
+    const ids: string[] = await articleRepository.trashIds();
     if (ids.length === 0) {
       return 0;
     }
-    return await articleStore.restoreTrash(ids);
+    return await articleRepository.restoreTrash(ids);
   }
 
   /** 清理超过 7 天的回收站条目。 */
   async purgeExpired(): Promise<number> {
-    return await articleStore.purgeTrash(Date.now() - RetentionConstants.TRASH_TTL_MS);
+    return await articleRepository.purgeTrash(Date.now() - RetentionConstants.TRASH_TTL_MS);
   }
 
   /** 距离上次自动清理是否已超过节流间隔。 */

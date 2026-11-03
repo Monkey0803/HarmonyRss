@@ -73,7 +73,7 @@ import { ResponsiveContent } from '../views/ResponsiveContent';
 import { FeedArticlesView } from '../views/FeedArticlesView';
 import { EffectPreviewView } from '../views/EffectPreviewView';
 import { feedViewModel } from '../viewmodel/FeedViewModel';
-import { articleStore } from '../service/ArticleStore';
+import { articleDatabase, articleRepository } from '../service/ArticleServices';
 import { articleActions } from '../service/ArticleActions';
 import { webPageSaveService } from '../service/WebPageSaveService';
 import { normalizeWebPageUrl } from '../service/WebPageSaveService';
@@ -277,11 +277,11 @@ struct Index {
   }
 
   private async restoreContinuation(request: ContinueRequest): Promise<void> {
-    await articleStore.whenReady();
+    await articleDatabase.whenReady();
     let articleId: string = request.articleId;
-    const byId = await articleStore.loadById(articleId);
+    const byId = await articleRepository.loadById(articleId);
     if (byId === undefined || normalizeWebPageUrl(byId.link) !== request.url) {
-      const byUrl = await articleStore.findByUrl(request.url);
+      const byUrl = await articleRepository.findByUrl(request.url);
       articleId = byUrl === undefined ? '' : byUrl.id;
     }
     if (articleId.length === 0) {

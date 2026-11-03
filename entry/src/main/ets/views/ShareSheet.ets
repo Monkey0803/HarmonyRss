@@ -17,7 +17,7 @@ import { ShareContext, ShareKind, ShareResult, ShareTarget, ShareTemplate } from
 import { ShareTargetId, targetById } from '../service/ShareTargets';
 import { shareViewModel } from '../viewmodel/ShareViewModel';
 import { feedViewModel } from '../viewmodel/FeedViewModel';
-import { articleStore } from '../service/ArticleStore';
+import { highlightStore, articleRepository } from '../service/ArticleServices';
 import { AppMenu } from '../common/components/AppMenu';
 import { MenuItemSpec, MenuSpec } from '../common/components/MenuSpec';
 import { ToastUtil } from '../common/utils/ToastUtil';
@@ -183,7 +183,7 @@ export struct ShareSheet {
     } else {
       // 高亮页的文章可能不在当前列表（筛选 / 分页 / 已删除）：回库读一次，
       // 否则「加入 / 取消稍后读」的文案与实际状态会不一致。
-      articleStore.loadById(ctx.articleId).then((article: Article | undefined) => {
+      articleRepository.loadById(ctx.articleId).then((article: Article | undefined) => {
         this.savedAlready = article !== undefined && article.saved;
       }).catch(() => {
         this.savedAlready = false;
@@ -197,7 +197,7 @@ export struct ShareSheet {
     if (ctx.kind !== ShareKind.ARTICLE || ctx.articleId.length === 0) {
       return;
     }
-    articleStore.listHighlights(ctx.articleId).then((items: Highlight[]) => {
+    highlightStore.listHighlights(ctx.articleId).then((items: Highlight[]) => {
       this.articleHighlightCount = items.length;
     }).catch(() => {
       this.articleHighlightCount = 0;
@@ -321,7 +321,7 @@ export struct ShareSheet {
       feedViewModel.toggleSaved(articleId);
     } else {
       // 高亮页对应的文章可能不在已加载列表里：直接落库，避免「提示已加入但实际没写」。
-      articleStore.setSaved(articleId, !wasSaved);
+      articleRepository.setSaved(articleId, !wasSaved);
     }
     this.savedAlready = !wasSaved;
     ToastUtil.show(this.getUIContext(), wasSaved

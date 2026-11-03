@@ -90,7 +90,7 @@ import {
   selectionRatioScript
 } from '../service/ReaderHighlight';
 import { Highlight, HighlightColor } from '../model/Highlight';
-import { articleStore } from '../service/ArticleStore';
+import { highlightStore, articleRepository } from '../service/ArticleServices';
 import { readingContinuation } from '../service/ReadingContinuation';
 import {
   parsePosition,
@@ -1024,7 +1024,7 @@ export struct ArticleDetailView {
       return;
     }
     try {
-      this.groupSources = await articleStore.loadGroupSources(article.id);
+      this.groupSources = await articleRepository.loadGroupSources(article.id);
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       hilog.warn(DOMAIN, TAG, 'load group sources failed: %{public}d', error.code);
@@ -1102,7 +1102,7 @@ export struct ArticleDetailView {
       this.highlights = [];
       return;
     }
-    this.highlights = await articleStore.listHighlights(article.id);
+    this.highlights = await highlightStore.listHighlights(article.id);
     this.replayHighlights(this.activeController());
     // 从标注聚合页点进来：定位到那条标注（消费后清空，避免切文又跳一次）。
     const pending: string = feedViewModel.pendingHighlightId;
@@ -1157,7 +1157,7 @@ export struct ArticleDetailView {
       const ratio: number = this.parseRatio(raw);
       const item: Highlight = new Highlight(this.newHighlightId(article.id), article.id, quote, '',
         HighlightColor.YELLOW, Date.now(), '', ratio);
-      articleStore.addHighlight(item);
+      highlightStore.addHighlight(item);
       this.selectedText = '';
       this.loadHighlights();
       this.snack($r('app.string.snack_highlight_added'));
@@ -1207,7 +1207,7 @@ export struct ArticleDetailView {
       return;
     }
     item.note = this.noteDraft.trim();
-    articleStore.updateHighlightNote(item.id, item.note);
+    highlightStore.updateHighlightNote(item.id, item.note);
     this.editingHighlightId = '';
     this.replayHighlights(this.activeController());
   }
@@ -1219,13 +1219,13 @@ export struct ArticleDetailView {
       return;
     }
     item.color = color;
-    articleStore.updateHighlightColor(id, color);
+    highlightStore.updateHighlightColor(id, color);
     this.replayHighlights(this.activeController());
   }
 
   /** 删除标注。 */
   private removeHighlight(id: string): void {
-    articleStore.deleteHighlight(id);
+    highlightStore.deleteHighlight(id);
     this.editingHighlightId = '';
     this.loadHighlights();
     this.snack($r('app.string.snack_highlight_removed'));

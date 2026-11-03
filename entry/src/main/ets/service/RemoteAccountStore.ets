@@ -1,7 +1,7 @@
 /*
  * RemoteAccountStore.ets — 远端账号 / 同步游标 / 文章映射 / 待同步队列的 SQL 层。
  *
- * 复用 ArticleStore 打开的同一个 RDB 连接（getStore），不重复打开数据库。
+ * 复用 ArticleDatabase 打开的同一个 RDB 连接（getStore），不重复打开数据库。
  * 所有失败只记日志并返回空态：远端同步是增强能力，不能影响本地阅读。
  */
 
@@ -10,7 +10,7 @@ import { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { ArticleDbConstants } from '../common/constants/RssConstants';
 import { OutboxItem, RemoteAccount, RemoteMapping } from '../model/Remote';
-import { articleStore } from './ArticleStore';
+import { articleDatabase } from './ArticleServices';
 
 const DOMAIN: number = 0x0000;
 const TAG: string = 'RemoteAccountStore';
@@ -26,12 +26,12 @@ function placeholders(count: number): string {
 
 export class RemoteAccountStore {
   private db(): relationalStore.RdbStore | undefined {
-    return articleStore.getStore();
+    return articleDatabase.getStore();
   }
 
   /** 读单账号（多条时取最近更新的一条）。 */
   async loadAccount(): Promise<RemoteAccount | undefined> {
-    await articleStore.whenReady();
+    await articleDatabase.whenReady();
     const store: relationalStore.RdbStore | undefined = this.db();
     if (store === undefined) {
       return undefined;
@@ -69,7 +69,7 @@ export class RemoteAccountStore {
 
   /** 保存账号（单账号：先清空再写，避免历史脏数据残留）。 */
   async saveAccount(account: RemoteAccount): Promise<void> {
-    await articleStore.whenReady();
+    await articleDatabase.whenReady();
     const store: relationalStore.RdbStore | undefined = this.db();
     if (store === undefined) {
       return;

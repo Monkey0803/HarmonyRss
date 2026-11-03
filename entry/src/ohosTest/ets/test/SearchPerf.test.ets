@@ -3,7 +3,7 @@
  *
  * 使用独立的临时数据库（bench_<ts>.db），按线上同构的表结构与 SQL 构造 1 万篇文章：
  *   articles + articles_fts + articles_fts_cjk(unicode61)
- * 查询语句与 ArticleStore.searchCjk / searchFts 保持一致（计数 + 取页），
+ * 查询语句与 ArticleSearchStore.searchCjk / searchFts 保持一致（计数 + 取页），
  * 结束后删除临时库，不触碰应用真实数据。
  *
  * 注意：测试 HAP 会覆盖主包，跑完需重装主包。
@@ -16,6 +16,11 @@ import { TestContext } from './TestContext';
 import { relationalStore } from '@kit.ArkData';
 import { grams, queryTokens } from '../../../main/ets/service/CjkTokenizer';
 import { escapeFtsToken } from '../../../main/ets/service/SearchQueryParser';
+import { parse } from '../../../main/ets/service/SearchQueryParser';
+import { ArticleRepository } from '../../../main/ets/service/ArticleRepository';
+import { SQL_CREATE, SQL_CREATE_FEEDS } from '../../../main/ets/service/ArticleSchema';
+import { Article } from '../../../main/ets/model/Feed';
+import { SearchPage } from '../../../main/ets/model/Search';
 
 const TOTAL: number = 10000;
 const BATCH: number = 500;
@@ -24,13 +29,7 @@ const PAGE_SIZE: number = 30;
 const DOUBLE_LIMIT_MS: number = 800;
 const SINGLE_LIMIT_MS: number = 1000;
 
-const SQL_ARTICLES: string =
-  'CREATE TABLE IF NOT EXISTS articles (' +
-  'id TEXT PRIMARY KEY, feed_title TEXT NOT NULL DEFAULT \'\', title TEXT NOT NULL DEFAULT \'\',' +
-  'summary TEXT NOT NULL DEFAULT \'\', plain_text TEXT NOT NULL DEFAULT \'\',' +
-  'published_at INTEGER NOT NULL DEFAULT 0, is_read INTEGER NOT NULL DEFAULT 0,' +
-  'is_starred INTEGER NOT NULL DEFAULT 0, is_saved INTEGER NOT NULL DEFAULT 0,' +
-  'author TEXT NOT NULL DEFAULT \'\')';
+const SQL_ARTICLES: string = SQL_CREATE;
 
 const SQL_FTS: string =
   'CREATE VIRTUAL TABLE IF NOT EXISTS articles_fts USING fts5(' +
@@ -76,7 +75,7 @@ async function countOf(store: relationalStore.RdbStore, sql: string,
   }
 }
 
-/** 中文索引路径：与 ArticleStore.searchCjk 同构（COUNT(DISTINCT) + SELECT DISTINCT）。 */
+/** 中文索引路径：与 ArticleSearchStore.searchCjk 同构（COUNT(DISTINCT) + SELECT DISTINCT）。 */
 async function measureCjk(store: relationalStore.RdbStore, raw: string): Promise<Timing> {
   const tokens: string[] = queryTokens(raw);
   const expression: string = tokens.map((token: string) => escapeFtsToken(token)).join(' AND ');
@@ -126,7 +125,7 @@ async function measureCjk(store: relationalStore.RdbStore, raw: string): Promise
   return new Timing(raw, total, minMs, Math.round(sum / (ROUNDS - 1)), maxMs);
 }
 
-/** 英文主索引路径：与 ArticleStore.searchFts 同构。 */
+/** 英文主索引路径：与 ArticleSearchStore.searchFts 同构。 */
 async function measureFts(store: relationalStore.RdbStore, raw: string): Promise<Timing> {
   const expression: string = escapeFtsToken(raw);
   const countSql: string = 'SELECT COUNT(*) AS c FROM articles_fts' +
@@ -166,18 +165,32 @@ export default function searchPerfTest() {
         securityLevel: relationalStore.SecurityLevel.S1
       };
       let opened: relationalStore.RdbStore | undefined = undefined;
+      let benchmarkRepository: ArticleRepository | undefined = undefined;
       try {
         const db: relationalStore.RdbStore = await relationalStore.getRdbStore(context, config);
         opened = db;
         db.executeSync(SQL_ARTICLES);
+        db.executeSync(SQL_CREATE_FEEDS);
         db.executeSync(SQL_FTS);
         db.executeSync(SQL_FTS_CJK);
+
+        db.beginTransaction();
+        try {
+          for (let feed = 0; feed < 500; feed += 1) {
+            db.executeSync('INSERT INTO feeds (id, url, title) VALUES (?,?,?)',
+              ['bench_feed_' + feed, 'https://example.com/feed/' + feed, '压测源 ' + feed]);
+          }
+          db.commit();
+        } catch (inner) {
+          db.rollBack();
+          throw inner as Error;
+        }
 
         // ---- 灌入 1 万篇 ----
         const now: number = Date.now();
         const insertArticle: string =
-          'INSERT OR REPLACE INTO articles (id, feed_title, title, summary, plain_text,' +
-          ' published_at, is_read, is_starred, is_saved, author) VALUES (?,?,?,?,?,?,?,?,?,?)';
+          'INSERT OR REPLACE INTO articles (id, feed_id, feed_title, title, summary, plain_text,' +
+          ' published_at, is_read, is_starred, is_saved, author) VALUES (?,?,?,?,?,?,?,?,?,?,?)';
         const insertFts: string =
           'INSERT INTO articles_fts (article_id, title, summary, plain_text, author) VALUES (?,?,?,?,?)';
         const insertCjk: string =
@@ -192,7 +205,8 @@ export default function searchPerfTest() {
               const summary: string = '鸿蒙系统开发与中文全文检索性能测试，荣耀发布。';
               const plain: string = bodyOf(i);
               db.executeSync(insertArticle,
-                [id, '压测源', title, summary, plain, now - i * 60000, 0, 0, 0, 'tester']);
+                [id, 'bench_feed_' + (i % 500), '压测源', title, summary, plain,
+                  now - i * 60000, 0, 0, 0, 'tester']);
               db.executeSync(insertFts, [id, title, summary, plain, 'tester']);
               db.executeSync(insertCjk, [id, grams(title + ' ' + summary + ' ' + plain, 20000)]);
             }
@@ -204,6 +218,43 @@ export default function searchPerfTest() {
         }
         const count: number = await countOf(db, 'SELECT COUNT(*) AS c FROM articles', []);
         console.info('PERF inserted total=' + count);
+        expect(count).assertEqual(TOTAL);
+        expect(await countOf(db, 'SELECT COUNT(*) AS c FROM feeds', [])).assertEqual(500);
+
+        // 与应用共用的 Repository/检索实现；首轮预热，不计入均值。
+        const repository: ArticleRepository = new ArticleRepository(dbName);
+        benchmarkRepository = repository;
+        const openStarted: number = Date.now();
+        await repository.open(context);
+        console.info('PERF production openMs=' + (Date.now() - openStarted));
+        let listTotalMs: number = 0;
+        let searchCjkTotalMs: number = 0;
+        let searchFtsTotalMs: number = 0;
+        for (let round = 0; round < ROUNDS; round += 1) {
+          const listStarted: number = Date.now();
+          const list: Article[] = await repository.loadForList();
+          const listMs: number = Date.now() - listStarted;
+          expect(list.length).assertEqual(TOTAL);
+
+          const cjkStarted: number = Date.now();
+          const cjkPage: SearchPage = await repository.search(parse('荣耀发布'), 0, PAGE_SIZE);
+          const cjkMs: number = Date.now() - cjkStarted;
+          expect(cjkPage.total > 0).assertTrue();
+
+          const ftsStarted: number = Date.now();
+          const ftsPage: SearchPage = await repository.search(parse('harmony'), 0, PAGE_SIZE);
+          const ftsMs: number = Date.now() - ftsStarted;
+          expect(ftsPage.total > 0).assertTrue();
+          if (round > 0) {
+            listTotalMs += listMs;
+            searchCjkTotalMs += cjkMs;
+            searchFtsTotalMs += ftsMs;
+          }
+        }
+        console.info('PERF production rows=10000 feeds=500 warmup=1 rounds=4' +
+          ' listAvgMs=' + Math.round(listTotalMs / (ROUNDS - 1)) +
+          ' cjkAvgMs=' + Math.round(searchCjkTotalMs / (ROUNDS - 1)) +
+          ' ftsAvgMs=' + Math.round(searchFtsTotalMs / (ROUNDS - 1)));
 
         // ---- 计时 ----
         const single: Timing = await measureCjk(db, '发');
@@ -231,6 +282,13 @@ export default function searchPerfTest() {
         expect(doubleTiming.avgMs < DOUBLE_LIMIT_MS).assertTrue();
         expect(single.avgMs < SINGLE_LIMIT_MS).assertTrue();
       } finally {
+        const repositoryStore: relationalStore.RdbStore | undefined = benchmarkRepository?.getStore();
+        if (repositoryStore !== undefined && repositoryStore !== opened) {
+          try {
+            repositoryStore.close();
+          } catch (err) {
+          }
+        }
         if (opened !== undefined) {
           try {
             opened.close();
