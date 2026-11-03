@@ -153,13 +153,18 @@ export struct SettingsFeedView {
           Divider().color($r('app.color.hm_divider'))
           // 立即刷新：右侧显示上次同步时间。
           Row() {
-            SettingIconTitle({ icon: $r('sys.symbol.arrow_clockwise'), title: $r('app.string.row_refresh_now') })
-            Blank()
+            // 标题必须包在 layoutWeight 里：SettingIconTitle 自身是 width('100%')，
+            // 直接平铺会把右侧时间挤出卡片（多语言下更明显）。
+            Row() {
+              SettingIconTitle({ icon: $r('sys.symbol.arrow_clockwise'), title: $r('app.string.row_refresh_now') })
+            }
+            .layoutWeight(1)
             Text(feedViewModel.lastUpdated > 0
               ? $r('app.string.home_last_sync', DateUtil.clock(feedViewModel.lastUpdated))
               : $r('app.string.home_never_synced'))
               .fontSize($r('app.float.font_size_caption'))
               .fontColor($r('app.color.hm_text_secondary'))
+              .maxLines(1)
           }
           .width('100%')
           .height($r('app.float.row_height'))
@@ -229,8 +234,10 @@ export struct SettingsFeedView {
         SettingsSectionTitle({ title: $r('app.string.offline_title') })
         Column() {
           Row() {
-            SettingIconTitle({ icon: $r('sys.symbol.arrow_down_circle'), title: $r('app.string.offline_auto') })
-            Blank()
+            Row() {
+              SettingIconTitle({ icon: $r('sys.symbol.arrow_down_circle'), title: $r('app.string.offline_auto') })
+            }
+            .layoutWeight(1)
             Toggle({ type: ToggleType.Switch, isOn: appSettings.offlineEnabled })
               .selectedColor($r('app.color.hm_brand'))
               .onChange((value: boolean) => {
@@ -241,12 +248,15 @@ export struct SettingsFeedView {
                 }
               })
           }
+          .width('100%')
           .height($r('app.float.row_height'))
           .padding({ left: $r('app.float.space_m'), right: $r('app.float.space_m') })
           Divider().color($r('app.color.hm_divider'))
           Row() {
-            SettingIconTitle({ icon: $r('sys.symbol.wifi'), title: $r('app.string.offline_wifi') })
-            Blank()
+            Row() {
+              SettingIconTitle({ icon: $r('sys.symbol.wifi'), title: $r('app.string.offline_wifi') })
+            }
+            .layoutWeight(1)
             Toggle({ type: ToggleType.Switch, isOn: appSettings.offlineWifiOnly })
               .selectedColor($r('app.color.hm_brand'))
               .onChange((value: boolean) => {
@@ -254,18 +264,23 @@ export struct SettingsFeedView {
                 settingsStore.save();
               })
           }
+          .width('100%')
           .height($r('app.float.row_height'))
           .padding({ left: $r('app.float.space_m'), right: $r('app.float.space_m') })
           Divider().color($r('app.color.hm_divider'))
           Row() {
-            SettingIconTitle({ icon: $r('sys.symbol.arrow_down_circle'), title: $r('app.string.offline_download_now') })
-            Blank()
+            Row() {
+              SettingIconTitle({ icon: $r('sys.symbol.arrow_down_circle'), title: $r('app.string.offline_download_now') })
+            }
+            .layoutWeight(1)
             Text(offlineDownloadService.running
               ? $r('app.string.offline_progress', offlineDownloadService.completed, offlineDownloadService.total)
               : $r('app.string.offline_download_now'))
               .fontSize($r('app.float.font_size_caption'))
               .fontColor($r('app.color.hm_brand'))
+              .maxLines(1)
           }
+          .width('100%')
           .height($r('app.float.row_height'))
           .padding({ left: $r('app.float.space_m'), right: $r('app.float.space_m') })
           .onClick(() => {
