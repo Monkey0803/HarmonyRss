@@ -163,7 +163,7 @@ export struct RemoteServiceView {
           .fontSize($r('app.float.font_size_body'))
           .fontColor($r('app.color.hm_text_primary'))
           .layoutWeight(1)
-        SymbolGlyph($r('sys.symbol.chevron_down'))
+        SymbolGlyph($r('sys.symbol.chevron_right'))
           .fontSize($r('app.float.icon_size_small'))
           .fontColor([$r('app.color.hm_text_secondary')])
       }
@@ -348,7 +348,7 @@ export struct RemoteServiceView {
         Text(AUTO_REFRESH_OPTIONS.labelOf(appSettings.remoteAutoSync))
           .fontSize($r('app.float.font_size_caption'))
           .fontColor($r('app.color.hm_text_secondary'))
-        SymbolGlyph($r('sys.symbol.chevron_down'))
+        SymbolGlyph($r('sys.symbol.chevron_right'))
           .fontSize($r('app.float.icon_size_small'))
           .fontColor([$r('app.color.hm_text_secondary')])
           .padding({ left: $r('app.float.space_xs') })

@@ -137,7 +137,7 @@ struct ShareTemplateRow {
       .layoutWeight(1)
       .alignItems(HorizontalAlign.Start)
 
-      SymbolGlyph($r('sys.symbol.chevron_down'))
+      SymbolGlyph($r('sys.symbol.chevron_right'))
         .fontSize($r('app.float.icon_size_small'))
         .fontColor([$r('app.color.hm_text_secondary')])
     }

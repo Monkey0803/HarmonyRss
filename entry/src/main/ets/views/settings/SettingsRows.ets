@@ -257,7 +257,7 @@ export struct NavSettingRow {
   }
 }
 
-/** 动作行：执行一个就地操作（如清理缓存），右侧可选状态文案 + 下箭头。 */
+/** 动作行：执行一个就地操作（如清理缓存），右侧可选状态文案 + 右箭头。 */
 @ComponentV2
 export struct ActionSettingRow {
   @Param icon: Resource = $r('sys.symbol.house');
@@ -279,7 +279,7 @@ export struct ActionSettingRow {
           .textOverflow({ overflow: TextOverflow.Ellipsis })
           .constraintSize({ maxWidth: '40%' })
       }
-      SymbolGlyph($r('sys.symbol.chevron_down'))
+      SymbolGlyph($r('sys.symbol.chevron_right'))
         .fontSize($r('app.float.icon_size_small'))
         .fontColor([$r('app.color.hm_text_secondary')])
         .padding({ left: $r('app.float.space_xs') })
