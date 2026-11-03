@@ -36,6 +36,9 @@ export struct ReaderBodyView {
   @Event onOverScroll: (event: OnOverScrollEvent) => void = () => {
   };
   @Event onLoadIntercept: (event: OnLoadInterceptEvent) => boolean = () => false;
+  @Event onWindowNew: (event: OnWindowNewEvent) => void = (event: OnWindowNewEvent): void => {
+    event.handler.setWebController(null);
+  };
   @Event onPanStart: (event: GestureEvent) => void = () => {
   };
   @Event onPanEnd: (event: GestureEvent) => void = () => {
@@ -68,6 +71,10 @@ export struct ReaderBodyView {
       })
       .onLoadIntercept((event: OnLoadInterceptEvent): boolean => {
         return this.onLoadIntercept(event);
+      })
+      .multiWindowAccess(true)
+      .onWindowNew((event: OnWindowNewEvent): void => {
+        this.onWindowNew(event);
       })
       .onTextSelectionChange((selectionText: string) => {
         this.onSelection(selectionText);

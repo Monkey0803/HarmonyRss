@@ -21,6 +21,7 @@ import readerTypographyTest from './ReaderTypography.test';
 import readerBudgetTest from './ReaderBudget.test';
 import summaryTextTest from './SummaryText.test';
 import urlTextTest from './UrlText.test';
+import linkNavigationTest from './LinkNavigation.test';
 import feedDiscoveryTest from './FeedDiscovery.test';
 import opmlCodecTest from './OpmlCodec.test';
 import shareIntentTest from './ShareIntent.test';
@@ -83,6 +84,7 @@ export default function testsuite() {
   readerBudgetTest();
   summaryTextTest();
   urlTextTest();
+  linkNavigationTest();
   feedDiscoveryTest();
   opmlCodecTest();
   shareIntentTest();

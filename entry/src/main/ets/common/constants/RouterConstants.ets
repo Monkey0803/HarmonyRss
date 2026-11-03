@@ -7,6 +7,8 @@
 export class RouterConstants {
   /** 文章详情页。 */
   static readonly PAGE_ARTICLE: string = 'article';
+  /** 文章正文链接打开的应用内网页。 */
+  static readonly PAGE_LINKED_WEB: string = 'linkedWeb';
   /** 单个订阅源的文章列表页。 */
   static readonly PAGE_FEED_ARTICLES: string = 'feedArticles';
   /** 标注聚合页（全部标注 + 导出）。 */

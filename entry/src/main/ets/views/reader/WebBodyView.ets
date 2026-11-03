@@ -19,6 +19,9 @@ export struct WebBodyView {
   @Param swipeDistance: number = 60;
 
   @Event onLoadIntercept: (event: OnLoadInterceptEvent) => boolean = () => false;
+  @Event onWindowNew: (event: OnWindowNewEvent) => void = (event: OnWindowNewEvent): void => {
+    event.handler.setWebController(null);
+  };
   @Event onMainFrameError: () => void = () => {
   };
   @Event onSelection: (text: string) => void = () => {
@@ -50,6 +53,10 @@ export struct WebBodyView {
       })
       .onLoadIntercept((event: OnLoadInterceptEvent): boolean => {
         return this.onLoadIntercept(event);
+      })
+      .multiWindowAccess(true)
+      .onWindowNew((event: OnWindowNewEvent): void => {
+        this.onWindowNew(event);
       })
       // 只有顶层文档失败才展示错误页；子资源失败不遮住可读正文。
       .onErrorReceive((event: OnErrorReceiveEvent) => {

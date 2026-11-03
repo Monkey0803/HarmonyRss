@@ -41,6 +41,7 @@ import { ReadSettingsSheet } from './ReadSettingsSheet';
 import { ToastUtil } from '../common/utils/ToastUtil';
 import { toPlainText } from '../common/utils/HtmlText';
 import { UrlText } from '../common/utils/UrlText';
+import { ArticleLinkTarget, articleLinkTarget, isWebLink } from '../service/LinkNavigation';
 import { screenAwake } from '../service/ScreenAwake';
 import { readerSpeech, SpeechProgress, SpeechStatus } from '../service/ReaderSpeech';
 import { speechLanguageOf } from '../service/ReaderSpeechLanguage';
@@ -194,6 +195,7 @@ export struct ArticleDetailView {
   @Local readerHtml: string = '';
   private readerController: webview.WebviewController = new webview.WebviewController();
   private webController: webview.WebviewController = new webview.WebviewController();
+  private returnFromLinkedWeb: boolean = false;
   /** 提取正文模式的可滚动控制器（由外层 HdsNavDestination 绑定，用于标题栏材质随滚动跟手渐变 + 阅读进度）。 */
   @Param scroller: Scroller = new Scroller();
   /** 网页原文只在首次加载完成时恢复一次进度，避免页面内跳转后又被拉回去。 */
@@ -670,26 +672,48 @@ export struct ArticleDetailView {
     }
   }
 
-  /**
-   * 仅把用户点击的正文外链交给系统浏览器。网页原文首次加载时的站点跳转
-   * 以及脚本导航都应留在 Web 内，否则打开某些文章会自动拉起浏览器。
-   * 注意：将来支持内嵌媒体（iframe 白名单）时，这里要放行白名单域。
-   */
+  /** 用户点正文网页链接时新开应用内页；自动跳转和页内锚点留在原 Web。 */
+  private openLinkedWeb(url: string): void {
+    this.returnFromLinkedWeb = true;
+    this.navPathStack.pushPath(new NavPathInfo(RouterConstants.PAGE_LINKED_WEB, url));
+  }
+
   private handleLinkIntercept(event: OnLoadInterceptEvent): boolean {
     const request: WebResourceRequest = event.data;
-    if (!request.isMainFrame() || !request.isRequestGesture() || request.isRedirect()) {
-      return false;
-    }
     const url: string = request.getRequestUrl();
-    if (url.length === 0 || url.startsWith('about:') || url.startsWith('data:') || url.startsWith('file:')) {
+    let currentUrl: string = this.cur().link;
+    if (this.viewMode === MODE_WEB) {
+      try {
+        currentUrl = this.webController.getUrl();
+      } catch (err) {
+        // Web 尚未绑定时仍可用文章原始链接判断锚点。
+      }
+    }
+    const target: ArticleLinkTarget = articleLinkTarget(url, currentUrl,
+      request.isMainFrame(), request.isRequestGesture(), request.isRedirect());
+    if (target === ArticleLinkTarget.CURRENT) {
       return false;
     }
-    const article: Article = this.cur();
-    if (article.link.length > 0 && url.startsWith(article.link)) {
-      return false;
+    if (target === ArticleLinkTarget.IN_APP) {
+      this.openLinkedWeb(url);
+    } else {
+      this.openInBrowserUrl(url);
     }
-    this.openInBrowserUrl(url);
     return true;
+  }
+
+  /** 拦下 target=_blank 等新窗口，仅用户触发的网页地址进入应用内页。 */
+  private handleNewWindow(event: OnWindowNewEvent): void {
+    event.handler.setWebController(null);
+    if (!event.isUserTrigger || event.targetUrl.length === 0) {
+      return;
+    }
+    if (isWebLink(event.targetUrl)) {
+      this.openLinkedWeb(event.targetUrl);
+    } else if (!event.targetUrl.startsWith('about:') && !event.targetUrl.startsWith('data:') &&
+      !event.targetUrl.startsWith('file:') && !event.targetUrl.startsWith('javascript:')) {
+      this.openInBrowserUrl(event.targetUrl);
+    }
   }
 
   private openInBrowserUrl(url: string): void {
@@ -1791,6 +1815,14 @@ export struct ArticleDetailView {
 
   aboutToAppear(): void {
     readingContinuation.setDetailVisible(true);
+    if (this.returnFromLinkedWeb) {
+      this.returnFromLinkedWeb = false;
+      this.startProgressPolling(this.viewMode === MODE_WEB ? this.webController : this.readerController);
+      if (appSettings.readerKeepScreenOn) {
+        screenAwake.set(true, this.getUIContext().getHostContext());
+      }
+      return;
+    }
     // 恢复上次用的阅读模式：上次停在「网页原文」时直接进 Web，
     // 不能再跑一遍 startReader()（它会无条件把 viewMode 拽回阅读器）。
     const article: Article | undefined = feedViewModel.currentArticle();
@@ -2537,6 +2569,7 @@ export struct ArticleDetailView {
               }
             },
             onLoadIntercept: (event: OnLoadInterceptEvent): boolean => this.handleLinkIntercept(event),
+            onWindowNew: (event: OnWindowNewEvent): void => this.handleNewWindow(event),
             onPanStart: (event: GestureEvent): void => {
               this.panStartX = event.fingerList.length > 0 ? event.fingerList[0].globalX : -1;
             },
@@ -2569,6 +2602,7 @@ export struct ArticleDetailView {
           highlightBridge: this.hlBridge,
           swipeDistance: SWIPE_DISTANCE_VP,
           onLoadIntercept: (event: OnLoadInterceptEvent): boolean => this.handleLinkIntercept(event),
+          onWindowNew: (event: OnWindowNewEvent): void => this.handleNewWindow(event),
           onMainFrameError: (): void => this.failWeb(),
           onSelection: (text: string): void => {
             if (this.selectedText !== text) {

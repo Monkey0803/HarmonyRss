@@ -67,6 +67,8 @@ import { SettingsSystemView } from '../views/settings/SettingsSystemView';
 import { ImageTabView } from '../views/ImageTabView';
 import { PrivacyVeil } from '../views/PrivacyVeil';
 import { ArticleDetailView } from '../views/ArticleDetailView';
+import { LinkedWebView } from '../views/LinkedWebView';
+import { UrlText } from '../common/utils/UrlText';
 import { SubscriptionsView } from '../views/SubscriptionsView';
 import { ResponsiveContent } from '../views/ResponsiveContent';
 import { FeedArticlesView } from '../views/FeedArticlesView';
@@ -1012,6 +1014,13 @@ struct Index {
       // 网页原文由 ArkWeb 自己滚动、不出现在 Scroller 偏移里，那种情况下标题栏保持常驻。
       .dynamicHideTitleBar(this.dynamicHideParams())
       .bindToScrollable([this.articleScroller])
+    } else if (name === RouterConstants.PAGE_LINKED_WEB) {
+      HdsNavDestination() {
+        LinkedWebView({ initialUrl: pageInfos as string })
+      }
+      .titleBar(this.titleOptions(UrlText.host(pageInfos as string)))
+      .titleMode(HdsNavDestinationTitleMode.MINI)
+      .backgroundColor($r('app.color.hm_web_surface'))
     } else if (name === RouterConstants.PAGE_FEED_ARTICLES) {
       HdsNavDestination() {
         ResponsiveContent() {
