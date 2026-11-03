@@ -17,7 +17,6 @@ import { BackupScalar, BackupSettings } from '../model/Backup';
 import { settingsWhitelist } from './BackupCodec';
 import { NotifyDefaults } from '../model/Notify';
 import { clampDigestHour, clampMinuteOfDay, decodeKeywords, encodeKeywords, normalizeKeywords } from './NotifyPolicy';
-import { normalizeProvider } from './TranslationPolicy';
 
 /** 远端自动同步间隔归一：脏值一律退回「关」。 */
 export function normalizeRemoteAutoSync(value: string): string {
@@ -289,13 +288,13 @@ export class SettingsStore {
         NotifyDefaults.DIGEST_HOUR);
       appSettings.notifyKeywords = readKeywords(
         store.getSync(PreferencesConstants.KEY_NOTIFY_KEYWORDS, ''), appSettings.notifyKeywords);
-      // 正文翻译：老库没有这些 key 时读出来就是默认值（关闭 / DeepL / 默认端点）。
+      // 正文翻译：旧服务的偏好不读取也不删除；AI 设置使用独立 key。
       appSettings.translateEnabled =
         store.getSync(PreferencesConstants.KEY_TRANSLATE_ENABLED, appSettings.translateEnabled) as boolean;
-      appSettings.translateProvider = normalizeProvider(
-        store.getSync(PreferencesConstants.KEY_TRANSLATE_PROVIDER, appSettings.translateProvider) as string);
-      appSettings.translateEndpoint =
-        store.getSync(PreferencesConstants.KEY_TRANSLATE_ENDPOINT, appSettings.translateEndpoint) as string;
+      appSettings.translateAiEndpoint =
+        store.getSync(PreferencesConstants.KEY_TRANSLATE_AI_ENDPOINT, appSettings.translateAiEndpoint) as string;
+      appSettings.translateAiModel =
+        store.getSync(PreferencesConstants.KEY_TRANSLATE_AI_MODEL, appSettings.translateAiModel) as string;
       // 发现页 RSSHub 实例：老库没有该 key 时读出来就是默认公共实例。
       appSettings.rsshubBase =
         store.getSync(PreferencesConstants.KEY_RSSHUB_BASE, appSettings.rsshubBase) as string;
@@ -614,8 +613,8 @@ export class SettingsStore {
       store.putSync(PreferencesConstants.KEY_NOTIFY_DIGEST_HOUR, appSettings.notifyDigestHour);
       store.putSync(PreferencesConstants.KEY_NOTIFY_KEYWORDS, encodeKeywords(appSettings.notifyKeywords));
       store.putSync(PreferencesConstants.KEY_TRANSLATE_ENABLED, appSettings.translateEnabled);
-      store.putSync(PreferencesConstants.KEY_TRANSLATE_PROVIDER, normalizeProvider(appSettings.translateProvider));
-      store.putSync(PreferencesConstants.KEY_TRANSLATE_ENDPOINT, appSettings.translateEndpoint.trim());
+      store.putSync(PreferencesConstants.KEY_TRANSLATE_AI_ENDPOINT, appSettings.translateAiEndpoint.trim());
+      store.putSync(PreferencesConstants.KEY_TRANSLATE_AI_MODEL, appSettings.translateAiModel.trim());
       store.putSync(PreferencesConstants.KEY_RSSHUB_BASE, appSettings.rsshubBase.trim());
       store.putSync(PreferencesConstants.KEY_DIAGNOSTICS_ENABLED, appSettings.diagnosticsEnabled);
     } catch (err) {

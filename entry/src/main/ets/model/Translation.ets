@@ -55,7 +55,9 @@ export enum TranslationErrorCode {
   /** 5xx：服务端错误。 */
   SERVER = 'server',
   /** 响应无法解析。 */
-  PARSE = 'parse'
+  PARSE = 'parse',
+  /** 模型不存在或不支持当前请求。 */
+  MODEL = 'model'
 }
 
 /** 翻译异常。 */

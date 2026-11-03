@@ -3142,11 +3142,11 @@
     },
     {
       "name": "translate_settings_desc",
-      "value": "Artikel mit einem Dienst deiner Wahl übersetzen. Standardmäßig aus; Ergebnisse werden auf dem Gerät zwischengespeichert."
+      "value": "KI-Übersetzung sendet Artikeltext an den konfigurierten Dienst. Standardmäßig aus; Ergebnisse bleiben lokal zwischengespeichert."
     },
     {
       "name": "translate_section_service",
-      "value": "Übersetzungsdienst"
+      "value": "KI-Übersetzung"
     },
     {
       "name": "translate_enable",
@@ -3161,24 +3161,24 @@
       "value": "Datenschutz: Nur der Artikeltext wird gesendet. Links, Bilder und Lesestatus sind nicht enthalten. Der API-Schlüssel liegt im Asset Store des Systems."
     },
     {
-      "name": "translate_provider",
-      "value": "Dienst"
-    },
-    {
-      "name": "translate_provider_deepl",
-      "value": "DeepL (API-Schlüssel erforderlich)"
-    },
-    {
-      "name": "translate_provider_libre",
-      "value": "LibreTranslate (selbst gehostet möglich)"
-    },
-    {
       "name": "translate_endpoint",
-      "value": "Endpunkt"
+      "value": "OpenAI-kompatible Chat-Completions-URL"
     },
     {
       "name": "translate_endpoint_hint",
-      "value": "Leer lassen, um den Standardendpunkt zu verwenden"
+      "value": "Leer lassen für die Standard-URL"
+    },
+    {
+      "name": "translate_ai_model",
+      "value": "Modell"
+    },
+    {
+      "name": "translate_ai_model_hint",
+      "value": "Leer lassen für gpt-4.1-mini"
+    },
+    {
+      "name": "translate_error_model",
+      "value": "Modell nicht verfügbar oder für diese Anfrage ungeeignet."
     },
     {
       "name": "translate_api_key",
@@ -3326,7 +3326,7 @@
     },
     {
       "name": "translate_error_parse",
-      "value": "Der Übersetzungsdienst hat eine unlesbare Antwort zurückgegeben."
+      "value": "Der KI-Dienst lieferte ungültige Absatzdaten."
     },
     {
       "name": "translate_open_settings",
@@ -3430,7 +3430,7 @@
     },
     {
       "name": "privacy_out_translate_desc",
-      "value": "Wenn aktiviert, wird Artikeltext an den gewählten Dienst (DeepL oder LibreTranslate) gesendet. Standardmäßig aus."
+      "value": "Wenn aktiviert, wird Artikeltext an den konfigurierten OpenAI-kompatiblen KI-Dienst gesendet. Standardmäßig aus."
     },
     {
       "name": "privacy_out_share_title",

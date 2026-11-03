@@ -3142,11 +3142,11 @@
     },
     {
       "name": "translate_settings_desc",
-      "value": "使用你选择的翻译服务翻译文章。默认关闭；结果缓存在本机。"
+      "value": "AI 翻译会把正文发送到你配置的服务。默认关闭，译文缓存在本机。"
     },
     {
       "name": "translate_section_service",
-      "value": "翻译服务"
+      "value": "AI 翻译"
     },
     {
       "name": "translate_enable",
@@ -3161,24 +3161,24 @@
       "value": "隐私说明：只发送正文文本，不包含链接、图片与阅读状态。API Key 存放在系统资产库。"
     },
     {
-      "name": "translate_provider",
-      "value": "服务"
-    },
-    {
-      "name": "translate_provider_deepl",
-      "value": "DeepL（需要 API Key）"
-    },
-    {
-      "name": "translate_provider_libre",
-      "value": "LibreTranslate（支持自建实例）"
-    },
-    {
       "name": "translate_endpoint",
-      "value": "服务地址"
+      "value": "OpenAI 兼容 Chat Completions 地址"
     },
     {
       "name": "translate_endpoint_hint",
-      "value": "留空使用默认地址"
+      "value": "留空使用 OpenAI 默认地址"
+    },
+    {
+      "name": "translate_ai_model",
+      "value": "模型"
+    },
+    {
+      "name": "translate_ai_model_hint",
+      "value": "留空使用 gpt-4.1-mini"
+    },
+    {
+      "name": "translate_error_model",
+      "value": "模型不可用或不支持此请求，请检查模型和地址。"
     },
     {
       "name": "translate_api_key",
@@ -3326,7 +3326,7 @@
     },
     {
       "name": "translate_error_parse",
-      "value": "翻译服务返回了无法解析的内容。"
+      "value": "AI 服务返回的段落格式有误，请重试或更换模型。"
     },
     {
       "name": "translate_open_settings",
@@ -3430,7 +3430,7 @@
     },
     {
       "name": "privacy_out_translate_desc",
-      "value": "开启后，正文文本会发送到你选择的翻译服务（DeepL 或 LibreTranslate）。默认关闭。"
+      "value": "开启后，正文文本会发送到你配置的 OpenAI 兼容 AI 服务。默认关闭。"
     },
     {
       "name": "privacy_out_share_title",

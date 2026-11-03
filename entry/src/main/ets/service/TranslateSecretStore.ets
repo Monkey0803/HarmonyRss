@@ -2,7 +2,7 @@
  * TranslateSecretStore.ets — 翻译服务 API Key 的安全存储（Asset Store Kit）。
  *
  * Key 只进 Asset Store（HUKS 管理），绝不写入 preferences / DB / 日志 / 备份。
- * 别名固定为 `rss_translate_key`，访问时机为「首次解锁后」。
+ * 旧服务与 AI 使用不同别名，避免旧 Key 被发送给新服务。访问时机为「首次解锁后」。
  */
 
 import { asset } from '@kit.AssetStoreKit';
@@ -14,7 +14,8 @@ const DOMAIN: number = 0x0000;
 const TAG: string = 'TranslateSecretStore';
 /** Asset Store：别名已存在。 */
 const ASSET_DUPLICATED: number = 24000003;
-const ALIAS: string = 'rss_translate_key';
+const LEGACY_ALIAS: string = 'rss_translate_key';
+const AI_ALIAS: string = 'rss_translate_ai_key';
 
 function toBytes(value: string): Uint8Array {
   return new util.TextEncoder().encodeInto(value);
@@ -29,6 +30,11 @@ function toText(value: Uint8Array): string {
 }
 
 export class TranslateSecretStore {
+  private readonly alias: string;
+
+  constructor(alias: string = LEGACY_ALIAS) {
+    this.alias = alias;
+  }
   /** 写入 Key；空串等价于删除。 */
   async save(key: string): Promise<void> {
     const text: string = key.trim();
@@ -37,7 +43,7 @@ export class TranslateSecretStore {
       return;
     }
     const attributes: asset.AssetMap = new Map();
-    attributes.set(asset.Tag.ALIAS, toBytes(ALIAS));
+    attributes.set(asset.Tag.ALIAS, toBytes(this.alias));
     attributes.set(asset.Tag.SECRET, toBytes(text));
     attributes.set(asset.Tag.ACCESSIBILITY, asset.Accessibility.DEVICE_FIRST_UNLOCKED);
     attributes.set(asset.Tag.CONFLICT_RESOLUTION, asset.ConflictResolution.OVERWRITE);
@@ -49,7 +55,7 @@ export class TranslateSecretStore {
       if (error.code === ASSET_DUPLICATED) {
         await this.remove();
         const retry: asset.AssetMap = new Map();
-        retry.set(asset.Tag.ALIAS, toBytes(ALIAS));
+        retry.set(asset.Tag.ALIAS, toBytes(this.alias));
         retry.set(asset.Tag.SECRET, toBytes(text));
         retry.set(asset.Tag.ACCESSIBILITY, asset.Accessibility.DEVICE_FIRST_UNLOCKED);
         await asset.add(retry);
@@ -63,7 +69,7 @@ export class TranslateSecretStore {
   /** 读取 Key；不存在 / 读取失败返回 undefined。 */
   async read(): Promise<string | undefined> {
     const query: asset.AssetMap = new Map();
-    query.set(asset.Tag.ALIAS, toBytes(ALIAS));
+    query.set(asset.Tag.ALIAS, toBytes(this.alias));
     query.set(asset.Tag.RETURN_TYPE, asset.ReturnType.ALL);
     try {
       const results: Array<asset.AssetMap> = await asset.query(query);
@@ -92,7 +98,7 @@ export class TranslateSecretStore {
   /** 删除 Key。资产本来就不存在时静默。 */
   async remove(): Promise<void> {
     const query: asset.AssetMap = new Map();
-    query.set(asset.Tag.ALIAS, toBytes(ALIAS));
+    query.set(asset.Tag.ALIAS, toBytes(this.alias));
     try {
       await asset.remove(query);
     } catch (err) {
@@ -104,3 +110,4 @@ export class TranslateSecretStore {
 
 /** 全局唯一实例。 */
 export const translateSecretStore: TranslateSecretStore = new TranslateSecretStore();
+export const aiTranslateSecretStore: TranslateSecretStore = new TranslateSecretStore(AI_ALIAS);

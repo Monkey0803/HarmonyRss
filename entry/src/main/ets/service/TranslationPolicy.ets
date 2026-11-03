@@ -5,32 +5,12 @@
  *   targetLanguageOf    目标语言跟随应用语言（跟随系统时按系统语言决定中/英）
  *   splitParagraphs     正文 → 段落（长段按句号再切，保证逐段对照）
  *   chunkParagraphs     段落 → 每次请求的批次（字符与条数双重上限）
- *   endpointOf          provider + 用户自定义端点 → 实际请求地址
  *
  * 语言识别只用于「决定是否需要翻译」与提示，不追求准确率；翻译接口本身也支持自动检测。
  */
 
 import { AppLanguage } from '../common/constants/SettingsConstants';
-import { TranslateDefaults, TranslateLimits, TranslateProvider } from '../common/constants/TranslateConstants';
-
-/** 归一翻译服务 id（脏值退回默认）。 */
-export function normalizeProvider(value: string): string {
-  if (value === TranslateProvider.LIBRE) {
-    return TranslateProvider.LIBRE;
-  }
-  return TranslateProvider.DEEPL;
-}
-
-/** 用户自定义端点只接受 http/https，其它一律退回默认端点。 */
-export function endpointOf(provider: string, custom: string): string {
-  const text: string = custom.trim();
-  const lower: string = text.toLowerCase();
-  if (text.length > 0 && (lower.startsWith('https://') || lower.startsWith('http://'))) {
-    return text;
-  }
-  return provider === TranslateProvider.LIBRE
-    ? TranslateDefaults.LIBRE_ENDPOINT : TranslateDefaults.DEEPL_ENDPOINT;
-}
+import { TranslateLimits } from '../common/constants/TranslateConstants';
 
 /** 字符是否日文假名。 */
 function isKana(code: number): boolean {
@@ -258,14 +238,4 @@ export function chunkParagraphs(paragraphs: string[], maxCount: number = Transla
     batches.push(current);
   }
   return batches;
-}
-
-/** DeepL 目标语言码（大写；'zh' → 'ZH'）。 */
-export function deepLTarget(code: string): string {
-  return code.toUpperCase();
-}
-
-/** DeepL 源语言码；无法识别返回空串（让服务自动检测）。 */
-export function deepLSource(code: string): string {
-  return code.length > 0 && code !== 'und' ? code.toUpperCase() : '';
 }

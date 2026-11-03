@@ -3142,11 +3142,11 @@
     },
     {
       "name": "translate_settings_desc",
-      "value": "Translate articles with a service you choose. Off by default; results are cached on device."
+      "value": "AI translation sends article text to your configured service. Off by default; results are cached on this device."
     },
     {
       "name": "translate_section_service",
-      "value": "Translation service"
+      "value": "AI translation"
     },
     {
       "name": "translate_enable",
@@ -3161,24 +3161,24 @@
       "value": "Privacy: only the article body text is sent. Links, images and reading state are not included. The API Key is stored in the system Asset Store."
     },
     {
-      "name": "translate_provider",
-      "value": "Service"
-    },
-    {
-      "name": "translate_provider_deepl",
-      "value": "DeepL (API Key required)"
-    },
-    {
-      "name": "translate_provider_libre",
-      "value": "LibreTranslate (self-hosted supported)"
-    },
-    {
       "name": "translate_endpoint",
-      "value": "Endpoint"
+      "value": "OpenAI-compatible Chat Completions URL"
     },
     {
       "name": "translate_endpoint_hint",
-      "value": "Leave empty to use the default endpoint"
+      "value": "Leave blank for the default OpenAI URL"
+    },
+    {
+      "name": "translate_ai_model",
+      "value": "Model"
+    },
+    {
+      "name": "translate_ai_model_hint",
+      "value": "Leave blank for gpt-4.1-mini"
+    },
+    {
+      "name": "translate_error_model",
+      "value": "The model is unavailable or does not support this request. Check the model and endpoint."
     },
     {
       "name": "translate_api_key",
@@ -3326,7 +3326,7 @@
     },
     {
       "name": "translate_error_parse",
-      "value": "The translation service returned an unreadable response."
+      "value": "The AI service returned invalid paragraph data. Retry or change the model."
     },
     {
       "name": "translate_open_settings",
@@ -3430,7 +3430,7 @@
     },
     {
       "name": "privacy_out_translate_desc",
-      "value": "When enabled, article body text is sent to the service you choose (DeepL or LibreTranslate). Off by default."
+      "value": "When enabled, article text is sent to your configured OpenAI-compatible AI service. Off by default."
     },
     {
       "name": "privacy_out_share_title",

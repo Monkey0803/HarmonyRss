@@ -4,8 +4,8 @@
  * 为什么单独一个库：翻译缓存是纯可再生成数据，和主库（订阅 / 文章 / 标注）解耦，
  * 清理 / 重建时不会碰到主库；主库也不用为它加版本迁移。
  *
- * 缓存键 = (article_id, target_lang)：同一篇文章切换目标语言会各存一份；
- * 源语言 / 服务 / 段落 JSON / 更新时间随行保存。超过保留天数或条数上限时自动清理最旧的。
+ * 旧译文表保持原样；AI 表的键由文章、目标语言、端点和模型组成。
+ * 超过保留天数或条数上限时自动清理最旧的。
  */
 
 import { relationalStore } from '@kit.ArkData';
@@ -18,6 +18,7 @@ const DOMAIN: number = 0x0000;
 const TAG: string = 'TranslationStore';
 const DB_NAME: string = 'harmony_rss_translations.db';
 const TABLE: string = 'translations';
+const AI_TABLE: string = 'ai_translations';
 const DAY_MS: number = 24 * 60 * 60 * 1000;
 
 const SQL_CREATE: string =
@@ -29,6 +30,10 @@ const SQL_CREATE: string =
   'payload TEXT NOT NULL DEFAULT \'\', ' +
   'updated_at INTEGER NOT NULL DEFAULT 0, ' +
   'PRIMARY KEY (article_id, target_lang))';
+const SQL_CREATE_AI: string =
+  'CREATE TABLE IF NOT EXISTS ' + AI_TABLE + ' (' +
+  'cache_key TEXT PRIMARY KEY, article_id TEXT NOT NULL, target_lang TEXT NOT NULL, ' +
+  'source_lang TEXT NOT NULL, payload TEXT NOT NULL, updated_at INTEGER NOT NULL)';
 
 /** 一条缓存记录。 */
 export class TranslationCacheRow {
@@ -67,6 +72,7 @@ export class TranslationStore {
       };
       this.store = await relationalStore.getRdbStore(context, config);
       this.store.executeSync(SQL_CREATE);
+      this.store.executeSync(SQL_CREATE_AI);
       this.prune();
     } catch (err) {
       const error: BusinessError = err as BusinessError;
@@ -86,6 +92,10 @@ export class TranslationStore {
       store.executeSync('DELETE FROM ' + TABLE + ' WHERE updated_at < ?', [cutoff]);
       store.executeSync('DELETE FROM ' + TABLE + ' WHERE rowid NOT IN (' +
         'SELECT rowid FROM ' + TABLE + ' ORDER BY updated_at DESC LIMIT ?)',
+        [TranslateLimits.MAX_CACHE_ENTRIES]);
+      store.executeSync('DELETE FROM ' + AI_TABLE + ' WHERE updated_at < ?', [cutoff]);
+      store.executeSync('DELETE FROM ' + AI_TABLE + ' WHERE rowid NOT IN (' +
+        'SELECT rowid FROM ' + AI_TABLE + ' ORDER BY updated_at DESC LIMIT ?)',
         [TranslateLimits.MAX_CACHE_ENTRIES]);
     } catch (err) {
       const error: BusinessError = err as BusinessError;
@@ -124,6 +134,50 @@ export class TranslationStore {
     }
   }
 
+  /** AI cache is separate from legacy translations and scoped to endpoint and model by cacheKey. */
+  async getAi(cacheKey: string): Promise<TranslationCacheRow | undefined> {
+    const store: relationalStore.RdbStore | undefined = this.store;
+    if (store === undefined) {
+      return undefined;
+    }
+    try {
+      const rs: relationalStore.ResultSet = await store.querySql(
+        'SELECT article_id, source_lang, target_lang, payload, updated_at FROM ' + AI_TABLE +
+        ' WHERE cache_key = ?', [cacheKey]);
+      try {
+        if (!rs.goToNextRow()) {
+          return undefined;
+        }
+        return new TranslationCacheRow(
+          rs.getString(rs.getColumnIndex('article_id')),
+          rs.getString(rs.getColumnIndex('source_lang')),
+          rs.getString(rs.getColumnIndex('target_lang')), 'ai',
+          rs.getString(rs.getColumnIndex('payload')),
+          rs.getLong(rs.getColumnIndex('updated_at')));
+      } finally {
+        rs.close();
+      }
+    } catch (err) {
+      return undefined;
+    }
+  }
+
+  putAi(cacheKey: string, articleId: string, sourceLang: string, targetLang: string,
+    payload: string): void {
+    const store: relationalStore.RdbStore | undefined = this.store;
+    if (store === undefined || cacheKey.length === 0 || payload.length === 0) {
+      return;
+    }
+    try {
+      store.executeSync('INSERT OR REPLACE INTO ' + AI_TABLE +
+        ' (cache_key, article_id, target_lang, source_lang, payload, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
+        [cacheKey, articleId, targetLang, sourceLang, payload, Date.now()]);
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.warn(DOMAIN, TAG, 'put AI failed: %{public}d', error.code);
+    }
+  }
+
   /** 写缓存（同文章 + 目标语言覆盖旧值）。 */
   put(articleId: string, sourceLang: string, targetLang: string, provider: string,
     payload: string): void {
@@ -149,7 +203,8 @@ export class TranslationStore {
     }
     try {
       const rs: relationalStore.ResultSet =
-        await store.querySql('SELECT COUNT(*) AS c FROM ' + TABLE);
+        await store.querySql('SELECT (SELECT COUNT(*) FROM ' + TABLE +
+          ') + (SELECT COUNT(*) FROM ' + AI_TABLE + ') AS c');
       try {
         if (!rs.goToNextRow()) {
           return 0;
@@ -174,6 +229,7 @@ export class TranslationStore {
     const before: number = await this.count();
     try {
       store.executeSync('DELETE FROM ' + TABLE);
+      store.executeSync('DELETE FROM ' + AI_TABLE);
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       hilog.warn(DOMAIN, TAG, 'clear failed: %{public}d', error.code);

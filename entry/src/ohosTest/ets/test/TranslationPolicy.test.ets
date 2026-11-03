@@ -7,19 +7,24 @@
  */
 
 import { describe, it, expect } from '@ohos/hypium';
-import { TranslateDefaults, TranslateLimits, TranslateProvider } from '../../../main/ets/common/constants/TranslateConstants';
+import { TranslateDefaults, TranslateLimits } from '../../../main/ets/common/constants/TranslateConstants';
 import { AppLanguage } from '../../../main/ets/common/constants/SettingsConstants';
 import {
+  aiCacheKey, aiEndpointOf, aiModelOf, buildAiTranslationRequest,
+  isValidAiEndpoint, parseAiTranslationResponse
+} from '../../../main/ets/service/AiTranslationProtocol';
+import {
   chunkParagraphs,
-  deepLSource,
-  deepLTarget,
   detectLanguage,
-  endpointOf,
   isSameLanguage,
-  normalizeProvider,
   splitParagraphs,
   targetLanguageOf
 } from '../../../main/ets/service/TranslationPolicy';
+
+function completion(content: string, finish: string = 'stop'): string {
+  return '{"choices":[{"finish_reason":"' + finish + '","message":{"content":' +
+    JSON.stringify(content) + '}}]}';
+}
 
 export default function translationPolicyTest() {
   describe('TranslationPolicy', () => {
@@ -102,23 +107,41 @@ export default function translationPolicyTest() {
       expect(byChars.length).assertEqual(2);
     });
 
-    it('provider_and_endpoint_normalization', 0, () => {
-      expect(normalizeProvider(TranslateProvider.LIBRE)).assertEqual(TranslateProvider.LIBRE);
-      expect(normalizeProvider('unknown')).assertEqual(TranslateProvider.DEEPL);
-      expect(endpointOf(TranslateProvider.DEEPL, '')).assertEqual(TranslateDefaults.DEEPL_ENDPOINT);
-      expect(endpointOf(TranslateProvider.LIBRE, '')).assertEqual(TranslateDefaults.LIBRE_ENDPOINT);
-      expect(endpointOf(TranslateProvider.DEEPL, 'https://example.com/translate'))
-        .assertEqual('https://example.com/translate');
-      // 非 http/https 的脏值退回默认端点。
-      expect(endpointOf(TranslateProvider.DEEPL, 'ftp://example.com')).assertEqual(TranslateDefaults.DEEPL_ENDPOINT);
+    it('ai_configuration_and_cache_isolation', 0, () => {
+      expect(aiEndpointOf('')).assertEqual(TranslateDefaults.AI_ENDPOINT);
+      expect(aiModelOf('')).assertEqual(TranslateDefaults.AI_MODEL);
+      expect(isValidAiEndpoint('https://example.com/v1/chat/completions')).assertTrue();
+      expect(isValidAiEndpoint('http://example.com/v1/chat/completions')).assertFalse();
+      expect(isValidAiEndpoint('https://user:pass@example.com/v1/chat/completions')).assertFalse();
+      expect(aiCacheKey('article', 'zh', 'https://a.example/v1/chat/completions', 'model-a') ===
+        aiCacheKey('article', 'zh', 'https://a.example/v1/chat/completions', 'model-b')).assertFalse();
+      expect(aiCacheKey('article', 'zh', 'https://a.example/v1/chat/completions', 'model-a') ===
+        aiCacheKey('article', 'zh', 'https://b.example/v1/chat/completions', 'model-a')).assertFalse();
     });
 
-    it('deepl_language_codes', 0, () => {
-      expect(deepLTarget('zh')).assertEqual('ZH');
-      expect(deepLTarget('en')).assertEqual('EN');
-      expect(deepLSource('en')).assertEqual('EN');
-      expect(deepLSource('und')).assertEqual('');
-      expect(deepLSource('')).assertEqual('');
+    it('ai_request_numbers_each_batch', 0, () => {
+      const batches: string[][] = chunkParagraphs(['one', 'two', 'three'], 2, 4000);
+      const first: string = buildAiTranslationRequest(batches[0], 'zh', 'model-a');
+      const second: string = buildAiTranslationRequest(batches[1], 'zh', 'model-a');
+      expect(first.indexOf('\\"index\\":0') >= 0).assertTrue();
+      expect(first.indexOf('\\"index\\":1') >= 0).assertTrue();
+      expect(second.indexOf('\\"index\\":0') >= 0).assertTrue();
+      expect(first.indexOf('model-a') >= 0).assertTrue();
+    });
+
+    it('ai_response_rejects_missing_misordered_or_empty_paragraphs', 0, () => {
+      const valid: string = completion('{"translations":[{"index":0,"text":"甲"},{"index":1,"text":"乙"}]}');
+      expect(parseAiTranslationResponse(valid, 2)[1]).assertEqual('乙');
+      const invalid: string[] = [
+        completion('{"translations":[{"index":1,"text":"错位"}]}'),
+        completion('{"translations":[{"index":0,"text":" "}]}'),
+        completion('{"translations":[{"index":0,"text":"未完成"}]}', 'length')
+      ];
+      for (let i = 0; i < invalid.length; i += 1) {
+        let rejected: boolean = false;
+        try { parseAiTranslationResponse(invalid[i], 1); } catch (err) { rejected = true; }
+        expect(rejected).assertTrue();
+      }
     });
   });
 }

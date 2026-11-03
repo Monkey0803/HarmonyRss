@@ -124,10 +124,9 @@ export class AppSettings {
 
   /** 是否允许联网翻译（默认关闭；关闭时阅读页只提示、不发起网络请求）。 */
   @Trace translateEnabled: boolean = TranslateDefaults.ENABLED;
-  /** 翻译服务：'deepl' | 'libre'。 */
-  @Trace translateProvider: string = TranslateDefaults.PROVIDER;
-  /** 自定义服务端点；空串 = 使用该服务的默认端点。 */
-  @Trace translateEndpoint: string = '';
+  /** AI 翻译端点和模型；旧服务偏好留在存储中，但不再读取。 */
+  @Trace translateAiEndpoint: string = TranslateDefaults.AI_ENDPOINT;
+  @Trace translateAiModel: string = TranslateDefaults.AI_MODEL;
 
   // ---- 发现与推荐 ----
 

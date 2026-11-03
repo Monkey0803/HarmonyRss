@@ -6,7 +6,7 @@
  *   - API Key 只写 Asset Store（TranslateSecretStore），页面只展示「已配置 / 未配置」；
  *   - 清除缓存只删独立翻译缓存库，不碰主库与文章。
  *
- * 交互：所有开关 / 选项即时保存；地址与 Key 在提交（回车 / 保存按钮 / 离开页面）时落盘。
+ * 交互：开关即时保存；地址、模型与 Key 在提交（回车 / 保存按钮 / 离开页面）时落盘。
  */
 
 import { common } from '@kit.AbilityKit';
@@ -14,9 +14,8 @@ import { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { appSettings } from '../model/AppSettings';
 import { TranslationError } from '../model/Translation';
-import { TranslateProvider } from '../common/constants/TranslateConstants';
 import { translationService } from '../service/TranslationService';
-import { translateSecretStore } from '../service/TranslateSecretStore';
+import { aiTranslateSecretStore } from '../service/TranslateSecretStore';
 import { settingsStore } from '../service/SettingsStore';
 import { safeArea } from '../service/SafeAreaController';
 import { ToastUtil } from '../common/utils/ToastUtil';
@@ -33,6 +32,7 @@ export struct TranslateSettingsView {
 
   /** 地址草稿（提交时写回 appSettings）。 */
   @Local endpointDraft: string = '';
+  @Local modelDraft: string = '';
   /** Key 草稿（保存后立即清空，避免明文常驻界面）。 */
   @Local keyDraft: string = '';
   @Local keySet: boolean = false;
@@ -45,9 +45,11 @@ export struct TranslateSettingsView {
     if (context === undefined) {
       return;
     }
-    this.endpointDraft = appSettings.translateEndpoint;
+    this.endpointDraft = appSettings.translateAiEndpoint;
+    this.modelDraft = appSettings.translateAiModel;
     settingsStore.load(context).then(() => {
-      this.endpointDraft = appSettings.translateEndpoint;
+      this.endpointDraft = appSettings.translateAiEndpoint;
+      this.modelDraft = appSettings.translateAiModel;
     });
     this.refreshKeyState();
     this.refreshCacheCount(context);
@@ -56,10 +58,11 @@ export struct TranslateSettingsView {
   /** 离开页面时把地址草稿落盘（onBlur 不一定触发）。 */
   aboutToDisappear(): void {
     this.saveEndpoint();
+    this.saveModel();
   }
 
   private async refreshKeyState(): Promise<void> {
-    this.keySet = await translateSecretStore.hasKey();
+    this.keySet = await aiTranslateSecretStore.hasKey();
   }
 
   private async refreshCacheCount(context: common.Context): Promise<void> {
@@ -72,27 +75,28 @@ export struct TranslateSettingsView {
 
   private saveEndpoint(): void {
     const next: string = this.endpointDraft.trim();
-    if (next === appSettings.translateEndpoint) {
+    if (next === appSettings.translateAiEndpoint) {
       return;
     }
-    appSettings.translateEndpoint = next;
+    appSettings.translateAiEndpoint = next;
+    settingsStore.save();
+  }
+
+  private saveModel(): void {
+    const next: string = this.modelDraft.trim();
+    if (next === appSettings.translateAiModel) {
+      return;
+    }
+    appSettings.translateAiModel = next;
     settingsStore.save();
   }
 
   private toggleEnabled(value: boolean): void {
     appSettings.translateEnabled = value;
     settingsStore.save();
-    if (value && !this.keySet && appSettings.translateProvider === TranslateProvider.DEEPL) {
+    if (value && !this.keySet) {
       ToastUtil.show(this.getUIContext(), $r('app.string.translate_api_key_unset'));
     }
-  }
-
-  private pickProvider(provider: string): void {
-    if (provider === appSettings.translateProvider) {
-      return;
-    }
-    appSettings.translateProvider = provider;
-    settingsStore.save();
   }
 
   private async saveKey(): Promise<void> {
@@ -102,7 +106,7 @@ export struct TranslateSettingsView {
     }
     this.savingKey = true;
     try {
-      await translateSecretStore.save(text);
+      await aiTranslateSecretStore.save(text);
       this.keyDraft = '';
       this.keySet = true;
       ToastUtil.show(this.getUIContext(), $r('app.string.translate_api_key_set'));
@@ -116,7 +120,7 @@ export struct TranslateSettingsView {
   }
 
   private async clearKey(): Promise<void> {
-    await translateSecretStore.remove();
+    await aiTranslateSecretStore.remove();
     this.keySet = false;
     this.keyDraft = '';
   }
@@ -130,6 +134,8 @@ export struct TranslateSettingsView {
       ToastUtil.show(this.getUIContext(), $r('app.string.translate_error_disabled_title'));
       return;
     }
+    this.saveEndpoint();
+    this.saveModel();
     this.testing = true;
     try {
       const text: string = await translationService.test(context);
@@ -164,55 +170,6 @@ export struct TranslateSettingsView {
       })
   }
 
-  /** 服务选择：两枚 chip（当前服务用品牌色）。值直接读 appSettings，保证状态变化即刷新。 */
-  @Builder
-  ProviderRow() {
-    Column({ space: $r('app.float.space_s') }) {
-      Text($r('app.string.translate_provider'))
-        .fontSize($r('app.float.font_size_body'))
-        .fontColor($r('app.color.hm_text_primary'))
-        .width('100%')
-      Row({ space: $r('app.float.space_s') }) {
-        Text($r('app.string.translate_provider_deepl'))
-          .fontSize($r('app.float.font_size_caption'))
-          .fontColor(appSettings.translateProvider === TranslateProvider.DEEPL
-            ? $r('app.color.hm_on_brand') : $r('app.color.hm_text_primary'))
-          .backgroundColor(appSettings.translateProvider === TranslateProvider.DEEPL
-            ? themePalette.fill() : $r('app.color.hm_value_chip_background'))
-          .borderRadius($r('app.float.radius_chip'))
-          .padding({
-            left: $r('app.float.space_m'),
-            right: $r('app.float.space_m'),
-            top: $r('app.float.space_xs'),
-            bottom: $r('app.float.space_xs')
-          })
-          .onClick(() => {
-            this.pickProvider(TranslateProvider.DEEPL);
-          })
-        Text($r('app.string.translate_provider_libre'))
-          .fontSize($r('app.float.font_size_caption'))
-          .fontColor(appSettings.translateProvider === TranslateProvider.LIBRE
-            ? $r('app.color.hm_on_brand') : $r('app.color.hm_text_primary'))
-          .backgroundColor(appSettings.translateProvider === TranslateProvider.LIBRE
-            ? themePalette.fill() : $r('app.color.hm_value_chip_background'))
-          .borderRadius($r('app.float.radius_chip'))
-          .padding({
-            left: $r('app.float.space_m'),
-            right: $r('app.float.space_m'),
-            top: $r('app.float.space_xs'),
-            bottom: $r('app.float.space_xs')
-          })
-          .onClick(() => {
-            this.pickProvider(TranslateProvider.LIBRE);
-          })
-      }
-      .width('100%')
-    }
-    .width('100%')
-    .padding($r('app.float.space_m'))
-    .alignItems(HorizontalAlign.Start)
-  }
-
   /** 地址输入 + 保存按钮。 */
   @Builder
   EndpointRow() {
@@ -243,6 +200,33 @@ export struct TranslateSettingsView {
           .onClick(() => {
             this.saveEndpoint();
           })
+      }
+      .width('100%')
+    }
+    .width('100%')
+    .padding($r('app.float.space_m'))
+    .alignItems(HorizontalAlign.Start)
+  }
+
+  @Builder
+  ModelRow() {
+    Column({ space: $r('app.float.space_s') }) {
+      Text($r('app.string.translate_ai_model'))
+        .fontSize($r('app.float.font_size_body'))
+        .fontColor($r('app.color.hm_text_primary'))
+      Row({ space: $r('app.float.space_s') }) {
+        TextInput({ text: this.modelDraft, placeholder: $r('app.string.translate_ai_model_hint') })
+          .type(InputType.Normal)
+          .fontSize($r('app.float.font_size_body'))
+          .layoutWeight(1)
+          .onChange((value: string) => { this.modelDraft = value; })
+          .onSubmit(() => { this.saveModel(); })
+        Button($r('app.string.translate_endpoint_save'))
+          .buttonStyle(ButtonStyleMode.NORMAL)
+          .fontSize($r('app.float.font_size_caption'))
+          .fontColor($r('app.color.hm_on_brand'))
+          .backgroundColor(themePalette.fill())
+          .onClick(() => { this.saveModel(); })
       }
       .width('100%')
     }
@@ -345,9 +329,9 @@ export struct TranslateSettingsView {
             .padding($r('app.float.space_m'))
 
             Divider().color($r('app.color.hm_divider'))
-            this.ProviderRow()
-            Divider().color($r('app.color.hm_divider'))
             this.EndpointRow()
+            Divider().color($r('app.color.hm_divider'))
+            this.ModelRow()
             Divider().color($r('app.color.hm_divider'))
             this.KeyRow()
 

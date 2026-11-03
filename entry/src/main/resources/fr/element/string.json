@@ -3142,11 +3142,11 @@
     },
     {
       "name": "translate_settings_desc",
-      "value": "Traduisez les articles avec le service de votre choix. Désactivé par défaut ; les résultats sont mis en cache sur l'appareil."
+      "value": "La traduction IA envoie le texte au service configuré. Désactivée par défaut ; les résultats sont mis en cache sur cet appareil."
     },
     {
       "name": "translate_section_service",
-      "value": "Service de traduction"
+      "value": "Traduction IA"
     },
     {
       "name": "translate_enable",
@@ -3161,24 +3161,24 @@
       "value": "Confidentialité : seul le texte de l'article est envoyé. Les liens, images et l'état de lecture ne sont pas inclus. La clé API est stockée dans l'Asset Store du système."
     },
     {
-      "name": "translate_provider",
-      "value": "Service"
-    },
-    {
-      "name": "translate_provider_deepl",
-      "value": "DeepL (clé API requise)"
-    },
-    {
-      "name": "translate_provider_libre",
-      "value": "LibreTranslate (auto-hébergement possible)"
-    },
-    {
       "name": "translate_endpoint",
-      "value": "Point de terminaison"
+      "value": "URL Chat Completions compatible OpenAI"
     },
     {
       "name": "translate_endpoint_hint",
-      "value": "Laissez vide pour utiliser le point de terminaison par défaut"
+      "value": "Vide pour l’URL OpenAI par défaut"
+    },
+    {
+      "name": "translate_ai_model",
+      "value": "Modèle"
+    },
+    {
+      "name": "translate_ai_model_hint",
+      "value": "Vide pour gpt-4.1-mini"
+    },
+    {
+      "name": "translate_error_model",
+      "value": "Modèle indisponible ou incompatible avec cette requête."
     },
     {
       "name": "translate_api_key",
@@ -3326,7 +3326,7 @@
     },
     {
       "name": "translate_error_parse",
-      "value": "Le service de traduction a renvoyé une réponse illisible."
+      "value": "Le service IA a renvoyé des paragraphes invalides."
     },
     {
       "name": "translate_open_settings",
@@ -3430,7 +3430,7 @@
     },
     {
       "name": "privacy_out_translate_desc",
-      "value": "Si activée, le texte de l'article est envoyé au service choisi (DeepL ou LibreTranslate). Désactivé par défaut."
+      "value": "Si elle est activée, le texte est envoyé au service IA compatible OpenAI configuré. Désactivée par défaut."
     },
     {
       "name": "privacy_out_share_title",

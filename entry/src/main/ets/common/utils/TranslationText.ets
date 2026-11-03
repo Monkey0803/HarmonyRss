@@ -29,6 +29,9 @@ export function translationErrorText(code: string): ResourceStr {
   if (code === TranslationErrorCode.SERVER) {
     return $r('app.string.translate_error_server');
   }
+  if (code === TranslationErrorCode.MODEL) {
+    return $r('app.string.translate_error_model');
+  }
   if (code === TranslationErrorCode.PARSE) {
     return $r('app.string.translate_error_parse');
   }

@@ -115,10 +115,8 @@ export class PreferencesConstants {
   // ---- 正文翻译（服务端点与开关；API Key 在 Asset Store） ----
   /** 联网翻译开关（默认关）。 */
   static readonly KEY_TRANSLATE_ENABLED: string = 'translateEnabled';
-  /** 翻译服务：'deepl' | 'libre'。 */
-  static readonly KEY_TRANSLATE_PROVIDER: string = 'translateProvider';
-  /** 自定义服务端点（空串 = 服务默认端点）。 */
-  static readonly KEY_TRANSLATE_ENDPOINT: string = 'translateEndpoint';
+  static readonly KEY_TRANSLATE_AI_ENDPOINT: string = 'translateAiEndpoint';
+  static readonly KEY_TRANSLATE_AI_MODEL: string = 'translateAiModel';
   // ---- 发现与推荐 ----
   /** RSSHub 实例根地址（发现页路由助手）。 */
   static readonly KEY_RSSHUB_BASE: string = 'rsshubBase';
