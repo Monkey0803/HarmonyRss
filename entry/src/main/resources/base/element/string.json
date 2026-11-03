@@ -4278,7 +4278,7 @@
     },
     {
       "name": "sync_cloud_unavailable",
-      "value": "Cloud sync is unavailable: enable cloud data sync in AGC and sign in to your HUAWEI ID."
+      "value": "Cloud sync cannot start. Check HUAWEI ID sign-in, the Cloud Space app switch, and AGC setup, then retry."
     },
     {
       "name": "sync_cloud_unavailable_unsupported",
@@ -4287,6 +4287,30 @@
     {
       "name": "sync_cloud_unavailable_store",
       "value": "The cloud database could not be opened on this device."
+    },
+    {
+      "name": "sync_cloud_unavailable_table_type",
+      "value": "This table was registered with a different distributed type. Check the app database configuration."
+    },
+    {
+      "name": "sync_cloud_unavailable_sync",
+      "value": "Cloud data transfer failed. Check your connection and Cloud Space settings, then retry."
+    },
+    {
+      "name": "sync_cloud_unavailable_cloud_disabled",
+      "value": "Cloud Space is unavailable. Check HUAWEI ID sign-in and this app's Cloud Space switch."
+    },
+    {
+      "name": "sync_cloud_unavailable_network",
+      "value": "Cloud sync could not connect. Check the network and retry."
+    },
+    {
+      "name": "sync_cloud_unavailable_wifi",
+      "value": "Sync is blocked by the Wi-Fi-only policy. Connect to Wi-Fi or turn off that policy."
+    },
+    {
+      "name": "sync_cloud_error_code",
+      "value": "System error code: %d"
     },
     {
       "name": "sync_kind_article_state",

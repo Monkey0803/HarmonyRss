@@ -52,10 +52,6 @@
       {
         "name": "ohos.permission.GET_NETWORK_INFO"
       },
-      // 智感握姿（系统手势检测，normal + system_grant）。
-      {
-        "name": "ohos.permission.DETECT_GESTURE"
-      },
       // 播客后台播放（配合 backgroundModes: audioPlayback + AVSession）。
       {
         "name": "ohos.permission.KEEP_BACKGROUND_RUNNING"

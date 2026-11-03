@@ -33,6 +33,8 @@ export class CommonConstants {
   static readonly TAB_BAR_HEIGHT_VP: number = 56;
   /** 页面内悬浮动作条与悬浮页签栏之间的间距（vp）。 */
   static readonly SELECT_BAR_GAP_VP: number = 8;
+  /** 订阅源多选悬浮操作条高度（vp）。 */
+  static readonly SELECT_BAR_HEIGHT_VP: number = 56;
   /** 悬浮页签栏上 miniBar（添加订阅源入口）宽度（vp）——圆角胶囊，够一个图标落位。 */
   static readonly MINI_BAR_WIDTH_VP: number = 64;
   /** 悬浮操作栏两侧留白（vp）：与首页悬浮页签栏的贴边距离一致。 */

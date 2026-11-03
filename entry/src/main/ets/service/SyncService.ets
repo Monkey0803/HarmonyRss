@@ -106,16 +106,18 @@ export class SyncStatus {
   /** 上次同步自动合并的条数（0 = 没发生冲突）。 */
   readonly conflicts: number;
   readonly backend: string;
-  /** 选了云同步目标时：端云能力是否真的可用。 */
+  /** 选了云同步目标时：最近一次登记或手动拉取是否成功。 */
   readonly cloudAvailable: boolean;
   /** 不可用原因（CloudAvailability 的字符串值）。 */
   readonly cloudReason: string;
+  /** 系统返回的原始错误码；0 表示当前没有错误。 */
+  readonly cloudErrorCode: number;
   /** 上次冲突的概要（最多 SyncLimits.CONFLICT_DETAILS 条）。 */
   readonly conflictItems: SyncConflict[];
 
   constructor(enabled: boolean, wifiOnly: boolean, lastAt: number, pending: number, records: number,
     conflicts: number, backend: string, cloudAvailable: boolean = true, cloudReason: string = '',
-    conflictItems: SyncConflict[] = []) {
+    conflictItems: SyncConflict[] = [], cloudErrorCode: number = 0) {
     this.enabled = enabled;
     this.wifiOnly = wifiOnly;
     this.lastSyncAt = lastAt;
@@ -125,6 +127,7 @@ export class SyncStatus {
     this.backend = backend;
     this.cloudAvailable = cloudAvailable;
     this.cloudReason = cloudReason;
+    this.cloudErrorCode = cloudErrorCode;
     this.conflictItems = conflictItems;
   }
 }
@@ -218,7 +221,7 @@ export class SyncService {
     }
   }
 
-  /** 仅 Wi-Fi 同步（默认开；只约束自动同步，手动「立即同步」由用户自己决定）。 */
+  /** 仅 Wi-Fi 同步（默认开；自动触发与系统端云传输均遵守）。 */
   private readWifiOnly(store: preferences.Preferences): boolean {
     const raw: preferences.ValueType =
       store.getSync(PreferencesConstants.KEY_CLOUD_SYNC_WIFI_ONLY, true);
@@ -308,7 +311,7 @@ export class SyncService {
 
   /**
    * 准备端云同步：打开云库 → 按「仅 Wi-Fi」设置网络策略 → 订阅云端变更。
-   * 只有真正登记为分布式表才算「可用」；AGC 未部署 / 未登录账号时返回 false，
+   * 只有真正登记为分布式表才算「可用」；登记失败时返回 false，
    * 调用方据此报「cloud unavailable」，不能把本机云表当成同步成功。
    */
   private async prepareCloud(context: common.Context): Promise<boolean> {
@@ -357,17 +360,19 @@ export class SyncService {
     const cloud: boolean = await this.isCloudBackend(context);
     let available: boolean = true;
     let reason: string = '';
+    let errorCode: number = 0;
     if (cloud) {
       // 还没准备过云库时先试一次：设置页要能直接说清「为什么没同步」。
       const opened: boolean = await cloudStore.open(context);
       if (opened) {
         await cloudStore.refresh();
       }
-      available = opened && cloudStore.isDistributed();
+      available = opened && cloudStore.availability() === CloudAvailability.READY;
       reason = available ? CloudAvailability.READY : cloudStore.availability();
+      errorCode = available ? 0 : cloudStore.errorCode();
     }
     return new SyncStatus(enabled, wifiOnly, lastAt, pending, records, conflicts,
-      cloud ? 'Cloud' : this.backendName, available, reason, details);
+      cloud ? 'Cloud' : this.backendName, available, reason, details, errorCode);
   }
 
   /** 立即同步：采集 → 拉取 / 合并 / 推送 → 回写。失败不抛，返回带 error 的摘要。 */

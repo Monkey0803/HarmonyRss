@@ -39,9 +39,10 @@ export struct SyncView {
   @Local records: number = 0;
   @Local backend: string = '';
   @Local syncing: boolean = false;
-  /** 选了云同步目标时：端云能力是否真的可用（未登录 / 未开通时为 false）。 */
+  /** 选了云同步目标时：最近一次登记或手动拉取是否成功。 */
   @Local cloudAvailable: boolean = true;
   @Local cloudReason: string = '';
+  @Local cloudErrorCode: number = 0;
   /** 上次同步自动合并的记录概要（最多 CONFLICT_DETAILS 条）。 */
   @Local conflictItems: SyncConflict[] = [];
 
@@ -80,17 +81,33 @@ export struct SyncView {
       this.backend = status.backend;
       this.cloudAvailable = status.cloudAvailable;
       this.cloudReason = status.cloudReason;
+      this.cloudErrorCode = status.cloudErrorCode;
       this.conflictItems = status.conflictItems;
     });
   }
 
-  /** 端云不可用的原因文案（未登录 / 未开通 / 系统不支持 / 云库打不开）。 */
+  /** 只显示能由系统错误码确认的具体原因；其余给排查步骤。 */
   private cloudUnavailableText(): ResourceStr {
     if (this.cloudReason === 'unsupported') {
       return $r('app.string.sync_cloud_unavailable_unsupported');
     }
     if (this.cloudReason === 'storeFailed') {
       return $r('app.string.sync_cloud_unavailable_store');
+    }
+    if (this.cloudReason === 'tableTypeMismatch') {
+      return $r('app.string.sync_cloud_unavailable_table_type');
+    }
+    if (this.cloudReason === 'cloudDisabled') {
+      return $r('app.string.sync_cloud_unavailable_cloud_disabled');
+    }
+    if (this.cloudReason === 'networkFailed') {
+      return $r('app.string.sync_cloud_unavailable_network');
+    }
+    if (this.cloudReason === 'wifiRequired') {
+      return $r('app.string.sync_cloud_unavailable_wifi');
+    }
+    if (this.cloudReason === 'syncFailed') {
+      return $r('app.string.sync_cloud_unavailable_sync');
     }
     return $r('app.string.sync_cloud_unavailable');
   }
@@ -199,7 +216,7 @@ export struct SyncView {
     if (context === undefined) {
       return;
     }
-    // 只约束自动同步；关闭后蜂窝网络下也会静默同步。
+    // 应用自动触发和系统端云传输都遵守此网络策略。
     this.wifiOnly = value;
     syncService.setWifiOnly(context, value).then(() => {
       this.refresh();
@@ -221,8 +238,21 @@ export struct SyncView {
           this.refresh();
         });
       } else {
-        this.showSnack($r('app.string.sync_failed', summary.error));
-        this.refresh();
+        if (summary.error === 'cloud unavailable' && this.cloudBackend) {
+          syncService.status(context).then((status: SyncStatus) => {
+            this.cloudAvailable = status.cloudAvailable;
+            this.cloudReason = status.cloudReason;
+            this.cloudErrorCode = status.cloudErrorCode;
+            this.showSnack(this.cloudUnavailableText());
+            this.refresh();
+          }).catch(() => {
+            this.showSnack($r('app.string.sync_cloud_unavailable'));
+            this.refresh();
+          });
+        } else {
+          this.showSnack($r('app.string.sync_failed', summary.error));
+          this.refresh();
+        }
       }
     });
   }
@@ -412,6 +442,13 @@ export struct SyncView {
             .fontColor($r('app.color.hm_text_secondary'))
             .width('100%')
             .margin({ top: $r('app.float.space_s'), left: $r('app.float.space_xs') })
+          if (this.cloudErrorCode > 0) {
+            Text($r('app.string.sync_cloud_error_code', this.cloudErrorCode))
+              .fontSize($r('app.float.font_size_caption'))
+              .fontColor($r('app.color.hm_text_secondary'))
+              .width('100%')
+              .margin({ top: $r('app.float.space_xs'), left: $r('app.float.space_xs') })
+          }
         }
 
         // 只有真的发生过「两端都改」才提示，0 条时不打扰。

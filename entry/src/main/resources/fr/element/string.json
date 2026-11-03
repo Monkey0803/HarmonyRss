@@ -4278,7 +4278,7 @@
     },
     {
       "name": "sync_cloud_unavailable",
-      "value": "Synchronisation cloud indisponible : activez la synchronisation des données dans AGC et connectez-vous à votre HUAWEI ID."
+      "value": "Impossible de démarrer la synchronisation cloud. Vérifiez la connexion HUAWEI ID, l'option de l'application dans Cloud Space et la configuration AGC, puis réessayez."
     },
     {
       "name": "sync_cloud_unavailable_unsupported",
@@ -4287,6 +4287,30 @@
     {
       "name": "sync_cloud_unavailable_store",
       "value": "La base de données cloud n'a pas pu être ouverte sur cet appareil."
+    },
+    {
+      "name": "sync_cloud_unavailable_table_type",
+      "value": "Cette table a été enregistrée avec un autre type distribué. Vérifiez la configuration de la base de données de l'application."
+    },
+    {
+      "name": "sync_cloud_unavailable_sync",
+      "value": "Le transfert des données cloud a échoué. Vérifiez le réseau et les paramètres Cloud Space, puis réessayez."
+    },
+    {
+      "name": "sync_cloud_unavailable_cloud_disabled",
+      "value": "Cloud Space est indisponible. Vérifiez la connexion HUAWEI ID et l'option Cloud Space de cette application."
+    },
+    {
+      "name": "sync_cloud_unavailable_network",
+      "value": "La synchronisation cloud ne peut pas se connecter. Vérifiez le réseau, puis réessayez."
+    },
+    {
+      "name": "sync_cloud_unavailable_wifi",
+      "value": "La règle Wi-Fi uniquement bloque la synchronisation. Connectez-vous au Wi-Fi ou désactivez cette règle."
+    },
+    {
+      "name": "sync_cloud_error_code",
+      "value": "Code d'erreur système : %d"
     },
     {
       "name": "sync_kind_article_state",

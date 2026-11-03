@@ -6,7 +6,7 @@
  *   2. 把表登记为分布式表（DISTRIBUTED_CLOUD），之后由系统在登录同一华为账号的设备之间同步行。
  *
  * 冲突语义仍是「整行后写」：行内没有字段级时间戳，字段级合并由 SyncEngine 在本地完成。
- * 所有云能力调用都 try/catch：未在 AGC 部署 / 未登录华为账号时降级为「本地表可读写、不上云」。
+ * 所有云能力调用都处理失败：登记不成功时本地表仍可读写，应用不会把它当成云同步成功。
  */
 
 import { relationalStore, cloudData } from '@kit.ArkData';
@@ -50,12 +50,62 @@ export enum CloudAvailability {
   STORE_FAILED = 'storeFailed',
   /** 系统 / 设备不支持端云数据同步能力。 */
   UNSUPPORTED = 'unsupported',
-  /** 能力可用但没开通：AGC 未部署容器或未登录华为账号。 */
-  NOT_CONFIGURED = 'notConfigured'
+  /** 这张表此前登记的分布式类型与当前请求不一致。 */
+  TABLE_TYPE_MISMATCH = 'tableTypeMismatch',
+  /** 系统报告云空间不可用；可能与账号或应用云开关有关。 */
+  CLOUD_DISABLED = 'cloudDisabled',
+  /** 系统报告网络错误。 */
+  NETWORK_FAILED = 'networkFailed',
+  /** 仅 Wi-Fi 策略阻止了本轮同步。 */
+  WIFI_REQUIRED = 'wifiRequired',
+  /** 分布式表已登记，但本次手动拉取失败。 */
+  SYNC_FAILED = 'syncFailed',
+  /** 系统没有给出足以区分账号、云空间开关与 AGC 配置的错误码。 */
+  UNKNOWN = 'unknown'
 }
 
 /** `setDistributedTables` 在能力不支持时返回的错误码。 */
 const ERR_CAPABILITY_UNSUPPORTED: number = 801;
+/** SDK 声明的分布式表类型不匹配 / 数据库实例已关闭错误码。 */
+const ERR_DISTRIBUTED_TYPE_MISMATCH: number = 14800051;
+const ERR_STORE_CLOSED: number = 14800014;
+const CLOUD_SYNC_TIMEOUT_MS: number = 60000;
+
+/** 只把 SDK 文档明确赋义的错误码归到确定原因，其余保留为未知。 */
+export function classifyCloudRegistrationError(code: number): CloudAvailability {
+  if (code === ERR_CAPABILITY_UNSUPPORTED) {
+    return CloudAvailability.UNSUPPORTED;
+  }
+  if (code === ERR_DISTRIBUTED_TYPE_MISMATCH) {
+    return CloudAvailability.TABLE_TYPE_MISMATCH;
+  }
+  if (code === ERR_STORE_CLOSED) {
+    return CloudAvailability.STORE_FAILED;
+  }
+  return CloudAvailability.UNKNOWN;
+}
+
+export function classifyCloudSyncError(code: number): CloudAvailability {
+  return code === ERR_CAPABILITY_UNSUPPORTED
+    ? CloudAvailability.UNSUPPORTED : CloudAvailability.SYNC_FAILED;
+}
+
+/** 进度回调的 code 与调用异常的 BusinessError.code 属于不同错误码空间。 */
+export function classifyCloudProgressCode(code: number): CloudAvailability {
+  if (code === relationalStore.ProgressCode.SUCCESS) {
+    return CloudAvailability.READY;
+  }
+  if (code === relationalStore.ProgressCode.CLOUD_DISABLED) {
+    return CloudAvailability.CLOUD_DISABLED;
+  }
+  if (code === relationalStore.ProgressCode.NETWORK_ERROR) {
+    return CloudAvailability.NETWORK_FAILED;
+  }
+  if (code === relationalStore.ProgressCode.BLOCKED_BY_NETWORK_STRATEGY) {
+    return CloudAvailability.WIFI_REQUIRED;
+  }
+  return CloudAvailability.SYNC_FAILED;
+}
 
 function recordFromRow(rs: relationalStore.ResultSet): SyncRecord {
   return new SyncRecord(
@@ -71,8 +121,9 @@ export class CloudStore {
   private store: relationalStore.RdbStore | undefined = undefined;
   /** 是否已成功登记为端云分布式表（false 时只在本机读写）。 */
   private distributed: boolean = false;
-  /** 最近一次可用性判定结果（未尝试过时按「未配置」处理）。 */
-  private availabilityState: CloudAvailability = CloudAvailability.NOT_CONFIGURED;
+  /** 最近一次可用性判定结果。 */
+  private availabilityState: CloudAvailability = CloudAvailability.UNKNOWN;
+  private lastErrorCode: number = 0;
   private listener: CloudChangeListener | undefined = undefined;
   private observer: ((accounts: Array<string>) => void) | undefined = undefined;
 
@@ -94,12 +145,13 @@ export class CloudStore {
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       hilog.error(DOMAIN, TAG, 'open cloud store failed: %{public}d', error.code);
+      this.lastErrorCode = error.code;
       this.availabilityState = CloudAvailability.STORE_FAILED;
       return false;
     }
   }
 
-  /** 登记端云分布式表；未在 AGC 部署时这里会失败，但不影响本地读写。 */
+  /** 登记端云分布式表；失败不影响本地读写。 */
   private async enableDistributed(store: relationalStore.RdbStore): Promise<void> {
     try {
       const config: relationalStore.DistributedConfig = { autoSync: true };
@@ -107,15 +159,15 @@ export class CloudStore {
         relationalStore.DistributedType.DISTRIBUTED_CLOUD, config);
       this.distributed = true;
       this.availabilityState = CloudAvailability.READY;
+      this.lastErrorCode = 0;
       hilog.info(DOMAIN, TAG, 'cloud sync enabled for %{public}s', CLOUD_TABLE);
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       this.distributed = false;
-      // 801 = 设备 / 系统不具备该能力；其余多为一侧未开通（AGC 容器或华为账号）。
-      this.availabilityState = error.code === ERR_CAPABILITY_UNSUPPORTED
-        ? CloudAvailability.UNSUPPORTED : CloudAvailability.NOT_CONFIGURED;
-      hilog.warn(DOMAIN, TAG, 'setDistributedTables failed (code=%{public}d, unsupported=%{public}s)',
-        error.code, this.availabilityState === CloudAvailability.UNSUPPORTED ? 'true' : 'false');
+      this.lastErrorCode = error.code;
+      this.availabilityState = classifyCloudRegistrationError(error.code);
+      hilog.warn(DOMAIN, TAG, 'setDistributedTables failed (code=%{public}d, reason=%{public}s)',
+        error.code, this.availabilityState);
     }
   }
 
@@ -140,9 +192,14 @@ export class CloudStore {
     return this.distributed;
   }
 
-  /** 可用性：READY / STORE_FAILED / UNSUPPORTED / NOT_CONFIGURED。 */
+  /** 最近一次登记或手动云同步的状态。 */
   availability(): CloudAvailability {
     return this.availabilityState;
+  }
+
+  /** 系统原始错误码；0 表示当前没有错误。 */
+  errorCode(): number {
+    return this.lastErrorCode;
   }
 
   /** 设置网络策略：仅 Wi-Fi 时不允许走蜂窝。 */
@@ -170,16 +227,49 @@ export class CloudStore {
     if (store === undefined || !this.distributed) {
       return false;
     }
+    let finish: (code: number) => void = (_code: number): void => {};
+    const finished: Promise<number> = new Promise<number>((resolve: (code: number) => void): void => {
+      finish = resolve;
+    });
+    let observedErrorCode: number = 0;
+    const timeoutId: number = setTimeout((): void => {
+      finish(observedErrorCode > 0 ? observedErrorCode : -1);
+    }, CLOUD_SYNC_TIMEOUT_MS);
     try {
       await store.cloudSync(relationalStore.SyncMode.SYNC_MODE_TIME_FIRST, [CLOUD_TABLE],
         (progress: relationalStore.ProgressDetails) => {
-          hilog.info(DOMAIN, TAG, 'cloud sync progress: %{public}d', progress.schedule);
+          hilog.info(DOMAIN, TAG, 'cloud sync progress: %{public}d code=%{public}d',
+            progress.schedule, progress.code);
+          if (progress.code !== relationalStore.ProgressCode.SUCCESS) {
+            observedErrorCode = progress.code;
+          }
+          if (progress.schedule === relationalStore.Progress.SYNC_FINISH) {
+            const table: relationalStore.TableDetails | undefined = progress.details[CLOUD_TABLE];
+            const hasIncompleteRows: boolean = table !== undefined &&
+              (table.upload.failed > 0 || table.download.failed > 0 ||
+                table.upload.remained > 0 || table.download.remained > 0);
+            finish(hasIncompleteRows && progress.code === relationalStore.ProgressCode.SUCCESS
+              ? -2 : progress.code);
+          }
         });
+      const code: number = await finished;
+      if (code !== relationalStore.ProgressCode.SUCCESS) {
+        this.lastErrorCode = code > 0 ? code : 0;
+        this.availabilityState = classifyCloudProgressCode(code);
+        hilog.warn(DOMAIN, TAG, 'cloudSync finished with code=%{public}d', code);
+        return false;
+      }
+      this.availabilityState = CloudAvailability.READY;
+      this.lastErrorCode = 0;
       return true;
     } catch (err) {
       const error: BusinessError = err as BusinessError;
+      this.lastErrorCode = error.code;
+      this.availabilityState = classifyCloudSyncError(error.code);
       hilog.warn(DOMAIN, TAG, 'cloudSync failed: %{public}d', error.code);
       return false;
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
 

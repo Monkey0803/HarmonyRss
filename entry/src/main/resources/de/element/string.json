@@ -4278,7 +4278,7 @@
     },
     {
       "name": "sync_cloud_unavailable",
-      "value": "Cloud-Sync nicht verfügbar: Cloud-Datensync in AGC aktivieren und bei HUAWEI ID anmelden."
+      "value": "Cloud-Sync kann nicht gestartet werden. HUAWEI ID, den App-Schalter in Cloud Space und die AGC-Konfiguration prüfen und erneut versuchen."
     },
     {
       "name": "sync_cloud_unavailable_unsupported",
@@ -4287,6 +4287,30 @@
     {
       "name": "sync_cloud_unavailable_store",
       "value": "Die Cloud-Datenbank konnte auf diesem Gerät nicht geöffnet werden."
+    },
+    {
+      "name": "sync_cloud_unavailable_table_type",
+      "value": "Diese Tabelle wurde mit einem anderen verteilten Typ registriert. Datenbankkonfiguration der App prüfen."
+    },
+    {
+      "name": "sync_cloud_unavailable_sync",
+      "value": "Die Cloud-Datenübertragung ist fehlgeschlagen. Netzwerk und Cloud-Space-Einstellungen prüfen und erneut versuchen."
+    },
+    {
+      "name": "sync_cloud_unavailable_cloud_disabled",
+      "value": "Cloud Space ist nicht verfügbar. HUAWEI ID und den Cloud-Space-Schalter dieser App prüfen."
+    },
+    {
+      "name": "sync_cloud_unavailable_network",
+      "value": "Cloud-Sync konnte keine Netzwerkverbindung herstellen. Netzwerk prüfen und erneut versuchen."
+    },
+    {
+      "name": "sync_cloud_unavailable_wifi",
+      "value": "Die WLAN-Regel blockiert die Synchronisierung. Mit WLAN verbinden oder die Regel deaktivieren."
+    },
+    {
+      "name": "sync_cloud_error_code",
+      "value": "Systemfehlercode: %d"
     },
     {
       "name": "sync_kind_article_state",

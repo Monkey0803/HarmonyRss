@@ -311,7 +311,9 @@ export struct SmartFoldersView {
           Text($r('app.string.smart_folder_empty'))
             .fontSize($r('app.float.font_size_caption'))
             .fontColor($r('app.color.hm_text_secondary'))
-            .padding($r('app.float.space_2xl'))
+            .width('100%')
+            .textAlign(TextAlign.Start)
+            .padding({ top: $r('app.float.space_2xl'), bottom: $r('app.float.space_2xl') })
         }
       } else {
         ForEach(smartFolderViewModel.folders, (folder: SmartFolder) => {

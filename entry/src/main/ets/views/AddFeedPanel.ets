@@ -264,7 +264,7 @@ export struct AddFeedPanel {
         // 进入页面时输入框会被默认焦点命中，但不要因此直接弹起软键盘（仅点击时才弹）。
         .enableKeyboardOnFocus(false)
         .maxLines(4)
-        .constraintSize({ minHeight: 64, maxHeight: 140 })
+        .height(44)
         .onChange((value: string) => {
           this.inputText = value;
         })

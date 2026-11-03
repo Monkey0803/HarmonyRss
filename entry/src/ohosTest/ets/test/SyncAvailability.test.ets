@@ -1,7 +1,7 @@
 /*
  * SyncAvailability.test.ets — 云同步可观测性的纯函数单测。
  *
- * 覆盖三件事（都不触碰数据库 / 网络）：
+ * 覆盖云错误码归类及下列纯函数（都不触碰数据库 / 网络）：
  *   - 冲突概要的字段差异计算：只报「合并结果与远端不同」的键，脏 payload 直接空返回；
  *   - 墓碑过期判定：未推送的墓碑永不过期（否则删除动作会丢）；
  *   - 冲突概要的编解码：脏数据跳过，条数与字段数都有上限。
@@ -18,12 +18,34 @@ import {
 } from '../../../main/ets/model/Sync';
 import { isTombstoneExpired, SyncLimits } from '../../../main/ets/service/sync/SyncStore';
 import { decodeConflictDetails, encodeConflictDetails } from '../../../main/ets/service/SyncService';
+import { CloudAvailability, classifyCloudRegistrationError,
+  classifyCloudProgressCode, classifyCloudSyncError } from '../../../main/ets/service/sync/CloudStore';
 
 const REMOTE: string = JSON.stringify({ read: '0', starred: '1', saved: '0', progress: '10' });
 const MERGED: string = JSON.stringify({ read: '1', starred: '1', saved: '0', progress: '10' });
 
 export default function syncAvailabilityTest() {
   describe('SyncAvailability', () => {
+    it('cloud_registration_classifies_only_documented_errors', 0, () => {
+      expect(classifyCloudRegistrationError(801)).assertEqual(CloudAvailability.UNSUPPORTED);
+      expect(classifyCloudRegistrationError(14800051)).assertEqual(CloudAvailability.TABLE_TYPE_MISMATCH);
+      expect(classifyCloudRegistrationError(14800014)).assertEqual(CloudAvailability.STORE_FAILED);
+      expect(classifyCloudRegistrationError(14800000)).assertEqual(CloudAvailability.UNKNOWN);
+      expect(classifyCloudRegistrationError(401)).assertEqual(CloudAvailability.UNKNOWN);
+    });
+
+    it('cloud_sync_failure_never_reports_ready', 0, () => {
+      expect(classifyCloudSyncError(801)).assertEqual(CloudAvailability.UNSUPPORTED);
+      expect(classifyCloudSyncError(14800000)).assertEqual(CloudAvailability.SYNC_FAILED);
+      expect(classifyCloudSyncError(0)).assertEqual(CloudAvailability.SYNC_FAILED);
+      expect(classifyCloudProgressCode(0)).assertEqual(CloudAvailability.READY);
+      expect(classifyCloudProgressCode(2)).assertEqual(CloudAvailability.NETWORK_FAILED);
+      expect(classifyCloudProgressCode(3)).assertEqual(CloudAvailability.CLOUD_DISABLED);
+      expect(classifyCloudProgressCode(7)).assertEqual(CloudAvailability.WIFI_REQUIRED);
+      expect(classifyCloudProgressCode(5)).assertEqual(CloudAvailability.SYNC_FAILED);
+      expect(classifyCloudProgressCode(-1)).assertEqual(CloudAvailability.SYNC_FAILED);
+    });
+
     it('changedFields_reports_only_diverged_keys', 0, () => {
       expect(changedPayloadFields(REMOTE, MERGED).join(',')).assertEqual('read');
       expect(changedPayloadFields(MERGED, MERGED).length).assertEqual(0);

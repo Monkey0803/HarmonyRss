@@ -368,8 +368,9 @@ Inoreader / Feedly 需要 OAuth 客户端与官方授权，暂不提供，也不
 ## 横切技术前置
 
 - [X] **数据库版本化**：已用 `RdbStore.version` 做 v1→v4 显式迁移（FTS、回收站、标签、智能文件夹）。
-- [X] **权限**：`module.json5` 已按实际使用声明 INTERNET / GET_NETWORK_INFO / DETECT_GESTURE /
-      DLP_GET_HIDE_STATUS；通知走运行时授权，后台任务 / 文件 / 相册 / 剪贴板无需额外权限，
+- [X] **权限**：`module.json5` 已按实际使用声明 INTERNET / GET_NETWORK_INFO /
+      KEEP_BACKGROUND_RUNNING / DISTRIBUTED_DATASYNC；智感握姿由 HdsTabs 原生适配、通知走运行时授权，
+      后台任务 / 文件 / 相册 / 剪贴板无需额外权限，
       申请时机与降级见 `spec/privacy-compliance/permissions-audit.md`。
 - [X] **网络层统一**：`service/HttpClient.ets` 统一超时、重试（指数退避 / Retry-After）、条件请求、
       User-Agent、系统代理、全局并发上限与按主机限流；抓取 / 正文 / 图片 / 远端同步已全部接入。

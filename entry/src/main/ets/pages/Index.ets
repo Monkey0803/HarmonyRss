@@ -41,7 +41,6 @@ import { settingsViewModel } from '../viewmodel/SettingsViewModel';
 import { settingsStore } from '../service/SettingsStore';
 import { MaterialController } from '../service/MaterialController';
 import { antiPeep } from '../service/AntiPeep';
-import { gripSensor } from '../service/GripSensor';
 import { safeArea } from '../service/SafeAreaController';
 import { deviceService } from '../service/DeviceService';
 import { diagnostics } from '../service/DiagnosticsService';
@@ -248,7 +247,6 @@ struct Index {
     }
     feedViewModel.unsubscribeArticles(this.onArticlesReadyDeepLink);
     antiPeep.stop();
-    gripSensor.stop();
   }
 
   /**

@@ -4278,7 +4278,7 @@
     },
     {
       "name": "sync_cloud_unavailable",
-      "value": "端云同步暂不可用：需在 AGC 开通云数据库并登录华为账号。"
+      "value": "端云同步暂不可用。请检查华为账号登录、云空间中的本应用开关和 AGC 配置，然后重试。"
     },
     {
       "name": "sync_cloud_unavailable_unsupported",
@@ -4287,6 +4287,30 @@
     {
       "name": "sync_cloud_unavailable_store",
       "value": "无法打开本机云数据库。"
+    },
+    {
+      "name": "sync_cloud_unavailable_table_type",
+      "value": "此表登记的分布式类型与当前配置不一致，请检查应用数据库配置。"
+    },
+    {
+      "name": "sync_cloud_unavailable_sync",
+      "value": "端云数据传输失败。请检查网络和云空间设置后重试。"
+    },
+    {
+      "name": "sync_cloud_unavailable_cloud_disabled",
+      "value": "云空间不可用。请检查华为账号是否已登录，以及云空间中的本应用开关。"
+    },
+    {
+      "name": "sync_cloud_unavailable_network",
+      "value": "端云同步无法连接网络，请检查网络后重试。"
+    },
+    {
+      "name": "sync_cloud_unavailable_wifi",
+      "value": "仅 Wi-Fi 策略阻止了本次同步。请连接 Wi-Fi 或关闭该策略。"
+    },
+    {
+      "name": "sync_cloud_error_code",
+      "value": "系统错误码：%d"
     },
     {
       "name": "sync_kind_article_state",

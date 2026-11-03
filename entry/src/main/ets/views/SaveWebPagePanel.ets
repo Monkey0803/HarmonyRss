@@ -140,6 +140,7 @@ export struct SaveWebPagePanel {
       TextInput({ text: this.inputText, placeholder: $r('app.string.save_web_hint') })
         .type(InputType.URL)
         .fontSize($r('app.float.font_size_body'))
+        .height(44)
         .onChange((value: string) => {
           this.inputText = value;
           this.clearPreview();
@@ -148,10 +149,10 @@ export struct SaveWebPagePanel {
       Row({ space: $r('app.float.space_s') }) {
         PasteButton({ icon: PasteIconStyle.LINES, text: PasteDescription.PASTE,
           buttonType: ButtonType.Capsule })
-          .onClick((event: ClickEvent, result: PasteButtonOnClickResult) => {
           .fontColor($r('app.color.hm_on_brand'))
           .iconColor($r('app.color.hm_on_brand'))
           .backgroundColor(themePalette.fill())
+          .onClick((event: ClickEvent, result: PasteButtonOnClickResult) => {
             if (result === PasteButtonOnClickResult.SUCCESS && !this.loading) {
               this.paste();
             } else if (result !== PasteButtonOnClickResult.SUCCESS) {
@@ -160,9 +161,9 @@ export struct SaveWebPagePanel {
           })
         Blank()
         Button(this.loading ? $r('app.string.save_web_loading') : $r('app.string.save_web_preview'))
-          .enabled(!this.loading)
           .fontColor($r('app.color.hm_on_brand'))
           .backgroundColor(themePalette.fill())
+          .enabled(!this.loading)
           .onClick(() => { this.preview(); })
       }
       .width('100%')
@@ -191,9 +192,9 @@ export struct SaveWebPagePanel {
         }
         Button($r('app.string.save_web_confirm'))
           .width('100%')
-          .enabled(!this.loading)
           .fontColor($r('app.color.hm_on_brand'))
           .backgroundColor(themePalette.fill())
+          .enabled(!this.loading)
           .onClick(() => { this.save(); })
       }
     }

@@ -25,13 +25,15 @@
 - **FR-001**: `app.json5` 开启 `cloudStructuredDataSyncEnabled`，用户在「设置 > 云空间」可见应用开关。
 - **FR-002**: 端侧独立库 `harmonyrss_cloud.db`（S1），建表语句与 AGC 列一一对应；主键 `recordKey` 为业务稳定键。
 - **FR-003**: 打开库后调用 `setDistributedTables(['cloudSyncRecords'], DISTRIBUTED_CLOUD, {autoSync:true})`；
-      失败（未部署 / 无权限）只记日志，本地表仍可用，同步退化为本机。
+      登记失败时本地表仍可用，但设置页显示已知错误类别与系统错误码，手动同步返回失败。
+      系统未提供足以区分未登录账号与 AGC 未部署的错误码时，展示联合排查指引，不猜具体原因。
 - **FR-004**: `cloudData.setCloudStrategy(NETWORK, WIFI 或 WIFI+CELLULAR)` 跟随现有「仅 Wi-Fi」开关。
 - **FR-005**: `CloudRelayBackend implements SyncBackend`：`pull` 按 `updatedAt` 游标取行，
       `push` 整行 upsert，`reset` 清空表；游标非法值按 0 处理。
 - **FR-006**: 云端变更（同账号其他设备写入）通过 `on('dataChange', SUBSCRIBE_TYPE_CLOUD)` 触发一次
       自动同步（受 60s 节流约束）。
-- **FR-007**: 手动「立即同步」在云端模式下先 `cloudSync()` 拉一轮云端行，再跑引擎合并。
+- **FR-007**: 手动「立即同步」在云端模式下先 `cloudSync()` 拉一轮云端行；等待终态进度回调，
+      终态错误或表内失败行均不得当作成功，再跑引擎合并。
 - **FR-008**: 设置页新增「端云数据同步（实验）」开关；关闭时继续用本机 Mock 后端，本地数据不变。
 - **FR-009**: 声明 `ohos.permission.DISTRIBUTED_DATASYNC`（含 reason / usedScene），仅在开启云端模式时调用相关接口。
 

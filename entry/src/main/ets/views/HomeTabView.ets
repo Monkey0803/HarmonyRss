@@ -620,8 +620,6 @@ export struct HomeTabView {
     Stack() {
       Column() {
         this.HomeBody()
-        // 固定在滚动视口外，让文章行始终停在悬浮页签栏上方。
-        Row().width('100%').height(safeArea.contentBottomInsetVp)
       }
       .width('100%')
       .height('100%')
@@ -700,6 +698,8 @@ export struct HomeTabView {
       }
       .width('100%')
       .height('100%')
+      // 列表铺到屏幕底部，末尾仍能滚过悬浮页签栏与系统导航提示条。
+      .contentEndOffset(safeArea.contentBottomInsetVp)
       .scrollBar(BarState.Off)
       // 键盘：列表持焦时 / 直接打开搜索；触屏点击空白处也会让列表重新获得焦点。
       .focusable(true)
@@ -718,7 +718,7 @@ export struct HomeTabView {
           feedViewModel.loadMore();
         }
       })
-      // 列表在标题栏下方滚动，但在底部页签栏上方截住内容。
+      // 只裁剪列表视口边界；悬浮页签栏由 HdsTabs 叠在列表上方。
       .clip(true)
       .cachedCount(3, true)
       .padding({ left: $r('app.float.space_l'), right: $r('app.float.space_l') })

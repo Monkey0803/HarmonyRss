@@ -4278,7 +4278,7 @@
     },
     {
       "name": "sync_cloud_unavailable",
-      "value": "クラウド同期を利用できません。AGC でクラウドデータ同期を有効にし、HUAWEI ID でサインインしてください。"
+      "value": "クラウド同期を開始できません。HUAWEI ID のサインイン、クラウド空間のアプリ設定、AGC の設定を確認して再試行してください。"
     },
     {
       "name": "sync_cloud_unavailable_unsupported",
@@ -4287,6 +4287,30 @@
     {
       "name": "sync_cloud_unavailable_store",
       "value": "この端末でクラウドデータベースを開けませんでした。"
+    },
+    {
+      "name": "sync_cloud_unavailable_table_type",
+      "value": "このテーブルは別の分散タイプで登録されています。アプリのデータベース設定を確認してください。"
+    },
+    {
+      "name": "sync_cloud_unavailable_sync",
+      "value": "クラウドデータの転送に失敗しました。ネットワークとクラウド空間の設定を確認して再試行してください。"
+    },
+    {
+      "name": "sync_cloud_unavailable_cloud_disabled",
+      "value": "クラウド空間を利用できません。HUAWEI ID のサインインと、このアプリのクラウド空間スイッチを確認してください。"
+    },
+    {
+      "name": "sync_cloud_unavailable_network",
+      "value": "クラウド同期でネットワークに接続できません。接続を確認して再試行してください。"
+    },
+    {
+      "name": "sync_cloud_unavailable_wifi",
+      "value": "Wi-Fi のみの設定により同期できません。Wi-Fi に接続するか、設定をオフにしてください。"
+    },
+    {
+      "name": "sync_cloud_error_code",
+      "value": "システムエラーコード: %d"
     },
     {
       "name": "sync_kind_article_state",

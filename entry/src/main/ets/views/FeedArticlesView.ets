@@ -158,7 +158,9 @@ export struct FeedArticlesView {
           Text($r('app.string.home_empty_title'))
             .fontSize($r('app.float.font_size_title'))
             .fontColor($r('app.color.hm_text_primary'))
-            .padding($r('app.float.space_2xl'))
+            .width('100%')
+            .textAlign(TextAlign.Start)
+            .padding({ top: $r('app.float.space_2xl'), bottom: $r('app.float.space_2xl') })
         }
       } else {
         // 虚拟化：单个源也可能上百条

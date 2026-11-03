@@ -321,7 +321,7 @@ export struct SubscriptionsView {
           })
       }
       .width('100%')
-      .height($r('app.float.row_height'))
+      .height(CommonConstants.SELECT_BAR_HEIGHT_VP)
       .padding({ left: $r('app.float.space_l'), right: $r('app.float.space_s') })
       .backgroundColor($r('app.color.hm_card_background'))
       .borderRadius($r('app.float.radius_card'))
@@ -784,6 +784,9 @@ export struct SubscriptionsView {
         }
         .width('100%')
         .layoutWeight(1)
+        // 列表延伸到悬浮栏后方；末尾为页签栏与多选操作条留出可滚动距离。
+        .contentEndOffset(safeArea.contentBottomInsetVp + (this.selecting
+          ? CommonConstants.SELECT_BAR_HEIGHT_VP + CommonConstants.SELECT_BAR_GAP_VP : 0))
         .padding({
           left: $r('app.float.space_l'),
           right: $r('app.float.space_l')
@@ -807,13 +810,6 @@ export struct SubscriptionsView {
           feedViewModel.reorderByDrag(from, to);
         })
 
-        if (this.selecting) {
-          // 多选操作条叠在页签栏上方，列表视口还需避让操作条及其上方间距。
-          Row().width('100%').height(CommonConstants.SELECT_BAR_GAP_VP)
-          Row().width('100%').height($r('app.float.row_height'))
-        }
-        // 固定在滚动视口外，订阅源行不会从悬浮页签栏下方穿过。
-        Row().width('100%').height(safeArea.contentBottomInsetVp)
       }
       .width('100%')
       .height('100%')
