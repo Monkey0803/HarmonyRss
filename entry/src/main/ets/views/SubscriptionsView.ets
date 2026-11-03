@@ -779,12 +779,6 @@ export struct SubscriptionsView {
               }
             }, (row: FeedListItem) => this.rowKey(row))
 
-            if (this.selecting) {
-              // 多选动作条悬浮在内容下沿：末尾再留一段可滚动的余量，最后一行不会被它压住。
-              ListItem() {
-                Row().width('100%').height($r('app.float.space_3xl'))
-              }
-            }
           }
         }
         .width('100%')
@@ -812,6 +806,11 @@ export struct SubscriptionsView {
           feedViewModel.reorderByDrag(from, to);
         })
 
+        if (this.selecting) {
+          // 多选操作条叠在页签栏上方，列表视口还需避让操作条及其上方间距。
+          Row().width('100%').height(CommonConstants.SELECT_BAR_GAP_VP)
+          Row().width('100%').height($r('app.float.row_height'))
+        }
         // 固定在滚动视口外，订阅源行不会从悬浮页签栏下方穿过。
         Row().width('100%').height(safeArea.contentBottomInsetVp)
       }
