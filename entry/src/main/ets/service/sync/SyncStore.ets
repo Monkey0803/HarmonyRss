@@ -321,5 +321,5 @@ export function isSyncableKind(kind: string): boolean {
     kind === SyncKinds.HIGHLIGHT || kind === SyncKinds.TAG ||
     kind === SyncKinds.ARTICLE_TAG || kind === SyncKinds.SETTINGS ||
     kind === SyncKinds.SMART_FOLDER || kind === SyncKinds.RULE ||
-    kind === SyncKinds.TEMPLATE;
+    kind === SyncKinds.TEMPLATE || kind === SyncKinds.WEB_PAGE;
 }

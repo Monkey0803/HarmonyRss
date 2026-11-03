@@ -18,6 +18,7 @@ import { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { Article } from '../model/Feed';
 import { WEB_PAGE_FEED_ID } from '../model/WebPagePreview';
+import { WebPagePayload } from '../model/Sync';
 import {
   ArticleStatePatch,
   BackupArticle,
@@ -1680,6 +1681,117 @@ export class ArticleStore {
       const error: BusinessError = err as BusinessError;
       hilog.error(DOMAIN, TAG, 'save web page failed: %{public}d', error.code);
       return undefined;
+    }
+  }
+
+  /**
+   * 列出本机保存的独立网页（同步采集用，只取元数据，不含正文）。
+   * 与列表同一口径：跨源重复里挂在主条下的网页不会出现两次。
+   */
+  async listSavedWebPages(): Promise<WebPagePayload[]> {
+    const store: relationalStore.RdbStore | undefined = this.store;
+    const result: WebPagePayload[] = [];
+    if (store === undefined) {
+      return result;
+    }
+    try {
+      const rs: relationalStore.ResultSet = await store.querySql(
+        'SELECT link, title, feed_title, summary, published_at FROM ' + ArticleDbConstants.TABLE_ARTICLES +
+        ' WHERE feed_id = ? ORDER BY published_at DESC', [WEB_PAGE_FEED_ID]);
+      try {
+        while (rs.goToNextRow()) {
+          const link: string = rs.getString(rs.getColumnIndex('link'));
+          if (link.length === 0) {
+            continue;
+          }
+          result.push(new WebPagePayload(
+            link,
+            rs.getString(rs.getColumnIndex('title')),
+            rs.getString(rs.getColumnIndex('feed_title')),
+            rs.getString(rs.getColumnIndex('summary')),
+            rs.getLong(rs.getColumnIndex('published_at'))));
+        }
+      } finally {
+        rs.close();
+      }
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.error(DOMAIN, TAG, 'listWebPages failed: %{public}d %{public}s', error.code, error.message);
+    }
+    return result;
+  }
+
+  /**
+   * 同步来的保存网页：本机没有则补一条（已存在不动，避免覆盖本地已读 / 进度）。
+   * @returns 是否真的插入了新行
+   */
+  insertSyncedWebPage(urlKey: string, payload: WebPagePayload): boolean {
+    const store: relationalStore.RdbStore | undefined = this.store;
+    if (store === undefined || urlKey.length === 0 || payload.url.length === 0) {
+      return false;
+    }
+    const id: string = 'saved-web|' + urlKey;
+    try {
+      const rs: relationalStore.ResultSet = store.querySqlSync(
+        'SELECT 1 FROM ' + ArticleDbConstants.TABLE_ARTICLES + ' WHERE id = ?', [id]);
+      try {
+        if (rs.goToNextRow()) {
+          return false;
+        }
+      } finally {
+        rs.close();
+      }
+      const article: Article = new Article(id, WEB_PAGE_FEED_ID,
+        payload.source.length > 0 ? payload.source : payload.title,
+        payload.title.length > 0 ? payload.title : payload.url,
+        payload.url, payload.summary, payload.summary,
+        payload.savedAt > 0 ? payload.savedAt : Date.now());
+      article.saved = true;
+      article.linkKey = urlKey;
+      article.titleKey = DedupeKeys.titleKey(article.title);
+      store.executeSync('INSERT INTO ' + ArticleDbConstants.TABLE_ARTICLES +
+        ' (id, feed_id, feed_title, title, link, summary, content, published_at, is_saved, fetched_at,' +
+        ' link_key, title_key) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)',
+        [article.id, article.feedId, article.feedTitle, article.title, article.link,
+          article.summary, article.content, article.publishedAt, Date.now(),
+          article.linkKey, article.titleKey]);
+      this.indexInserted(article);
+      return true;
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.error(DOMAIN, TAG, 'insert synced web page failed: %{public}d', error.code);
+      return false;
+    }
+  }
+
+  /** 删除一条独立网页（对端已删除时同步过来；只删网页条目，不碰其它文章）。 */
+  deleteSyncedWebPage(urlKey: string): boolean {
+    const store: relationalStore.RdbStore | undefined = this.store;
+    if (store === undefined || urlKey.length === 0) {
+      return false;
+    }
+    const id: string = 'saved-web|' + urlKey;
+    try {
+      const rs: relationalStore.ResultSet = store.querySqlSync(
+        'SELECT 1 FROM ' + ArticleDbConstants.TABLE_ARTICLES +
+        ' WHERE id = ? AND feed_id = ?', [id, WEB_PAGE_FEED_ID]);
+      try {
+        if (!rs.goToNextRow()) {
+          return false;
+        }
+      } finally {
+        rs.close();
+      }
+      store.executeSync('DELETE FROM ' + ArticleDbConstants.TABLE_ARTICLES +
+        ' WHERE id = ? AND feed_id = ?', [id, WEB_PAGE_FEED_ID]);
+      // 索引也要一起删：否则搜索会命中一条已经不存在的网页。
+      this.deleteFtsRows([id]);
+      this.cjkDeleteRows([id]);
+      return true;
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.error(DOMAIN, TAG, 'delete synced web page failed: %{public}d', error.code);
+      return false;
     }
   }
 

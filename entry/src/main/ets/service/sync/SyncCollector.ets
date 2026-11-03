@@ -32,6 +32,7 @@ import {
   SyncRecord,
   TagPayload,
   TemplatePayload,
+  WebPagePayload,
   decodeArticleStatePayload,
   decodeArticleTagPayload,
   decodeFeedPayload,
@@ -40,6 +41,7 @@ import {
   decodeSmartFolderPayload,
   decodeTagPayload,
   decodeTemplatePayload,
+  decodeWebPagePayload,
   encodeArticleStatePayload,
   encodeArticleTagPayload,
   encodeFeedPayload,
@@ -48,6 +50,7 @@ import {
   encodeSmartFolderPayload,
   encodeTagPayload,
   encodeTemplatePayload,
+  encodeWebPagePayload,
   latestFieldAt
 } from '../../model/Sync';
 import { ArticleDbConstants } from '../../common/constants/RssConstants';
@@ -63,6 +66,7 @@ import { appSettings } from '../../model/AppSettings';
 import { ThemeController } from '../ThemeController';
 import { LocaleController } from '../LocaleController';
 import { SyncStore } from './SyncStore';
+import { DedupeKeys } from '../DedupeKeys';
 
 const DOMAIN: number = 0x0000;
 const TAG: string = 'SyncCollector';
@@ -206,8 +210,15 @@ export class SyncCollector {
 
   /** 采集当前本地状态；返回本次标脏的条数。 */
   async collect(context: common.Context, now: number): Promise<number> {
+    // 冷启动时 autoSync 可能早于文章库打开：此时文章 / 高亮 / 标签 / 网页的快照全是空的，
+    // 继续比对会把「本机还没读到」误判成删除，给对端发墓碑并删掉对方的真实数据。
+    if (articleStore.getStore() === undefined) {
+      hilog.info(DOMAIN, TAG, 'collect skipped: article store not ready');
+      return 0;
+    }
     let changed: number = 0;
     changed += await this.collectFeeds(context, now);
+    changed += await this.collectWebPages(now);
     changed += await this.collectArticleStates(now);
     changed += await this.collectHighlights(now);
     changed += await this.collectTags(now);
@@ -253,6 +264,47 @@ export class SyncCollector {
         continue;
       }
       this.store.upsert(new SyncRecord(prior.key, SyncKinds.FEED, now, true, '', this.origin), true);
+      changed += 1;
+    }
+    return changed;
+  }
+
+  /**
+   * 采集本机保存的独立网页（只同步元数据）。
+   * 正文由各端按需重新提取，所以这里绝不把 reader_html 放进 payload。
+   */
+  private async collectWebPages(now: number): Promise<number> {
+    const pages: WebPagePayload[] = await articleStore.listSavedWebPages();
+    const existing: SyncRecord[] = await this.store.listByKind(SyncKinds.WEB_PAGE);
+    const known: Map<string, SyncRecord> = new Map<string, SyncRecord>();
+    for (let i = 0; i < existing.length; i += 1) {
+      known.set(existing[i].key, existing[i]);
+    }
+    const seen: Set<string> = new Set<string>();
+    let changed: number = 0;
+    for (let i = 0; i < pages.length; i += 1) {
+      const page: WebPagePayload = pages[i];
+      const urlKey: string = DedupeKeys.urlKey(page.url);
+      if (urlKey.length === 0) {
+        continue;
+      }
+      const key: string = SyncKeys.webPageKey(urlKey);
+      seen.add(key);
+      const payload: string = encodeWebPagePayload(page);
+      const prior: SyncRecord | undefined = known.get(key);
+      if (prior !== undefined && !prior.deleted && prior.payload === payload) {
+        continue;
+      }
+      this.store.upsert(new SyncRecord(key, SyncKinds.WEB_PAGE, now, false, payload, this.origin), true);
+      changed += 1;
+    }
+    // 本地删掉的网页：留墓碑，删除才会传播到另一端。
+    for (let i = 0; i < existing.length; i += 1) {
+      const prior: SyncRecord = existing[i];
+      if (prior.deleted || seen.has(prior.key)) {
+        continue;
+      }
+      this.store.upsert(new SyncRecord(prior.key, SyncKinds.WEB_PAGE, now, true, '', this.origin), true);
       changed += 1;
     }
     return changed;
@@ -536,6 +588,7 @@ export class SyncCollector {
   async apply(context: common.Context): Promise<number> {
     let applied: number = 0;
     applied += await this.applyFeeds(context);
+    applied += await this.applyWebPages();
     applied += await this.applyArticleStates();
     applied += await this.applyHighlights();
     applied += await this.applyTags();
@@ -620,6 +673,50 @@ export class SyncCollector {
       feedStore.save(result);
     }
     return changed;
+  }
+
+  /**
+   * 回写保存网页：远端新增的补进本机稍后读；远端墓碑删掉本机对应条目。
+   * 已存在的条目一律不动，避免覆盖本地已读 / 进度 / 已缓存正文。
+   */
+  private async applyWebPages(): Promise<number> {
+    const records: SyncRecord[] = await this.store.listByKind(SyncKinds.WEB_PAGE);
+    if (records.length === 0) {
+      return 0;
+    }
+    const local: WebPagePayload[] = await articleStore.listSavedWebPages();
+    const localKeys: Set<string> = new Set<string>();
+    for (let i = 0; i < local.length; i += 1) {
+      localKeys.add(DedupeKeys.urlKey(local[i].url));
+    }
+    let applied: number = 0;
+    for (let i = 0; i < records.length; i += 1) {
+      const record: SyncRecord = records[i];
+      if (!record.key.startsWith(SyncKeys.WEB_PAGE)) {
+        continue;
+      }
+      const urlKey: string = record.key.substring(SyncKeys.WEB_PAGE.length);
+      if (urlKey.length === 0) {
+        continue;
+      }
+      if (record.deleted) {
+        if (articleStore.deleteSyncedWebPage(urlKey)) {
+          applied += 1;
+        }
+        continue;
+      }
+      if (localKeys.has(urlKey)) {
+        continue;
+      }
+      const payload: WebPagePayload | undefined = decodeWebPagePayload(record.payload);
+      if (payload === undefined) {
+        continue;
+      }
+      if (articleStore.insertSyncedWebPage(urlKey, payload)) {
+        applied += 1;
+      }
+    }
+    return applied;
   }
 
   private async applyArticleStates(): Promise<number> {

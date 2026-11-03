@@ -8,7 +8,14 @@
  */
 
 import { describe, it, expect } from '@ohos/hypium';
-import { SyncConflict, changedPayloadFields } from '../../../main/ets/model/Sync';
+import {
+  SyncConflict,
+  SyncKeys,
+  WebPagePayload,
+  changedPayloadFields,
+  decodeWebPagePayload,
+  encodeWebPagePayload
+} from '../../../main/ets/model/Sync';
 import { isTombstoneExpired, SyncLimits } from '../../../main/ets/service/sync/SyncStore';
 import { decodeConflictDetails, encodeConflictDetails } from '../../../main/ets/service/SyncService';
 
@@ -53,6 +60,36 @@ export default function syncAvailabilityTest() {
       expect(decoded[0].kind).assertEqual('articleState');
       expect(decoded[0].fields.join(',')).assertEqual('read,starred');
       expect(decoded[1].fields.length).assertEqual(0);
+    });
+
+    it('web_page_payload_roundtrip', 0, () => {
+      const page: WebPagePayload = new WebPagePayload('https://a.com/x', 'Title', 'Source', 'sum', 123);
+      const decoded: WebPagePayload | undefined = decodeWebPagePayload(encodeWebPagePayload(page));
+      expect(decoded !== undefined).assertTrue();
+      if (decoded !== undefined) {
+        expect(decoded.url).assertEqual('https://a.com/x');
+        expect(decoded.title).assertEqual('Title');
+        expect(decoded.source).assertEqual('Source');
+        expect(decoded.summary).assertEqual('sum');
+        expect(decoded.savedAt).assertEqual(123);
+      }
+    });
+
+    it('web_page_payload_tolerates_missing_fields', 0, () => {
+      expect(decodeWebPagePayload('') === undefined).assertTrue();
+      expect(decodeWebPagePayload('oops') === undefined).assertTrue();
+      expect(decodeWebPagePayload('{}') === undefined).assertTrue();
+      const minimal: WebPagePayload | undefined = decodeWebPagePayload('{"url":"https://a.com/x"}');
+      expect(minimal !== undefined).assertTrue();
+      if (minimal !== undefined) {
+        expect(minimal.title).assertEqual('');
+        expect(minimal.savedAt).assertEqual(0);
+      }
+    });
+
+    it('web_page_key_is_stable_per_url', 0, () => {
+      expect(SyncKeys.webPageKey('https://a.com/x')).assertEqual('webPage:https://a.com/x');
+      expect(SyncKeys.webPageKey('https://a.com/x')).assertEqual(SyncKeys.webPageKey('https://a.com/x'));
     });
 
     it('conflict_details_ignores_dirty_json', 0, () => {

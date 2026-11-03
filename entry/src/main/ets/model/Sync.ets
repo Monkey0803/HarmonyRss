@@ -27,6 +27,8 @@ export class SyncKinds {
   static readonly RULE: string = 'rule';
   /** 分享模板。 */
   static readonly TEMPLATE: string = 'template';
+  /** 独立保存的网页（稍后读）：只同步元数据，正文各端按需重新提取。 */
+  static readonly WEB_PAGE: string = 'webPage';
 }
 
 /** 实体键前缀（key = 前缀 + 稳定 id）。 */
@@ -42,6 +44,8 @@ export class SyncKeys {
   static readonly TEMPLATE: string = 'template:';
   /** 设置只有一份，用固定键。 */
   static readonly SETTINGS: string = 'setting:app';
+  /** 独立保存的网页：按归一化 URL 做键，两端同一网页收敛为一条。 */
+  static readonly WEB_PAGE: string = 'webPage:';
 
   /** 名称类实体的键：去首尾空白 + 小写（改名 = 删旧键 + 建新键）。 */
   static nameKey(raw: string): string {
@@ -56,6 +60,11 @@ export class SyncKeys {
   /** 文章状态键：用本地文章 id（由订阅地址 + 链接生成，天然稳定）。 */
   static articleStateKey(articleId: string): string {
     return SyncKeys.ARTICLE_STATE + articleId;
+  }
+
+  /** 保存网页键：用归一化 URL（两端对同一网页得到同一个键）。 */
+  static webPageKey(urlKey: string): string {
+    return SyncKeys.WEB_PAGE + urlKey;
   }
 
   /** 高亮键：高亮 id 在本机生成，跨设备不会重复。 */
@@ -151,6 +160,30 @@ export class ArticleStatePayload {
     this.starred = starred;
     this.saved = saved;
     this.progress = progress;
+  }
+}
+
+/**
+ * 独立保存网页的载荷：只放元数据。
+ * 正文（reader_html）可能是几百 KB，跨端同步没有意义 —— 另一端打开时按需重新提取。
+ */
+export class WebPagePayload {
+  readonly url: string;
+  /** 用户在预览里确认过的标题（空则由对端回落为来源名）。 */
+  readonly title: string;
+  /** 来源名（保存时的站点名）。 */
+  readonly source: string;
+  /** 列表摘要（短文本，便于对端列表直接显示）。 */
+  readonly summary: string;
+  /** 保存时间（毫秒）；两端合并只用于排序，不参与冲突判定。 */
+  readonly savedAt: number;
+
+  constructor(url: string, title: string, source: string, summary: string, savedAt: number) {
+    this.url = url;
+    this.title = title;
+    this.source = source;
+    this.summary = summary;
+    this.savedAt = savedAt;
   }
 }
 
@@ -429,6 +462,36 @@ export function decodeFeedPayload(text: string): FeedPayload | undefined {
       typeof payload.siteUrl === 'string' ? payload.siteUrl : '',
       typeof payload.group === 'string' ? payload.group : '',
       payload.enabled !== false);
+  } catch (err) {
+    return undefined;
+  }
+}
+
+/**
+ * 保存网页载荷编解码（纯函数）。
+ * url 是唯一必需字段；其余缺字段退回空串 / 0，脏数据不阻断同步。
+ */
+export function encodeWebPagePayload(payload: WebPagePayload): string {
+  return JSON.stringify(payload);
+}
+
+export function decodeWebPagePayload(text: string): WebPagePayload | undefined {
+  if (text.length === 0) {
+    return undefined;
+  }
+  try {
+    const payload: WebPagePayload = JSON.parse(text) as WebPagePayload;
+    if (typeof payload.url !== 'string' || payload.url.length === 0) {
+      return undefined;
+    }
+    const savedAt: number = typeof payload.savedAt === 'number' && Number.isFinite(payload.savedAt)
+      ? payload.savedAt : 0;
+    return new WebPagePayload(
+      payload.url,
+      typeof payload.title === 'string' ? payload.title : '',
+      typeof payload.source === 'string' ? payload.source : '',
+      typeof payload.summary === 'string' ? payload.summary : '',
+      savedAt);
   } catch (err) {
     return undefined;
   }
