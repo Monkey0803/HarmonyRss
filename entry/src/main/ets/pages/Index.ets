@@ -52,6 +52,8 @@ import { RouterConstants } from '../common/constants/RouterConstants';
 import { BackgroundKind } from '../common/constants/SettingsConstants';
 import { IMAGE_DOMAIN } from '../common/constants/DomainConstants';
 import { HomeTabView } from '../views/HomeTabView';
+import { AppSheet } from '../common/components/AppSheet';
+import { SHEET_ADD_FEED_HEIGHT } from '../common/components/SheetDetents';
 import { AddFeedPanel } from '../views/AddFeedPanel';
 import { SaveWebPagePanel } from '../views/SaveWebPagePanel';
 import { FilterSegmentBar } from '../views/FilterSegmentBar';
@@ -1328,21 +1330,25 @@ struct Index {
       if (antiPeep.peeking) {
         PrivacyVeil()
       }
+
+      // 添加订阅 / 保存网页：短面板保持原 500vp 首挡，可向上扩展；
+      // 关闭按钮画在面板标题行里（尺寸与标题同高），不用系统那颗偏大的圆钮。
+      AppSheet({
+        visible: this.showAddSheet,
+        initialSize: SHEET_ADD_FEED_HEIGHT,
+        showClose: false,
+        onDismiss: () => {
+          this.pendingAddText = '';
+          this.addSheetMode = 'feed';
+          this.showAddSheet = false;
+        }
+      }) {
+        this.AddFeedPanelSheet()
+      }
     }
     .width('100%')
     .height('100%')
     // 背景图关闭时露出的兜底色（与窗口层 start_window_background 一致，含深浅色适配）。
     .backgroundColor($r('app.color.start_window_background'))
-    .bindSheet(this.showAddSheet, this.AddFeedPanelSheet(), MaterialController.sheetOptions({
-      height: 500,
-      dragBar: true,
-      // 关闭按钮画在面板标题行里（尺寸与标题同高），不用系统那颗偏大的圆钮。
-      showClose: false,
-      onDisappear: () => {
-        this.pendingAddText = '';
-        this.addSheetMode = 'feed';
-        this.showAddSheet = false;
-      }
-    }, appSettings.immersiveOn))
   }
 }

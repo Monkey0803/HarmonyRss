@@ -1,7 +1,7 @@
 /*
  * TagPickerSheet.ets — 标签选择器（详情页「+」与首页批量打标共用）。
  *
- * 纯 V2 组件，可直接作为 bindSheet 的内容：
+ * 纯 V2 组件，可直接作为 AppSheet 的内容：
  *   TagPickerSheet({ selectedTagIds: [...], onConfirm: (ids) => { ... } })
  *
  * 交互：勾选已有标签 + 可直接新建（新建成功后自动选中），确认回传选中的标签 id 列表。

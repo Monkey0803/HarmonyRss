@@ -108,6 +108,7 @@ import {
   mediaPlayerService
 } from '../service/MediaPlayerService';
 import { AppMenu } from '../common/components/AppMenu';
+import { AppSheet } from '../common/components/AppSheet';
 import { MenuItemSpec, MenuSpec } from '../common/components/MenuSpec';
 
 const DOMAIN: number = 0x0000;
@@ -195,10 +196,10 @@ export struct ArticleDetailView {
   /**
    * 半模态面板当前显示哪一种内容：'' 关闭 / 'read' 阅读排版 / 'hlList' 标注列表 / 'hlEdit' 标注编辑 /
    * 'tags' 标签选择 / 'sources' 来源列表 / 'share' 统一分享面板。
-   * 一个组件上只能挂一个 bindSheet（挂多个只会生效最后一个），所以用一个状态切换内容。
+   * 一个宿主（AppSheet）上只能挂一个半模态（挂多个只会生效最后一个），所以用一个状态切换内容。
    */
   @Local sheetMode: string = '';
-  /** 半模态显隐（bindSheet 的首参要是纯状态变量，不能传表达式，否则打开不生效）。 */
+  /** 半模态显隐（传给 AppSheet 的 visible）。 */
   @Local showSheet: boolean = false;
   /** 当前阅读进度（0–1），用于标题栏下方的细进度条；由文档内滚动回调刷新。 */
   @Local progressRatio: number = 0;
@@ -2521,7 +2522,7 @@ export struct ArticleDetailView {
     return item === undefined ? '' : item.color;
   }
 
-  /** 排版面板内容（半模态：沉浸光感生效区域，材质由 bindSheet 的 options 注入）。 */
+  /** 排版面板内容（半模态：系统材质与三挡高度由统一宿主 AppSheet 注入）。 */
   @Builder
   ReadSheet() {
     ReadSettingsSheet({
@@ -3728,6 +3729,29 @@ export struct ArticleDetailView {
           }
         })
       }
+
+      // 半模态统一宿主：系统材质 + 三挡高度固定在 AppSheet 内，内容仍由本页 SheetContent 分派。
+      AppSheet({
+        visible: this.showSheet,
+        initialSize: this.sheetMode === 'read' || this.sheetMode === 'tags' || this.sheetMode === 'share' ||
+          this.sheetMode === 'translate'
+          ? SheetSize.LARGE
+          : SheetSize.MEDIUM,
+        onDismiss: () => {
+          const mode: string = this.sheetMode;
+          this.showSheet = false;
+          this.sheetMode = '';
+          // 面板被下滑关闭时也要清空分享上下文，避免下次打开闪出上一次的内容。
+          if (mode === 'share') {
+            shareViewModel.close();
+          }
+          if (mode === 'translate') {
+            translationViewModel.close();
+          }
+        }
+      }) {
+        this.SheetContent()
+      }
     }
     .width('100%')
     .height('100%')
@@ -3742,25 +3766,5 @@ export struct ArticleDetailView {
       this.syncReaderInset();
     })
     .backgroundColor($r('app.color.hm_page_transparent'))
-    .bindSheet(this.showSheet, this.SheetContent(), MaterialController.sheetOptions({
-      // 分享面板内容较长（动作 / 目标 / 模板 / 导出四组），用大面板避免挤在中段要一直滚。
-      height: this.sheetMode === 'read' || this.sheetMode === 'tags' || this.sheetMode === 'share' ||
-        this.sheetMode === 'translate'
-        ? SheetSize.LARGE
-        : SheetSize.MEDIUM,
-      dragBar: true,
-      onDisappear: () => {
-        const mode: string = this.sheetMode;
-        this.showSheet = false;
-        this.sheetMode = '';
-        // 面板被下滑关闭时也要清空分享上下文，避免下次打开闪出上一次的内容。
-        if (mode === 'share') {
-          shareViewModel.close();
-        }
-        if (mode === 'translate') {
-          translationViewModel.close();
-        }
-      }
-    }, appSettings.immersiveOn))
   }
 }

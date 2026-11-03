@@ -1,7 +1,7 @@
 /*
  * ShareSheet.ets — 统一分享面板（纯状态管理 V2）。
  *
- * 三处入口（详情页 / 列表左滑 / 高亮页）复用同一个 bindSheet 内容组件：
+ * 三处入口（详情页 / 列表左滑 / 高亮页）复用同一份内容，宿主统一走 AppSheet：
  * 宿主先写 shareViewModel.context 再打开面板，本组件只做「展示 + 上报」，
  * 投递全部走 ShareViewModel → ShareService（目标 URL 构造在 ShareTargets，可单测）。
  *
@@ -537,12 +537,13 @@ export struct ShareSheet {
         .alignItems(HorizontalAlign.Start)
       }
       .width('100%')
-      // 面板高度由宿主 bindSheet 决定；内容超出时内部滚动，避免把面板撑破。
-      .constraintSize({ maxHeight: 560 })
+      // 面板高度由统一宿主 AppSheet 的三挡高度决定；内容超出时内部滚动，避免把面板撑破。
+      .layoutWeight(1)
       .scrollBar(BarState.Off)
       .align(Alignment.Top)
     }
     .width('100%')
+    .height('100%')
     .padding($r('app.float.space_l'))
     .alignItems(HorizontalAlign.Start)
     .onAppear(() => {

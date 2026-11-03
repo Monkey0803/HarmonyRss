@@ -15,8 +15,7 @@ import { safeArea } from '../service/SafeAreaController';
 import { ToastUtil } from '../common/utils/ToastUtil';
 import { common } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { appSettings } from '../model/AppSettings';
-import { MaterialController } from '../service/MaterialController';
+import { AppSheet } from '../common/components/AppSheet';
 import { ShareContext } from '../model/Share';
 import { shareService } from '../service/ShareService';
 import { shareViewModel } from '../viewmodel/ShareViewModel';
@@ -31,7 +30,7 @@ export struct HighlightsView {
   @Param scroller: Scroller = new Scroller();
   @Local items: HighlightLibraryItem[] = [];
   @Local loading: boolean = true;
-  /** 统一分享面板显隐（本页只有一个 bindSheet，直接用它作首参）。 */
+  /** 统一分享面板显隐（本页只有一个 AppSheet 宿主）。 */
   @Local showShare: boolean = false;
 
   aboutToAppear(): void {
@@ -151,6 +150,28 @@ export struct HighlightsView {
   }
 
   build() {
+    Stack() {
+      this.HighlightsBody()
+
+      // 统一分享面板（上下文已在 openShare 里写入 ShareViewModel）。
+      AppSheet({
+        visible: this.showShare,
+        initialSize: SheetSize.LARGE,
+        onDismiss: () => {
+          this.showShare = false;
+          shareViewModel.close();
+        }
+      }) {
+        this.SharePanel()
+      }
+    }
+    .width('100%')
+    .height('100%')
+  }
+
+  /** 标注列表主体：原先的 build 内容（半模态宿主独立在同级 Stack）。 */
+  @Builder
+  HighlightsBody() {
     List({ scroller: this.scroller }) {
       ListItem() {
         this.Header()
@@ -248,15 +269,6 @@ export struct HighlightsView {
     .cachedCount(3, true)
     .padding({ left: $r('app.float.space_l'), right: $r('app.float.space_l') })
     .backgroundColor($r('app.color.hm_page_transparent'))
-    // 统一分享面板（上下文已在 openShare 里写入 ShareViewModel）。
-    .bindSheet(this.showShare, this.SharePanel(), MaterialController.sheetOptions({
-      height: SheetSize.LARGE,
-      dragBar: true,
-      onDisappear: () => {
-        this.showShare = false;
-        shareViewModel.close();
-      }
-    }, appSettings.immersiveOn))
   }
 
   /** 统一分享面板（三处入口复用同一个 ShareSheet）。 */

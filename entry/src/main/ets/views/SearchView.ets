@@ -14,9 +14,9 @@ import { SmartFolderError, validateSmartFolder } from '../service/SmartFolderSto
 import { DateUtil } from '../common/utils/DateUtil';
 import { safeArea } from '../service/SafeAreaController';
 import { RouterConstants } from '../common/constants/RouterConstants';
-import { MaterialController } from '../service/MaterialController';
-import { appSettings } from '../model/AppSettings';
 import { ToastUtil } from '../common/utils/ToastUtil';
+import { AppSheet } from '../common/components/AppSheet';
+import { SHEET_SAVE_FOLDER_HEIGHT } from '../common/components/SheetDetents';
 import { FilterCapsule } from './FilterCapsule';
 
 /** 片段分片：一段普通文本或一段命中词。 */
@@ -158,7 +158,7 @@ export struct SearchView {
     ToastUtil.show(this.getUIContext(), $r('app.string.smart_folder_saved'));
   }
 
-  /** 保存面板内容（bindSheet）。 */
+  /** 保存面板内容（宿主为统一 AppSheet）。 */
   @Builder
   SaveFolderSheet() {
     Column({ space: $r('app.float.space_m') }) {
@@ -460,6 +460,27 @@ export struct SearchView {
   }
 
   build() {
+    Stack() {
+      this.SearchBody()
+
+      // 保存到文件夹：短面板保持原 360vp 首挡，仍可向上扩展。
+      AppSheet({
+        visible: this.showSaveSheet,
+        initialSize: SHEET_SAVE_FOLDER_HEIGHT,
+        onDismiss: () => {
+          this.showSaveSheet = false;
+        }
+      }) {
+        this.SaveFolderSheet()
+      }
+    }
+    .width('100%')
+    .height('100%')
+  }
+
+  /** 搜索主体：原先的 build 内容（半模态宿主独立在同级 Stack）。 */
+  @Builder
+  SearchBody() {
     Scroll(this.scroller) {
       Column() {
         Row().width('100%').height(safeArea.contentTopInsetVp)
@@ -506,12 +527,5 @@ export struct SearchView {
       searchViewModel.loadMore();
     })
     .backgroundColor($r('app.color.hm_page_transparent'))
-    .bindSheet(this.showSaveSheet, this.SaveFolderSheet(), MaterialController.sheetOptions({
-      height: 360,
-      dragBar: true,
-      onDisappear: () => {
-        this.showSaveSheet = false;
-      }
-    }, appSettings.immersiveOn))
   }
 }

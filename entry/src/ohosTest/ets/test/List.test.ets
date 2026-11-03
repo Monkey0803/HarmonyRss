@@ -60,6 +60,7 @@ import cloudBackupTest from './CloudBackup.test';
 import cloudRelayTest from './CloudRelay.test';
 import syncAvailabilityTest from './SyncAvailability.test';
 import materialLevelTest from './MaterialLevel.test';
+import sheetDetentsTest from './SheetDetents.test';
 import webPageSaveTest from './WebPageSave.test';
 import menuSpecTest from './MenuSpec.test';
 import swipeActionPlanTest from './SwipeActionPlan.test';
@@ -117,6 +118,7 @@ export default function testsuite() {
   cloudRelayTest();
   syncAvailabilityTest();
   materialLevelTest();
+  sheetDetentsTest();
   webPageSaveTest();
   menuSpecTest();
   swipeActionPlanTest();

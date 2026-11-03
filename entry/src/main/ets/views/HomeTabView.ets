@@ -31,6 +31,7 @@ import { shareViewModel } from '../viewmodel/ShareViewModel';
 import { frameRateSampler } from '../service/FrameRateSampler';
 import { KeyCode } from '@kit.InputKit';
 import { AppMenu } from '../common/components/AppMenu';
+import { AppSheet } from '../common/components/AppSheet';
 import { MenuItemSpec, MenuSectionSpec, MenuSpec } from '../common/components/MenuSpec';
 import { ArticleSwipeBar } from '../common/components/ArticleSwipeBar';
 
@@ -41,10 +42,10 @@ export struct HomeTabView {
   @Local refreshing: boolean = false;
   /**
    * 半模态内容类型：'' 关闭 / 'tags' 批量打标 / 'share' 统一分享面板。
-   * 一个组件只能挂一个 bindSheet，两种面板必须共用同一份显隐状态。
+   * 一个 AppSheet 宿主只能挂一个半模态，两种面板必须共用同一份显隐状态。
    */
   @Local sheetMode: string = '';
-  /** 半模态显隐（bindSheet 首参必须是纯状态变量）。 */
+  /** 半模态显隐（传给 AppSheet 的 visible）。 */
   @Local showSheet: boolean = false;
   /** 「添加订阅源」入口在悬浮页签栏的 miniBar 上（Index 持有面板），这里只发请求。 */
   @Event onAddFeedRequest: () => void = () => {};
@@ -527,7 +528,7 @@ export struct HomeTabView {
     })
   }
 
-  /** 半模态内容分派：同一时刻只有一种（一个组件只能挂一个 bindSheet）。 */
+  /** 半模态内容分派：同一时刻只有一种（一个 AppSheet 宿主只能挂一个半模态）。 */
   @Builder
   SheetContent() {
     if (this.sheetMode === 'tags') {
@@ -596,6 +597,32 @@ export struct HomeTabView {
   }
 
   build() {
+    Stack() {
+      this.HomeBody()
+
+      // 批量打标 / 分享面板共用同一个半模态宿主（标签选择在「标签」按钮、分享在左滑动作里打开）。
+      AppSheet({
+        visible: this.showSheet,
+        initialSize: this.sheetMode === 'share' ? SheetSize.LARGE : SheetSize.MEDIUM,
+        onDismiss: () => {
+          const mode: string = this.sheetMode;
+          this.showSheet = false;
+          this.sheetMode = '';
+          if (mode === 'share') {
+            shareViewModel.close();
+          }
+        }
+      }) {
+        this.SheetContent()
+      }
+    }
+    .width('100%')
+    .height('100%')
+  }
+
+  /** 列表主体：原先的 build 内容（半模态宿主独立在同级 Stack，不再挂在 Refresh 上）。 */
+  @Builder
+  HomeBody() {
     Refresh({ refreshing: this.refreshing }) {
       List({ scroller: this.scroller }) {
         ListItem() {
@@ -685,18 +712,5 @@ export struct HomeTabView {
     .width('100%')
     .height('100%')
     .backgroundColor($r('app.color.hm_page_transparent'))
-    // 批量打标 / 分享面板共用同一个 bindSheet（标签选择在「标签」按钮、分享在左滑动作里打开）。
-    .bindSheet(this.showSheet, this.SheetContent(), MaterialController.sheetOptions({
-      height: this.sheetMode === 'share' ? SheetSize.LARGE : SheetSize.MEDIUM,
-      dragBar: true,
-      onDisappear: () => {
-        const mode: string = this.sheetMode;
-        this.showSheet = false;
-        this.sheetMode = '';
-        if (mode === 'share') {
-          shareViewModel.close();
-        }
-      }
-    }, appSettings.immersiveOn))
   }
 }

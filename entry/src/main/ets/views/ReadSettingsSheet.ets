@@ -2,8 +2,8 @@
  * ReadSettingsSheet.ets — 详情页「阅读排版」半模态面板（纯 V2）。
  *
  * 为什么是半模态而不是菜单：字号 / 行距改成连续值后需要 Slider + 实时预览，
- * 菜单放不下；而且半模态属于沉浸光感的生效区域（面板材质由父组件的
- * MaterialController.sheetOptions 注入，见 ArticleDetailView）。
+ * 菜单放不下；半模态的系统材质与三挡高度由统一宿主 AppSheet 注入
+ * （common/components/AppSheet.ets），本组件只负责内容。
  *
  * 交互约定：
  *   - 面板里改的是 appSettings（@Trace），预览区立刻按新排版显示；
@@ -182,6 +182,19 @@ export struct ReadSettingsSheet {
   }
 
   build() {
+    // 三挡高度下，拖到紧凑挡时内容可能超出一屏：这里内部滚动，避免被裁切。
+    Scroll() {
+      this.SettingsBody()
+    }
+    .width('100%')
+    .height('100%')
+    .scrollBar(BarState.Off)
+    .align(Alignment.TopStart)
+  }
+
+  /** 排版设置内容（原先 build 里的 Column）。 */
+  @Builder
+  SettingsBody() {
     Column({ space: $r('app.float.space_m') }) {
       Text($r('app.string.read_panel_title'))
         .fontSize($r('app.float.font_size_title'))
