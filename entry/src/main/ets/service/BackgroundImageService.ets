@@ -15,10 +15,12 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 const DOMAIN: number = 0x0000;
 const TAG: string = 'BackgroundImageService';
 
-/** 沙箱内的固定文件名：每次重新选择都覆盖它，避免沙箱堆积。 */
+/** 沙箱内的文件名前缀；旧版使用无后缀的固定文件名。 */
 const FILE_NAME: string = 'global_background';
 
 export class BackgroundImageService {
+  private nextFileId: number = 0;
+
   /**
    * 打开系统图库选择器（只允许图片、最多 1 张）。
    * 返回复制到沙箱后的文件路径；用户取消或失败时返回空串。
@@ -67,6 +69,20 @@ export class BackgroundImageService {
     }
   }
 
+  /** 新图片生效后清理旧图片（包括旧版固定路径）。 */
+  removePrevious(context: common.Context, path: string): void {
+    const prefix: string = context.filesDir + '/' + FILE_NAME;
+    if (path !== prefix && !path.startsWith(prefix + '_')) {
+      return;
+    }
+    try {
+      fileIo.unlinkSync(path);
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.warn(DOMAIN, TAG, 'removePrevious failed: %{public}d', error.code);
+    }
+  }
+
   /** 关闭句柄失败只记日志，不能覆盖真正的业务错误。 */
   private closeQuietly(file: fileIo.File): void {
     try {
@@ -82,7 +98,11 @@ export class BackgroundImageService {
    * （调用方按「空路径 = 失败」处理）。
    */
   private copyToSandbox(context: common.Context, uri: string): string {
-    const target: string = context.filesDir + '/' + FILE_NAME;
+    // 每次使用新 URI，让 ArkUI Image 重新解码，而不是继续命中旧路径的图片缓存。
+    let target: string = '';
+    do {
+      target = context.filesDir + '/' + FILE_NAME + '_' + Date.now() + '_' + this.nextFileId++;
+    } while (this.exists(target));
     try {
       const source: fileIo.File = fileIo.openSync(uri, fileIo.OpenMode.READ_ONLY);
       try {
@@ -100,6 +120,9 @@ export class BackgroundImageService {
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       hilog.error(DOMAIN, TAG, 'copyToSandbox failed: %{public}d', error.code);
+      if (this.exists(target)) {
+        this.removePrevious(context, target);
+      }
       return '';
     }
   }

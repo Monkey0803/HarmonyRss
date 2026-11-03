@@ -164,7 +164,7 @@ export struct SettingsLookView {
         SettingsSectionTitle({ title: $r('app.string.section_language') })
         Column() {
           OptionSelectRow({
-            icon: $r('sys.symbol.translate'),
+            icon: $r('sys.symbol.globe_and_keyboard'),
             title: $r('app.string.row_language'),
             choice: LANGUAGE_OPTIONS,
             field: SettingField.LANGUAGE,

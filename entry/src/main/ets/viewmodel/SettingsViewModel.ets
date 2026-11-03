@@ -328,9 +328,13 @@ export class SettingsViewModel {
     if (path.length === 0) {
       return false;
     }
+    const previousPath: string = appSettings.backgroundImagePath;
     appSettings.backgroundImagePath = path;
     appSettings.backgroundKind = BackgroundKind.CUSTOM;
     settingsStore.save();
+    if (previousPath.length > 0 && previousPath !== path) {
+      backgroundImageService.removePrevious(context, previousPath);
+    }
     return true;
   }
 
