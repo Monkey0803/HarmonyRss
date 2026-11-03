@@ -599,7 +599,13 @@ export struct HomeTabView {
 
   build() {
     Stack() {
-      this.HomeBody()
+      Column() {
+        this.HomeBody()
+        // 固定在滚动视口外，让文章行始终停在悬浮页签栏上方。
+        Row().width('100%').height(safeArea.contentBottomInsetVp)
+      }
+      .width('100%')
+      .height('100%')
 
       // 批量打标 / 分享面板共用同一个半模态宿主（标签选择在「标签」按钮、分享在左滑动作里打开）。
       AppSheet({
@@ -672,13 +678,6 @@ export struct HomeTabView {
             }
           }
         }
-
-        // 底部预留：避让悬浮页签栏与系统导航条。
-        ListItem() {
-          Row()
-            .width('100%')
-            .height(safeArea.contentBottomInsetVp)
-        }
       }
       .width('100%')
       .height('100%')
@@ -700,8 +699,8 @@ export struct HomeTabView {
           feedViewModel.loadMore();
         }
       })
-      // 内容穿透标题栏：超出列表范围的部分不裁剪，滚到标题栏下方的列表项也不会被回收。
-      .clip(false)
+      // 列表在标题栏下方滚动，但在底部页签栏上方截住内容。
+      .clip(true)
       .cachedCount(3, true)
       .padding({ left: $r('app.float.space_l'), right: $r('app.float.space_l') })
     }
@@ -711,7 +710,7 @@ export struct HomeTabView {
       this.reload();
     })
     .width('100%')
-    .height('100%')
+    .layoutWeight(1)
     .backgroundColor($r('app.color.hm_page_transparent'))
   }
 }

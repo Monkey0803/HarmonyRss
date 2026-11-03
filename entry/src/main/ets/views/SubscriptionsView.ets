@@ -749,73 +749,74 @@ export struct SubscriptionsView {
 
   build() {
     Stack({ alignContent: Alignment.Bottom }) {
-      List({ scroller: this.scroller }) {
-        // 第 0 项：整块页头（占位 + 资料库快捷入口 + 订阅源小节标题），随滚动离开。
-        ListItem() {
-          this.Header()
-        }
-
-        if (feedViewModel.feeds.length === 0) {
+      Column() {
+        List({ scroller: this.scroller }) {
+          // 第 0 项：整块页头（占位 + 资料库快捷入口 + 订阅源小节标题），随滚动离开。
           ListItem() {
-            this.EmptyState()
+            this.Header()
           }
-        } else {
-          ForEach(feedViewModel.displayRows(), (row: FeedListItem) => {
+
+          if (feedViewModel.feeds.length === 0) {
             ListItem() {
-              if (row.isGroup) {
-                SubscriptionsGroupHeader({
-                  feeds: feedViewModel.feeds,
-                  groupName: row.groupName,
-                  collapsed: feedViewModel.isGroupCollapsed(row.groupName),
-                  selecting: this.selecting,
-                  onToggleCollapse: () => {
-                    feedViewModel.toggleGroupCollapsed(row.groupName);
-                  }
-                })
-              } else {
-                this.FeedRow(row.feed)
+              this.EmptyState()
+            }
+          } else {
+            ForEach(feedViewModel.displayRows(), (row: FeedListItem) => {
+              ListItem() {
+                if (row.isGroup) {
+                  SubscriptionsGroupHeader({
+                    feeds: feedViewModel.feeds,
+                    groupName: row.groupName,
+                    collapsed: feedViewModel.isGroupCollapsed(row.groupName),
+                    selecting: this.selecting,
+                    onToggleCollapse: () => {
+                      feedViewModel.toggleGroupCollapsed(row.groupName);
+                    }
+                  })
+                } else {
+                  this.FeedRow(row.feed)
+                }
+              }
+            }, (row: FeedListItem) => this.rowKey(row))
+
+            if (this.selecting) {
+              // 多选动作条悬浮在内容下沿：末尾再留一段可滚动的余量，最后一行不会被它压住。
+              ListItem() {
+                Row().width('100%').height($r('app.float.space_3xl'))
               }
             }
-          }, (row: FeedListItem) => this.rowKey(row))
-
-          if (this.selecting) {
-            // 多选动作条悬浮在内容下沿：末尾再留一段可滚动的余量，最后一行不会被它压住。
-            ListItem() {
-              Row().width('100%').height($r('app.float.space_3xl'))
-            }
           }
-
         }
+        .width('100%')
+        .layoutWeight(1)
+        .padding({
+          left: $r('app.float.space_l'),
+          right: $r('app.float.space_l')
+        })
+        .scrollBar(BarState.Off)
+        // 长按拖拽排序：拖订阅源行 → 单条移动（含跨组）；拖分组头 → 整组换位。
+        // 头部是第 0 项，行索引用 HEADER_ROWS 换算，否则会「拖 A 动 B」。
+        .onItemDragStart((event: ItemDragInfo, itemIndex: number) => {
+          const rowIndex: number = itemIndex - HEADER_ROWS;
+          if (rowIndex < 0) {
+            return this.EmptyDragPreview();
+          }
+          return this.DragPreview(feedViewModel.rowAt(rowIndex));
+        })
+        .onItemDrop((event: ItemDragInfo, itemIndex: number, insertIndex: number, isSuccess: boolean) => {
+          if (!isSuccess || itemIndex < HEADER_ROWS) {
+            return;
+          }
+          const from: number = itemIndex - HEADER_ROWS;
+          const to: number = Math.max(0, insertIndex - HEADER_ROWS);
+          feedViewModel.reorderByDrag(from, to);
+        })
 
-        // 底部避让：包括空态在内都要留出可滚动的末尾空间，供内容越过悬浮页签栏。
-        ListItem() {
-          Row().width('100%').height(safeArea.contentBottomInsetVp)
-        }
+        // 固定在滚动视口外，订阅源行不会从悬浮页签栏下方穿过。
+        Row().width('100%').height(safeArea.contentBottomInsetVp)
       }
       .width('100%')
       .height('100%')
-      .padding({
-        left: $r('app.float.space_l'),
-        right: $r('app.float.space_l')
-      })
-      .scrollBar(BarState.Off)
-      // 长按拖拽排序：拖订阅源行 → 单条移动（含跨组）；拖分组头 → 整组换位。
-      // 头部是第 0 项，行索引用 HEADER_ROWS 换算，否则会「拖 A 动 B」。
-      .onItemDragStart((event: ItemDragInfo, itemIndex: number) => {
-        const rowIndex: number = itemIndex - HEADER_ROWS;
-        if (rowIndex < 0) {
-          return this.EmptyDragPreview();
-        }
-        return this.DragPreview(feedViewModel.rowAt(rowIndex));
-      })
-      .onItemDrop((event: ItemDragInfo, itemIndex: number, insertIndex: number, isSuccess: boolean) => {
-        if (!isSuccess || itemIndex < HEADER_ROWS) {
-          return;
-        }
-        const from: number = itemIndex - HEADER_ROWS;
-        const to: number = Math.max(0, insertIndex - HEADER_ROWS);
-        feedViewModel.reorderByDrag(from, to);
-      })
 
       if (this.selecting) {
         this.SelectBar()
