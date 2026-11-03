@@ -154,7 +154,7 @@ export class FeedViewModel {
   @Trace lastUpdated: number = 0;
   /** 未读总数。 */
   @Trace unreadTotal: number = 0;
-  /** 当前范围（订阅源 + 关键词）下的未读数，表头展示用。 */
+  /** 当前筛选与订阅源范围内的未读数，表头展示用。 */
   @Trace unreadShown: number = 0;
   /** 列表分组方式：平铺 / 按订阅源 / 按日期。初值取用户上次的选择。 */
   @Trace groupMode: string = appSettings.listGroupMode;
@@ -2393,7 +2393,7 @@ export class FeedViewModel {
         continue;
       }
       total += 1;
-      if (this.scopeFeedId.length === 0 || item.feedId === this.scopeFeedId) {
+      if (this.passesFilter(item)) {
         shown += 1;
       }
       const current: number | undefined = counts.get(item.feedId);

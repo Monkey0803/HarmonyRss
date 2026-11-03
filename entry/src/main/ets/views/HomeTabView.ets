@@ -41,6 +41,7 @@ export struct HomeTabView {
   @Param navPathStack: NavPathStack = new NavPathStack();
   @Param scroller: Scroller = new Scroller();
   @Local refreshing: boolean = false;
+  @Local refreshAngle: number = 0;
   /**
    * 半模态内容类型：'' 关闭 / 'tags' 批量打标 / 'share' 统一分享面板。
    * 一个 AppSheet 宿主只能挂一个半模态，两种面板必须共用同一份显隐状态。
@@ -75,10 +76,14 @@ export struct HomeTabView {
     if (this.refreshing) {
       return;
     }
+    this.refreshAngle = 0;
     this.refreshing = true;
     // 下拉刷新是用户手动动作：force=true 绕过源级间隔（停用源仍然跳过）。
-    await feedViewModel.refreshAll(true);
-    this.refreshing = false;
+    try {
+      await feedViewModel.refreshAll(true);
+    } finally {
+      this.refreshing = false;
+    }
   }
 
   /** 列表快捷键：/ 打开全局搜索（其余按键留给系统 / 详情页）。 */
@@ -149,17 +154,31 @@ export struct HomeTabView {
         this.SelectionBar()
       } else {
       Row({ space: $r('app.float.space_m') }) {
-        SymbolGlyph($r('sys.symbol.arrow_clockwise'))
-          .fontSize($r('app.float.icon_size'))
-          .fontColor([feedViewModel.loading
-            ? $r('sys.color.font_tertiary')
-            : themePalette.accent()])
-          .padding($r('app.float.space_s'))
-          .enabled(!feedViewModel.loading)
-          .accessibilityText($r('app.string.home_refresh'))
-          .onClick(() => {
-            this.reload();
-          })
+        if (this.refreshing) {
+          // 无限循环的节点在刷新结束时销毁，避免只改角度后动画仍继续运行。
+          SymbolGlyph($r('sys.symbol.arrow_clockwise'))
+            .fontSize($r('app.float.icon_size'))
+            .fontColor([$r('sys.color.font_tertiary')])
+            .rotate({ angle: this.refreshAngle })
+            .animation({ duration: 900, curve: Curve.Linear, iterations: -1 })
+            .padding($r('app.float.space_s'))
+            .accessibilityText($r('app.string.home_refresh'))
+            .onAppear(() => {
+              this.refreshAngle = 360;
+            })
+        } else {
+          SymbolGlyph($r('sys.symbol.arrow_clockwise'))
+            .fontSize($r('app.float.icon_size'))
+            .fontColor([feedViewModel.loading
+              ? $r('sys.color.font_tertiary')
+              : themePalette.accent()])
+            .padding($r('app.float.space_s'))
+            .enabled(!feedViewModel.loading)
+            .accessibilityText($r('app.string.home_refresh'))
+            .onClick(() => {
+              this.reload();
+            })
+        }
 
         // 最近同步时间：抓取完成后更新（lastUpdated 是 @Trace，会驱动这里重建）
         if (feedViewModel.lastUpdated > 0) {

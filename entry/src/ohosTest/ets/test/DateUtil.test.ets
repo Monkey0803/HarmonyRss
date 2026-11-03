@@ -8,8 +8,14 @@ import { DateUtil } from '../../../main/ets/common/utils/DateUtil';
 export default function dateUtilTest() {
   describe('DateUtil', () => {
     it('invalid_timestamp_is_empty', 0, () => {
+      expect(DateUtil.format(0)).assertEqual('');
       expect(DateUtil.formatShort(0)).assertEqual('');
       expect(DateUtil.formatShort(-1)).assertEqual('');
+    });
+
+    it('display_date_omits_year', 0, () => {
+      const timestamp: number = new Date(2001, 0, 2, 3, 4, 0).getTime();
+      expect(DateUtil.format(timestamp)).assertEqual('01-02 03:04');
     });
 
     it('same_day_is_clock_only', 0, () => {
@@ -29,7 +35,7 @@ export default function dateUtilTest() {
       const now: number = new Date(2020, 5, 1, 12, 0, 0).getTime();
       const timestamp: number = new Date(2001, 0, 2, 3, 4, 0).getTime();
       const text: string = DateUtil.formatShort(timestamp, now);
-      expect(text.length).assertEqual(10);
+      expect(text).assertEqual('01-02');
       expect(text.indexOf(':') < 0).assertTrue();
     });
   });

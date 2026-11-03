@@ -244,7 +244,7 @@ export struct ArticleListItem {
       }
       }
       .width('100%')
-      .alignItems(VerticalAlign.Top)
+      .alignItems(VerticalAlign.Center)
     }
     .width('100%')
     .padding(this.rowPadding())
