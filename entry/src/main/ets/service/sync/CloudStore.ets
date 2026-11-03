@@ -32,6 +32,13 @@ const SQL_CREATE_TABLE: string =
   'deleted INTEGER NOT NULL DEFAULT 0, ' +
   'origin TEXT NOT NULL DEFAULT \'\')';
 
+/** 时间戳相同时以主键续页，避免一页末尾的同毫秒记录被跳过。 */
+export const CLOUD_PAGE_SQL: string =
+  'SELECT recordKey, kind, payload, updatedAt, deleted, origin FROM ' + CLOUD_TABLE +
+  ' WHERE CAST(updatedAt AS INTEGER) > ?' +
+  ' OR (CAST(updatedAt AS INTEGER) = ? AND recordKey > ?)' +
+  ' ORDER BY CAST(updatedAt AS INTEGER) ASC, recordKey ASC LIMIT ?';
+
 /** 远端变更回调（系统通知「云端这张表变了」时调用）。 */
 export type CloudChangeListener = () => void;
 
@@ -177,20 +184,18 @@ export class CloudStore {
   }
 
   /**
-   * 增量读取：`updatedAt` 严格大于游标、按时间升序，最多 limit 条。
+   * 增量读取：按 `(updatedAt, recordKey)` 严格续页，最多 limit 条。
    * 走 SQL 而不是「全表读出来再过滤」，万级记录时少了 O(n²) 的内存与比较开销。
    */
-  async listSince(cursor: number, limit: number): Promise<SyncRecord[]> {
+  async listSince(cursorTime: number, cursorKey: string, limit: number): Promise<SyncRecord[]> {
     const store: relationalStore.RdbStore | undefined = this.store;
     const result: SyncRecord[] = [];
     if (store === undefined) {
       return result;
     }
     try {
-      const rs: relationalStore.ResultSet = await store.querySql(
-        'SELECT recordKey, kind, payload, updatedAt, deleted, origin FROM ' + CLOUD_TABLE +
-        ' WHERE CAST(updatedAt AS INTEGER) > ? ORDER BY CAST(updatedAt AS INTEGER) ASC LIMIT ?',
-        [cursor, limit]);
+      const rs: relationalStore.ResultSet = await store.querySql(CLOUD_PAGE_SQL,
+        [cursorTime, cursorTime, cursorKey, limit]);
       try {
         while (rs.goToNextRow()) {
           result.push(recordFromRow(rs));
@@ -215,7 +220,7 @@ export class CloudStore {
     try {
       const rs: relationalStore.ResultSet = await store.querySql(
         'SELECT recordKey, kind, payload, updatedAt, deleted, origin FROM ' + CLOUD_TABLE +
-        ' ORDER BY CAST(updatedAt AS INTEGER) ASC');
+        ' ORDER BY CAST(updatedAt AS INTEGER) ASC, recordKey ASC');
       try {
         while (rs.goToNextRow()) {
           result.push(recordFromRow(rs));
