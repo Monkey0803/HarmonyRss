@@ -12,6 +12,19 @@ export enum ThemeMode {
   DARK = 'dark'
 }
 
+/** 默认主题色（品牌蓝，与 resources/base 的 hm_brand 一致）。 */
+export const DEFAULT_THEME_COLOR: string = '#0A59F7';
+
+/** 预设主题色 id（只用于展示与匹配；持久化存的是 #RRGGBB 色值）。 */
+export enum ThemeColorId {
+  BLUE = 'blue',
+  CYAN = 'cyan',
+  GREEN = 'green',
+  ORANGE = 'orange',
+  PURPLE = 'purple',
+  PINK = 'pink'
+}
+
 /** 语言：跟随系统 / 简体中文 / 繁體中文 / 日语 / 德语 / 法语 / 西班牙语 / 英语。 */
 export enum AppLanguage {
   SYSTEM = 'system',

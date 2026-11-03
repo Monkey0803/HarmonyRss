@@ -57,6 +57,7 @@ import { SHEET_ADD_FEED_HEIGHT } from '../common/components/SheetDetents';
 import { AddFeedPanel } from '../views/AddFeedPanel';
 import { SaveWebPagePanel } from '../views/SaveWebPagePanel';
 import { FilterSegmentBar } from '../views/FilterSegmentBar';
+import { FilterCapsule } from '../views/FilterCapsule';
 import { BrandTitle } from '../views/BrandTitle';
 import { SettingsTabView } from '../views/SettingsTabView';
 import { SettingsLookView } from '../views/settings/SettingsLookView';
@@ -105,6 +106,14 @@ import { deepLink, DEEP_LINK_EVENT, DeepLinkParams } from '../service/DeepLink';
 import { shareHandoff } from '../service/ShareHandoff';
 import { Article } from '../model/Feed';
 import { ArticleFilter } from '../common/constants/RssConstants';
+import { themePalette } from '../model/ThemePalette';
+
+/** 添加面板的两个模式：订阅源 / 保存网页（与 ADD_SHEET_MODE_LABELS 逐项对应）。 */
+const ADD_SHEET_MODES: string[] = ['feed', 'web'];
+const ADD_SHEET_MODE_LABELS: ResourceStr[] = [
+  $r('app.string.home_add_feed_title'),
+  $r('app.string.save_web_title')
+];
 
 @Entry
 @ComponentV2
@@ -655,26 +664,38 @@ struct Index {
   /**
    * 添加订阅源底部面板：复用可复用面板 AddFeedPanel，成功即收起。
    *
-   * 顶部留出 space_xl 再放模式切换：bindSheet 的 dragBar 会占用面板顶部约 24vp 的手势区，
-   * 切换按钮贴着顶边时点击会被当成下拉关闭面板（表现为「点保存网页把面板关掉了」）。
+   * 头部一行：模式切换用与阅读页筛选条同一个 FilterCapsule（等分轨道宽度），右侧只留关闭图标。
+   * 面板本身不再画标题（模式已经由胶囊表达），避免标题与胶囊文案重复。
+   *
+   * 顶部留出 space_xl 再放这一行：bindSheet 的 dragBar 会占用面板顶部约 24vp 的手势区，
+   * 控件贴着顶边时点击会被当成下拉关闭面板（表现为「点保存网页把面板关掉了」）。
    */
   @Builder
   AddFeedPanelSheet() {
     Column({ space: $r('app.float.space_s') }) {
       Row({ space: $r('app.float.space_s') }) {
-        Button($r('app.string.home_add_feed_title'))
-          .buttonStyle(this.addSheetMode === 'feed' ? ButtonStyleMode.NORMAL : ButtonStyleMode.TEXTUAL)
-          .onClick(() => { this.addSheetMode = 'feed'; })
-        Button($r('app.string.save_web_title'))
-          .buttonStyle(this.addSheetMode === 'web' ? ButtonStyleMode.NORMAL : ButtonStyleMode.TEXTUAL)
-          .onClick(() => { this.addSheetMode = 'web'; })
+        FilterCapsule({
+          options: ADD_SHEET_MODES,
+          labels: ADD_SHEET_MODE_LABELS,
+          active: this.addSheetMode,
+          stretch: true,
+          onSelect: (value: string) => { this.addSheetMode = value; }
+        })
+          .layoutWeight(1)
+        SymbolGlyph($r('sys.symbol.xmark'))
+          .fontSize($r('app.float.icon_size'))
+          .fontColor([$r('app.color.hm_text_secondary')])
+          .padding($r('app.float.space_xs'))
+          .accessibilityText($r('app.string.dialog_cancel'))
+          .onClick(() => { this.showAddSheet = false; })
       }
+      .width('100%')
+      .alignItems(VerticalAlign.Center)
       .padding({ left: $r('app.float.space_m'), right: $r('app.float.space_m'), top: $r('app.float.space_xl') })
       if (this.addSheetMode === 'web') {
         SaveWebPagePanel({
           initialText: this.pendingAddText,
-          showClose: true,
-          onClose: () => { this.showAddSheet = false; },
+          showTitle: false,
           onSaved: () => {
             this.pendingAddText = '';
             this.showAddSheet = false;
@@ -685,9 +706,8 @@ struct Index {
         })
       } else {
         AddFeedPanel({
-          showClose: true,
+          showTitle: false,
           initialText: this.pendingAddText,
-          onClose: () => { this.showAddSheet = false; },
           onSubmitResult: () => {
             this.pendingAddText = '';
             this.showAddSheet = false;
@@ -842,7 +862,7 @@ struct Index {
     Row({ space: $r('app.float.space_s') }) {
       SymbolGlyph($r('sys.symbol.plus'))
         .fontSize($r('app.float.icon_size'))
-        .fontColor([$r('app.color.hm_brand')])
+        .fontColor([themePalette.accent()])
       Text($r('app.string.home_add_feed_title'))
         .fontSize($r('app.float.font_size_caption'))
         .fontColor($r('app.color.hm_text_primary'))
@@ -963,10 +983,10 @@ struct Index {
     Column({ space: $r('app.float.space_xxs') }) {
       SymbolGlyph(icon)
         .fontSize($r('app.float.tab_icon_size'))
-        .fontColor([active ? $r('app.color.hm_brand') : $r('app.color.hm_text_secondary')])
+        .fontColor([active ? themePalette.accent() : $r('app.color.hm_text_secondary')])
       Text(label)
         .fontSize($r('app.float.tab_font_size'))
-        .fontColor(active ? $r('app.color.hm_brand') : $r('app.color.hm_text_secondary'))
+        .fontColor(active ? themePalette.accent() : $r('app.color.hm_text_secondary'))
     }
     .width('100%')
     .height($r('app.float.tab_item_height'))

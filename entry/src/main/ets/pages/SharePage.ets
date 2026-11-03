@@ -8,9 +8,17 @@
 import { common } from '@kit.AbilityKit';
 import { AddFeedPanel } from '../views/AddFeedPanel';
 import { SaveWebPagePanel } from '../views/SaveWebPagePanel';
+import { FilterCapsule } from '../views/FilterCapsule';
 import { settingsViewModel } from '../viewmodel/SettingsViewModel';
 import { feedViewModel } from '../viewmodel/FeedViewModel';
 import { shareHandoff } from '../service/ShareHandoff';
+
+/** 模式切换的两段（与 SHARE_MODE_LABELS 逐项对应）：分享进入默认「保存网页」。 */
+const SHARE_MODES: string[] = ['web', 'feed'];
+const SHARE_MODE_LABELS: ResourceStr[] = [
+  $r('app.string.save_web_title'),
+  $r('app.string.home_add_feed_title')
+];
 
 @Entry
 @ComponentV2
@@ -37,14 +45,13 @@ struct SharePage {
   build() {
     Scroll() {
       Column({ space: $r('app.float.space_m') }) {
-        Row({ space: $r('app.float.space_s') }) {
-          Button($r('app.string.save_web_title'))
-            .buttonStyle(this.mode === 'web' ? ButtonStyleMode.NORMAL : ButtonStyleMode.TEXTUAL)
-            .onClick(() => { this.mode = 'web'; })
-          Button($r('app.string.home_add_feed_title'))
-            .buttonStyle(this.mode === 'feed' ? ButtonStyleMode.NORMAL : ButtonStyleMode.TEXTUAL)
-            .onClick(() => { this.mode = 'feed'; })
-        }
+        FilterCapsule({
+          options: SHARE_MODES,
+          labels: SHARE_MODE_LABELS,
+          active: this.mode,
+          stretch: true,
+          onSelect: (value: string) => { this.mode = value; }
+        })
         if (this.initFailed) {
           Text($r('app.string.save_web_save_failed'))
         } else if (!this.ready) {
@@ -52,6 +59,7 @@ struct SharePage {
         } else if (this.mode === 'web') {
           SaveWebPagePanel({
             initialText: this.sharedText,
+            showTitle: false,
             onSaved: () => { this.saved = true; }
           })
           if (this.saved) {

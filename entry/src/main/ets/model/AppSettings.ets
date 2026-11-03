@@ -6,7 +6,7 @@
  */
 
 import { ArticleFilter, GroupMode, ReaderViewMode } from '../common/constants/RssConstants';
-import { ArchiveRule, ListDensity, ListRowLayout, RetentionDays, RetentionMode, SummaryLines } from '../common/constants/SettingsConstants';
+import { ArchiveRule, DEFAULT_THEME_COLOR, ListDensity, ListRowLayout, RetentionDays, RetentionMode, SummaryLines } from '../common/constants/SettingsConstants';
 import { THEME_OPTIONS, LANGUAGE_OPTIONS, MATERIAL_TYPE_OPTIONS, MATERIAL_LEVEL_OPTIONS, BACKGROUND_OPTIONS, LOGO_OPTIONS, AUTO_REFRESH_OPTIONS, READER_FONT_OPTIONS, READER_LINE_OPTIONS, READER_FAMILY_OPTIONS, READER_WIDTH_OPTIONS, READER_ALIGN_OPTIONS, READER_THEME_OPTIONS, READER_INDENT_OPTIONS } from './SettingsOptions';
 import { NotifyDefaults } from './Notify';
 import { TranslateDefaults } from '../common/constants/TranslateConstants';
@@ -15,6 +15,8 @@ import { TranslateDefaults } from '../common/constants/TranslateConstants';
 export class AppSettings {
   /** 主题：'system' | 'light' | 'dark'。 */
   @Trace themeMode: string = THEME_OPTIONS.defaultValue;
+  /** 主题色：#RRGGBB（默认品牌蓝；自定义色为任意合法色值）。 */
+  @Trace themeColor: string = DEFAULT_THEME_COLOR;
   /** 语言：'system' | 'zh' | 'zhTW' | 'ja' | 'de' | 'fr' | 'es' | 'en'。 */
   @Trace languageMode: string = LANGUAGE_OPTIONS.defaultValue;
   /** 沉浸光感总开关。 */

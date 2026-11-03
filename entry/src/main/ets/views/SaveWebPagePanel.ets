@@ -9,6 +9,13 @@ import { ToastUtil } from '../common/utils/ToastUtil';
 @ComponentV2
 export struct SaveWebPagePanel {
   @Param initialText: string = '';
+  /**
+   * 是否在面板内画标题。
+   * 底部面板 / 分享页把标题上移成模式胶囊（「保存网页」已经在胶囊上），这里传 false；
+   * 独立页面内嵌时保持默认 true。
+   */
+  @Param showTitle: boolean = true;
+  /** 是否在标题行右侧画关闭图标（仅 showTitle 为 true 时可见）。 */
   @Param showClose: boolean = false;
   @Event onClose: () => void = () => {};
   @Event onSaved: (articleId: string) => void = () => {};
@@ -107,19 +114,27 @@ export struct SaveWebPagePanel {
 
   build() {
     Column({ space: $r('app.float.space_m') }) {
-      Row() {
-        Text($r('app.string.save_web_title'))
-          .fontSize($r('app.float.font_size_section'))
-          .fontWeight(FontWeight.Medium)
-          .fontColor($r('app.color.hm_text_primary'))
-        Blank()
-        if (this.showClose) {
-          Button($r('app.string.save_web_close'))
-            .buttonStyle(ButtonStyleMode.TEXTUAL)
-            .onClick(() => { this.onClose(); })
+      if (this.showTitle) {
+        Row({ space: $r('app.float.space_s') }) {
+          Text($r('app.string.save_web_title'))
+            .fontSize($r('app.float.font_size_section'))
+            .fontWeight(FontWeight.Medium)
+            .fontColor($r('app.color.hm_text_primary'))
+            .maxLines(1)
+            .textOverflow({ overflow: TextOverflow.Ellipsis })
+            .layoutWeight(1)
+          if (this.showClose) {
+            SymbolGlyph($r('sys.symbol.xmark'))
+              .fontSize($r('app.float.icon_size'))
+              .fontColor([$r('app.color.hm_text_secondary')])
+              .padding($r('app.float.space_xs'))
+              .accessibilityText($r('app.string.dialog_cancel'))
+              .onClick(() => { this.onClose(); })
+          }
         }
+        .width('100%')
+        .alignItems(VerticalAlign.Center)
       }
-      .width('100%')
 
       TextInput({ text: this.inputText, placeholder: $r('app.string.save_web_hint') })
         .type(InputType.URL)
