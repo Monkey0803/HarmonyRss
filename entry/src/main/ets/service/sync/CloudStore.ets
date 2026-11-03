@@ -35,6 +35,21 @@ const SQL_CREATE_TABLE: string =
 /** 远端变更回调（系统通知「云端这张表变了」时调用）。 */
 export type CloudChangeListener = () => void;
 
+/** 端云同步的可用性：设置页据此说清楚「为什么没同步」。 */
+export enum CloudAvailability {
+  /** 已登记分布式表，可跨设备同步。 */
+  READY = 'ready',
+  /** 云库打不开（存储异常）。 */
+  STORE_FAILED = 'storeFailed',
+  /** 系统 / 设备不支持端云数据同步能力。 */
+  UNSUPPORTED = 'unsupported',
+  /** 能力可用但没开通：AGC 未部署容器或未登录华为账号。 */
+  NOT_CONFIGURED = 'notConfigured'
+}
+
+/** `setDistributedTables` 在能力不支持时返回的错误码。 */
+const ERR_CAPABILITY_UNSUPPORTED: number = 801;
+
 function recordFromRow(rs: relationalStore.ResultSet): SyncRecord {
   return new SyncRecord(
     rs.getString(rs.getColumnIndex('recordKey')),
@@ -49,6 +64,8 @@ export class CloudStore {
   private store: relationalStore.RdbStore | undefined = undefined;
   /** 是否已成功登记为端云分布式表（false 时只在本机读写）。 */
   private distributed: boolean = false;
+  /** 最近一次可用性判定结果（未尝试过时按「未配置」处理）。 */
+  private availabilityState: CloudAvailability = CloudAvailability.NOT_CONFIGURED;
   private listener: CloudChangeListener | undefined = undefined;
   private observer: ((accounts: Array<string>) => void) | undefined = undefined;
 
@@ -70,6 +87,7 @@ export class CloudStore {
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       hilog.error(DOMAIN, TAG, 'open cloud store failed: %{public}d', error.code);
+      this.availabilityState = CloudAvailability.STORE_FAILED;
       return false;
     }
   }
@@ -81,18 +99,43 @@ export class CloudStore {
       await store.setDistributedTables([CLOUD_TABLE],
         relationalStore.DistributedType.DISTRIBUTED_CLOUD, config);
       this.distributed = true;
+      this.availabilityState = CloudAvailability.READY;
       hilog.info(DOMAIN, TAG, 'cloud sync enabled for %{public}s', CLOUD_TABLE);
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       this.distributed = false;
-      hilog.warn(DOMAIN, TAG, 'setDistributedTables failed (cloud not configured?): %{public}d',
-        error.code);
+      // 801 = 设备 / 系统不具备该能力；其余多为一侧未开通（AGC 容器或华为账号）。
+      this.availabilityState = error.code === ERR_CAPABILITY_UNSUPPORTED
+        ? CloudAvailability.UNSUPPORTED : CloudAvailability.NOT_CONFIGURED;
+      hilog.warn(DOMAIN, TAG, 'setDistributedTables failed (code=%{public}d, unsupported=%{public}s)',
+        error.code, this.availabilityState === CloudAvailability.UNSUPPORTED ? 'true' : 'false');
     }
   }
 
   /** 是否已接入端云同步（用于设置页状态与手动同步）。 */
   isDistributed(): boolean {
     return this.distributed;
+  }
+
+  /**
+   * 重新尝试登记分布式表：用户刚登录华为账号 / 刚在 AGC 开通后不必重启应用。
+   * 已可用时直接返回 true，不重复调用系统接口。
+   */
+  async refresh(): Promise<boolean> {
+    const store: relationalStore.RdbStore | undefined = this.store;
+    if (store === undefined) {
+      return false;
+    }
+    if (this.distributed) {
+      return true;
+    }
+    await this.enableDistributed(store);
+    return this.distributed;
+  }
+
+  /** 可用性：READY / STORE_FAILED / UNSUPPORTED / NOT_CONFIGURED。 */
+  availability(): CloudAvailability {
+    return this.availabilityState;
   }
 
   /** 设置网络策略：仅 Wi-Fi 时不允许走蜂窝。 */
@@ -111,21 +154,55 @@ export class CloudStore {
     }
   }
 
-  /** 手动触发一次端云同步（autoSync 之外，用户点「立即同步」时先拉一轮云端行）。 */
-  async syncNow(): Promise<void> {
+  /**
+   * 手动触发一次端云同步（autoSync 之外，用户点「立即同步」时先拉一轮云端行）。
+   * 返回是否真的拉了一轮：未登记分布式表时返回 false，调用方不能把它当成「同步成功」。
+   */
+  async syncNow(): Promise<boolean> {
     const store: relationalStore.RdbStore | undefined = this.store;
     if (store === undefined || !this.distributed) {
-      return;
+      return false;
     }
     try {
       await store.cloudSync(relationalStore.SyncMode.SYNC_MODE_TIME_FIRST, [CLOUD_TABLE],
         (progress: relationalStore.ProgressDetails) => {
           hilog.info(DOMAIN, TAG, 'cloud sync progress: %{public}d', progress.schedule);
         });
+      return true;
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       hilog.warn(DOMAIN, TAG, 'cloudSync failed: %{public}d', error.code);
+      return false;
     }
+  }
+
+  /**
+   * 增量读取：`updatedAt` 严格大于游标、按时间升序，最多 limit 条。
+   * 走 SQL 而不是「全表读出来再过滤」，万级记录时少了 O(n²) 的内存与比较开销。
+   */
+  async listSince(cursor: number, limit: number): Promise<SyncRecord[]> {
+    const store: relationalStore.RdbStore | undefined = this.store;
+    const result: SyncRecord[] = [];
+    if (store === undefined) {
+      return result;
+    }
+    try {
+      const rs: relationalStore.ResultSet = await store.querySql(
+        'SELECT recordKey, kind, payload, updatedAt, deleted, origin FROM ' + CLOUD_TABLE +
+        ' WHERE CAST(updatedAt AS INTEGER) > ? ORDER BY CAST(updatedAt AS INTEGER) ASC LIMIT ?',
+        [cursor, limit]);
+      try {
+        while (rs.goToNextRow()) {
+          result.push(recordFromRow(rs));
+        }
+      } finally {
+        rs.close();
+      }
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.error(DOMAIN, TAG, 'listSince failed: %{public}d', error.code);
+    }
+    return result;
   }
 
   /** 全表读取（按修改时间升序，供后端按游标分页）。 */

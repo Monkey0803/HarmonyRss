@@ -12,7 +12,16 @@
  * 本地数据与游标保持上一次可用状态，下次同步继续。
  */
 
-import { SyncPullPage, SyncPushResult, SyncRecord, SyncSummary, isSameRecord, mergeRecord } from '../../model/Sync';
+import {
+  SyncConflict,
+  SyncPullPage,
+  SyncPushResult,
+  SyncRecord,
+  SyncSummary,
+  changedPayloadFields,
+  isSameRecord,
+  mergeRecord
+} from '../../model/Sync';
 import { SyncBackend, SyncBackendError } from './SyncBackend';
 import { SyncLimits, SyncRecordStore } from './SyncStore';
 
@@ -33,11 +42,18 @@ export class SyncEngine {
   private readonly backend: SyncBackend;
   private readonly store: SyncRecordStore;
   private readonly origin: string;
+  /** 本轮发生自动合并的记录概要（上限见 SyncLimits.CONFLICT_DETAILS）。 */
+  private conflictItems: SyncConflict[] = [];
 
   constructor(backend: SyncBackend, store: SyncRecordStore, origin: string) {
     this.backend = backend;
     this.store = store;
     this.origin = origin;
+  }
+
+  /** 最近一轮的冲突详情（设置页展开用；条数已截断）。 */
+  conflictDetails(): SyncConflict[] {
+    return this.conflictItems;
   }
 
   /** 推送一批记录（返回可标干净的 key）；后端报错时 failed = true，调用方停止本轮。 */
@@ -57,7 +73,7 @@ export class SyncEngine {
   private async pushPending(): Promise<PushRound> {
     let pushed: number = 0;
     const accepted: string[] = [];
-    for (let round = 0; round < 10; round += 1) {
+    for (let round = 0; round < SyncLimits.MAX_PUSH_ROUNDS; round += 1) {
       const dirty: SyncRecord[] = await this.store.listDirty(SyncLimits.PUSH_BATCH);
       if (dirty.length === 0) {
         return new PushRound(pushed, accepted, false);
@@ -84,6 +100,7 @@ export class SyncEngine {
     let pulled: number = 0;
     let conflicts: number = 0;
     let failure: string = '';
+    this.conflictItems = [];
 
     for (let page = 0; page < SyncLimits.MAX_PULL_PAGES; page += 1) {
       let pulledPage: SyncPullPage;
@@ -112,6 +129,10 @@ export class SyncEngine {
         pulled += 1;
         if (differsFromRemote) {
           conflicts += 1;
+          if (this.conflictItems.length < SyncLimits.CONFLICT_DETAILS) {
+            this.conflictItems.push(new SyncConflict(merged.key, merged.kind,
+              changedPayloadFields(remote.payload, merged.payload)));
+          }
         }
       }
       const nextCursor: string = this.backend.betterCursor(cursor, pulledPage.cursor);

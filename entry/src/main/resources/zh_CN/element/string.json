@@ -4221,6 +4221,38 @@
       "value": "上次同步自动合并了 %d 条两端改动"
     },
     {
+      "name": "sync_cloud_unavailable",
+      "value": "端云同步暂不可用：需在 AGC 开通云数据库并登录华为账号。"
+    },
+    {
+      "name": "sync_cloud_unavailable_unsupported",
+      "value": "当前设备不支持端云数据同步（需 HarmonyOS 6.0 及以上）。"
+    },
+    {
+      "name": "sync_cloud_unavailable_store",
+      "value": "无法打开本机云数据库。"
+    },
+    {
+      "name": "sync_kind_article_state",
+      "value": "文章状态"
+    },
+    {
+      "name": "sync_kind_article_tag",
+      "value": "标签关联"
+    },
+    {
+      "name": "sync_kind_other",
+      "value": "其他"
+    },
+    {
+      "name": "sync_conflict_no_fields",
+      "value": "整条取较新一端"
+    },
+    {
+      "name": "sync_field_progress",
+      "value": "进度"
+    },
+    {
       "name": "sync_row_backend",
       "value": "同步目标"
     },

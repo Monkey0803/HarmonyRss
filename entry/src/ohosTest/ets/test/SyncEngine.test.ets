@@ -12,6 +12,7 @@
 import { describe, it, expect } from '@ohos/hypium';
 import {
   ArticleStatePayload,
+  SyncConflict,
   SyncField,
   SyncKinds,
   SyncPullPage,
@@ -271,6 +272,35 @@ export default function syncEngineTest() {
       expect(secondRecord !== undefined && firstRecord !== undefined &&
         secondRecord.updatedAt === firstRecord.updatedAt).assertTrue();
       expect(await store.pendingCount()).assertEqual(0);
+    });
+
+    it('reports_conflict_details_for_merged_fields', 0, async () => {
+      const backend: MemoryBackend = new MemoryBackend();
+      const store: MemoryStore = new MemoryStore();
+      await backend.push([stateRecord('0', '1', 0, 300, 'node-b')]);
+      store.seed(stateRecord('1', '0', 200, 0, 'node-a'), true);
+      const engine: SyncEngine = new SyncEngine(backend, store, 'node-a');
+      const summary: SyncSummary = await engine.run();
+      expect(summary.conflicts >= 1).assertTrue();
+      const details: SyncConflict[] = engine.conflictDetails();
+      expect(details.length).assertEqual(1);
+      expect(details[0].key).assertEqual('article:1');
+      expect(details[0].kind).assertEqual(SyncKinds.ARTICLE_STATE);
+      // 回推的是「已读」；星标在远端已经是最新，不该算差异。
+      expect(details[0].fields.join(',')).assertEqual('read');
+    });
+
+    it('clears_conflict_details_between_runs', 0, async () => {
+      const backend: MemoryBackend = new MemoryBackend();
+      const store: MemoryStore = new MemoryStore();
+      await backend.push([stateRecord('0', '1', 0, 300, 'node-b')]);
+      store.seed(stateRecord('1', '0', 200, 0, 'node-a'), true);
+      const engine: SyncEngine = new SyncEngine(backend, store, 'node-a');
+      await engine.run();
+      expect(engine.conflictDetails().length).assertEqual(1);
+      // 第二轮已经收敛，不应再报冲突。
+      await engine.run();
+      expect(engine.conflictDetails().length).assertEqual(0);
     });
 
     it('keeps_dirty_when_push_fails', 0, async () => {

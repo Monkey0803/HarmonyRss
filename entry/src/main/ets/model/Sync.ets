@@ -305,6 +305,56 @@ export class SyncSummary {
   }
 }
 
+/**
+ * 一条「自动合并」的概要（设置页展示用）。
+ * 只保留可定位的键与发生变化的字段名，不带完整 payload —— 冲突详情不该把正文塞进偏好库。
+ */
+export class SyncConflict {
+  /** 同步记录键（如 `articleState:xxx`）。 */
+  readonly key: string;
+  /** 实体类型（见 SyncKinds）。 */
+  readonly kind: string;
+  /** 合并结果与远端不一致的字段名（浅层 JSON 键，已排序）；空数组表示整条以较新一端为准。 */
+  readonly fields: string[];
+
+  constructor(key: string, kind: string, fields: string[]) {
+    this.key = key;
+    this.kind = kind;
+    this.fields = fields;
+  }
+}
+
+/**
+ * 浅层比较两份 payload，返回「合并结果与远端不同」的键（排序去重）。
+ * 非对象 / 解析失败的 payload 返回空数组：详情宁可不显示，也不能因为脏数据中断同步。
+ */
+export function changedPayloadFields(remotePayload: string, mergedPayload: string): string[] {
+  if (remotePayload === mergedPayload || remotePayload.length === 0 || mergedPayload.length === 0) {
+    return [];
+  }
+  let remote: Record<string, Object>;
+  let merged: Record<string, Object>;
+  try {
+    remote = JSON.parse(remotePayload) as Record<string, Object>;
+    merged = JSON.parse(mergedPayload) as Record<string, Object>;
+  } catch (err) {
+    return [];
+  }
+  if (typeof remote !== 'object' || typeof merged !== 'object' || remote === null || merged === null) {
+    return [];
+  }
+  const fields: string[] = [];
+  const keys: string[] = Object.keys(merged);
+  for (let i = 0; i < keys.length; i += 1) {
+    const key: string = keys[i];
+    if (JSON.stringify(remote[key]) !== JSON.stringify(merged[key]) && fields.indexOf(key) < 0) {
+      fields.push(key);
+    }
+  }
+  fields.sort();
+  return fields;
+}
+
 /** 字段合并：时间新者胜；同一时间时布尔取 true、进度取较大值，其余保留本地。 */
 export function mergeField(local: SyncField, remote: SyncField): SyncField {
   if (local.at > remote.at) {

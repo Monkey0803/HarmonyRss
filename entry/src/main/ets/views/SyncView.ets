@@ -9,7 +9,7 @@
 
 import { common } from '@kit.AbilityKit';
 import { appSettings } from '../model/AppSettings';
-import { SyncSummary } from '../model/Sync';
+import { SyncConflict, SyncKinds, SyncSummary } from '../model/Sync';
 import { DateUtil } from '../common/utils/DateUtil';
 import { safeArea } from '../service/SafeAreaController';
 import { MaterialController } from '../service/MaterialController';
@@ -38,6 +38,11 @@ export struct SyncView {
   @Local records: number = 0;
   @Local backend: string = '';
   @Local syncing: boolean = false;
+  /** 选了云同步目标时：端云能力是否真的可用（未登录 / 未开通时为 false）。 */
+  @Local cloudAvailable: boolean = true;
+  @Local cloudReason: string = '';
+  /** 上次同步自动合并的记录概要（最多 CONFLICT_DETAILS 条）。 */
+  @Local conflictItems: SyncConflict[] = [];
 
   /** 状态变化回调：自动同步 / 云端变更完成后，页面上的时间与条数实时刷新。 */
   private onStatusChanged: () => void = () => {
@@ -72,7 +77,71 @@ export struct SyncView {
       this.pending = status.pending;
       this.records = status.records;
       this.backend = status.backend;
+      this.cloudAvailable = status.cloudAvailable;
+      this.cloudReason = status.cloudReason;
+      this.conflictItems = status.conflictItems;
     });
+  }
+
+  /** 端云不可用的原因文案（未登录 / 未开通 / 系统不支持 / 云库打不开）。 */
+  private cloudUnavailableText(): ResourceStr {
+    if (this.cloudReason === 'unsupported') {
+      return $r('app.string.sync_cloud_unavailable_unsupported');
+    }
+    if (this.cloudReason === 'storeFailed') {
+      return $r('app.string.sync_cloud_unavailable_store');
+    }
+    return $r('app.string.sync_cloud_unavailable');
+  }
+
+  /** 冲突实体的中文名；未知类型归到「其他」。 */
+  private kindLabel(kind: string): ResourceStr {
+    switch (kind) {
+      case SyncKinds.ARTICLE_STATE:
+        return $r('app.string.sync_kind_article_state');
+      case SyncKinds.FEED:
+        return $r('app.string.tab_subs');
+      case SyncKinds.HIGHLIGHT:
+        return $r('app.string.hl_panel_entry');
+      case SyncKinds.TAG:
+        return $r('app.string.tag_title');
+      case SyncKinds.ARTICLE_TAG:
+        return $r('app.string.sync_kind_article_tag');
+      case SyncKinds.SETTINGS:
+        return $r('app.string.tab_settings');
+      case SyncKinds.SMART_FOLDER:
+        return $r('app.string.smart_folder_title');
+      case SyncKinds.RULE:
+        return $r('app.string.rule_title');
+      case SyncKinds.TEMPLATE:
+        return $r('app.string.tpl_section_title');
+      default:
+        return $r('app.string.sync_kind_other');
+    }
+  }
+
+  /** 冲突字段的中文名；未知字段直接显示原名（不猜语义）。 */
+  private fieldLabel(field: string): ResourceStr {
+    if (field === 'read') {
+      return $r('app.string.a11y_article_read');
+    }
+    if (field === 'starred') {
+      return $r('app.string.filter_starred');
+    }
+    if (field === 'saved') {
+      return $r('app.string.filter_saved');
+    }
+    if (field === 'progress' || field === 'progressRatio') {
+      return $r('app.string.sync_field_progress');
+    }
+    return field;
+  }
+
+  /** 记录键去掉类型前缀后截断，详情行不撑破卡片。 */
+  private shortKey(key: string): string {
+    const at: number = key.indexOf(':');
+    const value: string = at >= 0 ? key.substring(at + 1) : key;
+    return value.length > 28 ? value.substring(0, 28) + '…' : value;
   }
 
   private lastSyncText(): ResourceStr {
@@ -335,6 +404,15 @@ export struct SyncView {
         .backgroundColor($r('app.color.hm_card_background'))
         .borderRadius($r('app.float.radius_card'))
 
+        // 选了端云但能力不可用：说清原因，别让用户以为「点了同步就是同步了」。
+        if (this.cloudBackend && !this.cloudAvailable) {
+          Text(this.cloudUnavailableText())
+            .fontSize($r('app.float.font_size_caption'))
+            .fontColor($r('app.color.hm_text_secondary'))
+            .width('100%')
+            .margin({ top: $r('app.float.space_s'), left: $r('app.float.space_xs') })
+        }
+
         // 只有真的发生过「两端都改」才提示，0 条时不打扰。
         if (this.conflicts > 0) {
           Text($r('app.string.sync_conflicts_merged', this.conflicts))
@@ -342,6 +420,38 @@ export struct SyncView {
             .fontColor($r('app.color.hm_text_secondary'))
             .width('100%')
             .margin({ top: $r('app.float.space_s'), left: $r('app.float.space_xs') })
+
+          if (this.conflictItems.length > 0) {
+            Column({ space: $r('app.float.space_xs') }) {
+              ForEach(this.conflictItems.slice(0, 5), (item: SyncConflict) => {
+                Row({ space: $r('app.float.space_xs') }) {
+                  Text(this.kindLabel(item.kind))
+                    .fontSize($r('app.float.font_size_caption'))
+                    .fontColor($r('app.color.hm_text_secondary'))
+                  Text(this.shortKey(item.key))
+                    .fontSize($r('app.float.font_size_caption'))
+                    .fontColor($r('app.color.hm_text_secondary'))
+                    .maxLines(1)
+                    .textOverflow({ overflow: TextOverflow.Ellipsis })
+                    .layoutWeight(1)
+                  if (item.fields.length === 0) {
+                    Text($r('app.string.sync_conflict_no_fields'))
+                      .fontSize($r('app.float.font_size_caption'))
+                      .fontColor($r('app.color.hm_text_secondary'))
+                  } else {
+                    ForEach(item.fields, (field: string) => {
+                      Text(this.fieldLabel(field))
+                        .fontSize($r('app.float.font_size_caption'))
+                        .fontColor($r('app.color.hm_text_secondary'))
+                    }, (field: string) => field)
+                  }
+                }
+                .width('100%')
+              }, (item: SyncConflict) => item.key)
+            }
+            .width('100%')
+            .margin({ top: $r('app.float.space_xs'), left: $r('app.float.space_xs') })
+          }
         }
 
         Text(this.cloudBackend ? $r('app.string.sync_aux_cloud') : $r('app.string.sync_aux_mock'))

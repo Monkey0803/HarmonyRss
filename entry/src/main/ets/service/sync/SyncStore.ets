@@ -27,8 +27,26 @@ export const SYNC_CURSOR_KEY: string = 'cloud_sync_cursor';
 export class SyncLimits {
   static readonly PUSH_BATCH: number = 200;
   static readonly PULL_BATCH: number = 200;
+  /**
+   * 单次同步最多推送的批次数（50 × 200 = 1 万条）。
+   * 首轮全量推送时不能只跑 10 批：老实现 2000 条就停，1 万条记录要连点五次「立即同步」。
+   */
+  static readonly MAX_PUSH_ROUNDS: number = 50;
   /** 单次同步最多拉取页数，避免后端游标异常时死循环。 */
   static readonly MAX_PULL_PAGES: number = 50;
+  /** 设置页最多展示的冲突条数。 */
+  static readonly CONFLICT_DETAILS: number = 20;
+  /** 墓碑保留时长：删除记录要同步出去，但不能永久留在本机 / 云端。 */
+  static readonly TOMBSTONE_TTL_MS: number = 30 * 24 * 60 * 60 * 1000;
+}
+
+/** 墓碑是否已过保留期（纯函数，可单测）：未推送的墓碑不清理，避免删除动作丢在对端。 */
+export function isTombstoneExpired(deleted: boolean, dirty: boolean, updatedAt: number,
+  now: number, ttlMs: number = SyncLimits.TOMBSTONE_TTL_MS): boolean {
+  if (!deleted || dirty) {
+    return false;
+  }
+  return now - updatedAt > ttlMs;
 }
 
 function recordFromRow(rs: relationalStore.ResultSet): SyncRecord {
@@ -244,6 +262,41 @@ export class SyncStore implements SyncRecordStore {
   clearAll(): void {
     this.exec('DELETE FROM ' + ArticleDbConstants.TABLE_SYNC_RECORDS, []);
     this.setCursor('');
+  }
+
+  /**
+   * 清理过期的墓碑（deleted=1 且已推送、超过保留期）。
+   * 未推送的墓碑保留：删除动作还没到对端，清掉会让对端把记录“复活”。
+   * 返回本次删除的行数（诊断 / 日志用）。
+   */
+  async pruneTombstones(now: number, ttlMs: number = SyncLimits.TOMBSTONE_TTL_MS): Promise<number> {
+    const store: relationalStore.RdbStore | undefined = this.db();
+    if (store === undefined) {
+      return 0;
+    }
+    const cutoff: number = now - ttlMs;
+    let removed: number = 0;
+    try {
+      const rs: relationalStore.ResultSet = await store.querySql(
+        'SELECT COUNT(*) AS c FROM ' + ArticleDbConstants.TABLE_SYNC_RECORDS +
+        ' WHERE deleted = 1 AND dirty = 0 AND updated_at < ?', [cutoff]);
+      try {
+        if (rs.goToNextRow()) {
+          removed = rs.getLong(rs.getColumnIndex('c'));
+        }
+      } finally {
+        rs.close();
+      }
+      if (removed > 0) {
+        this.exec('DELETE FROM ' + ArticleDbConstants.TABLE_SYNC_RECORDS +
+          ' WHERE deleted = 1 AND dirty = 0 AND updated_at < ?', [cutoff]);
+      }
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.warn(DOMAIN, TAG, 'pruneTombstones failed: %{public}d', error.code);
+      return 0;
+    }
+    return removed;
   }
 
   private exec(sql: string, args: relationalStore.ValueType[]): void {

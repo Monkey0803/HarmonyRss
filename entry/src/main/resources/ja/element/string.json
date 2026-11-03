@@ -4221,6 +4221,38 @@
       "value": "前回の同期で両端の変更を %d 件自動マージしました"
     },
     {
+      "name": "sync_cloud_unavailable",
+      "value": "クラウド同期を利用できません。AGC でクラウドデータ同期を有効にし、HUAWEI ID でサインインしてください。"
+    },
+    {
+      "name": "sync_cloud_unavailable_unsupported",
+      "value": "この端末はクラウドデータ同期に対応していません（HarmonyOS 6.0 以降が必要）。"
+    },
+    {
+      "name": "sync_cloud_unavailable_store",
+      "value": "この端末でクラウドデータベースを開けませんでした。"
+    },
+    {
+      "name": "sync_kind_article_state",
+      "value": "記事の状態"
+    },
+    {
+      "name": "sync_kind_article_tag",
+      "value": "記事タグ"
+    },
+    {
+      "name": "sync_kind_other",
+      "value": "その他"
+    },
+    {
+      "name": "sync_conflict_no_fields",
+      "value": "新しい方を採用"
+    },
+    {
+      "name": "sync_field_progress",
+      "value": "進捗"
+    },
+    {
       "name": "sync_row_backend",
       "value": "同期先"
     },

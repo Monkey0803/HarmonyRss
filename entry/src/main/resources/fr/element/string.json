@@ -4221,6 +4221,38 @@
       "value": "La dernière synchronisation a fusionné automatiquement %d modification(s) des deux côtés"
     },
     {
+      "name": "sync_cloud_unavailable",
+      "value": "Synchronisation cloud indisponible : activez la synchronisation des données dans AGC et connectez-vous à votre HUAWEI ID."
+    },
+    {
+      "name": "sync_cloud_unavailable_unsupported",
+      "value": "Cet appareil ne prend pas en charge la synchronisation cloud des données (HarmonyOS 6.0+ requis)."
+    },
+    {
+      "name": "sync_cloud_unavailable_store",
+      "value": "La base de données cloud n'a pas pu être ouverte sur cet appareil."
+    },
+    {
+      "name": "sync_kind_article_state",
+      "value": "État de l'article"
+    },
+    {
+      "name": "sync_kind_article_tag",
+      "value": "Étiquette de l'article"
+    },
+    {
+      "name": "sync_kind_other",
+      "value": "Autre"
+    },
+    {
+      "name": "sync_conflict_no_fields",
+      "value": "la version la plus récente gagne"
+    },
+    {
+      "name": "sync_field_progress",
+      "value": "Progression"
+    },
+    {
       "name": "sync_row_backend",
       "value": "Cible de synchronisation"
     },

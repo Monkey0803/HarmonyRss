@@ -4221,6 +4221,38 @@
       "value": "上次同步自動合併了 %d 條兩端改動"
     },
     {
+      "name": "sync_cloud_unavailable",
+      "value": "端雲同步暫不可用：需在 AGC 開通雲端資料庫並登入華為帳號。"
+    },
+    {
+      "name": "sync_cloud_unavailable_unsupported",
+      "value": "目前裝置不支援端雲資料同步（需 HarmonyOS 6.0 以上）。"
+    },
+    {
+      "name": "sync_cloud_unavailable_store",
+      "value": "無法開啟本機雲端資料庫。"
+    },
+    {
+      "name": "sync_kind_article_state",
+      "value": "文章狀態"
+    },
+    {
+      "name": "sync_kind_article_tag",
+      "value": "標籤關聯"
+    },
+    {
+      "name": "sync_kind_other",
+      "value": "其他"
+    },
+    {
+      "name": "sync_conflict_no_fields",
+      "value": "整條取較新一端"
+    },
+    {
+      "name": "sync_field_progress",
+      "value": "進度"
+    },
+    {
       "name": "sync_row_backend",
       "value": "同步目標"
     },

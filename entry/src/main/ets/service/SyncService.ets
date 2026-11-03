@@ -16,20 +16,85 @@ import { preferences } from '@kit.ArkData';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { PreferencesConstants } from '../common/constants/PreferencesConstants';
-import { SyncSummary } from '../model/Sync';
+import { SyncConflict, SyncSummary } from '../model/Sync';
 import { articleStore } from './ArticleStore';
 import { NetworkStatus } from './NetworkStatus';
 import { AutoSyncPolicy } from './sync/AutoSyncPolicy';
 import { SyncCollector } from './sync/SyncCollector';
 import { SyncEngine } from './sync/SyncEngine';
-import { syncStore } from './sync/SyncStore';
+import { syncStore, SyncLimits } from './sync/SyncStore';
 import { MockSyncBackend } from './sync/MockSyncBackend';
-import { cloudStore } from './sync/CloudStore';
+import { CloudAvailability, cloudStore } from './sync/CloudStore';
 import { CloudRelayBackend } from './sync/CloudRelayBackend';
 import { SyncBackend } from './sync/SyncBackend';
 
 const DOMAIN: number = 0x0000;
 const TAG: string = 'SyncService';
+
+/** 偏好库里冲突概要的原始形状（只读，逐字段校验后再用）。 */
+interface ConflictRaw {
+  key?: string;
+  kind?: string;
+  fields?: string[];
+}
+
+/** 落盘用的紧凑结构（类而不是对象字面量：ArkTS 要求显式类型）。 */
+class ConflictRow {
+  key: string = '';
+  kind: string = '';
+  fields: string[] = [];
+}
+
+/** 每个冲突最多记这么多字段名：详情是给人扫一眼的，不是调试工具。 */
+const MAX_CONFLICT_FIELDS: number = 6;
+
+/** 冲突概要编码：空数组存空串，避免偏好库里挂一个 `[]`。 */
+export function encodeConflictDetails(items: SyncConflict[]): string {
+  const rows: ConflictRow[] = [];
+  for (let i = 0; i < items.length && i < SyncLimits.CONFLICT_DETAILS; i += 1) {
+    const row: ConflictRow = new ConflictRow();
+    row.key = items[i].key;
+    row.kind = items[i].kind;
+    row.fields = items[i].fields.slice(0, MAX_CONFLICT_FIELDS);
+    rows.push(row);
+  }
+  return rows.length > 0 ? JSON.stringify(rows) : '';
+}
+
+/** 冲突概要解码：脏数据 / 缺字段一律跳过（纯函数，可单测）。 */
+export function decodeConflictDetails(raw: string): SyncConflict[] {
+  if (raw.length === 0) {
+    return [];
+  }
+  try {
+    const parsed: Object = JSON.parse(raw) as Object;
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+    const values: Object[] = parsed as Object[];
+    const result: SyncConflict[] = [];
+    for (let i = 0; i < values.length && result.length < SyncLimits.CONFLICT_DETAILS; i += 1) {
+      const row: ConflictRaw = values[i] as ConflictRaw;
+      if (typeof row.key !== 'string' || row.key.length === 0 ||
+        typeof row.kind !== 'string' || row.kind.length === 0) {
+        continue;
+      }
+      const fields: string[] = [];
+      if (Array.isArray(row.fields)) {
+        const rawFields: string[] = row.fields;
+        for (let j = 0; j < rawFields.length && fields.length < MAX_CONFLICT_FIELDS; j += 1) {
+          if (typeof rawFields[j] === 'string' && rawFields[j].length > 0) {
+            fields.push(rawFields[j]);
+          }
+        }
+      }
+      result.push(new SyncConflict(row.key, row.kind, fields));
+    }
+    return result;
+  } catch (err) {
+    return [];
+  }
+}
 
 /** 设置页展示用的同步状态快照。 */
 export class SyncStatus {
@@ -41,9 +106,16 @@ export class SyncStatus {
   /** 上次同步自动合并的条数（0 = 没发生冲突）。 */
   readonly conflicts: number;
   readonly backend: string;
+  /** 选了云同步目标时：端云能力是否真的可用。 */
+  readonly cloudAvailable: boolean;
+  /** 不可用原因（CloudAvailability 的字符串值）。 */
+  readonly cloudReason: string;
+  /** 上次冲突的概要（最多 SyncLimits.CONFLICT_DETAILS 条）。 */
+  readonly conflictItems: SyncConflict[];
 
   constructor(enabled: boolean, wifiOnly: boolean, lastAt: number, pending: number, records: number,
-    conflicts: number, backend: string) {
+    conflicts: number, backend: string, cloudAvailable: boolean = true, cloudReason: string = '',
+    conflictItems: SyncConflict[] = []) {
     this.enabled = enabled;
     this.wifiOnly = wifiOnly;
     this.lastSyncAt = lastAt;
@@ -51,6 +123,9 @@ export class SyncStatus {
     this.records = records;
     this.conflicts = conflicts;
     this.backend = backend;
+    this.cloudAvailable = cloudAvailable;
+    this.cloudReason = cloudReason;
+    this.conflictItems = conflictItems;
   }
 }
 
@@ -233,7 +308,8 @@ export class SyncService {
 
   /**
    * 准备端云同步：打开云库 → 按「仅 Wi-Fi」设置网络策略 → 订阅云端变更。
-   * AGC 未部署 / 未登录华为账号时 open 仍会成功（只是没登记分布式表），此时同步退化为本机表。
+   * 只有真正登记为分布式表才算「可用」；AGC 未部署 / 未登录账号时返回 false，
+   * 调用方据此报「cloud unavailable」，不能把本机云表当成同步成功。
    */
   private async prepareCloud(context: common.Context): Promise<boolean> {
     const opened: boolean = await cloudStore.open(context);
@@ -241,6 +317,11 @@ export class SyncService {
       return false;
     }
     await cloudStore.setWifiOnly(await this.isWifiOnly(context));
+    const ready: boolean = cloudStore.isDistributed() || await cloudStore.refresh();
+    if (!ready) {
+      hilog.info(DOMAIN, TAG, 'cloud unavailable: %{public}s', cloudStore.availability());
+      return false;
+    }
     this.bindCloudListener(context);
     return true;
   }
@@ -271,9 +352,22 @@ export class SyncService {
     const records: number = await syncStore.recordCount();
     const conflicts: number = store !== undefined
       ? this.readNumber(store, PreferencesConstants.KEY_CLOUD_SYNC_LAST_CONFLICTS) : 0;
+    const details: SyncConflict[] = store !== undefined
+      ? this.readConflictDetails(store) : [];
     const cloud: boolean = await this.isCloudBackend(context);
+    let available: boolean = true;
+    let reason: string = '';
+    if (cloud) {
+      // 还没准备过云库时先试一次：设置页要能直接说清「为什么没同步」。
+      const opened: boolean = await cloudStore.open(context);
+      if (opened) {
+        await cloudStore.refresh();
+      }
+      available = opened && cloudStore.isDistributed();
+      reason = available ? CloudAvailability.READY : cloudStore.availability();
+    }
     return new SyncStatus(enabled, wifiOnly, lastAt, pending, records, conflicts,
-      cloud ? 'Cloud' : this.backendName);
+      cloud ? 'Cloud' : this.backendName, available, reason, details);
   }
 
   /** 立即同步：采集 → 拉取 / 合并 / 推送 → 回写。失败不抛，返回带 error 的摘要。 */
@@ -294,7 +388,11 @@ export class SyncService {
           return new SyncSummary(0, 0, 0, await syncStore.pendingCount(), 0, 'cloud unavailable');
         }
         // 先把云端的最新行拉到本地表，再交给引擎合并（autoSync 之外需要一次手动拉取）。
-        await cloudStore.syncNow();
+        const pulledFromCloud: boolean = await cloudStore.syncNow();
+        if (!pulledFromCloud) {
+          // 系统没拉起来（能力刚被关闭 / 账号被登出）：宁可报错，也不要给用户一个假的成功。
+          return new SyncSummary(0, 0, 0, await syncStore.pendingCount(), 0, 'cloud unavailable');
+        }
         backend = new CloudRelayBackend(cloudStore);
       } else {
         backend = new MockSyncBackend(context);
@@ -304,7 +402,12 @@ export class SyncService {
       if (summary.error.length === 0) {
         await collector.apply(context);
         await this.rememberLastSync(context, summary.at);
-        await this.rememberConflicts(context, summary.conflicts);
+        await this.rememberConflicts(context, summary.conflicts, engine.conflictDetails());
+        // 已推送的旧墓碑按保留期清理，避免云表随删除操作无限增长。
+        const pruned: number = await syncStore.pruneTombstones(Date.now());
+        if (pruned > 0) {
+          hilog.info(DOMAIN, TAG, 'pruned %{public}d expired tombstones', pruned);
+        }
         this.notifyStatus();
         // 这一轮成功了：清掉失败重试，避免继续在后台补试。
         this.retryAttempt = 0;
@@ -353,6 +456,11 @@ export class SyncService {
       return true;
     }
     if (summary.error === 'busy') {
+      return false;
+    }
+    if (summary.error === 'cloud unavailable') {
+      // 端云能力不可用时重试也是白跑（账号未登录 / 未开通），等用户在设置页处理。
+      hilog.info(DOMAIN, TAG, 'auto sync skipped (%{public}s): cloud unavailable', trigger);
       return false;
     }
     hilog.info(DOMAIN, TAG, 'auto sync failed (%{public}s): %{public}s', trigger, summary.error);
@@ -429,8 +537,9 @@ export class SyncService {
     return this.syncingFlag;
   }
 
-  /** 记住本次自动合并条数（0 也要写，避免上一次的计数一直挂在页面上）。 */
-  private async rememberConflicts(context: common.Context, conflicts: number): Promise<void> {
+  /** 记住本次自动合并条数与概要（0 也要写，避免上一次的计数一直挂在页面上）。 */
+  private async rememberConflicts(context: common.Context, conflicts: number,
+    details: SyncConflict[]): Promise<void> {
     const store: preferences.Preferences | undefined = await this.open(context);
     if (store === undefined) {
       return;
@@ -438,11 +547,23 @@ export class SyncService {
     try {
       store.putSync(PreferencesConstants.KEY_CLOUD_SYNC_LAST_CONFLICTS,
         conflicts > 0 ? conflicts : 0);
+      store.putSync(PreferencesConstants.KEY_CLOUD_SYNC_CONFLICT_DETAILS,
+        encodeConflictDetails(conflicts > 0 ? details : []));
       await store.flush();
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       hilog.warn(DOMAIN, TAG, 'persist conflicts failed: %{public}d', error.code);
     }
+  }
+
+  /** 读出上次冲突概要；脏数据一律当空，不影响页面。 */
+  private readConflictDetails(store: preferences.Preferences): SyncConflict[] {
+    const raw: preferences.ValueType =
+      store.getSync(PreferencesConstants.KEY_CLOUD_SYNC_CONFLICT_DETAILS, '');
+    if (typeof raw !== 'string' || raw.length === 0) {
+      return [];
+    }
+    return decodeConflictDetails(raw);
   }
 
   private async rememberLastSync(context: common.Context, at: number): Promise<void> {

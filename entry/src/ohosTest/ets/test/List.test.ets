@@ -58,6 +58,7 @@ import syncContentTest from './SyncContent.test';
 import autoSyncPolicyTest from './AutoSyncPolicy.test';
 import cloudBackupTest from './CloudBackup.test';
 import cloudRelayTest from './CloudRelay.test';
+import syncAvailabilityTest from './SyncAvailability.test';
 import materialLevelTest from './MaterialLevel.test';
 import webPageSaveTest from './WebPageSave.test';
 import menuSpecTest from './MenuSpec.test';
@@ -114,6 +115,7 @@ export default function testsuite() {
   autoSyncPolicyTest();
   cloudBackupTest();
   cloudRelayTest();
+  syncAvailabilityTest();
   materialLevelTest();
   webPageSaveTest();
   menuSpecTest();

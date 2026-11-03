@@ -4221,6 +4221,38 @@
       "value": "Last sync merged %d changed item(s) from both sides"
     },
     {
+      "name": "sync_cloud_unavailable",
+      "value": "Cloud sync is unavailable: enable cloud data sync in AGC and sign in to your HUAWEI ID."
+    },
+    {
+      "name": "sync_cloud_unavailable_unsupported",
+      "value": "This device does not support cloud data sync (requires HarmonyOS 6.0+)."
+    },
+    {
+      "name": "sync_cloud_unavailable_store",
+      "value": "The cloud database could not be opened on this device."
+    },
+    {
+      "name": "sync_kind_article_state",
+      "value": "Article state"
+    },
+    {
+      "name": "sync_kind_article_tag",
+      "value": "Article tag"
+    },
+    {
+      "name": "sync_kind_other",
+      "value": "Other"
+    },
+    {
+      "name": "sync_conflict_no_fields",
+      "value": "newer side wins"
+    },
+    {
+      "name": "sync_field_progress",
+      "value": "Progress"
+    },
+    {
       "name": "sync_row_backend",
       "value": "Sync target"
     },

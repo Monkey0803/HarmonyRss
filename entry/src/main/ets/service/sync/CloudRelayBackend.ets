@@ -27,20 +27,11 @@ export class CloudRelayBackend implements SyncBackend {
   async pull(cursor: string, limit: number): Promise<SyncPullPage> {
     const from: number = numericCursor(cursor);
     const cap: number = limit > 0 ? limit : 100;
-    const all: SyncRecord[] = await this.store.listAll();
-    const page: SyncRecord[] = [];
+    const page: SyncRecord[] = await this.store.listSince(from, cap);
     let next: number = from;
-    for (let i = 0; i < all.length; i += 1) {
-      const row: SyncRecord = all[i];
-      if (row.updatedAt <= from) {
-        continue;
-      }
-      if (page.length >= cap) {
-        break;
-      }
-      page.push(row);
-      if (row.updatedAt > next) {
-        next = row.updatedAt;
+    for (let i = 0; i < page.length; i += 1) {
+      if (page[i].updatedAt > next) {
+        next = page[i].updatedAt;
       }
     }
     return new SyncPullPage(page, next > from ? next.toString() : cursor);
