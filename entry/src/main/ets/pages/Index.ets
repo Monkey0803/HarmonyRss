@@ -650,7 +650,12 @@ struct Index {
     })
   }
 
-  /** 添加订阅源底部面板：复用可复用面板 AddFeedPanel，成功即收起。 */
+  /**
+   * 添加订阅源底部面板：复用可复用面板 AddFeedPanel，成功即收起。
+   *
+   * 顶部留出 space_xl 再放模式切换：bindSheet 的 dragBar 会占用面板顶部约 24vp 的手势区，
+   * 切换按钮贴着顶边时点击会被当成下拉关闭面板（表现为「点保存网页把面板关掉了」）。
+   */
   @Builder
   AddFeedPanelSheet() {
     Column({ space: $r('app.float.space_s') }) {
@@ -662,7 +667,7 @@ struct Index {
           .buttonStyle(this.addSheetMode === 'web' ? ButtonStyleMode.NORMAL : ButtonStyleMode.TEXTUAL)
           .onClick(() => { this.addSheetMode = 'web'; })
       }
-      .padding({ left: $r('app.float.space_m'), right: $r('app.float.space_m'), top: $r('app.float.space_s') })
+      .padding({ left: $r('app.float.space_m'), right: $r('app.float.space_m'), top: $r('app.float.space_xl') })
       if (this.addSheetMode === 'web') {
         SaveWebPagePanel({
           initialText: this.pendingAddText,

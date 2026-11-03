@@ -55,10 +55,18 @@ export default class EntryAbility extends UIAbility {
   private handleSharedData(want: Want): void {
     systemShare.getSharedData(want)
       .then((data: systemShare.SharedData) => {
-        shareHandoff.set(shareIntent.extractFromSharedData(data));
+        const shared: string[] = shareIntent.extractFromSharedData(data);
+        // 分享记录里没有 http(s) 地址时，退回对 want 参数的尽力提取（与 ShareAbility 一致）。
+        shareHandoff.set(shared.length > 0 ? shared : shareIntent.extractSharedUrls(want));
       })
       .catch((error: BusinessError) => {
-        // 普通启动没有分享数据，getSharedData 会失败：属正常情况，不打扰用户。
+        // 普通启动没有分享数据，getSharedData 会失败；但部分应用只把地址放进 want 参数，
+        // 这里仍按参数提取一次，避免「分享到本应用却什么都不发生」。
+        const fallback: string[] = shareIntent.extractSharedUrls(want);
+        if (fallback.length > 0) {
+          shareHandoff.set(fallback);
+          return;
+        }
         hilog.info(DOMAIN, TAG, 'no shared data: %{public}d', error.code);
       });
   }
