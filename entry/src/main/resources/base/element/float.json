@@ -207,6 +207,66 @@
     {
       "name": "radius_filter_track",
       "value": "20"
+    },
+    {
+      "name": "theme_color_swatch_size",
+      "value": "32"
+    },
+    {
+      "name": "theme_color_swatch_radius",
+      "value": "16"
+    },
+    {
+      "name": "theme_color_swatch_hit",
+      "value": "44"
+    },
+    {
+      "name": "theme_color_done_hit",
+      "value": "44"
+    },
+    {
+      "name": "theme_color_picker_size",
+      "value": "24"
+    },
+    {
+      "name": "theme_color_preview_height",
+      "value": "36"
+    },
+    {
+      "name": "theme_color_dot_size",
+      "value": "16"
+    },
+    {
+      "name": "theme_color_dot_radius",
+      "value": "8"
+    },
+    {
+      "name": "subs_tile_card_height",
+      "value": "84"
+    },
+    {
+      "name": "subs_tile_icon_size",
+      "value": "24"
+    },
+    {
+      "name": "subs_tile_label_size",
+      "value": "12"
+    },
+    {
+      "name": "subs_tile_badge_size",
+      "value": "10"
+    },
+    {
+      "name": "subs_group_row_height",
+      "value": "48"
+    },
+    {
+      "name": "subs_group_gap",
+      "value": "12"
+    },
+    {
+      "name": "subs_avatar_radius",
+      "value": "8"
     }
   ]
 }

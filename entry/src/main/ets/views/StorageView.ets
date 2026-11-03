@@ -17,6 +17,7 @@ import { ToastUtil } from '../common/utils/ToastUtil';
 import { AppMenu } from '../common/components/AppMenu';
 import { choiceMenu } from '../common/components/ChoiceMenu';
 import { ChoiceValueChip } from '../common/components/ChoiceField';
+import { themePalette } from '../model/ThemePalette';
 
 /** 下拉选项行：自己按当前 id 取文案并弹 Menu。 */
 @ComponentV2
@@ -115,7 +116,7 @@ export struct StorageView {
     };
     const confirmButton: AlertDialogButtonBaseOptions = {
       value: $r('app.string.storage_clean_now'),
-      fontColor: $r('app.color.hm_brand'),
+      fontColor: themePalette.accent(),
       action: () => {
         storageViewModel.cleanNow().then((cleaned: number) => {
           ToastUtil.show(this.getUIContext(), $r('app.string.storage_clean_done', cleaned));
@@ -214,7 +215,7 @@ export struct StorageView {
           .fontSize($r('app.float.font_size_caption'))
           .fontColor($r('app.color.hm_on_brand'))
           .backgroundColor(storageViewModel.cleanable > 0
-            ? $r('app.color.hm_brand')
+            ? themePalette.fill()
             : $r('app.color.hm_text_secondary'))
           .enabled(storageViewModel.cleanable > 0 && !storageViewModel.cleaning)
           .onClick(() => {
@@ -258,7 +259,7 @@ export struct StorageView {
           Text(this.showAllFeeds ? $r('app.string.storage_show_less')
             : $r('app.string.storage_show_all'))
             .fontSize($r('app.float.font_size_caption'))
-            .fontColor($r('app.color.hm_brand'))
+            .fontColor(themePalette.accent())
         }
         .width('100%')
         .height($r('app.float.row_height'))
@@ -284,7 +285,7 @@ export struct StorageView {
       Button($r('app.string.storage_restore'))
         .buttonStyle(ButtonStyleMode.TEXTUAL)
         .fontSize($r('app.float.font_size_caption'))
-        .fontColor($r('app.color.hm_brand'))
+        .fontColor(themePalette.accent())
         .enabled(storageViewModel.stats.trashCount > 0 && !storageViewModel.restoring)
         .onClick(() => {
           this.confirmRestore();
@@ -311,7 +312,7 @@ export struct StorageView {
         Button($r('app.string.storage_rebuild'))
           .buttonStyle(ButtonStyleMode.TEXTUAL)
           .fontSize($r('app.float.font_size_caption'))
-          .fontColor($r('app.color.hm_brand'))
+          .fontColor(themePalette.accent())
           .enabled(!storageViewModel.rebuilding)
           .onClick(() => {
             storageViewModel.rebuildIndex().then(() => {
@@ -324,7 +325,7 @@ export struct StorageView {
       if (storageViewModel.rebuilding) {
         Progress({ value: Math.round(storageViewModel.progressRatio() * 100), total: 100 })
           .width('100%')
-          .color($r('app.color.hm_brand'))
+          .color(themePalette.accent())
       }
     }
     .width('100%')
@@ -343,7 +344,7 @@ export struct StorageView {
       Blank()
       Text(value)
         .fontSize($r('app.float.font_size_caption'))
-        .fontColor(ok ? $r('app.color.hm_brand') : $r('app.color.hm_text_secondary'))
+        .fontColor(ok ? themePalette.accent() : $r('app.color.hm_text_secondary'))
         .maxLines(1)
         .textOverflow({ overflow: TextOverflow.Ellipsis })
     }

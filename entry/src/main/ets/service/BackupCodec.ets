@@ -33,6 +33,7 @@ import { FullTextMode, TriState } from '../common/constants/SettingsConstants';
 /** 设置段白名单：只备份跨设备仍有意义、且不包含路径 / 凭据的偏好。 */
 const SETTINGS_WHITELIST: string[] = [
   PreferencesConstants.KEY_THEME_MODE,
+  PreferencesConstants.KEY_THEME_COLOR,
   PreferencesConstants.KEY_LANGUAGE_MODE,
   PreferencesConstants.KEY_MATERIAL_TYPE,
   PreferencesConstants.KEY_MATERIAL_LEVEL,

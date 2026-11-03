@@ -30,6 +30,7 @@ import { MaterialController } from '../service/MaterialController';
 import { antiPeep } from '../service/AntiPeep';
 import { RouterConstants } from '../common/constants/RouterConstants';
 import { ActionSettingRow, NavSettingRow, SettingsSectionTitle } from './settings/SettingsRows';
+import { themePalette } from '../model/ThemePalette';
 
 @ComponentV2
 export struct SettingsTabView {
@@ -58,7 +59,7 @@ export struct SettingsTabView {
     };
     const confirmButton: AlertDialogButtonBaseOptions = {
       value: $r('app.string.dialog_confirm'),
-      fontColor: $r('app.color.hm_brand'),
+      fontColor: themePalette.accent(),
       action: () => {
         feedViewModel.clearCachedContent().then((cleared: number) => {
           this.showCacheSnack($r('app.string.snack_cache_cleared', cleared));

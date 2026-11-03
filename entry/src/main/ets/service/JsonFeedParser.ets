@@ -40,6 +40,8 @@ interface JsonFeedItemRaw {
 interface JsonFeedRaw {
   title?: string;
   home_page_url?: string;
+  icon?: string;
+  favicon?: string;
   items?: JsonFeedItemRaw[];
 }
 
@@ -112,5 +114,9 @@ export function parseJsonFeed(json: string): ParsedFeed {
       articles.push(toArticle(items[i]));
     }
   }
-  return new ParsedFeed(asString(raw.title), asString(raw.home_page_url), articles);
+  let iconUrl: string = asString(raw.icon);
+  if (iconUrl.length === 0) {
+    iconUrl = asString(raw.favicon);
+  }
+  return new ParsedFeed(asString(raw.title), asString(raw.home_page_url), articles, iconUrl);
 }

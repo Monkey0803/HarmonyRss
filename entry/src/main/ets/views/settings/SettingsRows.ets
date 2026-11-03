@@ -14,6 +14,7 @@ import { MaterialController } from '../../service/MaterialController';
 import { AppMenu } from '../../common/components/AppMenu';
 import { choiceMenu } from '../../common/components/ChoiceMenu';
 import { ChoiceValueChip } from '../../common/components/ChoiceField';
+import { themePalette } from '../../model/ThemePalette';
 
 /** 设置页每一行绑定到 appSettings 的哪个字段。 */
 export enum SettingField {
@@ -56,7 +57,7 @@ export struct SettingIconTitle {
     Row({ space: $r('app.float.space_m') }) {
       SymbolGlyph(this.icon)
         .fontSize($r('app.float.icon_size'))
-        .fontColor([$r('app.color.hm_brand')])
+        .fontColor([themePalette.accent()])
       // 多语言长文案（德语尤其长）：标题让出空间并省略，避免把右侧取值 / 开关 / 箭头挤出屏幕。
       Text(this.title)
         .fontSize($r('app.float.font_size_body'))
@@ -200,7 +201,7 @@ export struct SwitchSettingRow {
         }
         .layoutWeight(1)
         Toggle({ type: ToggleType.Switch, isOn: this.isOn() })
-          .selectedColor($r('app.color.hm_brand'))
+          .selectedColor(themePalette.fill())
           .onChange((value: boolean) => {
             this.onToggle(value);
           })
@@ -227,6 +228,9 @@ export struct NavSettingRow {
   @Param icon: Resource = $r('sys.symbol.house');
   @Param title: ResourceStr = '';
   @Param detail: ResourceStr = '';
+  /** 详情文案前是否显示一个色点（主题色行用）。 */
+  @Param showDot: boolean = false;
+  @Param dotColor: ResourceColor = themePalette.accent();
   @Event onOpen: () => void = () => {};
 
   build() {
@@ -235,6 +239,13 @@ export struct NavSettingRow {
         SettingIconTitle({ icon: this.icon, title: this.title })
       }
       .layoutWeight(1)
+      if (this.showDot) {
+        Row()
+          .width($r('app.float.theme_color_dot_size'))
+          .height($r('app.float.theme_color_dot_size'))
+          .borderRadius($r('app.float.theme_color_dot_radius'))
+          .backgroundColor(this.dotColor)
+      }
       if (this.detail !== '') {
         Text(this.detail)
           .fontSize($r('app.float.font_size_caption'))
@@ -242,6 +253,7 @@ export struct NavSettingRow {
           .maxLines(1)
           .textOverflow({ overflow: TextOverflow.Ellipsis })
           .constraintSize({ maxWidth: '40%' })
+          .margin({ left: this.showDot ? $r('app.float.space_xs') : 0 })
       }
       SymbolGlyph($r('sys.symbol.chevron_right'))
         .fontSize($r('app.float.icon_size_small'))

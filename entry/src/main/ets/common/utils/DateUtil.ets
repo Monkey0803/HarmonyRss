@@ -22,6 +22,28 @@ export class DateUtil {
     return parts.join('-') + ' ' + clock.join(':');
   }
 
+  /**
+   * 列表行用的紧凑时间：今天 → HH:mm；今年 → MM-dd HH:mm；更早 → yyyy-MM-dd。
+   * 纯数字格式，不依赖语言；完整时间仍由 format() 提供给无障碍文案。
+   */
+  static formatShort(timestamp: number, now: number = Date.now()): string {
+    if (timestamp <= 0) {
+      return '';
+    }
+    const date: Date = new Date(timestamp);
+    const current: Date = new Date(now);
+    const clock: string = DateUtil.pad(date.getHours(), 2) + ':' + DateUtil.pad(date.getMinutes(), 2);
+    if (date.getFullYear() === current.getFullYear() && date.getMonth() === current.getMonth() &&
+      date.getDate() === current.getDate()) {
+      return clock;
+    }
+    if (date.getFullYear() === current.getFullYear()) {
+      return DateUtil.pad(date.getMonth() + 1, 2) + '-' + DateUtil.pad(date.getDate(), 2) + ' ' + clock;
+    }
+    return DateUtil.pad(date.getFullYear(), 4) + '-' + DateUtil.pad(date.getMonth() + 1, 2) + '-' +
+      DateUtil.pad(date.getDate(), 2);
+  }
+
   /** HH:mm（表头显示「最近同步」用）；时间戳非法时返回空串。 */
   static clock(timestamp: number): string {
     if (timestamp <= 0) {

@@ -21,6 +21,7 @@ import { settingsStore } from '../service/SettingsStore';
 import { safeArea } from '../service/SafeAreaController';
 import { ToastUtil } from '../common/utils/ToastUtil';
 import { translationErrorText, languageText } from '../common/utils/TranslationText';
+import { themePalette } from '../model/ThemePalette';
 
 const DOMAIN: number = 0x0000;
 const TAG: string = 'TranslateSettingsView';
@@ -177,7 +178,7 @@ export struct TranslateSettingsView {
           .fontColor(appSettings.translateProvider === TranslateProvider.DEEPL
             ? $r('app.color.hm_on_brand') : $r('app.color.hm_text_primary'))
           .backgroundColor(appSettings.translateProvider === TranslateProvider.DEEPL
-            ? $r('app.color.hm_brand') : $r('app.color.hm_value_chip_background'))
+            ? themePalette.fill() : $r('app.color.hm_value_chip_background'))
           .borderRadius($r('app.float.radius_chip'))
           .padding({
             left: $r('app.float.space_m'),
@@ -193,7 +194,7 @@ export struct TranslateSettingsView {
           .fontColor(appSettings.translateProvider === TranslateProvider.LIBRE
             ? $r('app.color.hm_on_brand') : $r('app.color.hm_text_primary'))
           .backgroundColor(appSettings.translateProvider === TranslateProvider.LIBRE
-            ? $r('app.color.hm_brand') : $r('app.color.hm_value_chip_background'))
+            ? themePalette.fill() : $r('app.color.hm_value_chip_background'))
           .borderRadius($r('app.float.radius_chip'))
           .padding({
             left: $r('app.float.space_m'),
@@ -238,7 +239,7 @@ export struct TranslateSettingsView {
           .buttonStyle(ButtonStyleMode.NORMAL)
           .fontSize($r('app.float.font_size_caption'))
           .fontColor($r('app.color.hm_on_brand'))
-          .backgroundColor($r('app.color.hm_brand'))
+          .backgroundColor(themePalette.fill())
           .onClick(() => {
             this.saveEndpoint();
           })
@@ -261,7 +262,7 @@ export struct TranslateSettingsView {
         Blank()
         Text(this.keySet ? $r('app.string.translate_api_key_set') : $r('app.string.translate_api_key_unset'))
           .fontSize($r('app.float.font_size_caption'))
-          .fontColor(this.keySet ? $r('app.color.hm_brand') : $r('app.color.hm_text_secondary'))
+          .fontColor(this.keySet ? themePalette.accent() : $r('app.color.hm_text_secondary'))
       }
       .width('100%')
 
@@ -284,7 +285,7 @@ export struct TranslateSettingsView {
           .buttonStyle(ButtonStyleMode.NORMAL)
           .fontSize($r('app.float.font_size_caption'))
           .fontColor($r('app.color.hm_on_brand'))
-          .backgroundColor($r('app.color.hm_brand'))
+          .backgroundColor(themePalette.fill())
           .enabled(!this.savingKey && this.keyDraft.trim().length > 0)
           .onClick(() => {
             this.saveKey();
@@ -335,7 +336,7 @@ export struct TranslateSettingsView {
               .alignItems(HorizontalAlign.Start)
 
               Toggle({ type: ToggleType.Switch, isOn: appSettings.translateEnabled })
-                .selectedColor($r('app.color.hm_brand'))
+                .selectedColor(themePalette.fill())
                 .onChange((value: boolean) => {
                   this.toggleEnabled(value);
                 })
@@ -375,8 +376,8 @@ export struct TranslateSettingsView {
               .height($r('app.float.row_height'))
               .buttonStyle(ButtonStyleMode.NORMAL)
               .fontSize($r('app.float.font_size_body'))
-              .fontColor($r('app.color.hm_brand'))
-              .backgroundColor($r('app.color.hm_menu_item_selected'))
+              .fontColor(themePalette.accent())
+              .backgroundColor(themePalette.tint())
               .enabled(!this.testing)
               .onClick(() => {
                 this.runTest();

@@ -19,6 +19,7 @@ import { RouterConstants } from '../common/constants/RouterConstants';
 import { AppMenu } from '../common/components/AppMenu';
 import { choiceMenu } from '../common/components/ChoiceMenu';
 import { MenuItemSpec, MenuSpec } from '../common/components/MenuSpec';
+import { themePalette } from '../model/ThemePalette';
 
 @ComponentV2
 export struct RemoteServiceView {
@@ -89,7 +90,7 @@ export struct RemoteServiceView {
     };
     const go: AlertDialogButtonBaseOptions = {
       value: $r('app.string.remote_migration_go'),
-      fontColor: $r('app.color.hm_brand'),
+      fontColor: themePalette.accent(),
       action: () => {
         this.openMigration();
       }
@@ -219,7 +220,7 @@ export struct RemoteServiceView {
             .fontColor($r('app.color.hm_text_primary'))
           Blank()
           Toggle({ type: ToggleType.Switch, isOn: remoteAccountViewModel.allowHttp })
-            .selectedColor($r('app.color.hm_brand'))
+            .selectedColor(themePalette.fill())
             .onChange((value: boolean) => {
               remoteAccountViewModel.allowHttp = value;
             })
@@ -239,7 +240,7 @@ export struct RemoteServiceView {
         .buttonStyle(ButtonStyleMode.NORMAL)
         .fontSize($r('app.float.font_size_body'))
         .fontColor($r('app.color.hm_on_brand'))
-        .backgroundColor($r('app.color.hm_brand'))
+        .backgroundColor(themePalette.fill())
         .width('100%')
         .height($r('app.float.row_height'))
         .enabled(!remoteAccountViewModel.connecting)
@@ -364,7 +365,7 @@ export struct RemoteServiceView {
           LoadingProgress()
             .width($r('app.float.icon_size'))
             .height($r('app.float.icon_size'))
-            .color($r('app.color.hm_brand'))
+            .color(themePalette.accent())
           Text(this.phaseText())
             .fontSize($r('app.float.font_size_caption'))
             .fontColor($r('app.color.hm_text_secondary'))
@@ -387,7 +388,7 @@ export struct RemoteServiceView {
           .buttonStyle(ButtonStyleMode.NORMAL)
           .fontSize($r('app.float.font_size_caption'))
           .fontColor($r('app.color.hm_on_brand'))
-          .backgroundColor($r('app.color.hm_brand'))
+          .backgroundColor(themePalette.fill())
           .enabled(!remoteSyncService.syncing)
           .onClick(() => {
             this.syncNow();

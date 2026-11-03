@@ -29,6 +29,7 @@ import { ToastUtil } from '../utils/ToastUtil';
 import { AppMenu } from './AppMenu';
 import { MenuItemSpec, MenuSectionSpec, MenuSpec } from './MenuSpec';
 import { SwipeOverflowId, swipeOverflowIds } from './SwipeActionPlan';
+import { themePalette } from '../../model/ThemePalette';
 
 /**
  * 一个左滑直达块的数据。
@@ -81,7 +82,7 @@ export struct ArticleSwipeBar {
     .justifyContent(FlexAlign.Center)
     .alignItems(HorizontalAlign.Center)
     .padding({ left: $r('app.float.space_xs'), right: $r('app.float.space_xs') })
-    .backgroundColor(spec.primary ? $r('app.color.hm_brand') : $r('app.color.hm_text_secondary'))
+    .backgroundColor(spec.primary ? themePalette.fill() : $r('app.color.hm_text_secondary'))
     .borderRadius($r('app.float.radius_menu_item'))
     .accessibilityText(spec.label)
     .onClick(() => {

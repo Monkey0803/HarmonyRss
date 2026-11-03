@@ -6,9 +6,11 @@
  */
 
 import { common, ConfigurationConstant } from '@kit.AbilityKit';
+import { resourceManager } from '@kit.LocalizationKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { ThemeMode } from '../common/constants/SettingsConstants';
+import { themePalette } from '../model/ThemePalette';
 
 const DOMAIN: number = 0x0000;
 const TAG: string = 'ThemeController';
@@ -24,6 +26,17 @@ export class ThemeController {
         applicationContext.setColorMode(ConfigurationConstant.ColorMode.COLOR_MODE_LIGHT);
       } else {
         applicationContext.setColorMode(ConfigurationConstant.ColorMode.COLOR_MODE_NOT_SET);
+      }
+      // 运行时颜色不走资源系统，深浅色由调色板自己维护：
+      // 显式浅 / 深色直接写入；跟随系统先读当前配置，后续由 onConfigurationUpdate 校正。
+      if (mode === ThemeMode.DARK) {
+        themePalette.setDark(true);
+      } else if (mode === ThemeMode.LIGHT) {
+        themePalette.setDark(false);
+      } else {
+        const colorMode: resourceManager.ColorMode =
+          context.resourceManager.getConfigurationSync().colorMode;
+        themePalette.setDark(colorMode === resourceManager.ColorMode.DARK);
       }
     } catch (err) {
       const error: BusinessError = err as BusinessError;

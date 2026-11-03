@@ -17,6 +17,8 @@ export class WidgetConstants {
   static readonly KEY_ID_PREFIX: string = 'i';
   /** 最近同步时间（HH:mm）的 key；与卡片 @Local sync 同名。 */
   static readonly KEY_SYNC: string = 'sync';
+  /** 主题色（已按深浅色收敛的 accent 色值）；与卡片 @Local themeAccent 同名。 */
+  static readonly KEY_THEME_ACCENT: string = 'themeAccent';
 
   /** 卡片 → 提供方：message 事件的参数 key 与取值（深链参数见 service/DeepLink 的 DeepLinkParams）。 */
   static readonly PARAM_EVENT: string = 'event';

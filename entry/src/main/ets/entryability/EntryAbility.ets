@@ -1,4 +1,4 @@
-import { AbilityConstant, ConfigurationConstant, UIAbility, Want } from '@kit.AbilityKit';
+import { AbilityConstant, Configuration, ConfigurationConstant, UIAbility, Want } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
 import { BusinessError } from '@kit.BasicServicesKit';
@@ -9,6 +9,7 @@ import { shareIntent } from '../service/ShareIntent';
 import { shareHandoff } from '../service/ShareHandoff';
 import { diagnostics } from '../service/DiagnosticsService';
 import { readingContinuation } from '../service/ReadingContinuation';
+import { themePalette } from '../model/ThemePalette';
 
 const DOMAIN: number = 0x0000;
 const TAG: string = 'HdsEntry';
@@ -28,8 +29,20 @@ export default class EntryAbility extends UIAbility {
     } catch (err) {
       hilog.error(DOMAIN, TAG, 'setColorMode failed');
     }
+    // 主题色是运行时色值，需自行记录当前深浅色；设置恢复后 ThemeController 会覆盖。
+    themePalette.setDark(
+      this.context.config.colorMode === ConfigurationConstant.ColorMode.COLOR_MODE_DARK);
     // 冷启动也可能是「分享」进来（skills 声明了 sendData/viewData）。
     this.handleSharedData(want);
+  }
+
+  /** 系统深浅色变化：同步运行时调色板（设置页显式浅/深色时不会被系统覆盖）。 */
+  onConfigurationUpdate(newConfig: Configuration): void {
+    if (newConfig.colorMode === ConfigurationConstant.ColorMode.COLOR_MODE_DARK) {
+      themePalette.setDark(true);
+    } else if (newConfig.colorMode === ConfigurationConstant.ColorMode.COLOR_MODE_LIGHT) {
+      themePalette.setDark(false);
+    }
   }
 
   /**

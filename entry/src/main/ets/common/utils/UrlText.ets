@@ -109,6 +109,53 @@ export class UrlText {
     return hostA === hostB;
   }
 
+  /** 取地址的源（scheme + host + port），只接受 http(s)；解析不出返回空串。 */
+  static origin(value: string): string {
+    const trimmed: string = value.trim();
+    if (trimmed.length === 0) {
+      return '';
+    }
+    try {
+      const parsed: url.URL = new url.URL(trimmed);
+      const protocol: string = parsed.protocol.toLowerCase().replace(':', '');
+      if (protocol !== 'http' && protocol !== 'https') {
+        return '';
+      }
+      const host: string = parsed.hostname;
+      if (host.length === 0) {
+        return '';
+      }
+      const port: string = parsed.port;
+      return protocol + '://' + host + (port.length > 0 ? ':' + port : '');
+    } catch (err) {
+      return '';
+    }
+  }
+
+  /**
+   * 把相对地址解析成绝对地址（只接受 http(s)），供 feed 自带的相对图标地址使用。
+   * ref 为空、base 为空或解析结果不是 http(s) 时返回空串。
+   */
+  static resolve(base: string, ref: string): string {
+    const target: string = ref.trim();
+    if (target.length === 0) {
+      return '';
+    }
+    if (UrlText.hasScheme(target)) {
+      return target;
+    }
+    const baseValue: string = base.trim();
+    if (baseValue.length === 0) {
+      return '';
+    }
+    try {
+      const resolved: string = new url.URL(target, baseValue).toString();
+      return UrlText.hasScheme(resolved) ? resolved : '';
+    } catch (err) {
+      return '';
+    }
+  }
+
   /** 剥掉两端的包裹标点并去首尾空白。 */
   private static stripWrapping(text: string): string {
     let value: string = text.trim();

@@ -14,6 +14,7 @@
 
 import { HdsSceneController, HdsSceneType, HdsVisualComponent } from '@kit.UIDesignKit';
 import { homeViewModel } from '../viewmodel/HomeViewModel';
+import { themePalette } from '../model/ThemePalette';
 
 /** 流光配色（系统材质上的高亮色，不随深浅色主题变化，故用色值常量集中定义）。 */
 const FLOW_FIRST_COLOR: string = '#0A59F7';
@@ -96,7 +97,7 @@ export function EffectPreviewView() {
       Button($r('app.string.effect_source'))
         .buttonStyle(ButtonStyleMode.NORMAL)
         .fontColor($r('app.color.hm_on_brand'))
-        .backgroundColor($r('app.color.hm_brand'))
+        .backgroundColor(themePalette.fill())
         .visualEffect(homeViewModel.sourceEffect())
         .onTouch((event: TouchEvent) => {
           if (event.type === TouchType.Down) {

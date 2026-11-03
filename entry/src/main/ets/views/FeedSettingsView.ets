@@ -26,6 +26,7 @@ import { offlineDownloadService } from '../service/OfflineDownloadService';
 import { AppMenu } from '../common/components/AppMenu';
 import { choiceMenu } from '../common/components/ChoiceMenu';
 import { ChoiceValueChip } from '../common/components/ChoiceField';
+import { themePalette } from '../model/ThemePalette';
 
 /** 下拉选项行（自己按当前 id 取文案并弹 Menu）。 */
 @ComponentV2
@@ -47,7 +48,7 @@ struct FeedOptionRow {
       Row({ space: $r('app.float.space_m') }) {
         SymbolGlyph(this.icon)
           .fontSize($r('app.float.icon_size'))
-          .fontColor([$r('app.color.hm_brand')])
+          .fontColor([themePalette.accent()])
         Text(this.title)
           .fontSize($r('app.float.font_size_body'))
           .fontColor($r('app.color.hm_text_primary'))
@@ -130,14 +131,14 @@ export struct FeedSettingsView {
         Row({ space: $r('app.float.space_m') }) {
           SymbolGlyph($r('sys.symbol.arrow_clockwise'))
             .fontSize($r('app.float.icon_size'))
-            .fontColor([$r('app.color.hm_brand')])
+            .fontColor([themePalette.accent()])
           Text($r('app.string.feed_settings_enabled'))
             .fontSize($r('app.float.font_size_body'))
             .fontColor($r('app.color.hm_text_primary'))
         }
         Blank()
         Toggle({ type: ToggleType.Switch, isOn: feed.enabled })
-          .selectedColor($r('app.color.hm_brand'))
+          .selectedColor(themePalette.fill())
           .onChange((value: boolean) => {
             const patch: FeedSettingsPatch = new FeedSettingsPatch();
             patch.enabled = value;
@@ -275,7 +276,7 @@ export struct FeedSettingsView {
           .buttonStyle(ButtonStyleMode.NORMAL)
           .fontSize($r('app.float.font_size_caption'))
           .fontColor($r('app.color.hm_on_brand'))
-          .backgroundColor(feed.enabled ? $r('app.color.hm_brand') : $r('app.color.hm_text_secondary'))
+          .backgroundColor(feed.enabled ? themePalette.fill() : $r('app.color.hm_text_secondary'))
           .enabled(feed.enabled && !this.retrying)
           .onClick(() => {
             this.retry(feed);
@@ -298,7 +299,7 @@ export struct FeedSettingsView {
         .fontColor($r('app.color.hm_text_primary'))
       Blank()
       Toggle({ type: ToggleType.Switch, isOn: appSettings.offlineFeedIds.indexOf(feed.id) >= 0 })
-        .selectedColor($r('app.color.hm_brand'))
+        .selectedColor(themePalette.fill())
         .onChange((value: boolean) => {
           offlineDownloadService.toggleFeed(feed.id, value);
           if (value) {

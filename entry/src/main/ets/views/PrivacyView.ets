@@ -12,6 +12,7 @@ import { privacyViewModel } from '../viewmodel/PrivacyViewModel';
 import { safeArea } from '../service/SafeAreaController';
 import { ToastUtil } from '../common/utils/ToastUtil';
 import { RouterConstants } from '../common/constants/RouterConstants';
+import { themePalette } from '../model/ThemePalette';
 
 /** 带右侧状态的说明行：@Param 保证异步读到的状态更新后能刷新。 */
 @ComponentV2
@@ -38,7 +39,7 @@ struct PrivacyStatusRow {
 
       Text(this.status)
         .fontSize($r('app.float.font_size_caption'))
-        .fontColor(this.statusOk ? $r('app.color.hm_brand') : $r('app.color.hm_text_secondary'))
+        .fontColor(this.statusOk ? themePalette.accent() : $r('app.color.hm_text_secondary'))
     }
     .width('100%')
     .padding({

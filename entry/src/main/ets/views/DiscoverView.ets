@@ -32,6 +32,7 @@ import { discoverCatalogService } from '../service/DiscoverCatalogService';
 import { FeedPreview } from '../model/FeedPreview';
 import { DateUtil } from '../common/utils/DateUtil';
 import { common } from '@kit.AbilityKit';
+import { themePalette } from '../model/ThemePalette';
 
 /** 页面顶部的分类顺序（all / hot 固定在前）。 */
 const CHIP_ORDER: string[] = [
@@ -270,7 +271,7 @@ export struct DiscoverView {
             .alignItems(HorizontalAlign.Start)
             .padding($r('app.float.space_s'))
             .backgroundColor(this.pendingPreview?.resolvedUrl === choice.resolvedUrl ?
-              $r('app.color.hm_menu_item_selected') : $r('app.color.hm_value_chip_background'))
+              themePalette.tint() : $r('app.color.hm_value_chip_background'))
             .borderRadius($r('app.float.radius_chip'))
             .onClick(() => { this.selectPreview(choice); })
           }, (choice: FeedPreview) => choice.resolvedUrl)
@@ -355,7 +356,7 @@ export struct DiscoverView {
         bottom: $r('app.float.space_s')
       })
       .backgroundColor(this.category === id
-        ? $r('app.color.hm_brand')
+        ? themePalette.fill()
         : $r('app.color.hm_card_background'))
       .borderRadius($r('app.float.radius_card'))
       .onClick(() => {
@@ -369,7 +370,7 @@ export struct DiscoverView {
       if (rank > 0) {
         Text(rank.toString())
           .fontSize($r('app.float.font_size_caption'))
-          .fontColor($r('app.color.hm_brand'))
+          .fontColor(themePalette.accent())
           .width(20)
           .textAlign(TextAlign.Center)
       }
@@ -408,7 +409,7 @@ export struct DiscoverView {
           .buttonStyle(ButtonStyleMode.NORMAL)
           .fontSize($r('app.float.font_size_caption'))
           .fontColor($r('app.color.hm_on_brand'))
-          .backgroundColor($r('app.color.hm_brand'))
+          .backgroundColor(themePalette.fill())
           .height($r('app.float.value_chip_height'))
           .enabled(this.subscribingUrl.length === 0)
           .onClick(() => {
@@ -524,7 +525,7 @@ export struct DiscoverView {
         .buttonStyle(ButtonStyleMode.NORMAL)
         .fontSize($r('app.float.font_size_body'))
         .fontColor($r('app.color.hm_on_brand'))
-        .backgroundColor($r('app.color.hm_brand'))
+        .backgroundColor(themePalette.fill())
         .width('100%')
         .height($r('app.float.row_height'))
         .onClick(() => {
@@ -555,7 +556,7 @@ export struct DiscoverView {
                 : $r('app.string.discover_subscribe'))
                 .buttonStyle(ButtonStyleMode.TEXTUAL)
                 .fontSize($r('app.float.font_size_caption'))
-                .fontColor($r('app.color.hm_brand'))
+                .fontColor(themePalette.accent())
                 .enabled(this.subscribingUrl.length === 0)
                 .onClick(() => {
                   this.subscribeUrl(item.url, '');

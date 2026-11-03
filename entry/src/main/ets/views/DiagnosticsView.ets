@@ -26,6 +26,7 @@ import { FeedErrorText } from '../common/utils/FeedErrorText';
 import { safeArea } from '../service/SafeAreaController';
 import { RouterConstants } from '../common/constants/RouterConstants';
 import { CommonConstants } from '../common/constants/CommonConstants';
+import { themePalette } from '../model/ThemePalette';
 
 @ComponentV2
 export struct DiagnosticsView {
@@ -368,7 +369,7 @@ export struct DiagnosticsView {
         : $r('app.string.diagnostics_retry'))
         .buttonStyle(ButtonStyleMode.TEXTUAL)
         .fontSize($r('app.float.font_size_caption'))
-        .fontColor($r('app.color.hm_brand'))
+        .fontColor(themePalette.accent())
         .enabled(!this.retrying)
         .width('100%')
         .height($r('app.float.row_height'))
@@ -411,7 +412,7 @@ export struct DiagnosticsView {
           .fontColor($r('app.color.hm_text_primary'))
           .layoutWeight(1)
         Toggle({ type: ToggleType.Switch, isOn: appSettings.diagnosticsEnabled })
-          .selectedColor($r('app.color.hm_brand'))
+          .selectedColor(themePalette.fill())
           .onChange((value: boolean) => {
             appSettings.diagnosticsEnabled = value;
             settingsStore.save();

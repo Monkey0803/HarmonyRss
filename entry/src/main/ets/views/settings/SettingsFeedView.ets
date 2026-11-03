@@ -40,6 +40,7 @@ import {
   SettingsSectionTitle,
   SwitchSettingRow
 } from './SettingsRows';
+import { themePalette } from '../../model/ThemePalette';
 
 @ComponentV2
 export struct SettingsFeedView {
@@ -239,7 +240,7 @@ export struct SettingsFeedView {
             }
             .layoutWeight(1)
             Toggle({ type: ToggleType.Switch, isOn: appSettings.offlineEnabled })
-              .selectedColor($r('app.color.hm_brand'))
+              .selectedColor(themePalette.fill())
               .onChange((value: boolean) => {
                 appSettings.offlineEnabled = value;
                 settingsStore.save();
@@ -258,7 +259,7 @@ export struct SettingsFeedView {
             }
             .layoutWeight(1)
             Toggle({ type: ToggleType.Switch, isOn: appSettings.offlineWifiOnly })
-              .selectedColor($r('app.color.hm_brand'))
+              .selectedColor(themePalette.fill())
               .onChange((value: boolean) => {
                 appSettings.offlineWifiOnly = value;
                 settingsStore.save();
@@ -277,7 +278,7 @@ export struct SettingsFeedView {
               ? $r('app.string.offline_progress', offlineDownloadService.completed, offlineDownloadService.total)
               : $r('app.string.offline_download_now'))
               .fontSize($r('app.float.font_size_caption'))
-              .fontColor($r('app.color.hm_brand'))
+              .fontColor(themePalette.accent())
               .maxLines(1)
           }
           .width('100%')

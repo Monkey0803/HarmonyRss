@@ -110,6 +110,7 @@ import {
 import { AppMenu } from '../common/components/AppMenu';
 import { AppSheet } from '../common/components/AppSheet';
 import { MenuItemSpec, MenuSpec } from '../common/components/MenuSpec';
+import { themePalette } from '../model/ThemePalette';
 
 const DOMAIN: number = 0x0000;
 const TAG: string = 'ArticleDetailView';
@@ -2020,7 +2021,7 @@ export struct ArticleDetailView {
     SymbolGlyph($r('sys.symbol.chevron_left'))
       .fontSize($r('app.float.icon_size'))
       .fontColor([feedViewModel.prevArticleId().length > 0
-        ? $r('app.color.hm_brand') : $r('sys.color.font_tertiary')])
+        ? themePalette.accent() : $r('sys.color.font_tertiary')])
       .padding($r('app.float.space_xs'))
       .enabled(feedViewModel.prevArticleId().length > 0)
       .accessibilityText($r('app.string.article_prev'))
@@ -2035,7 +2036,7 @@ export struct ArticleDetailView {
     SymbolGlyph($r('sys.symbol.chevron_right'))
       .fontSize($r('app.float.icon_size'))
       .fontColor([feedViewModel.nextArticleId().length > 0
-        ? $r('app.color.hm_brand') : $r('sys.color.font_tertiary')])
+        ? themePalette.accent() : $r('sys.color.font_tertiary')])
       .padding($r('app.float.space_xs'))
       .enabled(feedViewModel.nextArticleId().length > 0)
       .accessibilityText($r('app.string.article_next'))
@@ -2050,7 +2051,7 @@ export struct ArticleDetailView {
     SymbolGlyph($r('sys.symbol.envelope_badge_dot'))
       .fontSize($r('app.float.icon_size'))
       .fontColor([feedViewModel.nextUnreadId().length > 0
-        ? $r('app.color.hm_brand') : $r('sys.color.font_tertiary')])
+        ? themePalette.accent() : $r('sys.color.font_tertiary')])
       .padding($r('app.float.space_xs'))
       .enabled(feedViewModel.nextUnreadId().length > 0)
       .accessibilityText($r('app.string.article_next_unread'))
@@ -2267,7 +2268,7 @@ export struct ArticleDetailView {
                   if (source.articleId === this.cur().id) {
                     Text($r('app.string.dedupe_source_current'))
                       .fontSize($r('app.float.font_size_caption'))
-                      .fontColor($r('app.color.hm_brand'))
+                      .fontColor(themePalette.accent())
                       .height($r('app.float.value_chip_height'))
                       .padding({ left: $r('app.float.space_s'), right: $r('app.float.space_s') })
                       .backgroundColor($r('app.color.hm_value_chip_background'))
@@ -2279,7 +2280,7 @@ export struct ArticleDetailView {
                 if (source.link.length > 0) {
                   Text(source.link)
                     .fontSize($r('app.float.font_size_caption'))
-                    .fontColor($r('app.color.hm_brand'))
+                    .fontColor(themePalette.accent())
                     .maxLines(1)
                     .textOverflow({ overflow: TextOverflow.Ellipsis })
                     .width('100%')
@@ -2369,20 +2370,20 @@ export struct ArticleDetailView {
                 Row({ space: $r('app.float.space_m') }) {
                   Text($r('app.string.hl_action_goto'))
                     .fontSize($r('app.float.font_size_caption'))
-                    .fontColor($r('app.color.hm_brand'))
+                    .fontColor(themePalette.accent())
                     .onClick(() => {
                       this.closeSheet();
                       this.gotoHighlight(item);
                     })
                   Text($r('app.string.hl_action_note'))
                     .fontSize($r('app.float.font_size_caption'))
-                    .fontColor($r('app.color.hm_brand'))
+                    .fontColor(themePalette.accent())
                     .onClick(() => {
                       this.openHighlightEditor(item.id);
                     })
                   Text($r('app.string.hl_action_color'))
                     .fontSize($r('app.float.font_size_caption'))
-                    .fontColor($r('app.color.hm_brand'))
+                    .fontColor(themePalette.accent())
                     .onClick(() => {
                       this.setHighlightColor(item.id, this.nextColor(item.color));
                     })
@@ -2474,7 +2475,7 @@ export struct ArticleDetailView {
           .buttonStyle(ButtonStyleMode.NORMAL)
           .fontSize($r('app.float.font_size_caption'))
           .fontColor($r('app.color.hm_on_brand'))
-          .backgroundColor($r('app.color.hm_brand'))
+          .backgroundColor(themePalette.fill())
           .onClick(() => {
             this.saveHighlightNote();
           })
@@ -2588,7 +2589,7 @@ export struct ArticleDetailView {
   StarAction() {
     SymbolGlyph(this.cur().starred ? $r('sys.symbol.star_fill') : $r('sys.symbol.star'))
       .fontSize($r('app.float.icon_size'))
-      .fontColor([this.cur().starred ? $r('app.color.hm_brand') : $r('sys.color.font_primary')])
+      .fontColor([this.cur().starred ? themePalette.accent() : $r('sys.color.font_primary')])
       .padding($r('app.float.space_xs'))
       .accessibilityText(this.cur().starred ? $r('app.string.action_unstar') : $r('app.string.action_star'))
       .onClick(() => {
@@ -2601,7 +2602,7 @@ export struct ArticleDetailView {
   TagAction() {
     SymbolGlyph($r('sys.symbol.plus'))
       .fontSize($r('app.float.icon_size'))
-      .fontColor([$r('app.color.hm_brand')])
+      .fontColor([themePalette.accent()])
       .padding($r('app.float.space_xs'))
       .accessibilityText($r('app.string.tag_picker_title'))
       .onClick(() => {
@@ -2717,7 +2718,7 @@ export struct ArticleDetailView {
       LoadingProgress()
         .width($r('app.float.web_loading_size'))
         .height($r('app.float.web_loading_size'))
-        .color($r('app.color.hm_brand'))
+        .color(themePalette.accent())
     }
     .width('100%')
     .height('100%')
@@ -2958,7 +2959,7 @@ export struct ArticleDetailView {
                 .fontColor($r('app.color.hm_text_secondary'))
               Text(this.cur().link)
                 .fontSize($r('app.float.font_size_caption'))
-                .fontColor($r('app.color.hm_brand'))
+                .fontColor(themePalette.accent())
                 .width('100%')
             }
             .width('100%')
@@ -3032,7 +3033,7 @@ export struct ArticleDetailView {
 
         SymbolGlyph($r('sys.symbol.chevron_up'))
           .fontSize($r('app.float.icon_size_small'))
-          .fontColor([this.findCount > 0 ? $r('app.color.hm_brand') : $r('app.color.hm_text_secondary')])
+          .fontColor([this.findCount > 0 ? themePalette.accent() : $r('app.color.hm_text_secondary')])
           .accessibilityText($r('app.string.a11y_find_prev'))
           .enabled(this.findCount > 0)
           .onClick(() => {
@@ -3041,7 +3042,7 @@ export struct ArticleDetailView {
 
         SymbolGlyph($r('sys.symbol.chevron_down'))
           .fontSize($r('app.float.icon_size_small'))
-          .fontColor([this.findCount > 0 ? $r('app.color.hm_brand') : $r('app.color.hm_text_secondary')])
+          .fontColor([this.findCount > 0 ? themePalette.accent() : $r('app.color.hm_text_secondary')])
           .accessibilityText($r('app.string.a11y_find_next'))
           .enabled(this.findCount > 0)
           .onClick(() => {
@@ -3128,7 +3129,7 @@ export struct ArticleDetailView {
         Button($r('app.string.article_mode_web'))
           .buttonStyle(ButtonStyleMode.TEXTUAL)
           .fontSize($r('app.float.font_size_caption'))
-          .fontColor($r('app.color.hm_brand'))
+          .fontColor(themePalette.accent())
           .padding({ left: $r('app.float.space_xxs'), right: $r('app.float.space_xxs') })
           .onClick(() => {
             this.openWebForShortBody();
@@ -3168,7 +3169,7 @@ export struct ArticleDetailView {
         Row({ space: $r('app.float.space_xs') }) {
           SymbolGlyph($r('sys.symbol.headphones'))
             .fontSize($r('app.float.icon_size_small'))
-            .fontColor([$r('app.color.hm_brand')])
+            .fontColor([themePalette.accent()])
           Column({ space: $r('app.float.space_xxs') }) {
             Text(mediaPlayerService.title)
               .fontSize($r('app.float.font_size_caption'))
@@ -3193,7 +3194,7 @@ export struct ArticleDetailView {
             ? $r('app.string.media_pause') : $r('app.string.media_resume'))
             .buttonStyle(ButtonStyleMode.TEXTUAL)
             .fontSize($r('app.float.font_size_caption'))
-            .fontColor($r('app.color.hm_brand'))
+            .fontColor(themePalette.accent())
             .padding({ left: $r('app.float.space_xxs'), right: $r('app.float.space_xxs') })
             .enabled(mediaPlayerService.status !== MEDIA_LOADING)
             .onClick(() => {
@@ -3243,7 +3244,7 @@ export struct ArticleDetailView {
           Button('‹')
             .buttonStyle(ButtonStyleMode.TEXTUAL)
             .fontSize($r('app.float.font_size_body'))
-            .fontColor($r('app.color.hm_brand'))
+            .fontColor(themePalette.accent())
             .padding({ left: $r('app.float.space_xxs'), right: $r('app.float.space_xxs') })
             .accessibilityText($r('app.string.media_previous'))
             .onClick(() => {
@@ -3252,7 +3253,7 @@ export struct ArticleDetailView {
           Button('›')
             .buttonStyle(ButtonStyleMode.TEXTUAL)
             .fontSize($r('app.float.font_size_body'))
-            .fontColor($r('app.color.hm_brand'))
+            .fontColor(themePalette.accent())
             .padding({ left: $r('app.float.space_xxs'), right: $r('app.float.space_xxs') })
             .accessibilityText($r('app.string.media_next'))
             .onClick(() => {
@@ -3300,7 +3301,7 @@ export struct ArticleDetailView {
         Row({ space: $r('app.float.space_xxs') }) {
           SymbolGlyph($r('sys.symbol.speaker'))
             .fontSize($r('app.float.icon_size_small'))
-            .fontColor([$r('app.color.hm_brand')])
+            .fontColor([themePalette.accent()])
 
           Column({ space: $r('app.float.space_xxs') }) {
             Text(this.speechPaused ? $r('app.string.speech_paused') : $r('app.string.speech_running'))
@@ -3327,7 +3328,7 @@ export struct ArticleDetailView {
           Button(this.speechPaused ? $r('app.string.action_resume_speech') : $r('app.string.action_pause_speech'))
             .buttonStyle(ButtonStyleMode.TEXTUAL)
             .fontSize($r('app.float.font_size_caption'))
-            .fontColor($r('app.color.hm_brand'))
+            .fontColor(themePalette.accent())
             .padding({ left: $r('app.float.space_xxs'), right: $r('app.float.space_xxs') })
             .onClick(() => {
               this.toggleSpeechPause();
@@ -3336,7 +3337,7 @@ export struct ArticleDetailView {
           Button($r('app.string.action_stop_speech'))
             .buttonStyle(ButtonStyleMode.TEXTUAL)
             .fontSize($r('app.float.font_size_caption'))
-            .fontColor($r('app.color.hm_brand'))
+            .fontColor(themePalette.accent())
             .padding({ left: $r('app.float.space_xxs'), right: $r('app.float.space_xxs') })
             .onClick(() => {
               readerSpeech.stop();
@@ -3349,7 +3350,7 @@ export struct ArticleDetailView {
           Button($r('app.string.action_return_to_speech'))
             .buttonStyle(ButtonStyleMode.TEXTUAL)
             .fontSize($r('app.float.font_size_caption'))
-            .fontColor($r('app.color.hm_brand'))
+            .fontColor(themePalette.accent())
             .onClick(() => {
               this.returnToSpeech();
             })
@@ -3388,7 +3389,7 @@ export struct ArticleDetailView {
         Button($r('app.string.action_highlight'))
           .buttonStyle(ButtonStyleMode.TEXTUAL)
           .fontSize($r('app.float.font_size_caption'))
-          .fontColor($r('app.color.hm_brand'))
+          .fontColor(themePalette.accent())
           .onClick(() => {
             this.addHighlight();
           })
@@ -3396,7 +3397,7 @@ export struct ArticleDetailView {
         Button($r('app.string.translate_action_selection'))
           .buttonStyle(ButtonStyleMode.TEXTUAL)
           .fontSize($r('app.float.font_size_caption'))
-          .fontColor($r('app.color.hm_brand'))
+          .fontColor(themePalette.accent())
           .onClick(() => {
             this.translateSelected();
           })
@@ -3404,7 +3405,7 @@ export struct ArticleDetailView {
         Button($r('app.string.action_copy'))
           .buttonStyle(ButtonStyleMode.TEXTUAL)
           .fontSize($r('app.float.font_size_caption'))
-          .fontColor($r('app.color.hm_brand'))
+          .fontColor(themePalette.accent())
           .onClick(() => {
             this.copySelection();
           })
@@ -3412,7 +3413,7 @@ export struct ArticleDetailView {
         Button($r('app.string.action_share_selection'))
           .buttonStyle(ButtonStyleMode.TEXTUAL)
           .fontSize($r('app.float.font_size_caption'))
-          .fontColor($r('app.color.hm_brand'))
+          .fontColor(themePalette.accent())
           .onClick(() => {
             this.shareSelection();
           })
@@ -3449,7 +3450,7 @@ export struct ArticleDetailView {
         Row()
           .width(Math.round(this.progressRatio * 100) + '%')
           .height($r('app.float.read_progress_height'))
-          .backgroundColor($r('app.color.hm_brand'))
+          .backgroundColor(themePalette.fill())
           .borderRadius($r('app.float.read_progress_height'))
       }
       .width('100%')
@@ -3483,7 +3484,7 @@ export struct ArticleDetailView {
   TagChip(tag: TagWithCount) {
     Text(tag.name)
       .fontSize($r('app.float.font_size_caption'))
-      .fontColor($r('app.color.hm_brand'))
+      .fontColor(themePalette.accent())
       .maxLines(1)
       .textOverflow({ overflow: TextOverflow.Ellipsis })
       .constraintSize({ maxWidth: 160 })
@@ -3530,7 +3531,7 @@ export struct ArticleDetailView {
         if (this.cur().enclosures.length > 0) {
           Text(this.mediaChipText(this.cur()))
             .fontSize($r('app.float.font_size_caption'))
-            .fontColor($r('app.color.hm_brand'))
+            .fontColor(themePalette.accent())
             .maxLines(1)
             .height($r('app.float.value_chip_height'))
             .padding({ left: $r('app.float.space_m'), right: $r('app.float.space_m') })
@@ -3548,7 +3549,7 @@ export struct ArticleDetailView {
         if (this.merged()) {
           Text($r('app.string.dedupe_source_count', this.groupSources.length))
             .fontSize($r('app.float.font_size_caption'))
-            .fontColor($r('app.color.hm_brand'))
+            .fontColor(themePalette.accent())
             .maxLines(1)
             .height($r('app.float.value_chip_height'))
             .padding({ left: $r('app.float.space_m'), right: $r('app.float.space_m') })

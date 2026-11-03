@@ -18,6 +18,7 @@ import { MaterialController } from '../service/MaterialController';
 import { safeArea } from '../service/SafeAreaController';
 import { DateUtil } from '../common/utils/DateUtil';
 import { ToastUtil } from '../common/utils/ToastUtil';
+import { themePalette } from '../model/ThemePalette';
 
 /** 首次进页面快照列表为空时的补读延迟（毫秒）：等启动时的自动快照把文件写完。 */
 const SNAPSHOT_RETRY_MS: number = 1200;
@@ -100,7 +101,7 @@ struct BackupSnapshotRow {
       Button($r('app.string.backup_snapshot_restore'))
         .buttonStyle(ButtonStyleMode.TEXTUAL)
         .fontSize($r('app.float.font_size_caption'))
-        .fontColor($r('app.color.hm_brand'))
+        .fontColor(themePalette.accent())
         .enabled(this.rowEnabled)
         .onClick(() => {
           this.onRestore(this.info);
@@ -143,7 +144,7 @@ struct BackupPrimaryButton {
       .height($r('app.float.row_height'))
       .fontSize($r('app.float.font_size_body'))
       .fontColor($r('app.color.hm_on_brand'))
-      .backgroundColor(this.buttonEnabled ? $r('app.color.hm_brand') : $r('app.color.hm_text_secondary'))
+      .backgroundColor(this.buttonEnabled ? themePalette.fill() : $r('app.color.hm_text_secondary'))
       .enabled(this.buttonEnabled)
       .onClick(() => {
         this.onTap();
@@ -334,7 +335,7 @@ export struct BackupView {
     };
     const confirmButton: AlertDialogButtonBaseOptions = {
       value: $r('app.string.backup_cloud_restore_action'),
-      fontColor: $r('app.color.hm_brand'),
+      fontColor: themePalette.accent(),
       action: () => {
         this.runCloudRestore();
       }
@@ -373,7 +374,7 @@ export struct BackupView {
     };
     const confirmButton: AlertDialogButtonBaseOptions = {
       value: $r('app.string.backup_snapshot_restore'),
-      fontColor: $r('app.color.hm_brand'),
+      fontColor: themePalette.accent(),
       action: () => {
         this.restoreSnapshot(info);
       }
@@ -505,7 +506,7 @@ export struct BackupView {
           .fontColor($r('app.color.hm_text_primary'))
         Blank()
         Toggle({ type: ToggleType.Switch, isOn: backupViewModel.restoreSettings })
-          .selectedColor($r('app.color.hm_brand'))
+          .selectedColor(themePalette.fill())
           .enabled(!backupViewModel.busy())
           .onChange((value: boolean) => {
             backupViewModel.setRestoreSettings(value);
@@ -572,7 +573,7 @@ export struct BackupView {
           .alignItems(HorizontalAlign.Start)
 
           Toggle({ type: ToggleType.Switch, isOn: backupViewModel.cloudAuto })
-            .selectedColor($r('app.color.hm_brand'))
+            .selectedColor(themePalette.fill())
             .enabled(!backupViewModel.busy())
             .onChange((value: boolean) => {
               const context: common.Context | undefined = this.hostContext();
@@ -644,7 +645,7 @@ export struct BackupView {
           : $r('app.string.backup_snapshot_now'))
           .buttonStyle(ButtonStyleMode.TEXTUAL)
           .fontSize($r('app.float.font_size_caption'))
-          .fontColor($r('app.color.hm_brand'))
+          .fontColor(themePalette.accent())
           .enabled(!backupViewModel.busy())
           .onClick(() => {
             this.runSnapshotNow();

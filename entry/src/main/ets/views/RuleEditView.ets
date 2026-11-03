@@ -15,6 +15,7 @@ import { feedViewModel } from '../viewmodel/FeedViewModel';
 import { tagViewModel } from '../viewmodel/TagViewModel';
 import { RuleConstants } from '../common/constants/RssConstants';
 import { safeArea } from '../service/SafeAreaController';
+import { themePalette } from '../model/ThemePalette';
 
 @ComponentV2
 export struct RuleEditView {
@@ -243,7 +244,7 @@ export struct RuleEditView {
     Text(label)
       .fontSize($r('app.float.font_size_caption'))
       .fontColor(selected ? $r('app.color.hm_on_brand') : $r('app.color.hm_text_primary'))
-      .backgroundColor(selected ? $r('app.color.hm_brand') : $r('app.color.hm_value_chip_background'))
+      .backgroundColor(selected ? themePalette.fill() : $r('app.color.hm_value_chip_background'))
       .borderRadius($r('app.float.radius_chip'))
       .padding({
         left: $r('app.float.space_m'),
@@ -301,7 +302,7 @@ export struct RuleEditView {
           Row({ space: $r('app.float.space_s') }) {
             Checkbox({ name: feed.id })
               .select(this.hasFeed(feed.id))
-              .selectedColor($r('app.color.hm_brand'))
+              .selectedColor(themePalette.fill())
               .onChange((isOn: boolean) => {
                 this.setFeed(feed.id, isOn);
               })
@@ -334,7 +335,7 @@ export struct RuleEditView {
           Row({ space: $r('app.float.space_s') }) {
             Checkbox({ name: tag.id })
               .select(this.hasTag(tag.id))
-              .selectedColor($r('app.color.hm_brand'))
+              .selectedColor(themePalette.fill())
               .onChange((isOn: boolean) => {
                 this.setTag(tag.id, isOn);
               })
@@ -382,7 +383,7 @@ export struct RuleEditView {
             .fontColor($r('app.color.hm_text_primary'))
             .layoutWeight(1)
           Toggle({ type: ToggleType.Switch, isOn: this.ruleEnabled })
-            .selectedColor($r('app.color.hm_brand'))
+            .selectedColor(themePalette.fill())
             .onChange((isOn: boolean) => {
               this.ruleEnabled = isOn;
             })
@@ -425,7 +426,7 @@ export struct RuleEditView {
             .fontColor($r('app.color.hm_text_primary'))
             .layoutWeight(1)
           Toggle({ type: ToggleType.Switch, isOn: this.allSources })
-            .selectedColor($r('app.color.hm_brand'))
+            .selectedColor(themePalette.fill())
             .onChange((isOn: boolean) => {
               this.allSources = isOn;
               this.errorCode = '';
@@ -475,7 +476,7 @@ export struct RuleEditView {
           .buttonStyle(ButtonStyleMode.NORMAL)
           .fontSize($r('app.float.font_size_caption'))
           .fontColor($r('app.color.hm_on_brand'))
-          .backgroundColor($r('app.color.hm_brand'))
+          .backgroundColor(themePalette.fill())
           .enabled(!this.saving)
           .onClick(() => {
             this.save();

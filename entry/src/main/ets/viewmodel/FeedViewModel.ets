@@ -26,6 +26,7 @@ import { dedupeService } from '../service/DedupeService';
 import { CommonConstants } from '../common/constants/CommonConstants';
 import { UrlText } from '../common/utils/UrlText';
 import { ArticleDataSource, ArticleGroup } from './ArticleDataSource';
+import { buildFeedRows } from './FeedRowBuilder';
 import { articleContentService } from '../service/ArticleContentService';
 import { ParsedArticle, ParsedFeed } from '../service/RssParser';
 import { buildOpml, OpmlEntry } from '../service/OpmlCodec';
@@ -127,6 +128,8 @@ function mergeArticle(target: Article, source: Article): void {
 export class FeedViewModel {
   /** 订阅源列表。 */
   @Trace feeds: FeedSource[] = [];
+  /** 订阅管理页里被折叠的分组名（会话内状态；空串代表「未分组」）。 */
+  @Trace collapsedGroups: string[] = [];
   /** 当前筛选下的文章列表（界面直接渲染这一份）。 */
   @Trace articles: Article[] = [];
   /** 当前筛选：'all' | 'unread' | 'starred'。初值取用户上次的选择。 */
@@ -226,6 +229,8 @@ export class FeedViewModel {
     this.newestFirst = appSettings.listNewestFirst;
     this.groupMode = appSettings.listGroupMode;
     this.filter = appSettings.homeFilter;
+    // 先开库再读订阅：v10 起订阅源以 RDB 为准，库没开时会回退偏好库并覆盖回来。
+    await articleStore.open(context);
     this.feeds = await feedStore.load(context);
     // 远端同步通过回调读写订阅源与文章列表（避免 Service 反向依赖 ViewModel）。
     remoteSyncService.bindFeedSource(
@@ -240,7 +245,6 @@ export class FeedViewModel {
           console.warn('remote reload failed: ' + err.message);
         });
       });
-    await articleStore.open(context);
     offlineDownloadService.bindStatePublisher((id: string, state: string) => {
       for (let i = 0; i < this.all.length; i += 1) {
         if (this.all[i].id === id) {
@@ -1014,7 +1018,15 @@ export class FeedViewModel {
     }
     const source: FeedListItem = rows[fromRow];
     if (!source.isGroup) {
+      // 落点是折叠分组时，先把目标组展开，否则拖进去的源会立刻「消失」。
+      let targetGroup: string = source.feed.group;
+      if (toRow >= 0 && toRow < rows.length) {
+        targetGroup = rows[toRow].groupName;
+      }
       this.reorderFeed(fromRow, toRow);
+      if (this.isGroupCollapsed(targetGroup)) {
+        this.toggleGroupCollapsed(targetGroup);
+      }
       return;
     }
     let targetGroup: string = source.groupName;
@@ -1025,6 +1037,27 @@ export class FeedViewModel {
     const targetIndex: number = names.indexOf(targetGroup);
     if (targetIndex >= 0) {
       this.moveGroup(source.groupName, targetIndex);
+    }
+  }
+
+  /** 该分组是否折叠（读 @Trace 数组，视图在渲染时调用即可自动刷新）。 */
+  isGroupCollapsed(name: string): boolean {
+    return this.collapsedGroups.indexOf(name) >= 0;
+  }
+
+  /** 折叠 / 展开一个分组。 */
+  toggleGroupCollapsed(name: string): void {
+    if (this.isGroupCollapsed(name)) {
+      this.collapsedGroups = this.collapsedGroups.filter((item: string) => item !== name);
+      return;
+    }
+    this.collapsedGroups = this.collapsedGroups.concat([name]);
+  }
+
+  /** 全部展开（进入多选时调用，避免选中集合被折叠行隐藏）。 */
+  expandAllGroups(): void {
+    if (this.collapsedGroups.length > 0) {
+      this.collapsedGroups = [];
     }
   }
 
@@ -1066,18 +1099,9 @@ export class FeedViewModel {
     return result;
   }
 
-  /** 展平成列表行（分组头 + 该组订阅源），顺序即拖拽/展示顺序。 */
+  /** 展平成列表行（分组头 + 该组订阅源），顺序即拖拽/展示顺序；折叠分组只保留组头。 */
   displayRows(): FeedListItem[] {
-    const rows: FeedListItem[] = [];
-    const groups: FeedGroup[] = this.grouped();
-    for (let i = 0; i < groups.length; i += 1) {
-      const group: FeedGroup = groups[i];
-      rows.push(new FeedListItem(true, group.name, group.feeds.length, PLACEHOLDER_FEED));
-      for (let j = 0; j < group.feeds.length; j += 1) {
-        rows.push(new FeedListItem(false, group.name, 0, group.feeds[j]));
-      }
-    }
-    return rows;
+    return buildFeedRows(this.grouped(), this.collapsedGroups);
   }
 
   /** 取第 index 行（越界时夹取到边界，拖拽回调里用）。 */

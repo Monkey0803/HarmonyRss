@@ -46,11 +46,14 @@ export class ParsedFeed {
   readonly title: string;
   readonly siteUrl: string;
   readonly articles: ParsedArticle[];
+  /** feed 自带的站点图标（RSS image / Atom icon·logo / itunes:image），没有则为空串。 */
+  readonly iconUrl: string;
 
-  constructor(title: string, siteUrl: string, articles: ParsedArticle[]) {
+  constructor(title: string, siteUrl: string, articles: ParsedArticle[], iconUrl: string = '') {
     this.title = title;
     this.siteUrl = siteUrl;
     this.articles = articles;
+    this.iconUrl = iconUrl;
   }
 }
 
@@ -461,6 +464,40 @@ function htmlSource(input: string): string {
   return input.indexOf('<') >= 0 ? input : decodeEntities(input);
 }
 
+/**
+ * channel head 里的站点图标，按可靠性排序：
+ *   Atom <icon> → Atom <logo> → RSS 1.0 <image rdf:resource> → RSS <image><url> → <itunes:image href>。
+ * 只取原始地址，相对地址留给上层用 feed URL 解析。
+ */
+function firstFeedIcon(head: string, isAtom: boolean): string {
+  if (isAtom) {
+    const icon: string = readTagText(head, 'icon');
+    if (icon.length > 0) {
+      return decodeEntities(icon).trim();
+    }
+    const logo: string = readTagText(head, 'logo');
+    if (logo.length > 0) {
+      return decodeEntities(logo).trim();
+    }
+  }
+  const rdfImage: string = readTagAttr(head, 'image', 'rdf:resource');
+  if (rdfImage.length > 0) {
+    return decodeEntities(rdfImage).trim();
+  }
+  const imageBlock: string = readTagText(head, 'image');
+  if (imageBlock.length > 0) {
+    const imageUrl: string = readTagText(imageBlock, 'url');
+    if (imageUrl.length > 0) {
+      return decodeEntities(imageUrl).trim();
+    }
+  }
+  const itunesImage: string = readTagAttr(head, 'itunes:image', 'href');
+  if (itunesImage.length > 0) {
+    return decodeEntities(itunesImage).trim();
+  }
+  return '';
+}
+
 /** 解析一份 feed 文档；既支持 RSS 2.0（item）也支持 Atom 1.0（entry）。 */
 export function parseFeed(xml: string): ParsedFeed {
   const items: string[] = findBlocks(xml, 'item');
@@ -482,5 +519,5 @@ export function parseFeed(xml: string): ParsedFeed {
   for (let i = 0; i < limit; i += 1) {
     articles.push(parseArticle(blocks[i], isAtom));
   }
-  return new ParsedFeed(title, siteUrl, articles);
+  return new ParsedFeed(title, siteUrl, articles, firstFeedIcon(head, isAtom));
 }

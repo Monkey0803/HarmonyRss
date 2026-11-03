@@ -20,6 +20,7 @@ import { ShareContext } from '../model/Share';
 import { shareService } from '../service/ShareService';
 import { shareViewModel } from '../viewmodel/ShareViewModel';
 import { ShareSheet } from './ShareSheet';
+import { themePalette } from '../model/ThemePalette';
 
 const DOMAIN: number = 0x0000;
 const TAG: string = 'HighlightsView';
@@ -117,14 +118,14 @@ export struct HighlightsView {
         Button($r('app.string.hl_export_md'))
           .buttonStyle(ButtonStyleMode.TEXTUAL)
           .fontSize($r('app.float.font_size_caption'))
-          .fontColor($r('app.color.hm_brand'))
+          .fontColor(themePalette.accent())
           .onClick(() => {
             this.exportAs(true);
           })
         Button($r('app.string.hl_export_json'))
           .buttonStyle(ButtonStyleMode.TEXTUAL)
           .fontSize($r('app.float.font_size_caption'))
-          .fontColor($r('app.color.hm_brand'))
+          .fontColor(themePalette.accent())
           .onClick(() => {
             this.exportAs(false);
           })
@@ -203,7 +204,7 @@ export struct HighlightsView {
                   .borderRadius($r('app.float.feed_dot_size'))
                 Text(entry.articleTitle.length > 0 ? entry.articleTitle : entry.highlight.articleId)
                   .fontSize($r('app.float.font_size_caption'))
-                  .fontColor($r('app.color.hm_brand'))
+                  .fontColor(themePalette.accent())
                   .maxLines(1)
                   .textOverflow({ overflow: TextOverflow.Ellipsis })
                   .layoutWeight(1)

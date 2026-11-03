@@ -22,6 +22,7 @@ import { ToastUtil } from '../common/utils/ToastUtil';
 import { safeArea } from '../service/SafeAreaController';
 import { appSettings } from '../model/AppSettings';
 import { MaterialController } from '../service/MaterialController';
+import { themePalette } from '../model/ThemePalette';
 
 /** 默认模板 id（与 ShareTemplates 内的虚拟默认模板一致；它不是落库数据，因此只读）。 */
 const DEFAULT_TEMPLATE_ID: string = 'tpl_default';
@@ -347,7 +348,7 @@ export struct ShareSettingsView {
           .buttonStyle(ButtonStyleMode.NORMAL)
           .fontSize($r('app.float.font_size_caption'))
           .fontColor($r('app.color.hm_on_brand'))
-          .backgroundColor($r('app.color.hm_brand'))
+          .backgroundColor(themePalette.fill())
           .enabled(!this.saving)
           .onClick(() => {
             this.save();
@@ -419,7 +420,7 @@ export struct ShareSettingsView {
             Button($r('app.string.tpl_new'))
               .buttonStyle(ButtonStyleMode.TEXTUAL)
               .fontSize($r('app.float.font_size_caption'))
-              .fontColor($r('app.color.hm_brand'))
+              .fontColor(themePalette.accent())
               .enabled(!this.saving)
               .onClick(() => {
                 this.startCreate();

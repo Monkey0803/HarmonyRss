@@ -13,7 +13,7 @@
  */
 
 import { LogoStyle, logoStyleOf } from '../../model/LogoStyles';
-import { LogoKind } from '../constants/SettingsConstants';
+import { DEFAULT_THEME_COLOR, LogoKind } from '../constants/SettingsConstants';
 
 /** 设计稿为 100×100 单位，绘制时按 logoSize/100 缩放到 vp。 */
 const DESIGN: number = 100;
@@ -26,18 +26,26 @@ export struct AppLogo {
   @Param logoSize: number = 44;
   /** 外框圆角半径（vp）；极光变体强制为圆形，忽略此值。 */
   @Param cornerRadius: number = 12;
+  /** 当前主题色（#RRGGBB）：logo 渐变跟随它。 */
+  @Param themeColor: string = DEFAULT_THEME_COLOR;
+  /** 当前是否深色：用于让 accent 在深底上保持可读。 */
+  @Param isDark: boolean = false;
 
   private settings: RenderingContextSettings = new RenderingContextSettings(true);
   private context: CanvasRenderingContext2D = new CanvasRenderingContext2D(this.settings);
+  /** Canvas 是否已就绪；未就绪时只等 onReady 画一次。 */
+  private canvasReady: boolean = false;
 
-  /** logoKind 变化（如首页品牌行切换）时重绘标记。 */
-  @Monitor('logoKind')
-  onLogoKindChange(): void {
-    this.drawMark();
+  /** 变体 / 主题色 / 深浅色变化时重绘标记。 */
+  @Monitor('logoKind', 'themeColor', 'isDark')
+  onVisualChange(): void {
+    if (this.canvasReady) {
+      this.drawMark();
+    }
   }
 
   private style(): LogoStyle {
-    return logoStyleOf(this.logoKind);
+    return logoStyleOf(this.logoKind, this.themeColor, this.isDark);
   }
 
   /** 极光变体是圆形，其余为圆角方块。 */
@@ -97,6 +105,7 @@ export struct AppLogo {
         .width(this.logoSize)
         .height(this.logoSize)
         .onReady(() => {
+          this.canvasReady = true;
           this.drawMark();
         })
     }

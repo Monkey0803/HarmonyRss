@@ -17,6 +17,7 @@ import { appSettings } from '../model/AppSettings';
 import { safeArea } from '../service/SafeAreaController';
 import { DateUtil } from '../common/utils/DateUtil';
 import { ToastUtil } from '../common/utils/ToastUtil';
+import { themePalette } from '../model/ThemePalette';
 
 @ComponentV2
 export struct RulesView {
@@ -143,7 +144,7 @@ export struct RulesView {
         Button($r('app.string.rule_new'))
           .buttonStyle(ButtonStyleMode.TEXTUAL)
           .fontSize($r('app.float.font_size_caption'))
-          .fontColor($r('app.color.hm_brand'))
+          .fontColor(themePalette.accent())
           .enabled(ruleViewModel.rules.length < RuleConstants.MAX_RULES)
           .onClick(() => {
             this.startCreate();
@@ -161,7 +162,7 @@ export struct RulesView {
       Row({ space: $r('app.float.space_m') }) {
         SymbolGlyph($r('sys.symbol.folder'))
           .fontSize($r('app.float.icon_size'))
-          .fontColor([$r('app.color.hm_brand')])
+          .fontColor([themePalette.accent()])
         Text($r('app.string.rule_hidden_entry', feedViewModel.hiddenCount()))
           .fontSize($r('app.float.font_size_body'))
           .fontColor($r('app.color.hm_text_primary'))
@@ -218,7 +219,7 @@ export struct RulesView {
         .alignItems(HorizontalAlign.Start)
 
         Toggle({ type: ToggleType.Switch, isOn: rule.enabled })
-          .selectedColor($r('app.color.hm_brand'))
+          .selectedColor(themePalette.fill())
           .onChange((isOn: boolean) => {
             this.toggleEnabled(rule, isOn);
           })
@@ -239,7 +240,7 @@ export struct RulesView {
       if (this.showsTestResult(rule.id)) {
         Text(this.testResultText(rule.id))
           .fontSize($r('app.float.font_size_caption'))
-          .fontColor($r('app.color.hm_brand'))
+          .fontColor(themePalette.accent())
           .width('100%')
       }
 

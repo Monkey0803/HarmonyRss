@@ -15,6 +15,7 @@ import { MaterialController } from '../service/MaterialController';
 import { appSettings } from '../model/AppSettings';
 import { safeArea } from '../service/SafeAreaController';
 import { ToastUtil } from '../common/utils/ToastUtil';
+import { themePalette } from '../model/ThemePalette';
 
 @ComponentV2
 export struct SmartFoldersView {
@@ -199,7 +200,7 @@ export struct SmartFoldersView {
           .buttonStyle(ButtonStyleMode.NORMAL)
           .fontSize($r('app.float.font_size_caption'))
           .fontColor($r('app.color.hm_on_brand'))
-          .backgroundColor($r('app.color.hm_brand'))
+          .backgroundColor(themePalette.fill())
           .onClick(() => {
             this.save();
           })
@@ -218,7 +219,7 @@ export struct SmartFoldersView {
     Row({ space: $r('app.float.space_m') }) {
       SymbolGlyph($r('sys.symbol.folder_fill'))
         .fontSize($r('app.float.icon_size'))
-        .fontColor([$r('app.color.hm_brand')])
+        .fontColor([themePalette.accent()])
 
       Column({ space: $r('app.float.space_xxs') }) {
         Text(folder.name)
@@ -274,7 +275,7 @@ export struct SmartFoldersView {
         Button($r('app.string.smart_folder_new'))
           .buttonStyle(ButtonStyleMode.TEXTUAL)
           .fontSize($r('app.float.font_size_caption'))
-          .fontColor($r('app.color.hm_brand'))
+          .fontColor(themePalette.accent())
           .enabled(smartFolderViewModel.canCreate())
           .onClick(() => {
             this.startCreate();

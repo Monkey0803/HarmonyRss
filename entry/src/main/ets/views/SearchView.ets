@@ -18,6 +18,7 @@ import { ToastUtil } from '../common/utils/ToastUtil';
 import { AppSheet } from '../common/components/AppSheet';
 import { SHEET_SAVE_FOLDER_HEIGHT } from '../common/components/SheetDetents';
 import { FilterCapsule } from './FilterCapsule';
+import { themePalette } from '../model/ThemePalette';
 
 /** 片段分片：一段普通文本或一段命中词。 */
 class SnippetSegment {
@@ -70,7 +71,7 @@ struct SnippetText {
     Text() {
       ForEach(this.segments(), (segment: SnippetSegment, index: number) => {
         Span(segment.text)
-          .fontColor(segment.hit ? $r('app.color.hm_brand') : $r('app.color.hm_text_secondary'))
+          .fontColor(segment.hit ? themePalette.accent() : $r('app.color.hm_text_secondary'))
           .fontWeight(segment.hit ? FontWeight.Medium : FontWeight.Regular)
       }, (segment: SnippetSegment, index: number) => index.toString())
     }
@@ -207,7 +208,7 @@ export struct SearchView {
           .buttonStyle(ButtonStyleMode.NORMAL)
           .fontSize($r('app.float.font_size_caption'))
           .fontColor($r('app.color.hm_on_brand'))
-          .backgroundColor($r('app.color.hm_brand'))
+          .backgroundColor(themePalette.fill())
           .onClick(() => {
             this.saveFolder();
           })
@@ -277,7 +278,7 @@ export struct SearchView {
           })
         SymbolGlyph($r('sys.symbol.magnifyingglass'))
           .fontSize($r('app.float.icon_size'))
-          .fontColor([$r('app.color.hm_brand')])
+          .fontColor([themePalette.accent()])
           .padding($r('app.float.space_s'))
           .onClick(() => {
             this.submit(this.draft);
@@ -305,7 +306,7 @@ export struct SearchView {
           Blank()
           Text($r('app.string.search_clear_history'))
             .fontSize($r('app.float.font_size_caption'))
-            .fontColor($r('app.color.hm_brand'))
+            .fontColor(themePalette.accent())
             .onClick(() => {
               searchViewModel.clearHistory();
             })
@@ -366,10 +367,10 @@ export struct SearchView {
         Row({ space: $r('app.float.space_xs') }) {
           SymbolGlyph($r('sys.symbol.folder_fill'))
             .fontSize($r('app.float.font_size_caption'))
-            .fontColor([$r('app.color.hm_brand')])
+            .fontColor([themePalette.accent()])
           Text($r('app.string.smart_folder_save_current'))
             .fontSize($r('app.float.font_size_caption'))
-            .fontColor($r('app.color.hm_brand'))
+            .fontColor(themePalette.accent())
         }
         .width('100%')
         .padding({ top: $r('app.float.space_xs'), bottom: $r('app.float.space_xs') })
@@ -399,7 +400,7 @@ export struct SearchView {
       Row({ space: $r('app.float.space_s') }) {
         Text(hit.feedTitle)
           .fontSize($r('app.float.font_size_caption'))
-          .fontColor($r('app.color.hm_brand'))
+          .fontColor(themePalette.accent())
           .maxLines(1)
           .textOverflow({ overflow: TextOverflow.Ellipsis })
           .layoutWeight(1)
@@ -411,7 +412,7 @@ export struct SearchView {
         if (hit.starred) {
           SymbolGlyph($r('sys.symbol.star_fill'))
             .fontSize($r('app.float.icon_size_tiny'))
-            .fontColor([$r('app.color.hm_brand')])
+            .fontColor([themePalette.accent()])
         }
       }
       .width('100%')

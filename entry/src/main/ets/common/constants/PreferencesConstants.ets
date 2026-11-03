@@ -6,6 +6,8 @@
 export class PreferencesConstants {
   static readonly STORE_NAME: string = 'hds_app_settings_v1';
   static readonly KEY_THEME_MODE: string = 'themeMode';
+  /** 主题色：#RRGGBB（默认品牌蓝）。 */
+  static readonly KEY_THEME_COLOR: string = 'themeColor';
   static readonly KEY_LANGUAGE_MODE: string = 'languageMode';
   static readonly KEY_MATERIAL_TYPE: string = 'materialType';
   static readonly KEY_MATERIAL_LEVEL: string = 'materialLevel';
@@ -141,4 +143,6 @@ export class PreferencesConstants {
   static readonly KEY_CLOUD_SYNC_BACKEND: string = 'cloudSyncBackend';
   /** Mock 后端库（模拟远端记录；只在开启同步后读写）。 */
   static readonly KEY_CLOUD_SYNC_MOCK_DB: string = 'cloudSyncMockDb';
+  /** 已添加的服务卡片 formId 列表（JSON 字符串数组；改主题色时定向刷新）。 */
+  static readonly KEY_WIDGET_FORM_IDS: string = 'widgetFormIds';
 }

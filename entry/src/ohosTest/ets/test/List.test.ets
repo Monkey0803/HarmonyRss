@@ -64,6 +64,10 @@ import sheetDetentsTest from './SheetDetents.test';
 import webPageSaveTest from './WebPageSave.test';
 import menuSpecTest from './MenuSpec.test';
 import swipeActionPlanTest from './SwipeActionPlan.test';
+import themeColorTest from './ThemeColor.test';
+import feedRowBuilderTest from './FeedRowBuilder.test';
+import dateUtilTest from './DateUtil.test';
+import feedAvatarTest from './FeedAvatar.test';
 
 export default function testsuite() {
   htmlDomTest();
@@ -122,4 +126,8 @@ export default function testsuite() {
   webPageSaveTest();
   menuSpecTest();
   swipeActionPlanTest();
+  themeColorTest();
+  feedRowBuilderTest();
+  dateUtilTest();
+  feedAvatarTest();
 }

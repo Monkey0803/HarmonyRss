@@ -28,9 +28,16 @@ struct RssWidgetCard {
   @Local sync: string = '';
   /** 卡片尺寸语义值：small（2*2）/ large（2*4）。由提供方下发，默认按大卡片渲染。 */
   @Local dimension: string = WidgetConstants.DIMENSION_LARGE;
+  /** 主题色 accent（提供方按当前深浅色算好下发）；空串回退资源默认色。 */
+  @Local themeAccent: string = '';
 
   private isSmall(): boolean {
     return this.dimension === WidgetConstants.DIMENSION_SMALL;
+  }
+
+  /** 卡片品牌色：主题色优先，未收到数据时用资源默认值。 */
+  private brand(): ResourceColor {
+    return this.themeAccent.length > 0 ? this.themeAccent : $r('app.color.hm_brand');
   }
 
   /**
@@ -66,7 +73,7 @@ struct RssWidgetCard {
         .vertical(true)
         // Divider.strokeWidth 只接受 number | string，不能用资源引用。
         .strokeWidth(2)
-        .color($r('app.color.hm_brand'))
+        .color(this.brand())
         .height($r('app.float.space_m'))
       Text(text)
         .fontSize($r('app.float.font_size_caption'))
@@ -102,7 +109,7 @@ struct RssWidgetCard {
         .layoutWeight(1)
       Text($r('app.string.home_unread_count', this.unread))
         .fontSize($r('app.float.font_size_caption'))
-        .fontColor($r('app.color.hm_brand'))
+        .fontColor(this.brand())
 
       // 刷新按钮：只让提供方重读本地库（卡片进程无法联网抓取，联网交给后台任务）。
       SymbolGlyph($r('sys.symbol.arrow_clockwise'))

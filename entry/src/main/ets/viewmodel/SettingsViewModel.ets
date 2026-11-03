@@ -5,7 +5,9 @@
  */
 
 import { common } from '@kit.AbilityKit';
-import { ReaderTypography } from '../common/constants/SettingsConstants';
+import { DEFAULT_THEME_COLOR, ReaderTypography } from '../common/constants/SettingsConstants';
+import { ThemeColorMath } from '../common/utils/ThemeColorMath';
+import { WidgetThemeSync } from '../service/WidgetThemeSync';
 import { ARCHIVE_OPTIONS, LIST_DENSITY_OPTIONS, ROW_LAYOUT_OPTIONS, SUMMARY_LINES_OPTIONS, RETENTION_MODE_OPTIONS, RETENTION_DAYS_OPTIONS, READER_INDENT_OPTIONS } from '../model/SettingsOptions';
 import { feedViewModel } from './FeedViewModel';
 import { appSettings } from '../model/AppSettings';
@@ -31,6 +33,8 @@ export class SettingsViewModel {
 
   /** 设置恢复完成的信号：列表展示偏好（排序/分组）要先读到，靠它对齐时序。 */
   private ready: Promise<void> = Promise.resolve();
+  /** 上次落盘的主题色：区分「拖动预览」与「真正提交」，避免漏存。 */
+  private persistedThemeColor: string = DEFAULT_THEME_COLOR;
 
   /** 启动时装配：恢复落盘设置 → 应用主题与语言 → 恢复防窥订阅（不弹窗）→ 同步后台任务。 */
   init(context: common.Context): void {
@@ -45,6 +49,7 @@ export class SettingsViewModel {
 
   private async load(context: common.Context): Promise<void> {
     await settingsStore.load(context);
+    this.persistedThemeColor = appSettings.themeColor;
     ThemeController.apply(context, appSettings.themeMode);
     LocaleController.apply(appSettings.languageMode);
     this.immersiveSupported = MaterialController.immersiveSupported();
@@ -61,6 +66,24 @@ export class SettingsViewModel {
     appSettings.themeMode = id;
     ThemeController.apply(context, id);
     settingsStore.save();
+  }
+
+  /** 主题色实时预览：只改内存，面板关闭时再统一提交。 */
+  previewThemeColor(hex: string): void {
+    appSettings.themeColor = ThemeColorMath.normalize(hex, appSettings.themeColor);
+  }
+
+  /** 提交主题色：归一 → 落盘 → 定向刷新桌面卡片。 */
+  commitThemeColor(context: common.Context, hex: string): void {
+    const normalized: string = ThemeColorMath.normalize(hex, appSettings.themeColor);
+    appSettings.themeColor = normalized;
+    if (normalized === this.persistedThemeColor) {
+      return;
+    }
+    this.persistedThemeColor = normalized;
+    settingsStore.save();
+    WidgetThemeSync.push(context).catch(() => {
+    });
   }
 
   setLanguage(id: string): void {

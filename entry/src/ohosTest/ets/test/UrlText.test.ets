@@ -63,5 +63,23 @@ export default function urlTextTest() {
       expect(UrlText.isSameSite('https://a.com', 'https://b.com')).assertFalse();
       expect(UrlText.isSameSite('', 'https://a.com')).assertFalse();
     });
+
+    it('origin_keeps_scheme_host_and_port', 0, () => {
+      expect(UrlText.origin('https://fixture.invalid/path?q=1')).assertEqual('https://fixture.invalid');
+      expect(UrlText.origin('http://fixture.invalid:8080/feed')).assertEqual('http://fixture.invalid:8080');
+      expect(UrlText.origin('ftp://fixture.invalid/icon.png')).assertEqual('');
+      expect(UrlText.origin('not a url')).assertEqual('');
+    });
+
+    it('resolve_makes_relative_icon_absolute', 0, () => {
+      expect(UrlText.resolve('https://fixture.invalid/feed.xml', '/icon.png'))
+        .assertEqual('https://fixture.invalid/icon.png');
+      expect(UrlText.resolve('https://fixture.invalid/feed.xml', 'icon.png'))
+        .assertEqual('https://fixture.invalid/icon.png');
+      expect(UrlText.resolve('https://fixture.invalid/feed.xml', 'https://other.invalid/i.png'))
+        .assertEqual('https://other.invalid/i.png');
+      expect(UrlText.resolve('', '/icon.png')).assertEqual('');
+      expect(UrlText.resolve('https://fixture.invalid/feed.xml', '')).assertEqual('');
+    });
   });
 }

@@ -12,12 +12,15 @@
  */
 
 import { formBindingData, formInfo, FormExtensionAbility, formProvider } from '@kit.FormKit';
-import { Want } from '@kit.AbilityKit';
+import { Configuration, ConfigurationConstant, Want } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { articleStore, WidgetSnapshot } from '../service/ArticleStore';
 import { WidgetConstants } from '../common/constants/WidgetConstants';
 import { DateUtil } from '../common/utils/DateUtil';
+import { ThemeColorPrefs } from '../service/ThemeColorPrefs';
+import { WidgetFormStore } from '../service/WidgetFormStore';
+import { ThemeColorMath, ThemeColorRoles } from '../common/utils/ThemeColorMath';
 
 const DOMAIN: number = 0x0000;
 const TAG: string = 'RssWidgetAbility';
@@ -93,6 +96,8 @@ export default class RssWidgetAbility extends FormExtensionAbility {
 
   onRemoveForm(formId: string): void {
     this.dimensions.delete(formId);
+    WidgetFormStore.remove(this.context, formId).catch(() => {
+    });
     hilog.info(DOMAIN, TAG, 'onRemoveForm: %{public}s', formId);
   }
 
@@ -108,7 +113,11 @@ export default class RssWidgetAbility extends FormExtensionAbility {
         : WidgetConstants.LARGE_TITLE_COUNT;
       await articleStore.open(this.context);
       const snapshot: WidgetSnapshot = await articleStore.widgetSnapshot(count);
-      const data: Record<string, string | number> = this.buildData(snapshot, dimension);
+      const themeColor: string = await ThemeColorPrefs.read(this.context);
+      const isDark: boolean =
+        this.context.config.colorMode === ConfigurationConstant.ColorMode.COLOR_MODE_DARK;
+      const roles: ThemeColorRoles = ThemeColorMath.roles(themeColor, isDark);
+      const data: Record<string, string | number> = this.buildData(snapshot, dimension, roles.accent);
       await formProvider.updateForm(formId, formBindingData.createFormBindingData(data));
     } catch (err) {
       const error: BusinessError = err as BusinessError;
@@ -116,10 +125,12 @@ export default class RssWidgetAbility extends FormExtensionAbility {
     }
   }
 
-  private buildData(snapshot: WidgetSnapshot, dimension: string): Record<string, string | number> {
+  private buildData(snapshot: WidgetSnapshot, dimension: string,
+    themeAccent: string): Record<string, string | number> {
     const data: Record<string, string | number> = this.emptyData(dimension);
     const titles: string[] = snapshot.titles;
     data[WidgetConstants.KEY_UNREAD] = snapshot.unread;
+    data[WidgetConstants.KEY_THEME_ACCENT] = themeAccent;
     for (let i = 0; i < titles.length; i += 1) {
       const suffix: string = (i + 1).toString();
       data[WidgetConstants.KEY_TITLE_PREFIX + suffix] = titles[i];
@@ -143,7 +154,8 @@ export default class RssWidgetAbility extends FormExtensionAbility {
       'i1': '',
       'i2': '',
       'i3': '',
-      'sync': ''
+      'sync': '',
+      'themeAccent': ''
     };
     if (dimension.length > 0) {
       data[WidgetConstants.KEY_DIMENSION] = dimension;

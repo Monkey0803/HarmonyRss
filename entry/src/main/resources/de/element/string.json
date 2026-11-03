@@ -617,6 +617,58 @@
       "value": "Design"
     },
     {
+      "name": "row_theme_color",
+      "value": "Themenfarbe"
+    },
+    {
+      "name": "theme_color_custom",
+      "value": "Benutzerdefiniert"
+    },
+    {
+      "name": "theme_color_picker_title",
+      "value": "Themenfarbe auswählen"
+    },
+    {
+      "name": "theme_color_presets",
+      "value": "Voreinstellungen"
+    },
+    {
+      "name": "theme_color_preview",
+      "value": "Vorschau"
+    },
+    {
+      "name": "theme_color_done",
+      "value": "Fertig"
+    },
+    {
+      "name": "theme_color_picker_unavailable",
+      "value": "Benutzerdefinierte Farben werden von dieser Systemversion nicht unterstützt"
+    },
+    {
+      "name": "theme_color_blue",
+      "value": "Blau"
+    },
+    {
+      "name": "theme_color_cyan",
+      "value": "Türkis"
+    },
+    {
+      "name": "theme_color_green",
+      "value": "Grün"
+    },
+    {
+      "name": "theme_color_orange",
+      "value": "Orange"
+    },
+    {
+      "name": "theme_color_purple",
+      "value": "Violett"
+    },
+    {
+      "name": "theme_color_pink",
+      "value": "Rosa"
+    },
+    {
       "name": "row_global_background",
       "value": "Globaler Hintergrund"
     },
@@ -4487,6 +4539,18 @@
     {
       "name": "save_web_close",
       "value": "Close"
+    },
+    {
+      "name": "subs_offline_short",
+      "value": "Offline"
+    },
+    {
+      "name": "subs_group_collapse",
+      "value": "Gruppe einklappen"
+    },
+    {
+      "name": "subs_group_expand",
+      "value": "Gruppe ausklappen"
     }
   ]
 }

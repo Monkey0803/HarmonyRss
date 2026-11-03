@@ -617,6 +617,58 @@
       "value": "主題"
     },
     {
+      "name": "row_theme_color",
+      "value": "主題色"
+    },
+    {
+      "name": "theme_color_custom",
+      "value": "自訂"
+    },
+    {
+      "name": "theme_color_picker_title",
+      "value": "選擇主題色"
+    },
+    {
+      "name": "theme_color_presets",
+      "value": "預設"
+    },
+    {
+      "name": "theme_color_preview",
+      "value": "預覽"
+    },
+    {
+      "name": "theme_color_done",
+      "value": "完成"
+    },
+    {
+      "name": "theme_color_picker_unavailable",
+      "value": "目前系統版本不支援自訂取色"
+    },
+    {
+      "name": "theme_color_blue",
+      "value": "藍色"
+    },
+    {
+      "name": "theme_color_cyan",
+      "value": "青色"
+    },
+    {
+      "name": "theme_color_green",
+      "value": "綠色"
+    },
+    {
+      "name": "theme_color_orange",
+      "value": "橙色"
+    },
+    {
+      "name": "theme_color_purple",
+      "value": "紫色"
+    },
+    {
+      "name": "theme_color_pink",
+      "value": "粉紅色"
+    },
+    {
       "name": "row_global_background",
       "value": "全域性背景圖"
     },
@@ -4487,6 +4539,18 @@
     {
       "name": "save_web_close",
       "value": "關閉"
+    },
+    {
+      "name": "subs_offline_short",
+      "value": "離線"
+    },
+    {
+      "name": "subs_group_collapse",
+      "value": "摺疊群組"
+    },
+    {
+      "name": "subs_group_expand",
+      "value": "展開群組"
     }
   ]
 }

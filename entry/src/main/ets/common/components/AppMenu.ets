@@ -20,6 +20,7 @@
 
 import { LengthMetrics } from '@kit.ArkUI';
 import { MenuItemSpec, MenuSectionSpec, MenuSpec } from './MenuSpec';
+import { themePalette } from '../../model/ThemePalette';
 
 /** 分组分隔线左右缩进（与行内边距一致），LengthMetrics 不接受资源引用。 */
 const DIVIDER_INSET: LengthMetrics = LengthMetrics.vp(12);
@@ -27,7 +28,7 @@ const DIVIDER_INSET: LengthMetrics = LengthMetrics.vp(12);
 /** 菜单项文案色：选中 → 品牌色；危险动作 → 危险色；其余主文本色。 */
 function itemColor(item: MenuItemSpec): ResourceColor {
   if (item.selected) {
-    return $r('app.color.hm_brand');
+    return themePalette.accent();
   }
   return item.danger ? $r('app.color.hm_danger') : $r('app.color.hm_text_primary');
 }
@@ -60,7 +61,7 @@ function MenuRow(item: MenuItemSpec) {
     .padding({ left: $r('app.float.space_m'), right: $r('app.float.space_m') })
     .alignItems(VerticalAlign.Center)
     .backgroundColor(item.selected
-      ? $r('app.color.hm_menu_item_selected')
+      ? themePalette.tint()
       : $r('app.color.hm_page_transparent'))
     // 高亮块铺满行宽、圆角略小于卡片（卡片 20 / 块 16）—— 不再叠 margin：
     // 100% 宽度加外边距会在右侧溢出，左右留白不对称（旧 FeedSettingsView 注释记录过）。

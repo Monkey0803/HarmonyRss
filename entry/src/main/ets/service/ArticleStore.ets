@@ -309,6 +309,32 @@ const SQL_CREATE_TAGS: string =
   'created_at INTEGER NOT NULL DEFAULT 0)';
 
 /**
+ * v10 订阅源表：从偏好库 JSON 迁进 RDB。
+ * 偏好库适合「少量设置」，但订阅有几百条时每次全量读改写 JSON 会越来越慢。
+ * 过渡期双写（RDB + 偏好库），偏好库保留一版用于回滚与降级。
+ */
+const SQL_CREATE_FEEDS: string =
+  'CREATE TABLE IF NOT EXISTS ' + ArticleDbConstants.TABLE_FEEDS + ' (' +
+  'id TEXT PRIMARY KEY, ' +
+  'url TEXT NOT NULL DEFAULT \'\', ' +
+  'title TEXT NOT NULL DEFAULT \'\', ' +
+  'site_url TEXT NOT NULL DEFAULT \'\', ' +
+  'feed_group TEXT NOT NULL DEFAULT \'\', ' +
+  'etag TEXT NOT NULL DEFAULT \'\', ' +
+  'last_modified TEXT NOT NULL DEFAULT \'\', ' +
+  'last_updated INTEGER NOT NULL DEFAULT 0, ' +
+  'last_error TEXT NOT NULL DEFAULT \'\', ' +
+  'last_error_code TEXT NOT NULL DEFAULT \'\', ' +
+  'enabled INTEGER NOT NULL DEFAULT 1, ' +
+  'fetch_interval INTEGER NOT NULL DEFAULT 0, ' +
+  'full_text_mode TEXT NOT NULL DEFAULT \'global\', ' +
+  'retention_days INTEGER NOT NULL DEFAULT 0, ' +
+  'notify TEXT NOT NULL DEFAULT \'global\', ' +
+  'mark_read_on_scroll TEXT NOT NULL DEFAULT \'global\', ' +
+  'failure_count INTEGER NOT NULL DEFAULT 0, ' +
+  'position INTEGER NOT NULL DEFAULT 0)';
+
+/**
  * v4 文章 ↔ 标签关联表：联合主键保证「同一标签重复添加不产生重复关联」。
  * 关联行随文章删除 / 回收站过期清除而清理，但移入 / 移出回收站时**保留**（恢复后标签仍在）。
  */
@@ -610,6 +636,8 @@ export class ArticleStore {
       this.store.executeSync(SQL_CREATE_HIGHLIGHTS);
       // 标签 / 智能文件夹：即使库已是最新版本也执行一遍（自愈：上次建表失败 / 被打断）。
       this.createTagTables();
+      // v10 订阅源表：每次打开都补一次（升级被打断 / 建表失败都能自愈）。
+      this.createFeedTables();
       // 远端账号 / 游标 / 映射 / 待同步队列同理：最新版本也自愈。
       this.createRemoteTables();
       // 规则表同理：最新版本也自愈（建表失败只让规则功能降级为空态）。
@@ -680,6 +708,7 @@ export class ArticleStore {
       // v4 / v5 / v6 的表已在 open() 里用 CREATE TABLE IF NOT EXISTS 自愈过，这里再补一次（幂等）。
       this.createRemoteTables();
       this.createRuleTables();
+      this.createFeedTables();
       this.createDedupeIndexes();
       const mainStale: boolean = await this.ensureMainIndex();
       const cjkStale: boolean = await this.ensureCjkIndex();
@@ -704,6 +733,7 @@ export class ArticleStore {
     this.createTagTables();
     this.createRemoteTables();
     this.createRuleTables();
+    this.createFeedTables();
     this.createDedupeIndexes();
     const mainStale: boolean = await this.ensureMainIndex();
     const cjkStale: boolean = await this.ensureCjkIndex();
@@ -728,6 +758,16 @@ export class ArticleStore {
    * 每条单独 try/catch：任何一条失败都只记日志、不影响其它语句，也不影响阅读 / 检索主链路 ——
    * 标签功能降级为「页面空态」，下次启动再自愈。
    */
+  /** 建 v10 订阅源表（可重复执行；失败只降级为「订阅仍走偏好库」）。 */
+  private createFeedTables(): void {
+    try {
+      this.store?.executeSync(SQL_CREATE_FEEDS);
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.error(DOMAIN, TAG, 'create feed table failed: %{public}d', error.code);
+    }
+  }
+
   private createTagTables(): void {
     const statements: string[] = [SQL_CREATE_TAGS, SQL_CREATE_ARTICLE_TAGS, SQL_CREATE_SMART_FOLDERS];
     for (let i = 0; i < statements.length; i += 1) {

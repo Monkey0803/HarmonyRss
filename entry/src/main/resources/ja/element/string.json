@@ -617,6 +617,58 @@
       "value": "テーマ"
     },
     {
+      "name": "row_theme_color",
+      "value": "テーマカラー"
+    },
+    {
+      "name": "theme_color_custom",
+      "value": "カスタム"
+    },
+    {
+      "name": "theme_color_picker_title",
+      "value": "テーマカラーを選択"
+    },
+    {
+      "name": "theme_color_presets",
+      "value": "プリセット"
+    },
+    {
+      "name": "theme_color_preview",
+      "value": "プレビュー"
+    },
+    {
+      "name": "theme_color_done",
+      "value": "完了"
+    },
+    {
+      "name": "theme_color_picker_unavailable",
+      "value": "このシステムバージョンではカスタムカラーを選択できません"
+    },
+    {
+      "name": "theme_color_blue",
+      "value": "ブルー"
+    },
+    {
+      "name": "theme_color_cyan",
+      "value": "シアン"
+    },
+    {
+      "name": "theme_color_green",
+      "value": "グリーン"
+    },
+    {
+      "name": "theme_color_orange",
+      "value": "オレンジ"
+    },
+    {
+      "name": "theme_color_purple",
+      "value": "パープル"
+    },
+    {
+      "name": "theme_color_pink",
+      "value": "ピンク"
+    },
+    {
       "name": "row_global_background",
       "value": "全体の背景"
     },
@@ -4487,6 +4539,18 @@
     {
       "name": "save_web_close",
       "value": "Close"
+    },
+    {
+      "name": "subs_offline_short",
+      "value": "オフライン"
+    },
+    {
+      "name": "subs_group_collapse",
+      "value": "グループを折りたたむ"
+    },
+    {
+      "name": "subs_group_expand",
+      "value": "グループを展開"
     }
   ]
 }

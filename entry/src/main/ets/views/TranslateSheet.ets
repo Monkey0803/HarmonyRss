@@ -10,6 +10,7 @@
 import { TranslationErrorCode, TranslationParagraph } from '../model/Translation';
 import { translationViewModel } from '../viewmodel/TranslationViewModel';
 import { languageText, translationErrorText } from '../common/utils/TranslationText';
+import { themePalette } from '../model/ThemePalette';
 
 const STATUS_LOADING: string = 'loading';
 const STATUS_READY: string = 'ready';
@@ -47,7 +48,7 @@ export struct TranslateSheet {
     Row({ space: $r('app.float.space_s') }) {
       SymbolGlyph($r('sys.symbol.translate'))
         .fontSize($r('app.float.icon_size'))
-        .fontColor([$r('app.color.hm_brand')])
+        .fontColor([themePalette.accent()])
       Text($r('app.string.translate_sheet_title'))
         .fontSize($r('app.float.font_size_body'))
         .fontWeight(FontWeight.Medium)
@@ -66,7 +67,7 @@ export struct TranslateSheet {
         if (translationViewModel.fromCache) {
           Text($r('app.string.translate_cached'))
             .fontSize($r('app.float.font_size_caption'))
-            .fontColor($r('app.color.hm_brand'))
+            .fontColor(themePalette.accent())
         }
       }
       SymbolGlyph($r('sys.symbol.xmark'))
@@ -88,7 +89,7 @@ export struct TranslateSheet {
       Column({ space: $r('app.float.space_xs') }) {
         Text($r('app.string.translate_selection_title'))
           .fontSize($r('app.float.font_size_caption'))
-          .fontColor($r('app.color.hm_brand'))
+          .fontColor(themePalette.accent())
           .width('100%')
         Text(translationViewModel.selectionOriginal)
           .fontSize($r('app.float.font_size_caption'))
@@ -98,7 +99,7 @@ export struct TranslateSheet {
           LoadingProgress()
             .width($r('app.float.web_loading_size'))
             .height($r('app.float.web_loading_size'))
-            .color($r('app.color.hm_brand'))
+            .color(themePalette.accent())
         } else if (this.selectionFailed()) {
           Text(translationErrorText(translationViewModel.selectionError))
             .fontSize($r('app.float.font_size_caption'))
@@ -108,7 +109,7 @@ export struct TranslateSheet {
             Button($r('app.string.translate_open_settings'))
               .buttonStyle(ButtonStyleMode.TEXTUAL)
               .fontSize($r('app.float.font_size_caption'))
-              .fontColor($r('app.color.hm_brand'))
+              .fontColor(themePalette.accent())
               .padding({ left: 0 })
               .onClick(() => {
                 this.onOpenSettings();
@@ -153,7 +154,7 @@ export struct TranslateSheet {
             .buttonStyle(ButtonStyleMode.NORMAL)
             .fontSize($r('app.float.font_size_caption'))
             .fontColor($r('app.color.hm_on_brand'))
-            .backgroundColor($r('app.color.hm_brand'))
+            .backgroundColor(themePalette.fill())
             .onClick(() => {
               this.onOpenSettings();
             })
@@ -162,7 +163,7 @@ export struct TranslateSheet {
             .buttonStyle(ButtonStyleMode.NORMAL)
             .fontSize($r('app.float.font_size_caption'))
             .fontColor($r('app.color.hm_on_brand'))
-            .backgroundColor($r('app.color.hm_brand'))
+            .backgroundColor(themePalette.fill())
             .onClick(() => {
               translationViewModel.retry();
             })
@@ -213,7 +214,7 @@ export struct TranslateSheet {
               LoadingProgress()
                 .width($r('app.float.web_loading_size'))
                 .height($r('app.float.web_loading_size'))
-                .color($r('app.color.hm_brand'))
+                .color(themePalette.accent())
               Text($r('app.string.translate_loading'))
                 .fontSize($r('app.float.font_size_caption'))
                 .fontColor($r('app.color.hm_text_secondary'))
@@ -236,7 +237,7 @@ export struct TranslateSheet {
                 .fontColor($r('app.color.hm_text_secondary'))
               Blank()
               Toggle({ type: ToggleType.Switch, isOn: translationViewModel.onlyTranslation })
-                .selectedColor($r('app.color.hm_brand'))
+                .selectedColor(themePalette.fill())
                 .onChange((value: boolean) => {
                   translationViewModel.onlyTranslation = value;
                 })
@@ -254,7 +255,7 @@ export struct TranslateSheet {
               .height($r('app.float.row_height'))
               .buttonStyle(ButtonStyleMode.TEXTUAL)
               .fontSize($r('app.float.font_size_caption'))
-              .fontColor($r('app.color.hm_brand'))
+              .fontColor(themePalette.accent())
               .margin({ top: $r('app.float.space_m') })
               .onClick(() => {
                 translationViewModel.retry();

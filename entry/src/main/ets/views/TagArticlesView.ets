@@ -15,6 +15,7 @@ import { ArticleListItem } from './ArticleListItem';
 import { RouterConstants } from '../common/constants/RouterConstants';
 import { safeArea } from '../service/SafeAreaController';
 import { ToastUtil } from '../common/utils/ToastUtil';
+import { themePalette } from '../model/ThemePalette';
 
 @ComponentV2
 export struct TagArticlesView {
@@ -74,7 +75,7 @@ export struct TagArticlesView {
         ForEach(tagViewModel.activeTags, (tag: TagWithCount) => {
           Text(tag.name)
             .fontSize($r('app.float.font_size_caption'))
-            .fontColor($r('app.color.hm_brand'))
+            .fontColor(themePalette.accent())
             .maxLines(1)
             .textOverflow({ overflow: TextOverflow.Ellipsis })
             .padding({

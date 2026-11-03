@@ -8,6 +8,7 @@
 import { Article, FeedSource } from '../model/Feed';
 import { ParsedArticle, ParsedFeed } from './RssParser';
 import { ARTICLE_ID_SEPARATOR } from '../common/constants/RssConstants';
+import { UrlText } from '../common/utils/UrlText';
 import { articleStore } from './ArticleStore';
 
 /** 文章 id：订阅源 id + 链接（没有链接时退化为标题）。 */
@@ -24,6 +25,13 @@ export function toArticles(feed: FeedSource, parsed: ParsedFeed, sink: Article[]
   }
   if (parsed.siteUrl.length > 0) {
     feed.siteUrl = parsed.siteUrl;
+  }
+  // 图标可能是相对地址：这里统一按 feed 文档地址绝对化；空值不覆盖旧图标。
+  if (parsed.iconUrl.length > 0) {
+    const iconUrl: string = UrlText.resolve(feed.url, parsed.iconUrl);
+    if (iconUrl.length > 0) {
+      feed.iconUrl = iconUrl;
+    }
   }
   feed.lastUpdated = Date.now();
   // 同一批里按 id 去重：feed 里偶发重复条目（同一链接出现两次、guid 与 link 混用）时，

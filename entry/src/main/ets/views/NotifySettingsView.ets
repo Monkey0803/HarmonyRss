@@ -25,6 +25,7 @@ import { notifyViewModel } from '../viewmodel/NotifyViewModel';
 import { settingsViewModel } from '../viewmodel/SettingsViewModel';
 import { safeArea } from '../service/SafeAreaController';
 import { ToastUtil } from '../common/utils/ToastUtil';
+import { themePalette } from '../model/ThemePalette';
 
 /** 关键词输入框的最大长度（字符）：只防手滑，真正的上限是关键词条数。 */
 const KEYWORD_INPUT_MAX: number = 40;
@@ -251,7 +252,7 @@ export struct NotifySettingsView {
         SymbolGlyph(notifyViewModel.authorized ? $r('sys.symbol.bell') : $r('sys.symbol.bell_slash'))
           .fontSize($r('app.float.icon_size'))
           .fontColor([notifyViewModel.authorized
-            ? $r('app.color.hm_brand')
+            ? themePalette.accent()
             : $r('app.color.hm_text_secondary')])
         Text(notifyViewModel.authorized
           ? $r('app.string.notify_permission_on')
@@ -265,7 +266,7 @@ export struct NotifySettingsView {
             Button($r('app.string.notify_permission_check'))
               .buttonStyle(ButtonStyleMode.TEXTUAL)
               .fontSize($r('app.float.font_size_caption'))
-              .fontColor($r('app.color.hm_brand'))
+              .fontColor(themePalette.accent())
               .onClick(() => {
                 this.refreshPermission();
               })
@@ -274,7 +275,7 @@ export struct NotifySettingsView {
               .buttonStyle(ButtonStyleMode.NORMAL)
               .fontSize($r('app.float.font_size_caption'))
               .fontColor($r('app.color.hm_on_brand'))
-              .backgroundColor($r('app.color.hm_brand'))
+              .backgroundColor(themePalette.fill())
               .enabled(!this.asking)
               .onClick(() => {
                 this.askPermission();
@@ -322,7 +323,7 @@ export struct NotifySettingsView {
         .alignItems(HorizontalAlign.Start)
 
         Toggle({ type: ToggleType.Switch, isOn: appSettings.notifyNewArticles })
-          .selectedColor($r('app.color.hm_brand'))
+          .selectedColor(themePalette.fill())
           .enabled(!this.switching)
           .onChange((value: boolean) => {
             this.toggleMaster(value);
@@ -368,7 +369,7 @@ export struct NotifySettingsView {
             .buttonStyle(ButtonStyleMode.NORMAL)
             .fontSize($r('app.float.font_size_caption'))
             .fontColor($r('app.color.hm_on_brand'))
-            .backgroundColor($r('app.color.hm_brand'))
+            .backgroundColor(themePalette.fill())
             .enabled(notifyViewModel.keywords.length < CommonConstants.NOTIFY_KEYWORD_MAX)
             .onClick(() => {
               this.addKeyword();
@@ -442,7 +443,7 @@ export struct NotifySettingsView {
         .alignItems(HorizontalAlign.Start)
 
         Toggle({ type: ToggleType.Switch, isOn: notifyViewModel.dndEnabled })
-          .selectedColor($r('app.color.hm_brand'))
+          .selectedColor(themePalette.fill())
           .onChange((value: boolean) => {
             this.toggleDnd(value);
           })
@@ -540,7 +541,7 @@ export struct NotifySettingsView {
         .alignItems(HorizontalAlign.Start)
 
         Toggle({ type: ToggleType.Switch, isOn: notifyViewModel.digestEnabled })
-          .selectedColor($r('app.color.hm_brand'))
+          .selectedColor(themePalette.fill())
           .onChange((value: boolean) => {
             this.toggleDigest(value);
           })
@@ -614,8 +615,8 @@ export struct NotifySettingsView {
               .height($r('app.float.row_height'))
               .buttonStyle(ButtonStyleMode.NORMAL)
               .fontSize($r('app.float.font_size_body'))
-              .fontColor($r('app.color.hm_brand'))
-              .backgroundColor($r('app.color.hm_menu_item_selected'))
+              .fontColor(themePalette.accent())
+              .backgroundColor(themePalette.tint())
               .enabled(!this.testing)
               .onClick(() => {
                 this.sendTest();

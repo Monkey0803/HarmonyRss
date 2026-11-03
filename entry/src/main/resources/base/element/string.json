@@ -617,6 +617,58 @@
       "value": "Theme"
     },
     {
+      "name": "row_theme_color",
+      "value": "Theme color"
+    },
+    {
+      "name": "theme_color_custom",
+      "value": "Custom"
+    },
+    {
+      "name": "theme_color_picker_title",
+      "value": "Choose theme color"
+    },
+    {
+      "name": "theme_color_presets",
+      "value": "Presets"
+    },
+    {
+      "name": "theme_color_preview",
+      "value": "Preview"
+    },
+    {
+      "name": "theme_color_done",
+      "value": "Done"
+    },
+    {
+      "name": "theme_color_picker_unavailable",
+      "value": "Custom colors are not supported on this system version."
+    },
+    {
+      "name": "theme_color_blue",
+      "value": "Blue"
+    },
+    {
+      "name": "theme_color_cyan",
+      "value": "Cyan"
+    },
+    {
+      "name": "theme_color_green",
+      "value": "Green"
+    },
+    {
+      "name": "theme_color_orange",
+      "value": "Orange"
+    },
+    {
+      "name": "theme_color_purple",
+      "value": "Purple"
+    },
+    {
+      "name": "theme_color_pink",
+      "value": "Pink"
+    },
+    {
       "name": "row_global_background",
       "value": "Global background"
     },
@@ -4487,6 +4539,18 @@
     {
       "name": "save_web_close",
       "value": "Close"
+    },
+    {
+      "name": "subs_offline_short",
+      "value": "Offline"
+    },
+    {
+      "name": "subs_group_collapse",
+      "value": "Collapse group"
+    },
+    {
+      "name": "subs_group_expand",
+      "value": "Expand group"
     }
   ]
 }

@@ -10,7 +10,8 @@ import { BusinessError } from '@kit.BasicServicesKit';
 import { appSettings } from '../model/AppSettings';
 import { ARCHIVE_OPTIONS, LIST_DENSITY_OPTIONS, ROW_LAYOUT_OPTIONS, SUMMARY_LINES_OPTIONS, THEME_OPTIONS, LANGUAGE_OPTIONS, MATERIAL_TYPE_OPTIONS, MATERIAL_LEVEL_OPTIONS, BACKGROUND_OPTIONS, LOGO_OPTIONS, AUTO_REFRESH_OPTIONS, READER_FONT_OPTIONS, READER_LINE_OPTIONS, READER_FAMILY_OPTIONS, READER_WIDTH_OPTIONS, READER_ALIGN_OPTIONS, READER_THEME_OPTIONS, READER_INDENT_OPTIONS, RETENTION_MODE_OPTIONS, RETENTION_DAYS_OPTIONS } from '../model/SettingsOptions';
 import { PreferencesConstants } from '../common/constants/PreferencesConstants';
-import { ReaderTypography } from '../common/constants/SettingsConstants';
+import { DEFAULT_THEME_COLOR, ReaderTypography } from '../common/constants/SettingsConstants';
+import { ThemeColorMath } from '../common/utils/ThemeColorMath';
 import { normalizeArticleFilter, normalizeReaderViewMode } from '../common/constants/RssConstants';
 import { BackupScalar, BackupSettings } from '../model/Backup';
 import { settingsWhitelist } from './BackupCodec';
@@ -158,6 +159,8 @@ export class SettingsStore {
       const store: preferences.Preferences = await preferences.getPreferences(context, PreferencesConstants.STORE_NAME);
       this.store = store;
       const theme: string = store.getSync(PreferencesConstants.KEY_THEME_MODE, appSettings.themeMode) as string;
+      const themeColor: string =
+        store.getSync(PreferencesConstants.KEY_THEME_COLOR, appSettings.themeColor) as string;
       const language: string = store.getSync(PreferencesConstants.KEY_LANGUAGE_MODE, appSettings.languageMode) as string;
       const materialType: string = store.getSync(PreferencesConstants.KEY_MATERIAL_TYPE, appSettings.materialType) as string;
       const materialLevel: string = store.getSync(PreferencesConstants.KEY_MATERIAL_LEVEL, appSettings.materialLevel) as string;
@@ -170,6 +173,7 @@ export class SettingsStore {
       const statusBarScroll: boolean =
         store.getSync(PreferencesConstants.KEY_STATUS_BAR_SCROLL, appSettings.statusBarScrollsWithContent) as boolean;
       appSettings.themeMode = THEME_OPTIONS.normalize(theme);
+      appSettings.themeColor = ThemeColorMath.normalize(themeColor, DEFAULT_THEME_COLOR);
       appSettings.languageMode = LANGUAGE_OPTIONS.normalize(language);
       appSettings.materialType = MATERIAL_TYPE_OPTIONS.normalize(materialType);
       appSettings.materialLevel = MATERIAL_LEVEL_OPTIONS.normalize(materialLevel);
@@ -317,6 +321,9 @@ export class SettingsStore {
         case PreferencesConstants.KEY_THEME_MODE:
           settings.set(key, appSettings.themeMode);
           break;
+        case PreferencesConstants.KEY_THEME_COLOR:
+          settings.set(key, appSettings.themeColor);
+          break;
         case PreferencesConstants.KEY_LANGUAGE_MODE:
           settings.set(key, appSettings.languageMode);
           break;
@@ -430,6 +437,10 @@ export class SettingsStore {
       switch (key) {
         case PreferencesConstants.KEY_THEME_MODE:
           appSettings.themeMode = THEME_OPTIONS.normalize(stringValue(value, appSettings.themeMode));
+          break;
+        case PreferencesConstants.KEY_THEME_COLOR:
+          appSettings.themeColor = ThemeColorMath.normalize(
+            stringValue(value, appSettings.themeColor), DEFAULT_THEME_COLOR);
           break;
         case PreferencesConstants.KEY_LANGUAGE_MODE:
           appSettings.languageMode = LANGUAGE_OPTIONS.normalize(stringValue(value, appSettings.languageMode));
@@ -553,6 +564,7 @@ export class SettingsStore {
     // 落盘失败只影响下次启动的恢复，不应该中断当前操作，所以吞掉并记日志。
     try {
       store.putSync(PreferencesConstants.KEY_THEME_MODE, appSettings.themeMode);
+      store.putSync(PreferencesConstants.KEY_THEME_COLOR, appSettings.themeColor);
       store.putSync(PreferencesConstants.KEY_LANGUAGE_MODE, appSettings.languageMode);
       store.putSync(PreferencesConstants.KEY_MATERIAL_TYPE, appSettings.materialType);
       store.putSync(PreferencesConstants.KEY_MATERIAL_LEVEL, appSettings.materialLevel);

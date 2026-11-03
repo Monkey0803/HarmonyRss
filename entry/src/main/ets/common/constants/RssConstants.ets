@@ -151,6 +151,8 @@ export class ArticleDbConstants {
   static readonly TABLE_SYNC_OUTBOX: string = 'sync_outbox';
   /** 云同步记录（订阅源 / 文章状态）：本地副本 + 脏标记 + 远端 rev。 */
   static readonly TABLE_SYNC_RECORDS: string = 'sync_records';
+  /** v10 订阅源表（原偏好库 JSON）。 */
+  static readonly TABLE_FEEDS: string = 'feeds';
   /** 规则表（本地规则引擎：名称 / 关键词 / 字段 / 动作 / 命中统计）。 */
   static readonly TABLE_RULES: string = 'rules';
   /**
@@ -161,7 +163,7 @@ export class ArticleDbConstants {
    *   v8 = 媒体附件 articles.enclosures + 音频进度 articles.media_progress；
    *   v9 = 云同步记录 sync_records）。
    */
-  static readonly SCHEMA_VERSION: number = 9;
+  static readonly SCHEMA_VERSION: number = 10;
 }
 
 /**

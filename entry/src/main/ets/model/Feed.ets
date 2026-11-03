@@ -20,6 +20,8 @@ export class FeedSource {
   @Trace url: string;
   /** 站点主页（可能为空）。 */
   @Trace siteUrl: string;
+  /** feed 自带的站点图标（绝对地址）；空串表示没有，界面回退首字母头像。 */
+  @Trace iconUrl: string = '';
   /** 最近一次**成功**抓取的时间戳（毫秒）；失败不更新。 */
   @Trace lastUpdated: number;
   /** 本地保留的文章数，由 ViewModel 按文章列表重算。 */

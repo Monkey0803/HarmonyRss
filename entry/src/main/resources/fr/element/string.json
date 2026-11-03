@@ -617,6 +617,58 @@
       "value": "Thème"
     },
     {
+      "name": "row_theme_color",
+      "value": "Couleur du thème"
+    },
+    {
+      "name": "theme_color_custom",
+      "value": "Personnalisée"
+    },
+    {
+      "name": "theme_color_picker_title",
+      "value": "Choisir la couleur du thème"
+    },
+    {
+      "name": "theme_color_presets",
+      "value": "Préréglages"
+    },
+    {
+      "name": "theme_color_preview",
+      "value": "Aperçu"
+    },
+    {
+      "name": "theme_color_done",
+      "value": "Terminé"
+    },
+    {
+      "name": "theme_color_picker_unavailable",
+      "value": "Les couleurs personnalisées ne sont pas prises en charge par cette version du système"
+    },
+    {
+      "name": "theme_color_blue",
+      "value": "Bleu"
+    },
+    {
+      "name": "theme_color_cyan",
+      "value": "Turquoise"
+    },
+    {
+      "name": "theme_color_green",
+      "value": "Vert"
+    },
+    {
+      "name": "theme_color_orange",
+      "value": "Orange"
+    },
+    {
+      "name": "theme_color_purple",
+      "value": "Violet"
+    },
+    {
+      "name": "theme_color_pink",
+      "value": "Rose"
+    },
+    {
       "name": "row_global_background",
       "value": "Fond global"
     },
@@ -4487,6 +4539,18 @@
     {
       "name": "save_web_close",
       "value": "Close"
+    },
+    {
+      "name": "subs_offline_short",
+      "value": "Hors ligne"
+    },
+    {
+      "name": "subs_group_collapse",
+      "value": "Replier le groupe"
+    },
+    {
+      "name": "subs_group_expand",
+      "value": "Développer le groupe"
     }
   ]
 }

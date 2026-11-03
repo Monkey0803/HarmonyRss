@@ -12,6 +12,7 @@ import { ArticleListItem } from './ArticleListItem';
 import { RouterConstants } from '../common/constants/RouterConstants';
 import { safeArea } from '../service/SafeAreaController';
 import { ToastUtil } from '../common/utils/ToastUtil';
+import { themePalette } from '../model/ThemePalette';
 
 @ComponentV2
 export struct HiddenArticlesView {
@@ -68,7 +69,7 @@ export struct HiddenArticlesView {
 
       Text($r('app.string.rule_hidden_entry', ruleViewModel.hiddenCount))
         .fontSize($r('app.float.font_size_caption'))
-        .fontColor($r('app.color.hm_brand'))
+        .fontColor(themePalette.accent())
         .width('100%')
     }
     .width('100%')
@@ -93,7 +94,7 @@ export struct HiddenArticlesView {
         Button($r('app.string.hidden_unhide'))
           .buttonStyle(ButtonStyleMode.TEXTUAL)
           .fontSize($r('app.float.font_size_caption'))
-          .fontColor($r('app.color.hm_brand'))
+          .fontColor(themePalette.accent())
           .onClick(() => {
             this.unhide(article);
           })

@@ -15,6 +15,7 @@ import { FeedErrorText } from '../common/utils/FeedErrorText';
 import { RouterConstants } from '../common/constants/RouterConstants';
 import { safeArea } from '../service/SafeAreaController';
 import { ArticleSwipeBar } from '../common/components/ArticleSwipeBar';
+import { themePalette } from '../model/ThemePalette';
 
 @ComponentV2
 export struct FeedArticlesView {
@@ -103,7 +104,7 @@ export struct FeedArticlesView {
         Button(this.newestFirst ? $r('app.string.feed_sort_newest') : $r('app.string.feed_sort_oldest'))
           .buttonStyle(ButtonStyleMode.TEXTUAL)
           .fontSize($r('app.float.font_size_caption'))
-          .fontColor($r('app.color.hm_brand'))
+          .fontColor(themePalette.accent())
           .onClick(() => {
             this.newestFirst = !this.newestFirst;
             this.dataSource.setItems(this.ordered());
@@ -143,7 +144,7 @@ export struct FeedArticlesView {
             Button($r('app.string.action_retry'))
               .buttonStyle(ButtonStyleMode.NORMAL)
               .fontColor($r('app.color.hm_on_brand'))
-              .backgroundColor($r('app.color.hm_brand'))
+              .backgroundColor(themePalette.fill())
               .onClick(() => {
                 this.reload();
               })

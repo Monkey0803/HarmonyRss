@@ -24,6 +24,7 @@ import {
   SnackBarStyleOptions
 } from '@kit.UIDesignKit';
 import { SettingIconTitle, SettingsSectionTitle } from './settings/SettingsRows';
+import { themePalette } from '../model/ThemePalette';
 
 @ComponentV2
 export struct SyncView {
@@ -234,7 +235,7 @@ export struct SyncView {
     };
     const confirmButton: AlertDialogButtonBaseOptions = {
       value: $r('app.string.dialog_confirm'),
-      fontColor: $r('app.color.hm_brand'),
+      fontColor: themePalette.accent(),
       action: () => {
         const context: common.Context | undefined = this.hostContext();
         if (context === undefined) {
@@ -270,7 +271,7 @@ export struct SyncView {
             }
             .layoutWeight(1)
             Toggle({ type: ToggleType.Switch, isOn: this.syncOn })
-              .selectedColor($r('app.color.hm_brand'))
+              .selectedColor(themePalette.fill())
               .onChange((value: boolean) => {
                 this.toggle(value);
               })
@@ -288,7 +289,7 @@ export struct SyncView {
             }
             .layoutWeight(1)
             Toggle({ type: ToggleType.Switch, isOn: this.cloudBackend })
-              .selectedColor($r('app.color.hm_brand'))
+              .selectedColor(themePalette.fill())
               .onChange((value: boolean) => {
                 this.toggleCloud(value);
               })
@@ -306,7 +307,7 @@ export struct SyncView {
             }
             .layoutWeight(1)
             Toggle({ type: ToggleType.Switch, isOn: this.wifiOnly })
-              .selectedColor($r('app.color.hm_brand'))
+              .selectedColor(themePalette.fill())
               .onChange((value: boolean) => {
                 this.toggleWifiOnly(value);
               })

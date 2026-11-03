@@ -12,6 +12,7 @@ import { DateUtil } from '../common/utils/DateUtil';
 import { appSettings } from '../model/AppSettings';
 import { ListDensityMetrics, ListRowLayout } from '../common/constants/SettingsConstants';
 import { Enclosure, firstAudio, firstVideo, formatDuration } from '../model/Enclosure';
+import { themePalette } from '../model/ThemePalette';
 
 @ReusableV2
 @ComponentV2
@@ -107,13 +108,13 @@ export struct ArticleListItem {
         // 多选态：未读点换成勾选圈（选中的用品牌色实心）
         SymbolGlyph(this.picked ? $r('sys.symbol.checkmark_circle') : $r('sys.symbol.circle'))
           .fontSize($r('app.float.icon_size'))
-          .fontColor([this.picked ? $r('app.color.hm_brand') : $r('app.color.hm_text_secondary')])
+          .fontColor([this.picked ? themePalette.accent() : $r('app.color.hm_text_secondary')])
           .padding({ left: $r('app.float.space_xs'), right: $r('app.float.space_xs') })
       } else {
         Row()
           .width($r('app.float.feed_dot_size'))
           .height($r('app.float.feed_dot_size'))
-          .backgroundColor(this.article.read ? $r('app.color.hm_divider') : $r('app.color.hm_brand'))
+          .backgroundColor(this.article.read ? $r('app.color.hm_divider') : themePalette.fill())
           .borderRadius($r('app.float.feed_dot_size'))
       }
 
@@ -138,7 +139,7 @@ export struct ArticleListItem {
         Row({ space: $r('app.float.space_s') }) {
           Text(this.article.feedTitle)
             .fontSize($r('app.float.font_size_caption'))
-            .fontColor($r('app.color.hm_brand'))
+            .fontColor(themePalette.accent())
             .maxLines(1)
             .textOverflow({ overflow: TextOverflow.Ellipsis })
             .layoutWeight(1)
@@ -146,7 +147,7 @@ export struct ArticleListItem {
           if (this.merged()) {
             Text($r('app.string.dedupe_source_count', this.article.duplicateCount))
               .fontSize($r('app.float.font_size_caption'))
-              .fontColor($r('app.color.hm_brand'))
+              .fontColor(themePalette.accent())
               .maxLines(1)
               .constraintSize({ maxWidth: 96 })
               .height($r('app.float.value_chip_height'))
@@ -164,25 +165,25 @@ export struct ArticleListItem {
           if (this.mediaAudio() !== undefined) {
             SymbolGlyph($r('sys.symbol.headphones'))
               .fontSize($r('app.float.font_size_caption'))
-              .fontColor([$r('app.color.hm_brand')])
+              .fontColor([themePalette.accent()])
               .accessibilityText($r('app.string.media_audio_label'))
             if (this.mediaDurationText().length > 0) {
               Text(this.mediaDurationText())
                 .fontSize($r('app.float.font_size_caption'))
-                .fontColor($r('app.color.hm_brand'))
+                .fontColor(themePalette.accent())
                 .maxLines(1)
             }
           } else if (this.mediaVideo() !== undefined) {
             SymbolGlyph($r('sys.symbol.play_video'))
               .fontSize($r('app.float.font_size_caption'))
-              .fontColor([$r('app.color.hm_brand')])
+              .fontColor([themePalette.accent()])
               .accessibilityText($r('app.string.media_video_label'))
           }
           if (this.article.offlineState !== 'none') {
             SymbolGlyph($r('sys.symbol.arrow_down_circle'))
               .fontSize($r('app.float.font_size_caption'))
               .fontColor([this.article.offlineState === 'full'
-                ? $r('app.color.hm_brand') : $r('app.color.hm_text_secondary')])
+                ? themePalette.accent() : $r('app.color.hm_text_secondary')])
               .accessibilityText(this.article.offlineState === 'full'
                 ? $r('app.string.offline_full') : $r('app.string.offline_partial'))
           }
@@ -224,7 +225,7 @@ export struct ArticleListItem {
       if (this.article.saved) {
         SymbolGlyph($r('sys.symbol.bookmark_fill'))
           .fontSize($r('app.float.font_size_caption'))
-          .fontColor([$r('app.color.hm_brand')])
+          .fontColor([themePalette.accent()])
           .accessibilityText($r('app.string.filter_saved'))
       }
 
@@ -234,7 +235,7 @@ export struct ArticleListItem {
       if (!this.selecting) {
         SymbolGlyph(this.article.starred ? $r('sys.symbol.star_fill') : $r('sys.symbol.star'))
           .fontSize($r('app.float.icon_size'))
-          .fontColor([this.article.starred ? $r('app.color.hm_brand') : $r('app.color.hm_text_secondary')])
+          .fontColor([this.article.starred ? themePalette.accent() : $r('app.color.hm_text_secondary')])
           .padding($r('app.float.space_m'))
           .accessibilityText(this.article.starred ? $r('app.string.action_unstar') : $r('app.string.action_star'))
           .onClick(() => {
@@ -248,7 +249,7 @@ export struct ArticleListItem {
     .width('100%')
     .padding(this.rowPadding())
     .backgroundColor(this.selecting && this.picked
-      ? $r('app.color.hm_menu_item_selected')
+      ? themePalette.tint()
       : $r('app.color.hm_card_background'))
     .borderRadius($r('app.float.radius_card'))
     .accessibilityDescription(this.accessibilityState())

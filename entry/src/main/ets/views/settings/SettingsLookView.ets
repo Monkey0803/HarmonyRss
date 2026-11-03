@@ -16,10 +16,14 @@ import {
 } from '../../model/SettingsOptions';
 import { settingsViewModel } from '../../viewmodel/SettingsViewModel';
 import { AppLogo } from '../../common/components/AppLogo';
+import { AppSheet } from '../../common/components/AppSheet';
 import { CommonConstants } from '../../common/constants/CommonConstants';
 import { RouterConstants } from '../../common/constants/RouterConstants';
 import { BackgroundKind } from '../../common/constants/SettingsConstants';
 import { safeArea } from '../../service/SafeAreaController';
+import { themePalette } from '../../model/ThemePalette';
+import { themeColorLabelOf } from '../../model/ThemeColorOptions';
+import { ThemeColorSheet } from './ThemeColorSheet';
 import { NavSettingRow, OptionSelectRow, SettingField, SettingsSectionTitle } from './SettingsRows';
 
 /** App logo 选择区：四个变体的可视化预览，选中项加品牌色描边。 */
@@ -34,21 +38,23 @@ struct LogoPickerRow {
         AppLogo({
           logoKind: option.id,
           logoSize: CommonConstants.LOGO_TILE_SIZE,
-          cornerRadius: CommonConstants.LOGO_TILE_RADIUS
+          cornerRadius: CommonConstants.LOGO_TILE_RADIUS,
+          themeColor: appSettings.themeColor,
+          isDark: themePalette.isDark
         })
       }
       .padding($r('app.float.space_xs'))
       .borderRadius($r('app.float.radius_card'))
       .borderWidth(option.id === appSettings.logoKind ? 2 : 0)
-      .borderColor($r('app.color.hm_brand'))
+      .borderColor(themePalette.accent())
       .backgroundColor(option.id === appSettings.logoKind
-        ? $r('app.color.hm_menu_item_selected')
+        ? themePalette.tint()
         : $r('app.color.hm_page_transparent'))
 
       Text(option.label)
         .fontSize($r('app.float.font_size_caption'))
         .fontColor(option.id === appSettings.logoKind
-          ? $r('app.color.hm_brand')
+          ? themePalette.accent()
           : $r('app.color.hm_text_secondary'))
     }
     .layoutWeight(1)
@@ -77,6 +83,8 @@ struct LogoPickerRow {
 export struct SettingsLookView {
   @Param navPathStack: NavPathStack = new NavPathStack();
   @Param scroller: Scroller = new Scroller();
+  /** 主题色取色面板显隐。 */
+  @Local showThemeColor: boolean = false;
 
   private hostContext(): common.UIAbilityContext {
     const context: common.Context | undefined = this.getUIContext().getHostContext();
@@ -84,8 +92,9 @@ export struct SettingsLookView {
   }
 
   build() {
-    Scroll(this.scroller) {
-      Column() {
+    Stack() {
+      Scroll(this.scroller) {
+        Column() {
         // 透明标题栏占位：内容可以穿过标题栏下方。
         Row().width('100%').height(safeArea.contentTopInsetVp)
 
@@ -98,6 +107,17 @@ export struct SettingsLookView {
             field: SettingField.THEME,
             onPick: (id: string) => {
               settingsViewModel.setTheme(this.hostContext(), id);
+            }
+          })
+          Divider().color($r('app.color.hm_divider'))
+          NavSettingRow({
+            icon: $r('sys.symbol.paintbrush'),
+            title: $r('app.string.row_theme_color'),
+            detail: themeColorLabelOf(appSettings.themeColor),
+            showDot: true,
+            dotColor: themePalette.fill(),
+            onOpen: () => {
+              this.showThemeColor = true;
             }
           })
           Divider().color($r('app.color.hm_divider'))
@@ -177,6 +197,33 @@ export struct SettingsLookView {
     // 这里固定从顶部开始排。
     .align(Alignment.TopStart)
     .clip(false)
-    .backgroundColor($r('app.color.hm_page_transparent'))
+      .backgroundColor($r('app.color.hm_page_transparent'))
+
+      AppSheet({
+        visible: this.showThemeColor,
+        initialSize: SheetSize.MEDIUM,
+        showClose: false,
+        onDismiss: () => {
+          this.showThemeColor = false;
+          settingsViewModel.commitThemeColor(this.hostContext(), appSettings.themeColor);
+        }
+      }) {
+        ThemeColorSheet({
+          currentColor: appSettings.themeColor,
+          onPreview: (hex: string) => {
+            settingsViewModel.previewThemeColor(hex);
+          },
+          onCommit: (hex: string) => {
+            settingsViewModel.commitThemeColor(this.hostContext(), hex);
+          },
+          onClose: () => {
+            this.showThemeColor = false;
+            settingsViewModel.commitThemeColor(this.hostContext(), appSettings.themeColor);
+          }
+        })
+      }
+    }
+    .width('100%')
+    .height('100%')
   }
 }

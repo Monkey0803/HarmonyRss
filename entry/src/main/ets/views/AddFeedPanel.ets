@@ -20,6 +20,7 @@ import { MaterialController } from '../service/MaterialController';
 import { appSettings } from '../model/AppSettings';
 import { AppMenu } from '../common/components/AppMenu';
 import { MenuItemSpec, MenuSectionSpec, MenuSpec } from '../common/components/MenuSpec';
+import { themePalette } from '../model/ThemePalette';
 
 @ComponentV2
 export struct AddFeedPanel {
@@ -218,7 +219,7 @@ export struct AddFeedPanel {
           .buttonStyle(ButtonStyleMode.NORMAL)
           .fontSize($r('app.float.font_size_caption'))
           .fontColor($r('app.color.hm_on_brand'))
-          .backgroundColor($r('app.color.hm_brand'))
+          .backgroundColor(themePalette.fill())
           .onClick(() => {
             const name: string = this.draftNewGroup.trim();
             if (name.length > 0) {
@@ -233,7 +234,7 @@ export struct AddFeedPanel {
       Row({ space: $r('app.float.space_xs') }) {
         SymbolGlyph($r('sys.symbol.folder'))
           .fontSize($r('app.float.icon_size_small'))
-          .fontColor([$r('app.color.hm_brand')])
+          .fontColor([themePalette.accent()])
         Text(this.groupLabel())
           .fontSize($r('app.float.font_size_body'))
           .fontColor($r('app.color.hm_text_primary'))
@@ -287,7 +288,7 @@ export struct AddFeedPanel {
           .buttonStyle(ButtonStyleMode.NORMAL)
           .fontSize($r('app.float.font_size_body'))
           .fontColor($r('app.color.hm_on_brand'))
-          .backgroundColor($r('app.color.hm_brand'))
+          .backgroundColor(themePalette.fill())
           .constraintSize({ minWidth: 88 })
           .enabled(!this.submitting)
           .onClick(() => {
@@ -344,7 +345,7 @@ export struct AddFeedPanel {
               .alignItems(HorizontalAlign.Start)
               .padding($r('app.float.space_s'))
               .backgroundColor(this.pending?.resolvedUrl === choice.resolvedUrl ?
-                $r('app.color.hm_menu_item_selected') : $r('app.color.hm_value_chip_background'))
+                themePalette.tint() : $r('app.color.hm_value_chip_background'))
               .borderRadius($r('app.float.radius_chip'))
               .onClick(() => { this.selectPreview(choice); })
             }, (choice: FeedPreview) => choice.resolvedUrl)
@@ -419,7 +420,7 @@ export struct AddFeedPanel {
           .buttonStyle(ButtonStyleMode.NORMAL)
           .fontSize($r('app.float.font_size_body'))
           .fontColor($r('app.color.hm_on_brand'))
-          .backgroundColor($r('app.color.hm_brand'))
+          .backgroundColor(themePalette.fill())
           .enabled(!this.submitting)
           .onClick(() => {
             this.confirm();

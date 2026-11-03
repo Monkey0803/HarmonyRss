@@ -7,7 +7,7 @@
  * 首次运行（读不到值 / 全部非法）时播种内置订阅源。
  */
 
-import { preferences } from '@kit.ArkData';
+import { preferences, relationalStore } from '@kit.ArkData';
 import { common } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { PreferencesConstants } from '../common/constants/PreferencesConstants';
@@ -17,13 +17,15 @@ import { UrlText } from '../common/utils/UrlText';
 import { DedupeKeys } from './DedupeKeys';
 import { DEFAULT_FEEDS, FeedSeed } from '../model/DefaultFeeds';
 import { FullTextMode, TriState } from '../common/constants/SettingsConstants';
-import { FeedError } from '../common/constants/RssConstants';
+import { ArticleDbConstants, FeedError } from '../common/constants/RssConstants';
+import { articleStore } from './ArticleStore';
 
 /** 落盘用的扁平结构（新字段可选：旧记录读不到时按默认值处理）。 */
 interface FeedRecord {
   title: string;
   url: string;
   siteUrl: string;
+  iconUrl?: string;
   group: string;
   etag: string;
   lastModified: string;
@@ -111,8 +113,11 @@ export function decodeFeedRecords(text: string): FeedSource[] {
         ? record.title
         : url;
       const siteUrl: string = typeof record.siteUrl === 'string' ? record.siteUrl : '';
+      const rawIcon: string = typeof record.iconUrl === 'string' ? record.iconUrl.trim() : '';
+      const iconUrl: string = rawIcon.startsWith('http://') || rawIcon.startsWith('https://') ? rawIcon : '';
       const group: string = typeof record.group === 'string' ? record.group : '';
       const feed: FeedSource = new FeedSource(url, title, url, siteUrl, group);
+      feed.iconUrl = iconUrl;
       // 老数据没有这些字段，读不到就当作「没有校验值 / 从未同步」。
       feed.etag = typeof record.etag === 'string' ? record.etag : '';
       feed.lastModified = typeof record.lastModified === 'string' ? record.lastModified : '';
@@ -154,6 +159,7 @@ export function encodeFeeds(feeds: FeedSource[]): string {
       title: feed.title,
       url: feed.url,
       siteUrl: feed.siteUrl,
+      iconUrl: feed.iconUrl,
       group: feed.group,
       etag: feed.etag,
       lastModified: feed.lastModified,
@@ -237,11 +243,102 @@ export class FeedStore {
   private store: preferences.Preferences | undefined = undefined;
 
   /**
+   * 从 RDB 读订阅源（v10 起的权威副本）。
+   * 库不可用 / 表还没建时返回空数组，调用方回退偏好库。
+   */
+  private readFromDb(): FeedSource[] {
+    const store: relationalStore.RdbStore | undefined = articleStore.getStore();
+    const feeds: FeedSource[] = [];
+    if (store === undefined) {
+      return feeds;
+    }
+    try {
+      const rs: relationalStore.ResultSet = store.querySqlSync(
+        'SELECT id, url, title, site_url, feed_group, etag, last_modified, last_updated,' +
+        ' last_error, last_error_code, enabled, fetch_interval, full_text_mode, retention_days,' +
+        ' notify, mark_read_on_scroll, failure_count FROM ' + ArticleDbConstants.TABLE_FEEDS +
+        ' ORDER BY position ASC, id ASC');
+      try {
+        while (rs.goToNextRow()) {
+          const url: string = rs.getString(rs.getColumnIndex('url'));
+          if (url.length === 0) {
+            continue;
+          }
+          const id: string = rs.getString(rs.getColumnIndex('id'));
+          const title: string = rs.getString(rs.getColumnIndex('title'));
+          const feed: FeedSource = new FeedSource(id.length > 0 ? id : url,
+            title.length > 0 ? title : url, url,
+            rs.getString(rs.getColumnIndex('site_url')),
+            rs.getString(rs.getColumnIndex('feed_group')));
+          feed.etag = rs.getString(rs.getColumnIndex('etag'));
+          feed.lastModified = rs.getString(rs.getColumnIndex('last_modified'));
+          feed.lastUpdated = rs.getLong(rs.getColumnIndex('last_updated'));
+          feed.lastError = rs.getString(rs.getColumnIndex('last_error'));
+          feed.lastErrorCode = normalizeFeedErrorCode(
+            rs.getString(rs.getColumnIndex('last_error_code')), feed.lastError.length > 0);
+          feed.enabled = rs.getLong(rs.getColumnIndex('enabled')) === 1;
+          feed.fetchIntervalMinutes = normalizeFeedInterval(rs.getLong(rs.getColumnIndex('fetch_interval')));
+          feed.fullTextMode = normalizeFeedFullTextMode(rs.getString(rs.getColumnIndex('full_text_mode')));
+          feed.retentionDays = normalizeFeedRetention(rs.getLong(rs.getColumnIndex('retention_days')));
+          feed.notify = normalizeFeedTriState(rs.getString(rs.getColumnIndex('notify')));
+          feed.markReadOnScroll = normalizeFeedTriState(rs.getString(rs.getColumnIndex('mark_read_on_scroll')));
+          feed.failureCount = Math.max(0, Math.round(rs.getLong(rs.getColumnIndex('failure_count'))));
+          feeds.push(feed);
+        }
+      } finally {
+        rs.close();
+      }
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      console.error('FeedStore.readFromDb failed: ' + error.code.toString());
+      return [];
+    }
+    return feeds;
+  }
+
+  /** 全量写 RDB（订阅量级是几百条，整体替换比逐条 diff 简单可靠）。 */
+  private writeDb(feeds: FeedSource[]): void {
+    const store: relationalStore.RdbStore | undefined = articleStore.getStore();
+    if (store === undefined) {
+      return;
+    }
+    try {
+      store.beginTransaction();
+      try {
+        store.executeSync('DELETE FROM ' + ArticleDbConstants.TABLE_FEEDS);
+        for (let i = 0; i < feeds.length; i += 1) {
+          const feed: FeedSource = feeds[i];
+          store.executeSync('INSERT OR REPLACE INTO ' + ArticleDbConstants.TABLE_FEEDS +
+            ' (id, url, title, site_url, feed_group, etag, last_modified, last_updated, last_error,' +
+            ' last_error_code, enabled, fetch_interval, full_text_mode, retention_days, notify,' +
+            ' mark_read_on_scroll, failure_count, position) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [feed.id.length > 0 ? feed.id : feed.url, feed.url, feed.title, feed.siteUrl, feed.group,
+              feed.etag, feed.lastModified, feed.lastUpdated, feed.lastError, feed.lastErrorCode,
+              feed.enabled ? 1 : 0, feed.fetchIntervalMinutes, feed.fullTextMode, feed.retentionDays,
+              feed.notify, feed.markReadOnScroll, feed.failureCount, i]);
+        }
+        store.commit();
+      } catch (inner) {
+        store.rollBack();
+        throw inner as Error;
+      }
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      console.error('FeedStore.writeDb failed: ' + error.code.toString());
+    }
+  }
+
+  /**
    * 打开偏好库并读出订阅源。
    * seedWhenEmpty = true（默认）：没有有效数据时返回内置种子（首启体验）；
    * false：如实返回空数组（后台任务用，避免用户删光订阅后又被种子写回文章）。
    */
   async load(context: common.Context, seedWhenEmpty: boolean = true): Promise<FeedSource[]> {
+    // v10 起以 RDB 为准；读不到再回退偏好库（旧版本升级 / 数据库降级）。
+    const fromDb: FeedSource[] = this.readFromDb();
+    if (fromDb.length > 0) {
+      return fromDb;
+    }
     try {
       const store: preferences.Preferences =
         await preferences.getPreferences(context, PreferencesConstants.STORE_NAME);
@@ -251,6 +348,8 @@ export class FeedStore {
       const text: string = typeof raw === 'string' ? raw : '';
       const stored: FeedSource[] = decodeFeedRecords(text);
       if (stored.length > 0) {
+        // 首次升级：把偏好库里的订阅灌进 RDB，之后读写都走库（偏好库继续双写一版）。
+        this.writeDb(stored);
         return stored;
       }
     } catch (err) {
@@ -285,6 +384,8 @@ export class FeedStore {
     store.flush().catch((err: BusinessError) => {
       console.error('FeedStore.flush failed: ' + err.code.toString());
     });
+    // 双写：RDB 是权威副本，偏好库保留一版用于回滚 / 降级读取。
+    this.writeDb(feeds);
   }
 }
 

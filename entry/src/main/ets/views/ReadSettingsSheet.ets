@@ -24,6 +24,7 @@ import {
 import { ReaderAlign, ReaderIndent, ReaderTypography } from '../common/constants/SettingsConstants';
 import { appSettings } from '../model/AppSettings';
 import { settingsViewModel } from '../viewmodel/SettingsViewModel';
+import { themePalette } from '../model/ThemePalette';
 
 /** 拖动过程中应用排版的节流间隔（毫秒）。 */
 const APPLY_THROTTLE_MS: number = 100;
@@ -161,7 +162,7 @@ export struct ReadSettingsSheet {
               bottom: $r('app.float.space_xs')
             })
             .backgroundColor(this.selectedOf(group.id) === option.id
-              ? $r('app.color.hm_brand')
+              ? themePalette.accent()
               : $r('app.color.hm_value_chip_background'))
             .borderRadius($r('app.float.radius_chip'))
             .margin({ right: $r('app.float.space_xs'), bottom: $r('app.float.space_xs') })
@@ -283,7 +284,7 @@ export struct ReadSettingsSheet {
         Button($r('app.string.read_panel_reset'))
           .buttonStyle(ButtonStyleMode.TEXTUAL)
           .fontSize($r('app.float.font_size_caption'))
-          .fontColor($r('app.color.hm_brand'))
+          .fontColor(themePalette.accent())
           .onClick(() => {
             settingsViewModel.setReaderFontScale(1.0);
             settingsViewModel.setReaderLineScale(1.7);

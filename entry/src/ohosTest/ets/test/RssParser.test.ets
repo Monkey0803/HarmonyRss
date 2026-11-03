@@ -4,10 +4,12 @@
 
 import { describe, it, expect } from '@ohos/hypium';
 import { parseFeed, decodeEntities, stripTags, ParsedFeed, ParsedArticle } from '../../../main/ets/service/RssParser';
+import { parseJsonFeed } from '../../../main/ets/service/JsonFeedParser';
 
 const RSS_SAMPLE: string =
   '<?xml version="1.0"?><rss version="2.0"><channel>' +
   '<title>My Feed</title><link>https://example.com</link>' +
+  '<image><url>https://example.com/logo.png</url><title>Logo</title></image>' +
   '<item>' +
   '<title>Hello &amp; World</title>' +
   '<link>https://example.com/a</link>' +
@@ -22,6 +24,7 @@ const RSS_SAMPLE: string =
 const ATOM_SAMPLE: string =
   '<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom">' +
   '<title>Atom Feed</title><link href="https://atom.example"/>' +
+  '<icon>/icon.png</icon>' +
   '<entry>' +
   '<title>T</title>' +
   '<link href="https://atom.example/1"/>' +
@@ -47,6 +50,7 @@ export default function rssParserTest() {
     it('parses_rss_item', 0, () => {
       const feed: ParsedFeed = parseFeed(RSS_SAMPLE);
       expect(feed.title).assertEqual('My Feed');
+      expect(feed.iconUrl).assertEqual('https://example.com/logo.png');
       expect(feed.articles.length).assertEqual(1);
       const a: ParsedArticle = feed.articles[0];
       expect(a.title).assertEqual('Hello & World');
@@ -64,6 +68,7 @@ export default function rssParserTest() {
       const feed: ParsedFeed = parseFeed(ATOM_SAMPLE);
       expect(feed.title).assertEqual('Atom Feed');
       expect(feed.siteUrl).assertEqual('https://atom.example');
+      expect(feed.iconUrl).assertEqual('/icon.png');
       expect(feed.articles.length).assertEqual(1);
       const a: ParsedArticle = feed.articles[0];
       expect(a.title).assertEqual('T');
@@ -72,10 +77,18 @@ export default function rssParserTest() {
       expect(a.publishedAt > 0).assertTrue();
     });
 
+    it('parses_json_feed_icon', 0, () => {
+      const json: string =
+        '{"title":"J","home_page_url":"https://json.example","icon":"https://json.example/icon.png","items":[]}';
+      const feed: ParsedFeed = parseJsonFeed(json);
+      expect(feed.iconUrl).assertEqual('https://json.example/icon.png');
+    });
+
     it('empty_document_is_safe', 0, () => {
       const feed: ParsedFeed = parseFeed('');
       expect(feed.articles.length).assertEqual(0);
       expect(feed.title).assertEqual('');
+      expect(feed.iconUrl).assertEqual('');
     });
   });
 }

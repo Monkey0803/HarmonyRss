@@ -35,6 +35,7 @@ export default function feedStoreTest() {
       expect(feed.failureCount).assertEqual(0);
       expect(feed.lastUpdated).assertEqual(0);
       expect(feed.lastErrorCode).assertEqual(FeedError.NONE);
+      expect(feed.iconUrl).assertEqual('');
     });
 
     it('dirty_values_normalized', 0, () => {
@@ -89,6 +90,7 @@ export default function feedStoreTest() {
       feed.lastError = 'network: connection refused';
       feed.lastErrorCode = FeedError.NETWORK_ERROR;
       feed.lastUpdated = 1700000000001;
+      feed.iconUrl = 'https://fixture.invalid/icon.png';
       const restored: FeedSource = decodeFeedRecords(encodeFeeds([feed]))[0];
       expect(restored.enabled).assertFalse();
       expect(restored.fetchIntervalMinutes).assertEqual(180);
@@ -100,6 +102,14 @@ export default function feedStoreTest() {
       expect(restored.failureCount).assertEqual(2);
       expect(restored.lastErrorCode).assertEqual(FeedError.NETWORK_ERROR);
       expect(restored.lastUpdated).assertEqual(1700000000001);
+      expect(restored.iconUrl).assertEqual('https://fixture.invalid/icon.png');
+    });
+
+    it('rejects_non_http_icon', 0, () => {
+      const json: string =
+        '[{"title":"x","url":"https://fixture.invalid/feed","siteUrl":"","group":"","etag":"",' +
+        '"lastModified":"","iconUrl":"file:///tmp/icon.png"}]';
+      expect(decodeFeedRecords(json)[0].iconUrl).assertEqual('');
     });
 
     it('old_raw_error_uses_localizable_fallback', 0, () => {

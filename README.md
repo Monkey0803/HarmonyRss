@@ -132,7 +132,8 @@ HarmonyOS（ArkTS）RSS 阅读器。基于 **UI Design Kit（HDS）** 组件与 
   语言目录为 `zh_CN` / `zh_Hant` / `ja` / `de` / `fr` / `es`（base 为英文兜底），
   日期、数字与占位符沿用系统 / 模板格式；`node tools/check-i18n.mjs` 校验 key 覆盖与占位符一致性。
 - **桌面服务卡片**：`entry/src/main/ets/form`。
-- **外观**：主题、全局背景图、沉浸光感材质、App logo、防窥保护、智感握姿。
+- **外观**：主题、主题色（6 个预设 + 系统取色器自定义，覆盖应用内 UI / 桌面卡片 / App logo）、
+  全局背景图、沉浸光感材质、App logo、防窥保护、智感握姿。
   应用图标走**分层图标静态更换**（前景 / 背景 1024×1024 + `layered_image.json`）；
   启动图由分层图标合成圆角 logo（256×256，仅图形、无文字）。
   两者都随新版本发布生效；**不接入** AppGallery Kit 动态图标服务，因此不需要邮件申请、也没有新增权限。

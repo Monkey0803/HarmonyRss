@@ -18,6 +18,7 @@ import {
   RemoteMigrationResult
 } from '../model/Remote';
 import { ToastUtil } from '../common/utils/ToastUtil';
+import { themePalette } from '../model/ThemePalette';
 
 @ComponentV2
 export struct RemoteMigrationView {
@@ -106,7 +107,7 @@ export struct RemoteMigrationView {
     Row({ space: $r('app.float.space_m') }) {
       SymbolGlyph(this.selectedMode === mode ? $r('sys.symbol.checkmark_circle') : $r('sys.symbol.circle'))
         .fontSize($r('app.float.icon_size'))
-        .fontColor([this.selectedMode === mode ? $r('app.color.hm_brand') : $r('app.color.hm_text_secondary')])
+        .fontColor([this.selectedMode === mode ? themePalette.accent() : $r('app.color.hm_text_secondary')])
       Column({ space: $r('app.float.space_xxs') }) {
         Text(title)
           .fontSize($r('app.float.font_size_body'))
@@ -179,7 +180,7 @@ export struct RemoteMigrationView {
             LoadingProgress()
               .width($r('app.float.icon_size'))
               .height($r('app.float.icon_size'))
-              .color($r('app.color.hm_brand'))
+              .color(themePalette.accent())
             Text($r('app.string.remote_migration_loading'))
               .fontSize($r('app.float.font_size_caption'))
               .fontColor($r('app.color.hm_text_secondary'))
@@ -205,7 +206,7 @@ export struct RemoteMigrationView {
             .buttonStyle(ButtonStyleMode.NORMAL)
             .fontSize($r('app.float.font_size_body'))
             .fontColor($r('app.color.hm_on_brand'))
-            .backgroundColor($r('app.color.hm_brand'))
+            .backgroundColor(themePalette.fill())
             .width('100%')
             .height($r('app.float.row_height'))
             .margin({ top: $r('app.float.space_xl') })
@@ -224,7 +225,7 @@ export struct RemoteMigrationView {
           Button($r('app.string.remote_migration_retry'))
             .buttonStyle(ButtonStyleMode.TEXTUAL)
             .fontSize($r('app.float.font_size_caption'))
-            .fontColor($r('app.color.hm_brand'))
+            .fontColor(themePalette.accent())
             .onClick(() => {
               this.loadPreview();
             })

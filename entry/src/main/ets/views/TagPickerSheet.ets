@@ -11,6 +11,7 @@
 import { TagWithCount } from '../model/Tag';
 import { tagViewModel } from '../viewmodel/TagViewModel';
 import { ToastUtil } from '../common/utils/ToastUtil';
+import { themePalette } from '../model/ThemePalette';
 
 @ComponentV2
 export struct TagPickerSheet {
@@ -76,7 +77,7 @@ export struct TagPickerSheet {
     Row({ space: $r('app.float.space_m') }) {
       SymbolGlyph(this.isPicked(tag.id) ? $r('sys.symbol.checkmark_circle') : $r('sys.symbol.circle'))
         .fontSize($r('app.float.icon_size'))
-        .fontColor([this.isPicked(tag.id) ? $r('app.color.hm_brand') : $r('app.color.hm_text_secondary')])
+        .fontColor([this.isPicked(tag.id) ? themePalette.accent() : $r('app.color.hm_text_secondary')])
       Text(tag.name)
         .fontSize($r('app.float.font_size_body'))
         .fontColor($r('app.color.hm_text_primary'))
@@ -90,7 +91,7 @@ export struct TagPickerSheet {
     .width('100%')
     .padding($r('app.float.space_m'))
     .backgroundColor(this.isPicked(tag.id)
-      ? $r('app.color.hm_menu_item_selected')
+      ? themePalette.tint()
       : $r('app.color.hm_value_chip_background'))
     .borderRadius($r('app.float.radius_card'))
     .onClick(() => {
@@ -140,7 +141,7 @@ export struct TagPickerSheet {
           .buttonStyle(ButtonStyleMode.NORMAL)
           .fontSize($r('app.float.font_size_caption'))
           .fontColor($r('app.color.hm_on_brand'))
-          .backgroundColor($r('app.color.hm_brand'))
+          .backgroundColor(themePalette.fill())
           .enabled(!this.busy)
           .onClick(() => {
             this.createTag();
@@ -154,7 +155,7 @@ export struct TagPickerSheet {
           .buttonStyle(ButtonStyleMode.NORMAL)
           .fontSize($r('app.float.font_size_caption'))
           .fontColor($r('app.color.hm_on_brand'))
-          .backgroundColor($r('app.color.hm_brand'))
+          .backgroundColor(themePalette.fill())
           .onClick(() => {
             this.onConfirm(this.working.slice());
           })

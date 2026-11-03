@@ -10,6 +10,7 @@
 
 import { AppLogo } from '../common/components/AppLogo';
 import { appSettings } from '../model/AppSettings';
+import { themePalette } from '../model/ThemePalette';
 import { CommonConstants } from '../common/constants/CommonConstants';
 
 @Builder
@@ -18,7 +19,9 @@ export function BrandTitle() {
     AppLogo({
       logoKind: appSettings.logoKind,
       logoSize: CommonConstants.LOGO_BRAND_SIZE,
-      cornerRadius: CommonConstants.LOGO_BRAND_RADIUS
+      cornerRadius: CommonConstants.LOGO_BRAND_RADIUS,
+      themeColor: appSettings.themeColor,
+      isDark: themePalette.isDark
     })
     Text($r('app.string.brand_name'))
       .fontSize($r('app.float.font_size_title'))

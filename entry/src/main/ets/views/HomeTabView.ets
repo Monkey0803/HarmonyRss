@@ -34,6 +34,7 @@ import { AppMenu } from '../common/components/AppMenu';
 import { AppSheet } from '../common/components/AppSheet';
 import { MenuItemSpec, MenuSectionSpec, MenuSpec } from '../common/components/MenuSpec';
 import { ArticleSwipeBar } from '../common/components/ArticleSwipeBar';
+import { themePalette } from '../model/ThemePalette';
 
 @ComponentV2
 export struct HomeTabView {
@@ -152,7 +153,7 @@ export struct HomeTabView {
           .fontSize($r('app.float.icon_size'))
           .fontColor([feedViewModel.loading
             ? $r('sys.color.font_tertiary')
-            : $r('app.color.hm_brand')])
+            : themePalette.accent()])
           .padding($r('app.float.space_s'))
           .enabled(!feedViewModel.loading)
           .accessibilityText($r('app.string.home_refresh'))
@@ -187,7 +188,7 @@ export struct HomeTabView {
           .fontSize($r('app.float.icon_size'))
           .fontColor([feedViewModel.groupMode === GroupMode.NONE
             ? $r('app.color.hm_text_secondary')
-            : $r('app.color.hm_brand')])
+            : themePalette.accent()])
           .padding($r('app.float.space_xs'))
           .rotate({ angle: feedViewModel.newestFirst ? 0 : 180 })
           .accessibilityText($r('app.string.list_sort_toggle'))
@@ -258,10 +259,10 @@ export struct HomeTabView {
       Row({ space: $r('app.float.space_xs') }) {
         SymbolGlyph($r('sys.symbol.checkmark_circle'))
           .fontSize($r('app.float.icon_size_small'))
-          .fontColor([$r('app.color.hm_brand')])
+          .fontColor([themePalette.accent()])
         Text($r('app.string.home_mark_all_read'))
           .fontSize($r('app.float.font_size_caption'))
-          .fontColor($r('app.color.hm_brand'))
+          .fontColor(themePalette.accent())
           .maxLines(1)
       }
       .alignItems(VerticalAlign.Center)
@@ -286,7 +287,7 @@ export struct HomeTabView {
     };
     const confirmButton: AlertDialogButtonBaseOptions = {
       value: $r('app.string.dialog_confirm'),
-      fontColor: $r('app.color.hm_brand'),
+      fontColor: themePalette.accent(),
       action: () => {
         feedViewModel.markAllRead();
       }
@@ -316,7 +317,7 @@ export struct HomeTabView {
         Button($r('app.string.home_empty_action'))
           .buttonStyle(ButtonStyleMode.NORMAL)
           .fontColor($r('app.color.hm_on_brand'))
-          .backgroundColor($r('app.color.hm_brand'))
+          .backgroundColor(themePalette.fill())
           .onClick(() => {
             // 「添加订阅源」入口现在挂在悬浮页签栏的 miniBar 上（见 Index），这里只上报请求。
             this.onAddFeedRequest();
@@ -444,14 +445,14 @@ export struct HomeTabView {
         Blank()
         Text($r('app.string.select_all'))
           .fontSize($r('app.float.font_size_caption'))
-          .fontColor($r('app.color.hm_brand'))
+          .fontColor(themePalette.accent())
           .padding($r('app.float.space_s'))
           .onClick(() => {
             feedViewModel.selectAllVisible();
           })
         Text($r('app.string.select_done'))
           .fontSize($r('app.float.font_size_caption'))
-          .fontColor($r('app.color.hm_brand'))
+          .fontColor(themePalette.accent())
           .padding($r('app.float.space_s'))
           .onClick(() => {
             feedViewModel.exitSelect();
@@ -495,7 +496,7 @@ export struct HomeTabView {
   SelectionAction(label: ResourceStr, action: () => void) {
     Text(label)
       .fontSize($r('app.float.font_size_caption'))
-      .fontColor($r('app.color.hm_brand'))
+      .fontColor(themePalette.accent())
       .textAlign(TextAlign.Center)
       .layoutWeight(1)
       .padding({ top: $r('app.float.space_s'), bottom: $r('app.float.space_s') })

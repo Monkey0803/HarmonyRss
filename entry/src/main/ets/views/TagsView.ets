@@ -15,6 +15,7 @@ import { MaterialController } from '../service/MaterialController';
 import { appSettings } from '../model/AppSettings';
 import { safeArea } from '../service/SafeAreaController';
 import { ToastUtil } from '../common/utils/ToastUtil';
+import { themePalette } from '../model/ThemePalette';
 
 @ComponentV2
 export struct TagsView {
@@ -131,7 +132,7 @@ export struct TagsView {
     Row({ space: $r('app.float.space_m') }) {
       SymbolGlyph(this.isSelected(tag.id) ? $r('sys.symbol.checkmark_circle') : $r('sys.symbol.circle'))
         .fontSize($r('app.float.icon_size'))
-        .fontColor([this.isSelected(tag.id) ? $r('app.color.hm_brand') : $r('app.color.hm_text_secondary')])
+        .fontColor([this.isSelected(tag.id) ? themePalette.accent() : $r('app.color.hm_text_secondary')])
 
       if (this.renameId === tag.id) {
         TextInput({ text: this.renameDraft, placeholder: $r('app.string.tag_rename_hint') })
@@ -143,7 +144,7 @@ export struct TagsView {
           })
         Text($r('app.string.dialog_save'))
           .fontSize($r('app.float.font_size_caption'))
-          .fontColor($r('app.color.hm_brand'))
+          .fontColor(themePalette.accent())
           .padding($r('app.float.space_s'))
           .onClick(() => {
             this.saveRename(tag.id);
@@ -182,7 +183,7 @@ export struct TagsView {
     .width('100%')
     .padding($r('app.float.space_m'))
     .backgroundColor(this.isSelected(tag.id)
-      ? $r('app.color.hm_menu_item_selected')
+      ? themePalette.tint()
       : $r('app.color.hm_card_background'))
     .borderRadius($r('app.float.radius_card'))
     .onClick(() => {
@@ -212,7 +213,7 @@ export struct TagsView {
           .buttonStyle(ButtonStyleMode.NORMAL)
           .fontSize($r('app.float.font_size_caption'))
           .fontColor($r('app.color.hm_on_brand'))
-          .backgroundColor($r('app.color.hm_brand'))
+          .backgroundColor(themePalette.fill())
           .enabled(!this.busy)
           .onClick(() => {
             this.createTag();
@@ -259,7 +260,7 @@ export struct TagsView {
         .width('100%')
         .height($r('app.float.row_height'))
         .justifyContent(FlexAlign.Center)
-        .backgroundColor($r('app.color.hm_brand'))
+        .backgroundColor(themePalette.fill())
         .borderRadius($r('app.float.radius_card'))
         .enabled(!this.busy)
         .onClick(() => {
