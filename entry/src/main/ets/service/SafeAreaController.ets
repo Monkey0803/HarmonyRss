@@ -8,7 +8,7 @@
  *     供把占位块放进滚动内容里的页面使用（标题栏是浮层，内容从其下方穿过）。
  *     注意：这个值只有在滚动内容**从顶部开始排**时才是准的 —— Scroll 默认会把短内容整体居中，
  *     会让首屏顶部凭空多出一条空白，所以各页都显式设置了 `.align(Alignment.TopStart)`。
- *   - contentBottomInsetVp：可滚动内容底部预留量（= 悬浮页签栏避让高度 + 系统导航条高度）；
+ *   - contentBottomInsetVp：可滚动内容底部预留量（= 悬浮页签栏高度 + 间距 + 系统导航条高度）；
  *   - bottomInsetVp：系统导航条高度，用于底部没有悬浮栏的页面内缩。
  *
  * 单位统一换算成 vp，方便直接用于布局；旋转 / 分屏 / 折叠时由 avoidAreaChange 刷新。
@@ -34,7 +34,7 @@ export class SafeAreaController {
   @Trace bottomInsetVp: number = 0;
   /** 可滚动内容顶部预留量（vp）= 系统状态栏 + HDS 紧凑标题栏高度。 */
   @Trace contentTopInsetVp: number = 0;
-  /** 可滚动内容底部预留量（vp）= 悬浮页签栏避让高度 + 系统导航条高度。 */
+  /** 可滚动内容底部预留量（vp）= 悬浮页签栏高度 + 间距 + 系统导航条高度。 */
   @Trace contentBottomInsetVp: number = 0;
 
   private mainWindow: window.Window | undefined = undefined;
