@@ -336,7 +336,7 @@ export class ReaderConstants {
 
 /** OPML 导入 / 导出相关常量（文件格式的元数据，不是界面文案）。 */
 export class OpmlConstants {
-  static readonly DOC_TITLE: string = 'HarmonyRss';
+  static readonly DOC_TITLE: string = '源见 RSS';
   static readonly FILE_NAME: string = 'harmonyrss-subscriptions.opml';
   static readonly FILE_SUFFIX_FILTER: string = 'OPML|.opml';
   static readonly MIME_TYPE: string = 'text/x-opml';

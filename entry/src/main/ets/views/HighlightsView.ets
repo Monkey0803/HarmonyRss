@@ -61,7 +61,7 @@ export struct HighlightsView {
       return;
     }
     const ok: boolean = await articleActions.shareText(this.hostContext(),
-      markdown ? 'HarmonyRss 标注（Markdown）' : 'HarmonyRss 标注（JSON）', text);
+      markdown ? '源见 RSS 标注（Markdown）' : '源见 RSS 标注（JSON）', text);
     if (!ok) {
       hilog.warn(DOMAIN, TAG, 'share export failed');
       ToastUtil.show(this.getUIContext(), $r('app.string.toast_action_failed'));

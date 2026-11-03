@@ -18,7 +18,7 @@
     },
     {
       "name": "EntryAbility_label",
-      "value": "HarmonyRss"
+      "value": "源见 RSS"
     },
     {
       "name": "tab_home",
@@ -1282,7 +1282,7 @@
     },
     {
       "name": "brand_name",
-      "value": "HarmonyRss"
+      "value": "源见 RSS"
     },
     {
       "name": "logo_classic",
@@ -1302,7 +1302,11 @@
     },
     {
       "name": "aux_logo_launcher_hint",
-      "value": "上記のロゴはアプリ内の表示にのみ反映されます。ホーム画面と起動アイコンは静的リソースで、アプリの更新時に切り替わります。"
+      "value": "HarmonyOS 7 ではホーム画面のアイコンも変わります。古いシステムではアプリ内のロゴのみ変わります。起動アイコンは変わりません。"
+    },
+    {
+      "name": "toast_logo_change_failed",
+      "value": "ホーム画面のアイコンを変更できませんでした。システムのバージョンを確認してください。"
     },
     {
       "name": "effect_flow_title",

@@ -44,11 +44,11 @@ export class CommonConstants {
   /** App logo 在设置页预览瓦片中的边长（vp）。 */
   static readonly LOGO_TILE_SIZE: number = 46;
   /** App logo 预览瓦片圆角（vp）。 */
-  static readonly LOGO_TILE_RADIUS: number = 14;
+  static readonly LOGO_TILE_RADIUS: number = 10;
   /** App logo 在首页品牌行的边长（vp）。 */
   static readonly LOGO_BRAND_SIZE: number = 26;
   /** App logo 在首页品牌行的圆角（vp）。 */
-  static readonly LOGO_BRAND_RADIUS: number = 8;
+  static readonly LOGO_BRAND_RADIUS: number = 6;
   /** 复制正文 / 分享纯文本的字符上限（与系统分享承载能力一致）。 */
   static readonly SHARE_TEXT_MAX_CHARS: number = 20000;
   /** 自定义分享模板数量上限。 */

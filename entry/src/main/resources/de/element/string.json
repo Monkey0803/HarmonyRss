@@ -18,7 +18,7 @@
     },
     {
       "name": "EntryAbility_label",
-      "value": "HarmonyRss"
+      "value": "源见 RSS"
     },
     {
       "name": "tab_home",
@@ -1282,7 +1282,7 @@
     },
     {
       "name": "brand_name",
-      "value": "HarmonyRss"
+      "value": "源见 RSS"
     },
     {
       "name": "logo_classic",
@@ -1302,7 +1302,11 @@
     },
     {
       "name": "aux_logo_launcher_hint",
-      "value": "Das Logo oben betrifft nur die Darstellung in der App. Startbildschirm- und Start-Symbol sind statische Ressourcen und ändern sich mit App-Updates."
+      "value": "Unter HarmonyOS 7 ändert sich auch das Startbildschirm-Symbol. Auf älteren Systemen ändert sich nur das Logo in der App. Das Startsymbol bleibt unverändert."
+    },
+    {
+      "name": "toast_logo_change_failed",
+      "value": "Das Startbildschirm-Symbol konnte nicht gewechselt werden. Prüfen Sie die Systemversion."
     },
     {
       "name": "effect_flow_title",

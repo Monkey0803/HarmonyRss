@@ -18,7 +18,7 @@
     },
     {
       "name": "EntryAbility_label",
-      "value": "HarmonyRss"
+      "value": "源见 RSS"
     },
     {
       "name": "tab_home",
@@ -1282,7 +1282,7 @@
     },
     {
       "name": "brand_name",
-      "value": "HarmonyRss"
+      "value": "源见 RSS"
     },
     {
       "name": "logo_classic",
@@ -1302,7 +1302,11 @@
     },
     {
       "name": "aux_logo_launcher_hint",
-      "value": "Le logo ci-dessus ne concerne que l’affichage dans l’application. Les icônes de l’écran d’accueil et de démarrage sont des ressources statiques, mises à jour avec les versions de l’application."
+      "value": "Sous HarmonyOS 7, l’icône d’accueil change aussi. Sur les anciens systèmes, seul le logo dans l’application change. L’icône de démarrage reste fixe."
+    },
+    {
+      "name": "toast_logo_change_failed",
+      "value": "Impossible de modifier l’icône d’accueil. Vérifiez la version du système et réessayez."
     },
     {
       "name": "effect_flow_title",

@@ -5,6 +5,11 @@
     "versionCode": 1000000,
     "versionName": "1.0.0",
     "icon": "$media:layered_image",
+    "alternateIcons": [
+      { "name": "aurora", "icon": "$media:layered_image_aurora" },
+      { "name": "sunset", "icon": "$media:layered_image_sunset" },
+      { "name": "mono", "icon": "$media:layered_image_mono" }
+    ],
     "label": "$string:app_name",
     // 关系型数据库端云同步：用户在「设置 > 云空间」可见应用开关，可自行关闭。
     "cloudStructuredDataSyncEnabled": true

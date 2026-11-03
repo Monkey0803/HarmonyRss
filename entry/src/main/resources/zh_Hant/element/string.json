@@ -18,7 +18,7 @@
     },
     {
       "name": "EntryAbility_label",
-      "value": "HarmonyRss"
+      "value": "源见 RSS"
     },
     {
       "name": "tab_home",
@@ -1282,7 +1282,7 @@
     },
     {
       "name": "brand_name",
-      "value": "HarmonyRss"
+      "value": "源见 RSS"
     },
     {
       "name": "logo_classic",
@@ -1302,7 +1302,11 @@
     },
     {
       "name": "aux_logo_launcher_hint",
-      "value": "以上 logo 僅影響應用內展示；桌面與啟動圖示為靜態資源，隨應用版本更新。"
+      "value": "HarmonyOS 7 可同步更換桌面圖示；舊版系統僅更換應用內 Logo。啟動圖示隨版本更新。"
+    },
+    {
+      "name": "toast_logo_change_failed",
+      "value": "無法更換桌面圖示，請檢查系統版本後重試。"
     },
     {
       "name": "effect_flow_title",

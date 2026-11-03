@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-labelledby="title">
+  <title id="title">源见 RSS：书页与订阅波纹</title>
+  <defs>
+    <linearGradient id="blue" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0D4DC6"/>
+      <stop offset="1" stop-color="#3A9DF9"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#blue)" d="M0 0h1024v1024H0z"/>
+  <g fill="none" stroke="#fff" stroke-width="38">
+    <path d="M370 297a110 110 0 0 1 110 110"/>
+    <path d="M370 207a200 200 0 0 1 200 200"/>
+  </g>
+  <circle cx="370" cy="407" r="29" fill="#fff"/>
+  <path fill="#fff" d="M234 550Q366 515 497 575v184q-132-62-263-25z"/>
+  <path fill="#fff" d="M527 575q131-60 263-25v184q-131-37-263 25z"/>
+</svg>

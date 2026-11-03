@@ -4,11 +4,13 @@
  * 界面只读 appSettings 的字段；任何一次用户改动都经由这里：写状态 → 应用副作用 → 落盘。
  */
 
-import { common } from '@kit.AbilityKit';
-import { DEFAULT_THEME_COLOR, ReaderTypography } from '../common/constants/SettingsConstants';
+import { bundleManager, common } from '@kit.AbilityKit';
+import { BusinessError, deviceInfo } from '@kit.BasicServicesKit';
+import { hilog } from '@kit.PerformanceAnalysisKit';
+import { DEFAULT_THEME_COLOR, LogoKind, ReaderTypography } from '../common/constants/SettingsConstants';
 import { ThemeColorMath } from '../common/utils/ThemeColorMath';
 import { WidgetThemeSync } from '../service/WidgetThemeSync';
-import { ARCHIVE_OPTIONS, LIST_DENSITY_OPTIONS, ROW_LAYOUT_OPTIONS, SUMMARY_LINES_OPTIONS, RETENTION_MODE_OPTIONS, RETENTION_DAYS_OPTIONS, READER_INDENT_OPTIONS } from '../model/SettingsOptions';
+import { ARCHIVE_OPTIONS, LIST_DENSITY_OPTIONS, LOGO_OPTIONS, ROW_LAYOUT_OPTIONS, SUMMARY_LINES_OPTIONS, RETENTION_MODE_OPTIONS, RETENTION_DAYS_OPTIONS, READER_INDENT_OPTIONS } from '../model/SettingsOptions';
 import { feedViewModel } from './FeedViewModel';
 import { appSettings } from '../model/AppSettings';
 import { settingsStore } from '../service/SettingsStore';
@@ -24,6 +26,8 @@ import { BackgroundKind } from '../common/constants/SettingsConstants';
 
 @ObservedV2
 export class SettingsViewModel {
+  /** 系统图标切换期间阻止重复点击。 */
+  @Trace logoChangePending: boolean = false;
   /** 本机是否支持沉浸式材质（设置页可据此提示降级）。 */
   @Trace immersiveSupported: boolean = true;
   /** 应用级（全局）沉浸光感是否开启（由 module.json5 的 metadata 决定，运行时读取）。 */
@@ -60,6 +64,8 @@ export class SettingsViewModel {
     }
     // 智感握姿：开关开启时订阅握持手识别（设备不支持时内部粘性降级）。
     gripSensor.setEnabled(appSettings.gripEnabled);
+    // 旧版本只保存应用内选项；升级后把该选择同步到系统桌面图标。
+    await this.applyLauncherIcon(appSettings.logoKind);
   }
 
   setTheme(context: common.Context, id: string): void {
@@ -269,15 +275,51 @@ export class SettingsViewModel {
     return true;
   }
 
-  /**
-   * 切换 App logo：只影响应用内展示，并持久化。
-   *
-   * 桌面 / 启动图标走**静态资源**（随版本发布更新），不接入 AppGallery 动态图标服务，
-   * 因此这里不再尝试切换系统桌面图标。
-   */
-  setLogoKind(id: string): void {
-    appSettings.logoKind = id;
-    settingsStore.save();
+  /** 先让系统切换桌面图标，成功后才更新应用内预览及持久化设置。 */
+  async setLogoKind(id: string): Promise<boolean> {
+    if (this.logoChangePending || LOGO_OPTIONS.normalize(id) !== id) {
+      return false;
+    }
+    this.logoChangePending = true;
+    try {
+      if (!await this.applyLauncherIcon(id)) {
+        return false;
+      }
+      appSettings.logoKind = id;
+      settingsStore.save();
+      return true;
+    } finally {
+      this.logoChangePending = false;
+    }
+  }
+
+  /** API 26 起同步桌面图标；旧系统保持原有的应用内 Logo 切换。 */
+  private async applyLauncherIcon(id: string): Promise<boolean> {
+    if (!deviceInfo.apiAvailable('26.0.0')) {
+      return true;
+    }
+    try {
+      const icons = await bundleManager.getAlternateIcons();
+      const target: string = id === LogoKind.CLASSIC ? '' : id;
+      for (const icon of icons) {
+        if (icon.enabled && icon.iconName === target) {
+          return true;
+        }
+        if (icon.enabled && target === '') {
+          await bundleManager.setAlternateIcon('');
+          return true;
+        }
+      }
+      if (target === '') {
+        return true;
+      }
+      await bundleManager.setAlternateIcon(target);
+      return true;
+    } catch (err) {
+      const error: BusinessError = err as BusinessError;
+      hilog.warn(0x0000, 'SettingsViewModel', 'set alternate icon failed: %{public}d', error.code);
+      return false;
+    }
   }
 
   /**

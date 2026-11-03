@@ -57,12 +57,14 @@ export default function themeColorTest() {
       expect(ThemeColorMath.withAlpha('#FF0000', 0x1A)).assertEqual('#1AFF0000');
     });
 
-    it('logo_follows_theme', 0, () => {
-      const classic: LogoStyle = logoStyleOf(LogoKind.CLASSIC, DEFAULT_THEME_COLOR, false);
-      expect(classic.colorStart).assertEqual('#0A59F7');
+    it('logo_matches_launcher_variants', 0, () => {
+      const classic: LogoStyle = logoStyleOf(LogoKind.CLASSIC);
+      expect(classic.colorStart).assertEqual('#0D4DC6');
       expect(classic.markColor).assertEqual('#FFFFFF');
-      const mono: LogoStyle = logoStyleOf(LogoKind.MONO, '#2E9E4F', false);
-      expect(ThemeColorMath.contrast(mono.markColor, '#1B1D23') >= 4.4).assertTrue();
+      expect(logoStyleOf(LogoKind.AURORA).colorEnd).assertEqual('#786BE8');
+      expect(logoStyleOf(LogoKind.SUNSET).colorStart).assertEqual('#B93569');
+      const mono: LogoStyle = logoStyleOf(LogoKind.MONO);
+      expect(ThemeColorMath.contrast(mono.markColor, mono.colorStart) >= 4.4).assertTrue();
     });
   });
 }

@@ -1,0 +1,6 @@
+{
+  "layered-image": {
+    "background": "$media:background_aurora",
+    "foreground": "$media:foreground"
+  }
+}

@@ -18,7 +18,7 @@
     },
     {
       "name": "EntryAbility_label",
-      "value": "HarmonyRss"
+      "value": "源见 RSS"
     },
     {
       "name": "tab_home",
@@ -1282,7 +1282,7 @@
     },
     {
       "name": "brand_name",
-      "value": "HarmonyRss"
+      "value": "源见 RSS"
     },
     {
       "name": "logo_classic",
@@ -1302,7 +1302,11 @@
     },
     {
       "name": "aux_logo_launcher_hint",
-      "value": "El logotipo anterior solo afecta a la vista dentro de la aplicación. Los iconos de pantalla de inicio y de arranque son recursos estáticos y se actualizan con las versiones de la aplicación."
+      "value": "En HarmonyOS 7 también cambia el icono de inicio. En sistemas anteriores solo cambia el logotipo de la aplicación. El icono de arranque permanece fijo."
+    },
+    {
+      "name": "toast_logo_change_failed",
+      "value": "No se pudo cambiar el icono de inicio. Comprueba la versión del sistema e inténtalo de nuevo."
     },
     {
       "name": "effect_flow_title",

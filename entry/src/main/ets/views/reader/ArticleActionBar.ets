@@ -126,14 +126,14 @@ export struct ArticleActionBar {
       // 溢出菜单：内容在打开时由 menuProvider 现算，状态变化不会读到旧规格。
       SymbolGlyph($r('sys.symbol.more'))
         .fontSize($r('app.float.icon_size'))
-        .fontColor([$r('sys.color.font_primary')])
+        .fontColor([this.accent])
         .padding($r('app.float.space_xs'))
         .accessibilityText($r('app.string.action_more'))
         .bindMenu(this.MoreMenu(), MaterialController.menuOptions({}, appSettings.immersiveOn))
 
       SymbolGlyph($r('sys.symbol.textformat'))
         .fontSize($r('app.float.icon_size'))
-        .fontColor([$r('sys.color.font_primary')])
+        .fontColor([this.accent])
         .padding($r('app.float.space_xs'))
         .accessibilityText($r('app.string.row_reader_font'))
         .onClick(() => {
@@ -142,7 +142,7 @@ export struct ArticleActionBar {
 
       SymbolGlyph(this.webMode ? $r('sys.symbol.doc_text') : $r('sys.symbol.link'))
         .fontSize($r('app.float.icon_size'))
-        .fontColor([$r('sys.color.font_primary')])
+        .fontColor([this.accent])
         .padding($r('app.float.space_xs'))
         .accessibilityText(this.webMode
           ? $r('app.string.article_mode_reader')

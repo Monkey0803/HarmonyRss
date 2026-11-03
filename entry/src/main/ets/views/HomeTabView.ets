@@ -198,7 +198,7 @@ export struct HomeTabView {
         // 全局检索：压入独立搜索页（列表内关键词过滤已移除，避免两套搜索并存）。
         SymbolGlyph($r('sys.symbol.magnifyingglass'))
           .fontSize($r('app.float.icon_size'))
-          .fontColor([$r('app.color.hm_text_secondary')])
+          .fontColor([themePalette.accent()])
           .padding($r('app.float.space_xs'))
           .accessibilityText($r('app.string.search_title'))
           .onClick(() => {

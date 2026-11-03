@@ -538,7 +538,7 @@ struct Index {
   }
 
   /**
-   * 根标题栏配置：在「阅读」页签时，标题换成品牌行（logo + HarmonyRss），
+   * 根标题栏配置：在「阅读」页签时，标题换成品牌行（logo + 源见 RSS），
    * 并在标题下方挂筛选分段控件。
    *
    * 为什么都挂标题栏：沉浸光感是区域级能力，只有 Navigation/NavDestination 标题栏与横向 Tabs 的
@@ -570,7 +570,7 @@ struct Index {
     return options;
   }
 
-  /** 标题栏 stackBuilder：品牌行（logo + HarmonyRss）。 */
+  /** 标题栏 stackBuilder：品牌行（logo + 源见 RSS）。 */
   @Builder
   HomeBrandBar() {
     BrandTitle()

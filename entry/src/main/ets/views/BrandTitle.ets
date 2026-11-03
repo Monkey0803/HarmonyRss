@@ -1,5 +1,5 @@
 /*
- * BrandTitle.ets — 阅读页签标题栏的品牌标识（App logo + HarmonyRss 文字）。
+ * BrandTitle.ets — 阅读页签标题栏的品牌标识（App logo + 源见 RSS 文字）。
  *
  * 替代原来的纯文字标题「阅读」：挂在 HdsNavigation 标题栏的 stackBuilder 上，
  * 与筛选条（bottomBuilder）同处标题栏生效区域。
@@ -10,7 +10,6 @@
 
 import { AppLogo } from '../common/components/AppLogo';
 import { appSettings } from '../model/AppSettings';
-import { themePalette } from '../model/ThemePalette';
 import { CommonConstants } from '../common/constants/CommonConstants';
 
 @Builder
@@ -19,9 +18,7 @@ export function BrandTitle() {
     AppLogo({
       logoKind: appSettings.logoKind,
       logoSize: CommonConstants.LOGO_BRAND_SIZE,
-      cornerRadius: CommonConstants.LOGO_BRAND_RADIUS,
-      themeColor: appSettings.themeColor,
-      isDark: themePalette.isDark
+      cornerRadius: CommonConstants.LOGO_BRAND_RADIUS
     })
     Text($r('app.string.brand_name'))
       .fontSize($r('app.float.font_size_title'))

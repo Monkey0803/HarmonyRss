@@ -18,7 +18,7 @@
     },
     {
       "name": "EntryAbility_label",
-      "value": "HarmonyRss"
+      "value": "源见 RSS"
     },
     {
       "name": "tab_home",
@@ -1282,7 +1282,7 @@
     },
     {
       "name": "brand_name",
-      "value": "HarmonyRss"
+      "value": "源见 RSS"
     },
     {
       "name": "logo_classic",
@@ -1302,7 +1302,11 @@
     },
     {
       "name": "aux_logo_launcher_hint",
-      "value": "The logo above only affects the in-app display. The home-screen and launch icons are static assets and update with app releases."
+      "value": "On HarmonyOS 7, the Home screen icon also changes. On older systems, only the in-app logo changes. The launch icon remains fixed."
+    },
+    {
+      "name": "toast_logo_change_failed",
+      "value": "Could not change the Home screen icon. Check your system version and try again."
     },
     {
       "name": "effect_flow_title",

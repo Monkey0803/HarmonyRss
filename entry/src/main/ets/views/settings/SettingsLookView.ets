@@ -18,6 +18,7 @@ import { settingsViewModel } from '../../viewmodel/SettingsViewModel';
 import { AppLogo } from '../../common/components/AppLogo';
 import { AppSheet } from '../../common/components/AppSheet';
 import { CommonConstants } from '../../common/constants/CommonConstants';
+import { ToastUtil } from '../../common/utils/ToastUtil';
 import { RouterConstants } from '../../common/constants/RouterConstants';
 import { BackgroundKind } from '../../common/constants/SettingsConstants';
 import { safeArea } from '../../service/SafeAreaController';
@@ -38,9 +39,7 @@ struct LogoPickerRow {
         AppLogo({
           logoKind: option.id,
           logoSize: CommonConstants.LOGO_TILE_SIZE,
-          cornerRadius: CommonConstants.LOGO_TILE_RADIUS,
-          themeColor: appSettings.themeColor,
-          isDark: themePalette.isDark
+          cornerRadius: CommonConstants.LOGO_TILE_RADIUS
         })
       }
       .padding($r('app.float.space_xs'))
@@ -59,7 +58,9 @@ struct LogoPickerRow {
     }
     .layoutWeight(1)
     .onClick(() => {
-      this.onPick(option.id);
+      if (!settingsViewModel.logoChangePending) {
+        this.onPick(option.id);
+      }
     })
   }
 
@@ -143,8 +144,10 @@ export struct SettingsLookView {
         SettingsSectionTitle({ title: $r('app.string.section_branding') })
         Column() {
           LogoPickerRow({
-            onPick: (id: string) => {
-              settingsViewModel.setLogoKind(id);
+            onPick: async (id: string) => {
+              if (!await settingsViewModel.setLogoKind(id)) {
+                ToastUtil.show(this.getUIContext(), $r('app.string.toast_logo_change_failed'));
+              }
             }
           })
         }
