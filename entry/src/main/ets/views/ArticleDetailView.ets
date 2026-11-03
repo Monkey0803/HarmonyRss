@@ -249,8 +249,6 @@ export struct ArticleDetailView {
       this.speechFollow = false;
     }
   });
-  /** 沉浸阅读：只隐藏页内底部操作条（点按正文中部切换；标题栏由外壳的滚动显隐控制）。 */
-  @Local bottomBarHidden: boolean = false;
   /** 短正文提示是否已被用户关掉（切文时复位；提示本身按当前文章内容实时判断）。 */
   @Local shortBodyHintClosed: boolean = false;
   /** 横向手势的起手点（px），用于避让系统边缘返回手势。 */
@@ -269,7 +267,7 @@ export struct ArticleDetailView {
   private hlBridge: ReaderHighlightBridge = new ReaderHighlightBridge((id: string) => {
     this.openHighlightEditor(id);
   });
-  /** 正文触摸判定（沉浸阅读的点按）：按下位置与时间。 */
+  /** 正文触摸判定（点按打开图片）：按下位置与时间。 */
   private tapStartX: number = -1;
   private tapStartY: number = -1;
   private tapStartTime: number = 0;
@@ -1347,10 +1345,7 @@ export struct ArticleDetailView {
     readerSpeech.stop();
     this.speechFollow = true;
     this.speechSegmentId = -1;
-    // 底栏沉浸态与查找条都复位（新文章从完整界面开始）
-    if (this.bottomBarHidden) {
-      this.bottomBarHidden = false;
-    }
+    // 查找条复位（新文章从完整界面开始）
     this.findOpen = false;
     this.findQuery = '';
     this.findCount = 0;
@@ -1825,29 +1820,21 @@ export struct ArticleDetailView {
       });
   }
 
-  /** 注入滚动监听与点按监听（进度条 + 沉浸切换用；失败不影响阅读）。 */
   /**
-   * 点按 / 长按正文：先问文档「这个坐标上是图片吗」。
-   * 是图片就打开大图；不是就按原来的逻辑处理（点按中部切换沉浸栏）。
+   * 点按 / 长按正文：问文档「这个坐标上是图片吗」，是图片就打开大图。
+   * 底栏常驻显示，点按正文不再切换任何栏的显隐。
    */
-  private handleBodyTap(localX: number, localY: number, windowY: number, longPress: boolean): void {
+  private handleBodyTap(localX: number, localY: number): void {
     this.activeController().runJavaScript(imageAtPointScript(localX, localY))
       .then((raw: string) => {
         const src: string = this.decodeJsString(raw);
         if (src.length > 0) {
           this.viewerSrc = src;
           this.viewerOpen = true;
-          return;
-        }
-        if (!longPress && this.isMiddleBandVp(windowY)) {
-          this.toggleBottomBar();
         }
       })
       .catch(() => {
-        // 命中测试失败（页面未就绪等）：按普通点按处理，不打断阅读。
-        if (!longPress && this.isMiddleBandVp(windowY)) {
-          this.toggleBottomBar();
-        }
+        // 命中测试失败（页面未就绪等）：不打断阅读。
       });
   }
 
@@ -1925,7 +1912,7 @@ export struct ArticleDetailView {
   }
 
   /**
-   * 正文触摸判定：短按、几乎没位移、且落在屏幕中间 60% 区域 → 视为「点按中部」。
+   * 正文触摸判定：短按、几乎没位移 → 视为点按（用于图片命中）。
    * 放在 ArkTS 侧而不是注入脚本：ArkWeb 里 text 区域的合成点按不一定抛出 DOM click 事件（实测点按回调收不到）。
    */
   private handleBodyTouch(event: TouchEvent): void {
@@ -1933,7 +1920,7 @@ export struct ArticleDetailView {
       // 用户主动触摸会取消文档内的恢复脚本，下一次轮询可立即记住新位置。
       this.progressReadyAt = 0;
       if (event.touches.length > 0) {
-        // 组件内坐标（vp）用于图片命中；窗口坐标保留给「点按屏幕中部」的沉浸判定。
+        // 组件内坐标（vp）用于图片命中。
         this.tapLocalX = event.touches[0].x;
         this.tapLocalY = event.touches[0].y;
         this.tapStartX = event.touches[0].windowX;
@@ -1958,31 +1945,14 @@ export struct ArticleDetailView {
       return;
     }
     if (elapsed >= 600) {
-      // 长按：只处理图片（打开大图，保存入口在查看器里），不做沉浸切换。
-      this.handleBodyTap(localX, localY, startY, true);
+      // 长按：只处理图片（打开大图，保存入口在查看器里）。
+      this.handleBodyTap(localX, localY);
       return;
     }
     if (elapsed > 300) {
       return;
     }
-    this.handleBodyTap(localX, localY, startY, false);
-  }
-
-  /** 竖直方向是否落在屏幕中间 60%（入参是 vp）。 */
-  private isMiddleBandVp(windowY: number): boolean {
-    try {
-      const heightVp: number = this.getUIContext().px2vp(display.getDefaultDisplaySync().height);
-      return windowY > heightVp * 0.25 && windowY < heightVp * 0.75;
-    } catch (err) {
-      const error: BusinessError = err as BusinessError;
-      hilog.warn(DOMAIN, TAG, 'display info failed: %{public}d', error.code);
-      return false;
-    }
-  }
-
-  /** 沉浸阅读：点按正文中部时收起 / 恢复页内底部操作条（标题栏统一由滚动显隐控制）。 */
-  private toggleBottomBar(): void {
-    this.bottomBarHidden = !this.bottomBarHidden;
+    this.handleBodyTap(localX, localY);
   }
 
   private restoreWebProgress(): void {
@@ -2792,7 +2762,7 @@ export struct ArticleDetailView {
                 this.selectedText = selectionText;
               }
             })
-            // 沉浸阅读：点按正文中部切换上下栏（ArkWeb 里 DOM click 不一定触发，改在 ArkTS 侧判定）
+            // 点按 / 长按正文：命中图片时打开大图（ArkWeb 里 DOM click 不一定触发，改在 ArkTS 侧判定）
             .onTouch((event: TouchEvent) => {
               this.handleBodyTouch(event);
             })
@@ -2886,7 +2856,7 @@ export struct ArticleDetailView {
               this.selectedText = selectionText;
             }
           })
-          // 沉浸阅读：点按正文中部切换上下栏（ArkWeb 里 DOM click 不一定触发，改在 ArkTS 侧判定）
+          // 点按 / 长按正文：命中图片时打开大图（ArkWeb 里 DOM click 不一定触发，改在 ArkTS 侧判定）
           .onTouch((event: TouchEvent) => {
             this.handleBodyTouch(event);
           })
@@ -3486,7 +3456,7 @@ export struct ArticleDetailView {
     }
   }
 
-  /** 长文阅读时在底栏上方显示明确的百分比，沉浸阅读下也可查看。 */
+  /** 长文阅读时在底栏上方显示明确的百分比。 */
   @Builder
   ProgressBadge() {
     if (this.hasArticle() && this.progressRatio > 0.005 && this.progressRatio < 1) {
@@ -3501,7 +3471,7 @@ export struct ArticleDetailView {
       }
       .width('100%')
       .padding({ right: $r('app.float.space_l'), bottom: $r('app.float.space_xxs') })
-      .margin({ bottom: this.bottomBarHidden ? safeArea.bottomInsetVp : this.barStripHeight() })
+      .margin({ bottom: this.barStripHeight() })
       .justifyContent(FlexAlign.End)
       .hitTestBehavior(HitTestMode.None)
     }
@@ -3735,16 +3705,14 @@ export struct ArticleDetailView {
        * 上面那层，底栏整棵子树就再也收不到 touch（表现为：底栏图标全部点不动，只能透传给正文）。
        * 所以底栏放在浮层之后、查看器之前，是这里唯一正确的层次。
        *
-       * 沉浸态下收起（高度 + 透明度动画；内容底部预留是固定的，收起后只是多点留白）。
+       * 底栏常驻：不随点按 / 滚动收起，保证任何时候都能操作。
        */
       Column() {
         this.FloatingBar()
       }
       .width('100%')
-      .height(this.bottomBarHidden ? 0 : this.barStripHeight())
-      .opacity(this.bottomBarHidden ? 0 : 1)
+      .height(this.barStripHeight())
       .clip(true)
-      .animation({ duration: 180, curve: Curve.Friction })
 
       // 图片全屏查看器：盖在最上层，自带黑色背景与保存控件。
       if (this.viewerOpen && this.viewerSrc.length > 0) {
