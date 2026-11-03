@@ -968,12 +968,14 @@ struct Index {
         .height('100%')
         .objectFit(ImageFit.Cover)
         .interpolation(ImageInterpolation.High)
+        .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
     } else if (appSettings.backgroundKind !== BackgroundKind.NONE) {
       Image(this.backgroundResource())
         .width('100%')
         .height('100%')
         .objectFit(ImageFit.Cover)
         .interpolation(ImageInterpolation.High)
+        .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
     }
   }
 
@@ -1370,5 +1372,6 @@ struct Index {
     .height('100%')
     // 背景图关闭时露出的兜底色（与窗口层 start_window_background 一致，含深浅色适配）。
     .backgroundColor($r('app.color.start_window_background'))
+    .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
   }
 }
