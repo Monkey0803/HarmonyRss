@@ -5,6 +5,7 @@ import { feedViewModel } from '../viewmodel/FeedViewModel';
 import { UrlText } from '../common/utils/UrlText';
 import { clipboardService } from '../service/ClipboardService';
 import { ToastUtil } from '../common/utils/ToastUtil';
+import { themePalette } from '../model/ThemePalette';
 
 @ComponentV2
 export struct SaveWebPagePanel {
@@ -126,7 +127,7 @@ export struct SaveWebPagePanel {
           if (this.showClose) {
             SymbolGlyph($r('sys.symbol.xmark'))
               .fontSize($r('app.float.icon_size'))
-              .fontColor([$r('app.color.hm_text_secondary')])
+              .fontColor([themePalette.accent()])
               .padding($r('app.float.space_xs'))
               .accessibilityText($r('app.string.dialog_cancel'))
               .onClick(() => { this.onClose(); })
@@ -148,6 +149,9 @@ export struct SaveWebPagePanel {
         PasteButton({ icon: PasteIconStyle.LINES, text: PasteDescription.PASTE,
           buttonType: ButtonType.Capsule })
           .onClick((event: ClickEvent, result: PasteButtonOnClickResult) => {
+          .fontColor($r('app.color.hm_on_brand'))
+          .iconColor($r('app.color.hm_on_brand'))
+          .backgroundColor(themePalette.fill())
             if (result === PasteButtonOnClickResult.SUCCESS && !this.loading) {
               this.paste();
             } else if (result !== PasteButtonOnClickResult.SUCCESS) {
@@ -157,6 +161,8 @@ export struct SaveWebPagePanel {
         Blank()
         Button(this.loading ? $r('app.string.save_web_loading') : $r('app.string.save_web_preview'))
           .enabled(!this.loading)
+          .fontColor($r('app.color.hm_on_brand'))
+          .backgroundColor(themePalette.fill())
           .onClick(() => { this.preview(); })
       }
       .width('100%')
@@ -186,6 +192,8 @@ export struct SaveWebPagePanel {
         Button($r('app.string.save_web_confirm'))
           .width('100%')
           .enabled(!this.loading)
+          .fontColor($r('app.color.hm_on_brand'))
+          .backgroundColor(themePalette.fill())
           .onClick(() => { this.save(); })
       }
     }

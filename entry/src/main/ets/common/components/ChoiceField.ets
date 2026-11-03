@@ -11,6 +11,8 @@
  * 长文案（德语「Systemeinstellung folgen」等）限宽并省略，避免把左侧标题挤没。
  */
 
+import { themePalette } from '../../model/ThemePalette';
+
 @ComponentV2
 export struct ChoiceValueChip {
   /** 当前值的展示文案。 */
@@ -25,14 +27,14 @@ export struct ChoiceValueChip {
         .textOverflow({ overflow: TextOverflow.Ellipsis })
       SymbolGlyph($r('sys.symbol.arrowtriangle_down_fill'))
         .fontSize($r('app.float.icon_size_tiny'))
-        .fontColor([$r('app.color.hm_text_primary')])
+        .fontColor([themePalette.accent()])
         .flexShrink(0)
     }
     .constraintSize({ maxWidth: '58%' })
     .flexShrink(0)
     .height($r('app.float.value_chip_height'))
     .padding({ left: $r('app.float.space_l'), right: $r('app.float.space_l') })
-    .backgroundColor($r('app.color.hm_value_chip_background'))
+    .backgroundColor(themePalette.tint())
     .borderRadius($r('app.float.radius_chip'))
   }
 }

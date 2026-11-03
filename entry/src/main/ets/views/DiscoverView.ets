@@ -249,6 +249,8 @@ export struct DiscoverView {
         .onChange((value: string) => { this.websiteInput = value; })
       Button(this.checkingWebsite ? $r('app.string.discover_subscribing') :
         $r('app.string.discover_website_check'))
+        .fontColor($r('app.color.hm_on_brand'))
+        .backgroundColor(themePalette.fill())
         .enabled(!this.checkingWebsite)
         .onClick(() => { this.inspectAddress(this.websiteInput); })
       if (this.previewTitle.length > 0) {
@@ -280,6 +282,8 @@ export struct DiscoverView {
           .fontSize($r('app.float.font_size_caption'))
           .fontColor($r('app.color.hm_text_primary'))
         Button($r('app.string.discover_subscribe'))
+          .fontColor($r('app.color.hm_on_brand'))
+          .backgroundColor(themePalette.fill())
           .onClick(() => { this.confirmPreview(); })
       }
     }
@@ -462,6 +466,9 @@ export struct DiscoverView {
         // 安全控件：用户点击后临时获得剪贴板读取授权（无需 READ_PASTEBOARD 权限）。
         PasteButton({ icon: PasteIconStyle.LINES, text: PasteDescription.PASTE,
           buttonType: ButtonType.Capsule })
+          .fontColor($r('app.color.hm_on_brand'))
+          .iconColor($r('app.color.hm_on_brand'))
+          .backgroundColor(themePalette.fill())
           .onClick((event: ClickEvent, result: PasteButtonOnClickResult) => {
             if (this.importing) {
               return;

@@ -273,6 +273,9 @@ export struct AddFeedPanel {
         // 注意：安全控件样式受系统校验约束，不要设置透明度 / 负 padding / 遮挡。
         PasteButton({ icon: PasteIconStyle.LINES, text: PasteDescription.PASTE,
           buttonType: ButtonType.Capsule })
+          .fontColor($r('app.color.hm_on_brand'))
+          .iconColor($r('app.color.hm_on_brand'))
+          .backgroundColor(themePalette.fill())
           .onClick((event: ClickEvent, result: PasteButtonOnClickResult) => {
             if (this.submitting) {
               return;
@@ -446,7 +449,7 @@ export struct AddFeedPanel {
           if (this.showClose) {
             SymbolGlyph($r('sys.symbol.xmark'))
               .fontSize($r('app.float.icon_size'))
-              .fontColor([$r('app.color.hm_text_secondary')])
+              .fontColor([themePalette.accent()])
               .padding($r('app.float.space_xs'))
               .accessibilityText($r('app.string.dialog_cancel'))
               .onClick(() => {

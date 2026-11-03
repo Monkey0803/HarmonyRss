@@ -2729,7 +2729,7 @@ export struct ArticleDetailView {
 
         SymbolGlyph($r('sys.symbol.xmark'))
           .fontSize($r('app.float.icon_size_small'))
-          .fontColor([$r('app.color.hm_text_secondary')])
+          .fontColor([themePalette.accent()])
           .width(FIND_CONTROL_HEIGHT_VP)
           .height(FIND_CONTROL_HEIGHT_VP)
           .accessibilityText($r('app.string.a11y_find_close'))

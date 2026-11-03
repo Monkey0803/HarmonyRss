@@ -237,6 +237,7 @@ export struct ReadSettingsSheet {
         style: SliderStyle.OutSet
       })
         .width('100%')
+        .selectedColor(themePalette.fill())
         .onChange((value: number, mode: SliderChangeMode) => {
           settingsViewModel.setReaderFontScale(value);
           this.applyChange(mode);
@@ -263,6 +264,7 @@ export struct ReadSettingsSheet {
         style: SliderStyle.OutSet
       })
         .width('100%')
+        .selectedColor(themePalette.fill())
         .onChange((value: number, mode: SliderChangeMode) => {
           settingsViewModel.setReaderLineScale(value);
           this.applyChange(mode);

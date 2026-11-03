@@ -257,7 +257,7 @@ export struct NavSettingRow {
       }
       SymbolGlyph($r('sys.symbol.chevron_right'))
         .fontSize($r('app.float.icon_size_small'))
-        .fontColor([$r('app.color.hm_text_secondary')])
+        .fontColor([themePalette.accent()])
         .padding({ left: $r('app.float.space_xs') })
     }
     .width('100%')

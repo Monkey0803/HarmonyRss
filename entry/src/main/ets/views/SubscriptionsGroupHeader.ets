@@ -110,7 +110,7 @@ export struct SubscriptionsGroupHeader {
           Row() {
             SymbolGlyph($r('sys.symbol.chevron_right'))
               .fontSize($r('app.float.icon_size_small'))
-              .fontColor([$r('app.color.hm_text_secondary')])
+              .fontColor([themePalette.accent()])
               .rotate({ angle: this.collapsed ? 0 : 90 })
           }
           .width(40)

@@ -313,7 +313,7 @@ export struct SubscriptionsView {
           })
         SymbolGlyph($r('sys.symbol.xmark'))
           .fontSize($r('app.float.icon_size'))
-          .fontColor([$r('app.color.hm_text_secondary')])
+          .fontColor([themePalette.accent()])
           .padding($r('app.float.space_s'))
           .accessibilityText($r('app.string.dialog_cancel'))
           .onClick(() => {
@@ -508,6 +508,7 @@ export struct SubscriptionsView {
           // 和行点击互相抵消（点整行选不中，几秒后又被自己取消）。
           Checkbox({ name: feed.id })
             .select(this.isSelected(feed.id))
+            .selectedColor(themePalette.fill())
             .onClick(() => {
               this.toggleSelect(feed.id);
             })
@@ -668,7 +669,7 @@ export struct SubscriptionsView {
           Row() {
             SymbolGlyph($r('sys.symbol.line_3_horizontal'))
               .fontSize($r('app.float.icon_size'))
-              .fontColor([$r('app.color.hm_text_secondary')])
+              .fontColor([themePalette.accent()])
           }
           .width(40)
           .height(40)

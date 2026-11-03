@@ -33,9 +33,9 @@ function itemColor(item: MenuItemSpec): ResourceColor {
   return item.danger ? $r('app.color.hm_danger') : $r('app.color.hm_text_primary');
 }
 
-/** 前置图标色：与文案同一套语义（选中品牌色 / 危险色 / 主文本色）。 */
+/** 前置图标色：普通动作跟随主题，危险动作保留警示色。 */
 function iconColor(item: MenuItemSpec): ResourceColor {
-  return itemColor(item);
+  return item.danger ? $r('app.color.hm_danger') : themePalette.accent();
 }
 
 /** 一条菜单项的内容行（单参 @Builder）。 */

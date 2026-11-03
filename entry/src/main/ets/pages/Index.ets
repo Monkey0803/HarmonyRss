@@ -684,7 +684,7 @@ struct Index {
           .layoutWeight(1)
         SymbolGlyph($r('sys.symbol.xmark'))
           .fontSize($r('app.float.icon_size'))
-          .fontColor([$r('app.color.hm_text_secondary')])
+          .fontColor([themePalette.accent()])
           .padding($r('app.float.space_xs'))
           .accessibilityText($r('app.string.dialog_cancel'))
           .onClick(() => { this.showAddSheet = false; })

@@ -163,7 +163,7 @@ export struct SettingsTabView {
           Divider().color($r('app.color.hm_divider'))
           // 备份与迁移：导出 JSON / 合并导入 / 本地快照都在独立页面里。
           NavSettingRow({
-            icon: $r('sys.symbol.externaldrive'),
+            icon: $r('sys.symbol.archivebox_badge_clock'),
             title: $r('app.string.backup_entry'),
             onOpen: () => {
               this.openPage(RouterConstants.PAGE_BACKUP);
@@ -171,7 +171,7 @@ export struct SettingsTabView {
           })
           Divider().color($r('app.color.hm_divider'))
           ActionSettingRow({
-            icon: $r('sys.symbol.externaldrive'),
+            icon: $r('sys.symbol.clean'),
             title: $r('app.string.row_reader_cache'),
             detail: this.cacheSummary(),
             onAction: () => {
