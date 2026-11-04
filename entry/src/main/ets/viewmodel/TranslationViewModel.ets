@@ -13,6 +13,7 @@ import {
   TranslationResult
 } from '../model/Translation';
 import { translationService } from '../service/TranslationService';
+import { splitParagraphs } from '../service/TranslationPolicy';
 
 /** 面板状态。 */
 const STATUS_IDLE: string = 'idle';
@@ -87,7 +88,7 @@ export class TranslationViewModel {
     this.status = STATUS_IDLE;
     this.articleId = '';
     this.sourceText = '';
-    this.selectionOriginal = text.trim();
+    this.selectionOriginal = splitParagraphs(text.trim()).join('\n\n');
     this.selectionTranslated = '';
     this.selectionError = '';
     this.selectionStatus = STATUS_LOADING;

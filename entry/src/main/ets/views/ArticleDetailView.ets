@@ -2138,10 +2138,6 @@ export struct ArticleDetailView {
       })
     } else if (this.sheetMode === 'translate') {
       TranslateSheetView({
-        onClose: (): void => {
-          translationViewModel.close();
-          this.closeSheet();
-        },
         onOpenSettings: (): void => {
           translationViewModel.close();
           this.closeSheet();

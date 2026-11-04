@@ -48,7 +48,8 @@ export function isValidAiEndpoint(value: string): boolean {
 }
 
 export function aiCacheKey(articleId: string, target: string, endpoint: string, model: string): string {
-  return JSON.stringify([articleId, target, aiEndpointOf(endpoint), aiModelOf(model)]);
+  // v2 让旧版按网页碎片生成的译文不再命中，保留旧记录直至自然过期或用户清空。
+  return JSON.stringify(['v2', articleId, target, aiEndpointOf(endpoint), aiModelOf(model)]);
 }
 
 export function buildAiTranslationRequest(texts: string[], target: string, model: string): string {

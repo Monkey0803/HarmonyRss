@@ -68,6 +68,28 @@ export default function translationPolicyTest() {
       expect(result[2]).assertEqual('第三段');
     });
 
+    it('split_paragraphs_joins_web_fragmented_sentences', 0, () => {
+      const text: string = 'You might know of some rule in your jurisdiction which overrides local\n' +
+        'rules, and allows certain classes of vehicles.\nPlease disregard these\n' +
+        'rules; the park isn\'t necessarily in your jurisdiction.\nOr perhaps\n' +
+        'your religion allows certain rules to be overridden.';
+      const result: string[] = splitParagraphs(text);
+      expect(result.length).assertEqual(3);
+      expect(result[0]).assertEqual('You might know of some rule in your jurisdiction which overrides local ' +
+        'rules, and allows certain classes of vehicles.');
+      expect(result[1]).assertEqual('Please disregard these rules; the park isn\'t necessarily in your jurisdiction.');
+      expect(result[2]).assertEqual('Or perhaps your religion allows certain rules to be overridden.');
+    });
+
+    it('split_paragraphs_keeps_explicit_break_and_title', 0, () => {
+      const result: string[] = splitParagraphs('No Vehicles in the Park\nThis is a game about rules.\n' +
+        'A sentence without a period\n\nNext paragraph starts here.');
+      expect(result.length).assertEqual(4);
+      expect(result[0]).assertEqual('No Vehicles in the Park');
+      expect(result[2]).assertEqual('A sentence without a period');
+      expect(result[3]).assertEqual('Next paragraph starts here.');
+    });
+
     it('split_paragraphs_cuts_long_lines', 0, () => {
       let line: string = '';
       for (let i = 0; i < 60; i += 1) {
@@ -117,6 +139,7 @@ export default function translationPolicyTest() {
         aiCacheKey('article', 'zh', 'https://a.example/v1/chat/completions', 'model-b')).assertFalse();
       expect(aiCacheKey('article', 'zh', 'https://a.example/v1/chat/completions', 'model-a') ===
         aiCacheKey('article', 'zh', 'https://b.example/v1/chat/completions', 'model-a')).assertFalse();
+      expect(aiCacheKey('article', 'zh', '', '').startsWith('["v2",')).assertTrue();
     });
 
     it('ai_request_numbers_each_batch', 0, () => {

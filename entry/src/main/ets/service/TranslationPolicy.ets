@@ -3,7 +3,7 @@
  *
  *   detectLanguage      轻量语言识别（中文 / 英文 / 日文 / 韩文 / 俄文 / 阿拉伯文）
  *   targetLanguageOf    目标语言跟随应用语言（跟随系统时按系统语言决定中/英）
- *   splitParagraphs     正文 → 段落（长段按句号再切，保证逐段对照）
+ *   splitParagraphs     正文 → 段落（合并网页的句中断行，长段按上限切分）
  *   chunkParagraphs     段落 → 每次请求的批次（字符与条数双重上限）
  *
  * 语言识别只用于「决定是否需要翻译」与提示，不追求准确率；翻译接口本身也支持自动检测。
@@ -137,20 +137,49 @@ function isSentenceEnd(code: number): boolean {
     code === 0x002e || code === 0x0021 || code === 0x003f;
 }
 
-/** 超长行按句末标点切分；切完仍超长的块再硬切。 */
+/** 句末标点之后允许有引号或右括号。 */
+function endsSentence(text: string): boolean {
+  return /[.!?。！？]["'”’）)]*$/.test(text);
+}
+
+/** 网页块标签产生的句中断行通常以下一行的小写词继续。 */
+function continuesSentence(previous: string, next: string): boolean {
+  if (endsSentence(previous)) {
+    return false;
+  }
+  return /[,;:，；：]$/.test(previous) || /^[a-zà-öø-ÿ]/.test(next) || previous.length >= 100;
+}
+
+/** 长段尽量在句末切分；短段保留原有句群，不逐句拆开。 */
 function splitLongLine(line: string): string[] {
+  if (line.length <= TranslateLimits.PARAGRAPH_CHARS) {
+    return [line];
+  }
   const result: string[] = [];
+  let current: string = '';
   let start: number = 0;
   for (let i = 0; i < line.length; i += 1) {
     const code: number = line.charCodeAt(i);
-    const length: number = i - start + 1;
-    if (isSentenceEnd(code) && length >= 40) {
-      result.push(line.substring(start, i + 1).trim());
+    if (isSentenceEnd(code)) {
+      const sentence: string = line.substring(start, i + 1).trim();
+      if (current.length > 0 && current.length + sentence.length + 1 > TranslateLimits.PARAGRAPH_CHARS) {
+        result.push(current);
+        current = '';
+      }
+      current = current.length > 0 ? current + ' ' + sentence : sentence;
       start = i + 1;
     }
   }
   if (start < line.length) {
-    result.push(line.substring(start).trim());
+    const tail: string = line.substring(start).trim();
+    if (current.length > 0 && current.length + tail.length + 1 > TranslateLimits.PARAGRAPH_CHARS) {
+      result.push(current);
+      current = '';
+    }
+    current = current.length > 0 ? current + ' ' + tail : tail;
+  }
+  if (current.length > 0) {
+    result.push(current);
   }
   const limited: string[] = [];
   for (let i = 0; i < result.length; i += 1) {
@@ -173,23 +202,42 @@ function splitLongLine(line: string): string[] {
 
 /**
  * 正文纯文本 → 段落列表。
- * 以换行为界（toPlainText 已把块级标签换成换行），长段按句号再切；
+ * 空行保留段落边界；网页块标签产生的句中断行按上下文拼回完整句；
  * 去掉空行，按 MAX_PARAGRAPHS / MAX_CHARS 截断。
  */
 export function splitParagraphs(text: string): string[] {
   const normalized: string = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
   const lines: string[] = normalized.split('\n');
-  const result: string[] = [];
-  let chars: number = 0;
-  for (let i = 0; i < lines.length && result.length < TranslateLimits.MAX_PARAGRAPHS; i += 1) {
+  const logical: string[] = [];
+  let pending: string = '';
+  for (let i = 0; i < lines.length; i += 1) {
     const line: string = lines[i].trim();
     if (line.length === 0) {
+      if (pending.length > 0) {
+        logical.push(pending);
+        pending = '';
+      }
       continue;
     }
+    if (pending.length > 0 && continuesSentence(pending, line)) {
+      pending += ' ' + line;
+    } else {
+      if (pending.length > 0) {
+        logical.push(pending);
+      }
+      pending = line;
+    }
+  }
+  if (pending.length > 0) {
+    logical.push(pending);
+  }
+  const result: string[] = [];
+  let chars: number = 0;
+  for (let i = 0; i < logical.length && result.length < TranslateLimits.MAX_PARAGRAPHS; i += 1) {
     if (chars >= TranslateLimits.MAX_CHARS) {
       break;
     }
-    const pieces: string[] = splitLongLine(line);
+    const pieces: string[] = splitLongLine(logical[i]);
     for (let j = 0; j < pieces.length && result.length < TranslateLimits.MAX_PARAGRAPHS; j += 1) {
       const piece: string = pieces[j];
       if (piece.length === 0) {

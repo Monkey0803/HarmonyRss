@@ -11,6 +11,7 @@ import { TranslationErrorCode, TranslationParagraph } from '../model/Translation
 import { translationViewModel } from '../viewmodel/TranslationViewModel';
 import { languageText, translationErrorText } from '../common/utils/TranslationText';
 import { themePalette } from '../model/ThemePalette';
+import { safeArea } from '../service/SafeAreaController';
 
 const STATUS_LOADING: string = 'loading';
 const STATUS_READY: string = 'ready';
@@ -18,8 +19,6 @@ const STATUS_ERROR: string = 'error';
 
 @ComponentV2
 export struct TranslateSheet {
-  @Event onClose: () => void = () => {
-  };
   @Event onOpenSettings: () => void = () => {
   };
 
@@ -45,38 +44,36 @@ export struct TranslateSheet {
 
   @Builder
   Header() {
-    Row({ space: $r('app.float.space_s') }) {
-      SymbolGlyph($r('sys.symbol.translate'))
-        .fontSize($r('app.float.icon_size'))
-        .fontColor([themePalette.accent()])
-      Text($r('app.string.translate_sheet_title'))
-        .fontSize($r('app.float.font_size_body'))
-        .fontWeight(FontWeight.Medium)
-        .fontColor($r('app.color.hm_text_primary'))
-        .layoutWeight(1)
-      if (translationViewModel.status === STATUS_READY) {
-        Text(languageText(translationViewModel.sourceLang))
-          .fontSize($r('app.float.font_size_caption'))
-          .fontColor($r('app.color.hm_text_secondary'))
-        SymbolGlyph($r('sys.symbol.arrow_right'))
-          .fontSize($r('app.float.icon_size_tiny'))
-          .fontColor([$r('app.color.hm_text_secondary')])
-        Text(languageText(translationViewModel.targetLang))
-          .fontSize($r('app.float.font_size_caption'))
-          .fontColor($r('app.color.hm_text_secondary'))
-        if (translationViewModel.fromCache) {
-          Text($r('app.string.translate_cached'))
-            .fontSize($r('app.float.font_size_caption'))
-            .fontColor(themePalette.accent())
-        }
+    Column({ space: $r('app.float.space_xs') }) {
+      Row({ space: $r('app.float.space_s') }) {
+        SymbolGlyph($r('sys.symbol.translate'))
+          .fontSize($r('app.float.icon_size'))
+          .fontColor([themePalette.accent()])
+        Text($r('app.string.translate_sheet_title'))
+          .fontSize($r('app.float.font_size_body'))
+          .fontWeight(FontWeight.Medium)
+          .fontColor($r('app.color.hm_text_primary'))
       }
-      SymbolGlyph($r('sys.symbol.xmark'))
-        .fontSize($r('app.float.icon_size'))
-        .fontColor([$r('app.color.hm_text_secondary')])
-        .padding($r('app.float.space_xs'))
-        .onClick(() => {
-          this.onClose();
-        })
+      .width('100%')
+      if (translationViewModel.status === STATUS_READY) {
+        Row({ space: $r('app.float.space_xs') }) {
+          Text(languageText(translationViewModel.sourceLang))
+            .fontSize($r('app.float.font_size_caption'))
+            .fontColor($r('app.color.hm_text_secondary'))
+          SymbolGlyph($r('sys.symbol.arrow_right'))
+            .fontSize($r('app.float.icon_size_tiny'))
+            .fontColor([$r('app.color.hm_text_secondary')])
+          Text(languageText(translationViewModel.targetLang))
+            .fontSize($r('app.float.font_size_caption'))
+            .fontColor($r('app.color.hm_text_secondary'))
+          if (translationViewModel.fromCache) {
+            Text($r('app.string.translate_cached'))
+              .fontSize($r('app.float.font_size_caption'))
+              .fontColor(themePalette.accent())
+          }
+        }
+        .width('100%')
+      }
     }
     .width('100%')
     .padding({ bottom: $r('app.float.space_s') })
@@ -86,13 +83,13 @@ export struct TranslateSheet {
   @Builder
   SelectionCard() {
     if (this.hasSelection()) {
-      Column({ space: $r('app.float.space_xs') }) {
+      Column({ space: $r('app.float.space_s') }) {
         Text($r('app.string.translate_selection_title'))
           .fontSize($r('app.float.font_size_caption'))
           .fontColor(themePalette.accent())
           .width('100%')
         Text(translationViewModel.selectionOriginal)
-          .fontSize($r('app.float.font_size_caption'))
+          .fontSize($r('app.float.font_size_body'))
           .fontColor($r('app.color.hm_text_secondary'))
           .width('100%')
         if (translationViewModel.selectionStatus === STATUS_LOADING) {
@@ -118,6 +115,7 @@ export struct TranslateSheet {
         } else if (translationViewModel.selectionTranslated.length > 0) {
           Text(translationViewModel.selectionTranslated)
             .fontSize($r('app.float.font_size_body'))
+            .fontWeight(FontWeight.Medium)
             .fontColor($r('app.color.hm_text_primary'))
             .width('100%')
             .copyOption(CopyOptions.LocalDevice)
@@ -180,31 +178,47 @@ export struct TranslateSheet {
   /** 段落对照行：原文（次要色）+ 译文（主色）。 */
   @Builder
   ParagraphRow(item: TranslationParagraph) {
-    Column({ space: $r('app.float.space_xs') }) {
+    Column({ space: $r('app.float.space_s') }) {
       if (!translationViewModel.onlyTranslation) {
         Text(item.original)
-          .fontSize($r('app.float.font_size_caption'))
+          .fontSize($r('app.float.font_size_body'))
           .fontColor($r('app.color.hm_text_secondary'))
           .width('100%')
           .copyOption(CopyOptions.LocalDevice)
       }
       Text(item.translated.length > 0 ? item.translated : item.original)
         .fontSize($r('app.float.font_size_body'))
+        .fontWeight(FontWeight.Medium)
         .fontColor($r('app.color.hm_text_primary'))
         .width('100%')
         .copyOption(CopyOptions.LocalDevice)
     }
     .width('100%')
-    .padding({
-      top: $r('app.float.space_s'),
-      bottom: $r('app.float.space_s')
-    })
+    .padding($r('app.float.space_m'))
+    .margin({ bottom: $r('app.float.space_s') })
+    .backgroundColor($r('app.color.hm_card_background'))
+    .borderRadius($r('app.float.radius_card'))
     .alignItems(HorizontalAlign.Start)
   }
 
   build() {
     Column() {
       this.Header()
+      if (translationViewModel.status === STATUS_READY) {
+        Row() {
+          Text($r('app.string.translate_only_translation'))
+            .fontSize($r('app.float.font_size_caption'))
+            .fontColor($r('app.color.hm_text_secondary'))
+          Blank()
+          Toggle({ type: ToggleType.Switch, isOn: translationViewModel.onlyTranslation })
+            .selectedColor(themePalette.fill())
+            .onChange((value: boolean) => {
+              translationViewModel.onlyTranslation = value;
+            })
+        }
+        .width('100%')
+        .padding({ bottom: $r('app.float.space_s') })
+      }
       Scroll() {
         Column() {
           this.SelectionCard()
@@ -231,44 +245,33 @@ export struct TranslateSheet {
                 .width('100%')
                 .margin({ bottom: $r('app.float.space_s') })
             }
-            Row() {
-              Text($r('app.string.translate_only_translation'))
-                .fontSize($r('app.float.font_size_caption'))
-                .fontColor($r('app.color.hm_text_secondary'))
-              Blank()
-              Toggle({ type: ToggleType.Switch, isOn: translationViewModel.onlyTranslation })
-                .selectedColor(themePalette.fill())
-                .onChange((value: boolean) => {
-                  translationViewModel.onlyTranslation = value;
-                })
-            }
-            .width('100%')
-            .padding({ bottom: $r('app.float.space_s') })
-
             ForEach(translationViewModel.paragraphs, (item: TranslationParagraph) => {
               this.ParagraphRow(item)
-              Divider().color($r('app.color.hm_divider'))
             }, (item: TranslationParagraph, index: number) => index.toString())
-
-            Button($r('app.string.translate_retry'))
-              .width('100%')
-              .height($r('app.float.row_height'))
-              .buttonStyle(ButtonStyleMode.TEXTUAL)
-              .fontSize($r('app.float.font_size_caption'))
-              .fontColor(themePalette.accent())
-              .margin({ top: $r('app.float.space_m') })
-              .onClick(() => {
-                translationViewModel.retry();
-              })
           }
         }
         .width('100%')
-        .padding({ bottom: $r('app.float.space_xl') })
+        .padding({ bottom: $r('app.float.space_s') })
         .alignItems(HorizontalAlign.Start)
       }
       .layoutWeight(1)
       .scrollBar(BarState.Off)
       .align(Alignment.Top)
+      if (translationViewModel.status === STATUS_READY) {
+        Column() {
+          Button($r('app.string.translate_retry'))
+            .width('100%')
+            .height($r('app.float.search_field_height'))
+            .buttonStyle(ButtonStyleMode.TEXTUAL)
+            .fontSize($r('app.float.font_size_body'))
+            .fontColor(themePalette.accent())
+            .onClick(() => {
+              translationViewModel.retry();
+            })
+        }
+        .width('100%')
+        .padding({ bottom: safeArea.bottomInsetVp / 2 })
+      }
     }
     .width('100%')
     .height('100%')

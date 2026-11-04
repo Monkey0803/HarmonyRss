@@ -190,16 +190,11 @@ export struct ShareSheetView {
 /** 正文翻译面板：结果已由 ViewModel 就绪（缓存或刚发起）。 */
 @ComponentV2
 export struct TranslateSheetView {
-  @Event onClose: () => void = () => {
-  };
   @Event onOpenSettings: () => void = () => {
   };
 
   build() {
     TranslateSheet({
-      onClose: (): void => {
-        this.onClose();
-      },
       onOpenSettings: (): void => {
         this.onOpenSettings();
       }

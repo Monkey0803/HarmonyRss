@@ -108,13 +108,11 @@ export class TranslationService {
     }
     const translated: string[] = await this.translateParagraphs(paragraphs, target, endpoint, model);
     const resultParagraphs: TranslationParagraph[] = [];
-    let translatedChars: number = 0;
     for (let i = 0; i < paragraphs.length; i += 1) {
       const value: string = i < translated.length ? translated[i] : '';
       resultParagraphs.push(new TranslationParagraph(paragraphs[i], value));
-      translatedChars += paragraphs[i].length;
     }
-    const truncated: boolean = translatedChars < raw.length;
+    const truncated: boolean = paragraphs.join('').replace(/\s+/g, '').length < raw.replace(/\s+/g, '').length;
     translationStore.putAi(cacheKey, articleId, source, target, this.encodePayload(resultParagraphs));
     return new TranslationResult(resultParagraphs, source, target, 'ai', false, truncated);
   }
@@ -136,7 +134,7 @@ export class TranslationService {
     const paragraphs: string[] = splitParagraphs(raw);
     const translated: string[] = await this.translateParagraphs(paragraphs, target,
       aiEndpointOf(appSettings.translateAiEndpoint), aiModelOf(appSettings.translateAiModel));
-    return translated.join('\n');
+    return translated.join('\n\n');
   }
 
   /** 设置页「测试翻译」：翻译一句固定文本并返回结果。 */
