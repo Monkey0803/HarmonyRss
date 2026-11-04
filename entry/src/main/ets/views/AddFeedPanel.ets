@@ -21,6 +21,7 @@ import { appSettings } from '../model/AppSettings';
 import { AppMenu } from '../common/components/AppMenu';
 import { MenuItemSpec, MenuSectionSpec, MenuSpec } from '../common/components/MenuSpec';
 import { themePalette } from '../model/ThemePalette';
+import { FeedPreviewItems } from './FeedPreviewItems';
 
 @ComponentV2
 export struct AddFeedPanel {
@@ -402,32 +403,7 @@ export struct AddFeedPanel {
 
       this.GroupPicker()
 
-      if (this.previewCount === 0) {
-        Text($r('app.string.subs_preview_no_items'))
-          .fontSize($r('app.float.font_size_caption'))
-          .fontColor($r('app.color.hm_text_secondary'))
-      } else {
-        Text($r('app.string.subs_article_count', this.previewCount))
-          .fontSize($r('app.float.font_size_caption'))
-          .fontColor($r('app.color.hm_text_secondary'))
-        Text($r('app.string.subs_preview_latest'))
-          .fontSize($r('app.float.font_size_caption'))
-          .fontColor($r('app.color.hm_text_secondary'))
-        ForEach(this.previewItems, (item: PreviewItem) => {
-          Row({ space: $r('app.float.space_s') }) {
-            Text(item.title.length > 0 ? item.title : $r('app.string.article_title'))
-              .fontSize($r('app.float.font_size_body'))
-              .fontColor($r('app.color.hm_text_primary'))
-              .maxLines(1)
-              .textOverflow({ overflow: TextOverflow.Ellipsis })
-              .layoutWeight(1)
-            Text(DateUtil.format(item.publishedAt))
-              .fontSize($r('app.float.font_size_caption'))
-              .fontColor($r('app.color.hm_text_secondary'))
-          }
-          .width('100%')
-        }, (item: PreviewItem) => item.title + '|' + item.publishedAt.toString())
-      }
+      FeedPreviewItems({ count: this.previewCount, items: this.previewItems })
 
       Row({ space: $r('app.float.space_s') }) {
         Button($r('app.string.dialog_cancel'))

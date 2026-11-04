@@ -13,21 +13,18 @@
 
 import { media } from '@kit.MediaKit';
 import { avSession } from '@kit.AVSessionKit';
-import { backgroundTaskManager } from '@kit.BackgroundTasksKit';
-import { common, wantAgent, Want, WantAgent } from '@kit.AbilityKit';
+import { common, Want } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { Article } from '../model/Feed';
 import { Enclosure, firstAudio } from '../model/Enclosure';
-import { articleRepository } from './ArticleServices';
 import { readerSpeech } from './ReaderSpeech';
+import { MediaProgressStore } from './MediaProgressStore';
+import { MediaBackgroundTask } from './MediaBackgroundTask';
 
 const DOMAIN: number = 0x0000;
 const TAG: string = 'MediaPlayerService';
-const MAIN_ABILITY: string = 'EntryAbility';
 const SESSION_TAG: string = 'HarmonyRssReader';
-/** 后端任务 requestCode（与通知 / 卡片区分）。 */
-const BACKGROUND_REQUEST_CODE: number = 3001;
 /** 倍速档位（与 AVPlayer.PlaybackSpeed 一一对应）。 */
 const SPEEDS: number[] = [0.75, 1.0, 1.25, 1.5, 1.75, 2.0];
 /** 进度写库节流（秒）。 */
@@ -117,8 +114,9 @@ export class MediaPlayerService {
   private queue: MediaTrack[] = [];
   private current: MediaTrack | undefined = undefined;
   private lastSavedSecond: number = -1;
-  private backgroundRunning: boolean = false;
+  private readonly backgroundTask: MediaBackgroundTask = new MediaBackgroundTask();
   private switching: boolean = false;
+  private readonly progressStore: MediaProgressStore = new MediaProgressStore();
 
   /** 当前是否有可展示的播放器（含暂停 / 出错）。 */
   hasTrack(): boolean {
@@ -448,8 +446,7 @@ export class MediaPlayerService {
 
   /** 读上次播放位置（秒）。 */
   private async loadProgress(articleId: string): Promise<number> {
-    const article: Article | undefined = await articleRepository.loadById(articleId);
-    return article !== undefined ? article.mediaProgress : 0;
+    return this.progressStore.load(articleId);
   }
 
   /** 写播放位置（秒）。 */
@@ -458,7 +455,7 @@ export class MediaPlayerService {
     if (track === undefined) {
       return;
     }
-    await articleRepository.setMediaProgress(track.articleId, this.positionSeconds);
+    await this.progressStore.save(track.articleId, this.positionSeconds);
   }
 
   /** 释放 AVPlayer（切歌用，会话保留）。 */
@@ -573,57 +570,12 @@ export class MediaPlayerService {
     }
   }
 
-  /** 申请后台长时任务（AVSession 已接入，系统不会额外弹通知）。 */
   private async startBackground(): Promise<void> {
-    const context: common.UIAbilityContext | undefined = this.context;
-    if (context === undefined || this.backgroundRunning) {
-      return;
-    }
-    try {
-      const agent: WantAgent | undefined = await this.buildWantAgent(context);
-      if (agent === undefined) {
-        return;
-      }
-      await backgroundTaskManager.startBackgroundRunning(context,
-        backgroundTaskManager.BackgroundMode.AUDIO_PLAYBACK, agent);
-      this.backgroundRunning = true;
-    } catch (err) {
-      this.logError('start background', err);
-    }
+    await this.backgroundTask.start(this.context);
   }
 
-  /** 结束后台长时任务。 */
   private async stopBackground(): Promise<void> {
-    const context: common.UIAbilityContext | undefined = this.context;
-    if (context === undefined || !this.backgroundRunning) {
-      return;
-    }
-    try {
-      await backgroundTaskManager.stopBackgroundRunning(context);
-    } catch (err) {
-      this.logError('stop background', err);
-    }
-    this.backgroundRunning = false;
-  }
-
-  /** 后台任务点回应用用的 WantAgent。 */
-  private async buildWantAgent(context: common.UIAbilityContext): Promise<WantAgent | undefined> {
-    try {
-      const want: Want = {
-        bundleName: context.applicationInfo.name,
-        abilityName: MAIN_ABILITY
-      };
-      const info: wantAgent.WantAgentInfo = {
-        wants: [want],
-        actionType: wantAgent.OperationType.START_ABILITY,
-        requestCode: BACKGROUND_REQUEST_CODE,
-        actionFlags: [wantAgent.WantAgentFlags.UPDATE_PRESENT_FLAG]
-      };
-      return await wantAgent.getWantAgent(info);
-    } catch (err) {
-      this.logError('want agent', err);
-      return undefined;
-    }
+    await this.backgroundTask.stop(this.context);
   }
 
   private logError(action: string, err: Object): void {

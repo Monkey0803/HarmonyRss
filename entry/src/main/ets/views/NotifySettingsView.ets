@@ -26,6 +26,7 @@ import { settingsViewModel } from '../viewmodel/SettingsViewModel';
 import { safeArea } from '../service/SafeAreaController';
 import { Toast } from '@rss/toast-kit';
 import { themePalette } from '../model/ThemePalette';
+import { NotifyPermissionCard } from './NotifyPermissionCard';
 
 /** 关键词输入框的最大长度（字符）：只防手滑，真正的上限是关键词条数。 */
 const KEYWORD_INPUT_MAX: number = 40;
@@ -239,66 +240,6 @@ export struct NotifySettingsView {
         bottom: $r('app.float.space_s'),
         left: $r('app.float.space_xs')
       })
-  }
-
-  /** 权限卡片：状态 + 申请授权 / 重新检查 + 引导文案。 */
-  @Builder
-  PermissionCard() {
-    Column({ space: $r('app.float.space_s') }) {
-      Row({ space: $r('app.float.space_s') }) {
-        SymbolGlyph(notifyViewModel.authorized ? $r('sys.symbol.bell') : $r('sys.symbol.bell_slash'))
-          .fontSize($r('app.float.icon_size'))
-          .fontColor([notifyViewModel.authorized
-            ? themePalette.accent()
-            : $r('app.color.hm_text_secondary')])
-        Text(notifyViewModel.authorized
-          ? $r('app.string.notify_permission_on')
-          : $r('app.string.notify_permission_off'))
-          .fontSize($r('app.float.font_size_body'))
-          .fontColor($r('app.color.hm_text_primary'))
-          .layoutWeight(1)
-        if (!notifyViewModel.authorized) {
-          if (this.deniedOnce) {
-            // 已拒绝过一次：不再弹系统框，交给用户去系统设置开，回来点「重新检查」。
-            Button($r('app.string.notify_permission_check'))
-              .buttonStyle(ButtonStyleMode.TEXTUAL)
-              .fontSize($r('app.float.font_size_caption'))
-              .fontColor(themePalette.accent())
-              .onClick(() => {
-                this.refreshPermission();
-              })
-          } else {
-            Button($r('app.string.notify_permission_grant'))
-              .buttonStyle(ButtonStyleMode.NORMAL)
-              .fontSize($r('app.float.font_size_caption'))
-              .fontColor($r('app.color.hm_on_brand'))
-              .backgroundColor(themePalette.fill())
-              .enabled(!this.asking)
-              .onClick(() => {
-                this.askPermission();
-              })
-          }
-        }
-      }
-      .width('100%')
-
-      if (!notifyViewModel.authorized) {
-        Text($r('app.string.notify_permission_hint'))
-          .fontSize($r('app.float.font_size_caption'))
-          .fontColor($r('app.color.hm_text_secondary'))
-          .width('100%')
-      } else if (!appSettings.notifyNewArticles) {
-        Text($r('app.string.notify_status_off'))
-          .fontSize($r('app.float.font_size_caption'))
-          .fontColor($r('app.color.hm_text_secondary'))
-          .width('100%')
-      }
-    }
-    .width('100%')
-    .padding($r('app.float.space_m'))
-    .backgroundColor($r('app.color.hm_card_background'))
-    .borderRadius($r('app.float.radius_card'))
-    .alignItems(HorizontalAlign.Start)
   }
 
   /** 通知范围卡片：总开关 + 关键词。 */
@@ -594,7 +535,11 @@ export struct NotifySettingsView {
             .padding({ top: $r('app.float.space_s') })
 
           this.SectionTitle($r('app.string.notify_section_permission'))
-          this.PermissionCard()
+          NotifyPermissionCard({
+            deniedOnce: this.deniedOnce, asking: this.asking,
+            onRefresh: () => this.refreshPermission(),
+            onAsk: () => this.askPermission()
+          })
 
           this.SectionTitle($r('app.string.notify_section_policy'))
           this.PolicyCard()

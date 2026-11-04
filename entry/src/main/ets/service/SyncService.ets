@@ -27,6 +27,7 @@ import { MockSyncBackend } from './sync/MockSyncBackend';
 import { CloudAvailability, cloudStore } from './sync/CloudStore';
 import { CloudRelayBackend } from './sync/CloudRelayBackend';
 import { SyncBackend } from './sync/SyncBackend';
+import { SyncRetryScheduler } from './sync/SyncRetryScheduler';
 
 const DOMAIN: number = 0x0000;
 const TAG: string = 'SyncService';
@@ -139,9 +140,8 @@ export class SyncService {
   private syncingFlag: boolean = false;
   /** 上次自动同步尝试时间（只存内存：进程重启后允许立刻同步一次）。 */
   private lastAttemptAt: number = 0;
-  /** 失败重试定时器与已重试次数。 */
-  private retryTimer: number = -1;
-  private retryAttempt: number = 0;
+  /** 失败重试退避状态。 */
+  private readonly retryScheduler: SyncRetryScheduler = new SyncRetryScheduler();
   /** 云端变更监听是否已绑定（同账号其他设备写入时触发一次自动同步）。 */
   private cloudListenerBound: boolean = false;
   /** 状态变化订阅者（设置页实时刷新用；只存内存）。 */
@@ -216,8 +216,7 @@ export class SyncService {
     }
     if (!enabled) {
       // 关掉同步后不再重试：定时器留在那里只会在后台空转。
-      this.retryAttempt = 0;
-      this.clearRetryTimer();
+      this.retryScheduler.clear();
     }
   }
 
@@ -425,8 +424,7 @@ export class SyncService {
         }
         this.notifyStatus();
         // 这一轮成功了：清掉失败重试，避免继续在后台补试。
-        this.retryAttempt = 0;
-        this.clearRetryTimer();
+        this.retryScheduler.clear();
       }
       return summary;
     } catch (err) {
@@ -515,30 +513,16 @@ export class SyncService {
 
   /** 失败退避重试：30s / 60s / 120s，最多三次；次数用尽交给下一次自动触发。 */
   private scheduleRetry(context: common.Context): void {
-    if (this.retryTimer >= 0 || !AutoSyncPolicy.canRetry(this.retryAttempt)) {
-      return;
-    }
-    const delay: number = AutoSyncPolicy.retryDelay(this.retryAttempt);
-    this.retryAttempt += 1;
-    this.retryTimer = setTimeout(() => {
-      this.retryTimer = -1;
-      this.autoSync(context, 'retry', false).catch((err: Error) => {
+    this.retryScheduler.schedule(context, (retryContext: common.Context): void => {
+      this.autoSync(retryContext, 'retry', false).catch((err: Error) => {
         hilog.info(DOMAIN, TAG, 'sync retry failed: %{public}s', err.message);
       });
-    }, delay);
-  }
-
-  private clearRetryTimer(): void {
-    if (this.retryTimer >= 0) {
-      clearTimeout(this.retryTimer);
-      this.retryTimer = -1;
-    }
+    });
   }
 
   /** 重置模拟远端（同时清空本地同步副本与游标，下次同步重新建立基线）。 */
   async resetRemote(context: common.Context): Promise<void> {
-    this.retryAttempt = 0;
-    this.clearRetryTimer();
+    this.retryScheduler.clear();
     if (await this.isCloudBackend(context)) {
       await this.prepareCloud(context);
       cloudStore.clear();

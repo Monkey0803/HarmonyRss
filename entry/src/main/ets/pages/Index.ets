@@ -48,10 +48,7 @@ import { IMAGE_DOMAIN } from '../common/constants/DomainConstants';
 import { HomeTabView } from '../views/HomeTabView';
 import { AppSheet } from '../common/components/AppSheet';
 import { SHEET_ADD_FEED_HEIGHT } from '../common/components/SheetDetents';
-import { AddFeedPanel } from '../views/AddFeedPanel';
-import { SaveWebPagePanel } from '../views/SaveWebPagePanel';
 import { FilterSegmentBar } from '../views/FilterSegmentBar';
-import { FilterCapsule } from '../views/FilterCapsule';
 import { BrandTitle } from '../views/BrandTitle';
 import { SettingsTabView } from '../views/SettingsTabView';
 import { ImageTabView } from '../views/ImageTabView';
@@ -73,13 +70,7 @@ import { shareHandoff } from '../service/ShareHandoff';
 import { Article } from '../model/Feed';
 import { ArticleFilter } from '../common/constants/RssConstants';
 import { themePalette } from '../model/ThemePalette';
-
-/** 添加面板的两个模式：订阅源 / 保存网页（与 ADD_SHEET_MODE_LABELS 逐项对应）。 */
-const ADD_SHEET_MODES: string[] = ['feed', 'web'];
-const ADD_SHEET_MODE_LABELS: ResourceStr[] = [
-  $r('app.string.home_add_feed_title'),
-  $r('app.string.save_web_title')
-];
+import { IndexAddSheetContent } from './IndexAddSheetContent';
 
 @Entry
 @ComponentV2
@@ -513,62 +504,6 @@ struct Index {
   }
 
   /**
-   * 添加订阅源底部面板：复用可复用面板 AddFeedPanel，成功即收起。
-   *
-   * 头部一行：模式切换用与阅读页筛选条同一个 FilterCapsule（等分轨道宽度），右侧只留关闭图标。
-   * 面板本身不再画标题（模式已经由胶囊表达），避免标题与胶囊文案重复。
-   *
-   * 顶部留出 space_xl 再放这一行：bindSheet 的 dragBar 会占用面板顶部约 24vp 的手势区，
-   * 控件贴着顶边时点击会被当成下拉关闭面板（表现为「点保存网页把面板关掉了」）。
-   */
-  @Builder
-  AddFeedPanelSheet() {
-    Column({ space: $r('app.float.space_s') }) {
-      Row({ space: $r('app.float.space_s') }) {
-        FilterCapsule({
-          options: ADD_SHEET_MODES,
-          labels: ADD_SHEET_MODE_LABELS,
-          active: this.addSheetMode,
-          stretch: true,
-          onSelect: (value: string) => { this.addSheetMode = value; }
-        })
-          .layoutWeight(1)
-        SymbolGlyph($r('sys.symbol.xmark'))
-          .fontSize($r('app.float.icon_size'))
-          .fontColor([themePalette.accent()])
-          .padding($r('app.float.space_xs'))
-          .accessibilityText($r('app.string.dialog_cancel'))
-          .onClick(() => { this.showAddSheet = false; })
-      }
-      .width('100%')
-      .alignItems(VerticalAlign.Center)
-      .padding({ left: $r('app.float.space_m'), right: $r('app.float.space_m'), top: $r('app.float.space_xl') })
-      if (this.addSheetMode === 'web') {
-        SaveWebPagePanel({
-          initialText: this.pendingAddText,
-          showTitle: false,
-          onSaved: () => {
-            this.pendingAddText = '';
-            this.showAddSheet = false;
-            feedViewModel.clearScope();
-            feedViewModel.setFilter(ArticleFilter.SAVED);
-            this.selectTab(TabIndex.HOME);
-          }
-        })
-      } else {
-        AddFeedPanel({
-          showTitle: false,
-          initialText: this.pendingAddText,
-          onSubmitResult: () => {
-            this.pendingAddText = '';
-            this.showAddSheet = false;
-          }
-        })
-      }
-    }
-  }
-
-  /**
    * 切换 section（底部页签与侧边栏共用）：记住停留的页签，下次打开直接回到这里。
    * HdsTabs 的 onChange 与 HdsSideMenu 的 $selectedIndex 都走这里，两条外壳行为一致。
    */
@@ -873,7 +808,23 @@ struct Index {
           this.showAddSheet = false;
         }
       }) {
-        this.AddFeedPanelSheet()
+        IndexAddSheetContent({
+          mode: this.addSheetMode,
+          pendingText: this.pendingAddText,
+          onMode: (value: string) => { this.addSheetMode = value; },
+          onClose: () => { this.showAddSheet = false; },
+          onSaved: () => {
+            this.pendingAddText = '';
+            this.showAddSheet = false;
+            feedViewModel.clearScope();
+            feedViewModel.setFilter(ArticleFilter.SAVED);
+            this.selectTab(TabIndex.HOME);
+          },
+          onSubmitted: () => {
+            this.pendingAddText = '';
+            this.showAddSheet = false;
+          }
+        })
       }
     }
     .width('100%')

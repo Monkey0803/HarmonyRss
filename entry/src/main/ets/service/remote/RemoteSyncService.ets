@@ -54,17 +54,11 @@ import {
   mergeFeeds
 } from './RemoteSyncPlan';
 import { appSettings } from '../../model/AppSettings';
+import { RemoteMigrationStateStore, MODE_KEY, isMigrationMode } from './RemoteMigrationStateStore';
+import { RemoteStateTransfer } from './RemoteStateTransfer';
 
 const DOMAIN: number = 0x0000;
 const TAG: string = 'RemoteSyncService';
-const MODE_KEY: string = 'subscription_mode';
-const MODE_DISABLED_KEY: string = 'mode_disabled_feeds';
-
-function isMigrationMode(value: string): boolean {
-  return value === RemoteMigrationMode.MERGE || value === RemoteMigrationMode.MIGRATED
-    || value === RemoteMigrationMode.REMOTE_ONLY;
-}
-
 /** 纯逻辑在 RemoteSyncPlan 中实现；这里 re-export，保持「同步服务对外提供纯函数」的契约。 */
 export { FeedMergeResult, mergeFeeds, decideState, buildEditTagBatches, feedKey };
 
@@ -100,6 +94,8 @@ function toLocalArticle(feed: FeedSource, item: RemoteArticle): Article {
 
 @ObservedV2
 export class RemoteSyncService {
+  private readonly migrationState: RemoteMigrationStateStore = new RemoteMigrationStateStore();
+  private readonly stateTransfer: RemoteStateTransfer = new RemoteStateTransfer();
   /** 是否正在同步（账号页按钮禁用 / 进度展示）。 */
   @Trace syncing: boolean = false;
   /** 当前阶段：'idle' | 'feeds' | 'articles' | 'push' | 'pull' | 'done'。 */
@@ -306,7 +302,7 @@ export class RemoteSyncService {
         for (let i = 0; i < localOnly.length; i += 1) {
           localOnlyIds.add(localOnly[i].id);
         }
-        const previousDisabled: string[] = await this.readModeDisabledIds();
+        const previousDisabled: string[] = await this.migrationState.readModeDisabledIds();
         const previousSet: Set<string> = new Set(previousDisabled);
         const nextDisabled: string[] = [];
         // 之前因「仅远端」停用、但现在远端已经有的源：恢复启用。
@@ -338,7 +334,7 @@ export class RemoteSyncService {
             nextDisabled.push(feed.id);
           }
         }
-        await this.saveModeDisabledIds(nextDisabled);
+        await this.migrationState.saveModeDisabledIds(nextDisabled);
       }
       const feedChanged = this.feedChanged;
       if (feedsChanged && feedChanged !== undefined) {
@@ -477,204 +473,20 @@ export class RemoteSyncService {
     }
   }
 
-  /** 回写本地已读 / 收藏：统一的远端变更交给后端批量处理。 */
+  /** 已读和收藏状态由独立传输器批量处理。 */
   private async pushStates(account: RemoteAccount, backend: RemoteBackend,
     session: RemoteSession, result: SyncResult): Promise<void> {
-    const pending: OutboxItem[] =
-      await remoteAccountStore.pendingItems(RemoteSyncConstants.MAX_ARTICLES_PER_SYNC);
-    if (pending.length === 0) {
-      return;
-    }
-    const mappings: RemoteMapping[] = await remoteAccountStore.allMappings();
-    const remoteIds: Map<string, string> = new Map<string, string>();
-    for (let i = 0; i < mappings.length; i += 1) {
-      remoteIds.set(mappings[i].articleId, mappings[i].remoteId);
-    }
-    const changes: RemoteStateChange[] = [];
-    const localIds: string[] = [];
-    for (let i = 0; i < pending.length; i += 1) {
-      const item: OutboxItem = pending[i];
-      const remoteId: string | undefined = remoteIds.get(item.articleId);
-      if (remoteId === undefined || (!item.setRead && !item.setStarred)) {
-        continue;
-      }
-      changes.push(new RemoteStateChange(remoteId,
-        item.setRead ? item.readValue : undefined,
-        item.setStarred ? item.starredValue : undefined));
-      localIds.push(item.articleId);
-    }
-    if (changes.length === 0) {
-      // 没有任何可回写的映射 / 变更：直接清掉，避免队列永久积压。
-      const orphans: string[] = [];
-      for (let i = 0; i < pending.length; i += 1) {
-        orphans.push(pending[i].articleId);
-      }
-      await remoteAccountStore.ackItems(orphans);
-      return;
-    }
-    const pushResult: RemotePushResult =
-      await backend.pushStateChanges(account.baseUrl, session, changes);
-    for (let i = 0; i < pushResult.errors.length; i += 1) {
-      result.errors.push(pushResult.errors[i]);
-    }
-    const applied: Set<string> = new Set(pushResult.applied);
-    const failed: Set<string> = new Set(pushResult.failed);
-    const failedText: string = pushResult.errors.length > 0
-      ? pushResult.errors[0]
-      : RemoteErrorCode.SERVER.toString();
-    const acked: string[] = [];
-    const attempted: Set<string> = new Set<string>();
-    for (let i = 0; i < changes.length; i += 1) {
-      const remoteId: string = changes[i].remoteId;
-      const localId: string = localIds[i];
-      attempted.add(localId);
-      if (applied.has(remoteId) && !failed.has(remoteId)) {
-        acked.push(localId);
-        result.statesPushed += 1;
-      } else {
-        await remoteAccountStore.failItem(localId, failedText);
-      }
-    }
-    if (acked.length > 0) {
-      await remoteAccountStore.ackItems(acked);
-    }
-    // 没有远端映射 / 没有任何变更的条目：清掉，避免永久重试。
-    if (attempted.size < pending.length) {
-      const orphans: string[] = [];
-      for (let i = 0; i < pending.length; i += 1) {
-        if (!attempted.has(pending[i].articleId) && !remoteIds.has(pending[i].articleId)) {
-          orphans.push(pending[i].articleId);
-        }
-      }
-      await remoteAccountStore.ackItems(orphans);
-    }
+    await this.stateTransfer.pushStates(account, backend, session, result);
   }
 
-  /** 拉回远端已读 / 收藏：只更新状态列，不覆盖正文 / 进度 / 标签。 */
   private async pullStates(account: RemoteAccount, backend: RemoteBackend,
     session: RemoteSession, result: SyncResult): Promise<void> {
-    let unreadOk: boolean = true;
-    let starredOk: boolean = true;
-    let unread: Set<string> = new Set<string>();
-    let starred: Set<string> = new Set<string>();
-    try {
-      unread = await this.collectIds((continuation: string): Promise<RemoteIdPage> => {
-        return backend.fetchUnreadIds(account.baseUrl, session, continuation);
-      });
-    } catch (err) {
-      const code: RemoteErrorCode = this.codeOfObject(err);
-      if (code === RemoteErrorCode.AUTH) {
-        throw new RemoteError(code, 'auth expired during pull');
-      }
-      unreadOk = false;
-      unread = new Set<string>();
-      result.errors.push(code.toString());
-    }
-    try {
-      starred = await this.collectIds((continuation: string): Promise<RemoteIdPage> => {
-        return backend.fetchStarredIds(account.baseUrl, session, continuation);
-      });
-    } catch (err) {
-      const code: RemoteErrorCode = this.codeOfObject(err);
-      if (code === RemoteErrorCode.AUTH) {
-        throw new RemoteError(code, 'auth expired during pull');
-      }
-      starredOk = false;
-      starred = new Set<string>();
-      result.errors.push(code.toString());
-    }
-    const mappings: RemoteMapping[] = await remoteAccountStore.allMappings();
-    if (mappings.length === 0) {
-      return;
-    }
-    const pendingIds: Set<string> = new Set<string>();
-    const pending: OutboxItem[] =
-      await remoteAccountStore.pendingItems(RemoteSyncConstants.MAX_ARTICLES_PER_SYNC);
-    for (let i = 0; i < pending.length; i += 1) {
-      pendingIds.add(pending[i].articleId);
-    }
-    const ids: string[] = [];
-    for (let i = 0; i < mappings.length; i += 1) {
-      ids.push(mappings[i].articleId);
-    }
-    const states: ArticleState[] = await articleRepository.loadStates(ids);
-    const stateById: Map<string, ArticleState> = new Map<string, ArticleState>();
-    for (let i = 0; i < states.length; i += 1) {
-      stateById.set(states[i].articleId, states[i]);
-    }
-    let pulled: number = 0;
-    // 决策先全部算完再统一落库：回写是「整组」语义，逐条写会互相覆盖组内状态，
-    // 也避免一次同步里做 O(映射数) 次 UPDATE。
-    const readTargets: string[] = [];
-    const unreadTargets: string[] = [];
-    const starredTargets: string[] = [];
-    const unstarredTargets: string[] = [];
-    for (let i = 0; i < mappings.length; i += 1) {
-      const mapping: RemoteMapping = mappings[i];
-      const local: ArticleState | undefined = stateById.get(mapping.articleId);
-      if (local === undefined) {
-        continue;
-      }
-      const remoteRead: boolean = unreadOk ? !unread.has(mapping.remoteId) : local.read;
-      const remoteStarred: boolean = starredOk ? starred.has(mapping.remoteId) : local.starred;
-      const decision = decideState(local.read, local.starred, remoteRead, remoteStarred,
-        pendingIds.has(mapping.articleId));
-      if (decision.read !== local.read) {
-        if (decision.read) {
-          readTargets.push(mapping.articleId);
-        } else {
-          unreadTargets.push(mapping.articleId);
-        }
-        pulled += 1;
-      }
-      if (decision.starred !== local.starred) {
-        if (decision.starred) {
-          starredTargets.push(mapping.articleId);
-        } else {
-          unstarredTargets.push(mapping.articleId);
-        }
-        pulled += 1;
-      }
-    }
-    // 回写作用到整组：先解析主条 / 重复项再批量落库，保证组内状态一致（FR-006）。
-    if (readTargets.length > 0) {
-      await dedupeService.applyRead(readTargets, true);
-    }
-    if (unreadTargets.length > 0) {
-      await dedupeService.applyRead(unreadTargets, false);
-    }
-    if (starredTargets.length > 0) {
-      await dedupeService.applyStarred(starredTargets, true);
-    }
-    if (unstarredTargets.length > 0) {
-      await dedupeService.applyStarred(unstarredTargets, false);
-    }
-    result.statesPulled = pulled;
+    await this.stateTransfer.pullStates(account, backend, session, result);
   }
 
-  /** 分页收集 id（最多 MAX_ID_PAGES 页）。 */
-  private async collectIds(fetcher: (continuation: string) => Promise<RemoteIdPage>): Promise<Set<string>> {
-    const ids: Set<string> = new Set<string>();
-    let continuation: string = '';
-    let pages: number = 0;
-    while (pages < RemoteSyncConstants.MAX_ID_PAGES) {
-      const page: RemoteIdPage = await fetcher(continuation);
-      pages += 1;
-      for (let i = 0; i < page.ids.length; i += 1) {
-        ids.add(page.ids[i]);
-      }
-      if (page.continuation.length === 0) {
-        break;
-      }
-      continuation = page.continuation;
-    }
-    return ids;
-  }
-
-  /** 当前订阅模式（未设置 / 脏值返回空串）。 */
+  /** 当前订阅迁移模式。 */
   async subscriptionMode(): Promise<string> {
-    const value: string = await remoteAccountStore.getState(MODE_KEY);
-    return isMigrationMode(value) ? value : '';
+    return this.migrationState.subscriptionMode();
   }
 
   /** 迁移预览：本地总数 / 远端总数 / 重合 / 本地独有 + 当前模式。 */
@@ -740,7 +552,7 @@ export class RemoteSyncService {
     const feedChanged = this.feedChanged;
     let changed: boolean = merged.changed;
     if (mode === RemoteMigrationMode.REMOTE_ONLY) {
-      const disabledIds: string[] = await this.readModeDisabledIds();
+      const disabledIds: string[] = await this.migrationState.readModeDisabledIds();
       for (let i = 0; i < localOnly.length; i += 1) {
         const feed: FeedSource = localOnly[i];
         if (feed.enabled) {
@@ -752,10 +564,10 @@ export class RemoteSyncService {
           changed = true;
         }
       }
-      await this.saveModeDisabledIds(disabledIds);
+      await this.migrationState.saveModeDisabledIds(disabledIds);
     } else {
       // merge / migrated：恢复之前因「仅远端」被停用的源。
-      const restored: boolean = await this.restoreModeDisabledFeeds(merged.feeds);
+      const restored: boolean = await this.migrationState.restoreModeDisabledFeeds(merged.feeds);
       if (restored) {
         changed = true;
       }
@@ -769,51 +581,6 @@ export class RemoteSyncService {
     await remoteAccountStore.setState(MODE_KEY, mode);
     result.mode = mode;
     return result;
-  }
-
-  /** 读「仅远端模式」下被停用的源 id（损坏 JSON 一律当空）。 */
-  private async readModeDisabledIds(): Promise<string[]> {
-    const text: string = await remoteAccountStore.getState(MODE_DISABLED_KEY);
-    if (text.length === 0) {
-      return [];
-    }
-    try {
-      const raw: string[] = JSON.parse(text);
-      if (!Array.isArray(raw)) {
-        return [];
-      }
-      const result: string[] = [];
-      for (let i = 0; i < raw.length; i += 1) {
-        if (typeof raw[i] === 'string' && raw[i].length > 0) {
-          result.push(raw[i]);
-        }
-      }
-      return result;
-    } catch (err) {
-      return [];
-    }
-  }
-
-  private async saveModeDisabledIds(ids: string[]): Promise<void> {
-    await remoteAccountStore.setState(MODE_DISABLED_KEY, ids.length > 0 ? JSON.stringify(ids) : '');
-  }
-
-  /** 恢复因「仅远端」被停用的源；返回是否有变化。 */
-  private async restoreModeDisabledFeeds(feeds: FeedSource[]): Promise<boolean> {
-    const ids: string[] = await this.readModeDisabledIds();
-    if (ids.length === 0) {
-      return false;
-    }
-    const targets: Set<string> = new Set(ids);
-    let changed: boolean = false;
-    for (let i = 0; i < feeds.length; i += 1) {
-      if (targets.has(feeds[i].id) && !feeds[i].enabled) {
-        feeds[i].enabled = true;
-        changed = true;
-      }
-    }
-    await this.saveModeDisabledIds([]);
-    return changed;
   }
 
   /** 退出登录：默认保留本地文章与状态；clearSyncData = true 时清空映射 / 队列 / 游标。 */
