@@ -24,7 +24,7 @@ import { CommonConstants } from '../common/constants/CommonConstants';
 import { notifyViewModel } from '../viewmodel/NotifyViewModel';
 import { settingsViewModel } from '../viewmodel/SettingsViewModel';
 import { safeArea } from '../service/SafeAreaController';
-import { Toast } from '@rss/toast-kit';
+import { Toast } from '@monkey0803/toast-kit';
 import { themePalette } from '../model/ThemePalette';
 import { NotifyPermissionCard } from './NotifyPermissionCard';
 

@@ -25,7 +25,7 @@ import { Article } from '../../model/Feed';
 import { appSettings } from '../../model/AppSettings';
 import { feedViewModel } from '../../viewmodel/FeedViewModel';
 import { MaterialController } from '../../service/MaterialController';
-import { Toast } from '@rss/toast-kit';
+import { Toast } from '@monkey0803/toast-kit';
 import { AppMenu } from './AppMenu';
 import { MenuItemSpec, MenuSectionSpec, MenuSpec } from './MenuSpec';
 import { SwipeOverflowId, swipeOverflowIds } from './SwipeActionPlan';

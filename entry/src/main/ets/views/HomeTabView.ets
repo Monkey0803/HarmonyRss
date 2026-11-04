@@ -23,7 +23,7 @@ import { FeedErrorText } from '../common/utils/FeedErrorText';
 import { safeArea } from '../service/SafeAreaController';
 import { TagPickerSheet } from './TagPickerSheet';
 import { tagViewModel } from '../viewmodel/TagViewModel';
-import { Toast } from '@rss/toast-kit';
+import { Toast } from '@monkey0803/toast-kit';
 import { common } from '@kit.AbilityKit';
 import { ShareSheet } from './ShareSheet';
 import { ShareContext } from '../model/Share';

@@ -18,7 +18,7 @@ import { settingsViewModel } from '../../viewmodel/SettingsViewModel';
 import { AppLogo } from '../../common/components/AppLogo';
 import { AppSheet } from '../../common/components/AppSheet';
 import { CommonConstants } from '../../common/constants/CommonConstants';
-import { Toast } from '@rss/toast-kit';
+import { Toast } from '@monkey0803/toast-kit';
 import { RouterConstants } from '../../common/constants/RouterConstants';
 import { BackgroundKind } from '../../common/constants/SettingsConstants';
 import { safeArea } from '../../service/SafeAreaController';

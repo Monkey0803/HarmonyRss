@@ -13,7 +13,7 @@ import { FeedStorageStat } from '../model/Search';
 import { storageViewModel } from '../viewmodel/StorageViewModel';
 import { safeArea } from '../service/SafeAreaController';
 import { MaterialController } from '../service/MaterialController';
-import { Toast } from '@rss/toast-kit';
+import { Toast } from '@monkey0803/toast-kit';
 import { AppMenu } from '../common/components/AppMenu';
 import { choiceMenu } from '../common/components/ChoiceMenu';
 import { ChoiceValueChip } from '../common/components/ChoiceField';

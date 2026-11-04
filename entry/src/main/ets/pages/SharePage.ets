@@ -12,7 +12,8 @@ import { FilterCapsule } from '../views/FilterCapsule';
 import { settingsViewModel } from '../viewmodel/SettingsViewModel';
 import { feedViewModel } from '../viewmodel/FeedViewModel';
 import { shareHandoff } from '../service/ShareHandoff';
-import { Toast } from '@rss/toast-kit';
+import { Toast } from '@monkey0803/toast-kit';
+import { Keyboard } from '@monkey0803/keyboard-kit';
 import { setupToast } from '../common/utils/ToastSetup';
 
 /** 模式切换的两段（与 SHARE_MODE_LABELS 逐项对应）：分享进入默认「保存网页」。 */
@@ -35,6 +36,7 @@ struct SharePage {
     // 分享扩展是独立上下文：这里自行注册 Toast 上下文与材质增强。
     setupToast();
     Toast.attach(this.getUIContext());
+    Keyboard.attach(this.getUIContext());
     const context: common.Context | undefined = this.getUIContext().getHostContext();
     if (context !== undefined) {
       settingsViewModel.init(context);
@@ -49,6 +51,7 @@ struct SharePage {
 
   aboutToDisappear(): void {
     Toast.detach(this.getUIContext());
+    Keyboard.detach(this.getUIContext());
   }
 
   build() {

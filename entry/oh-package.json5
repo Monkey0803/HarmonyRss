@@ -6,6 +6,7 @@
   "author": "",
   "license": "",
   "dependencies": {
-    "@rss/toast-kit": "file:../toast-kit"
+    "@monkey0803/keyboard-kit": "1.0.0",
+    "@monkey0803/toast-kit": "1.0.0"
   }
 }

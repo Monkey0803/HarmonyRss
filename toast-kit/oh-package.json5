@@ -1,9 +1,20 @@
 {
-  "name": "@rss/toast-kit",
+  "name": "@monkey0803/toast-kit",
   "version": "1.0.0",
   "description": "Reusable HarmonyOS toast library built on promptAction.showToast.",
   "main": "Index.ets",
-  "author": "",
+  "author": {
+    "name": "Monkey0803",
+    "email": "monkey0803@example.com",
+    "url": "https://gitee.com/monkey0803/toast-kit"
+  },
   "license": "Apache-2.0",
+  "repository": "https://gitee.com/monkey0803/toast-kit",
+  "keywords": [
+    "harmonyos",
+    "arkts",
+    "toast",
+    "har"
+  ],
   "dependencies": {}
 }

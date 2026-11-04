@@ -6,7 +6,7 @@
  */
 
 import { promptAction } from '@kit.ArkUI';
-import { Toast } from '@rss/toast-kit';
+import { Toast } from '@monkey0803/toast-kit';
 import { appSettings } from '../../model/AppSettings';
 import { MaterialController } from '../../service/MaterialController';
 

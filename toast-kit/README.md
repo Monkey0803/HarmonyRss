@@ -2,6 +2,17 @@
 
 HarmonyOS 可复用 Toast 库。底层使用系统 `promptAction.showToast`，不引入自绘浮层；调用方初始化一次后即可在任意位置 `Toast.show(...)`，无需再传 `this.getUIContext()`。
 
+- **OHPM**：`@monkey0803/toast-kit@1.0.0`
+- **Gitee**：https://gitee.com/monkey0803/toast-kit
+
+## 安装
+
+```bash
+ohpm install @monkey0803/toast-kit
+```
+
+> 发布包构建基线：HarmonyOS 6.1.0（API 23）。
+
 ## 特性
 
 - 零上下文调用：`Toast.show($r('app.string.saved'))`
@@ -14,16 +25,18 @@ HarmonyOS 可复用 Toast 库。底层使用系统 `promptAction.showToast`，�
 
 ### 1. 添加依赖
 
-本地模块（本仓库）：
+**Gitee 源码方式**（独立仓库 clone 后）：
 
 ```json5
 // entry/oh-package.json5
 {
   "dependencies": {
-    "@rss/toast-kit": "file:../toast-kit"
+    "@monkey0803/toast-kit": "file:../toast-kit/library"
   }
 }
 ```
+
+> 若直接在 HarmonyRss 主工程内使用本模块，依赖路径为 `file:../toast-kit`。
 
 然后在工程根目录执行：
 
@@ -31,18 +44,29 @@ HarmonyOS 可复用 Toast 库。底层使用系统 `promptAction.showToast`，�
 ohpm install --all
 ```
 
-发布到 OHPM 后可直接：
+**OHPM 方式**：
 
 ```sh
-ohpm install @rss/toast-kit
+ohpm install @monkey0803/toast-kit
 ```
+
+**从源码构建 HAR**（独立仓库根目录）：
+
+```sh
+devecocli build
+# 或
+hvigorw --mode module -p module=toast_kit@default -p product=default assembleHar -p buildMode=release
+```
+
+产物位于 `library/build/default/outputs/default/`。
+
 
 ### 2. 初始化（一次）
 
 主 UIAbility：
 
 ```ts
-import { Toast } from '@rss/toast-kit';
+import { Toast } from '@monkey0803/toast-kit';
 
 onWindowStageCreate(windowStage: window.WindowStage): void {
   windowStage.loadContent('pages/Index', (err) => {
@@ -59,7 +83,7 @@ onWindowStageCreate(windowStage: window.WindowStage): void {
 ### 3. 使用
 
 ```ts
-import { Toast } from '@rss/toast-kit';
+import { Toast } from '@monkey0803/toast-kit';
 
 Toast.show($r('app.string.saved'));
 Toast.show('Saved', { duration: 3000 });
@@ -77,7 +101,7 @@ Toast.showIn(uiContext, $r('app.string.saved'));
 在页面生命周期中挂载 / 卸载：
 
 ```ts
-import { Toast } from '@rss/toast-kit';
+import { Toast } from '@monkey0803/toast-kit';
 
 aboutToAppear(): void {
   Toast.attach(this.getUIContext());
@@ -96,7 +120,7 @@ aboutToDisappear(): void {
 
 ```ts
 import { promptAction } from '@kit.ArkUI';
-import { Toast } from '@rss/toast-kit';
+import { Toast } from '@monkey0803/toast-kit';
 import { appSettings } from '../model/AppSettings';
 import { MaterialController } from '../service/MaterialController';
 

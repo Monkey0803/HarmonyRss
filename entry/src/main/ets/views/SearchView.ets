@@ -14,7 +14,7 @@ import { SmartFolderError, validateSmartFolder } from '../service/SmartFolderSto
 import { DateUtil } from '../common/utils/DateUtil';
 import { safeArea } from '../service/SafeAreaController';
 import { RouterConstants } from '../common/constants/RouterConstants';
-import { Toast } from '@rss/toast-kit';
+import { Toast } from '@monkey0803/toast-kit';
 import { AppSheet } from '../common/components/AppSheet';
 import { SHEET_SAVE_FOLDER_HEIGHT } from '../common/components/SheetDetents';
 import { FilterCapsule } from './FilterCapsule';

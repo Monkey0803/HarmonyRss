@@ -14,7 +14,7 @@ import { ArticleDataSource, articleRowKey } from '../viewmodel/ArticleDataSource
 import { ArticleListItem } from './ArticleListItem';
 import { RouterConstants } from '../common/constants/RouterConstants';
 import { safeArea } from '../service/SafeAreaController';
-import { Toast } from '@rss/toast-kit';
+import { Toast } from '@monkey0803/toast-kit';
 import { themePalette } from '../model/ThemePalette';
 
 @ComponentV2

@@ -4,7 +4,7 @@ import { common } from '@kit.AbilityKit';
 import { articleActions } from '../service/ArticleActions';
 import { isWebLink } from '../service/LinkNavigation';
 import { UrlText } from '../common/utils/UrlText';
-import { Toast } from '@rss/toast-kit';
+import { Toast } from '@monkey0803/toast-kit';
 import { safeArea } from '../service/SafeAreaController';
 import { themePalette } from '../model/ThemePalette';
 

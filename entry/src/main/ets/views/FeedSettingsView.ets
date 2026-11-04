@@ -20,7 +20,7 @@ import { appSettings } from '../model/AppSettings';
 import { safeArea } from '../service/SafeAreaController';
 import { MaterialController } from '../service/MaterialController';
 import { DateUtil } from '../common/utils/DateUtil';
-import { Toast } from '@rss/toast-kit';
+import { Toast } from '@monkey0803/toast-kit';
 import { FeedErrorText } from '../common/utils/FeedErrorText';
 import { offlineDownloadService } from '../service/OfflineDownloadService';
 import { AppMenu } from '../common/components/AppMenu';

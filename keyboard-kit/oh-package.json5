@@ -1,0 +1,21 @@
+{
+  "name": "@monkey0803/keyboard-kit",
+  "version": "1.0.0",
+  "description": "Reusable HarmonyOS soft-keyboard library built on UIContext focus and keyboard avoidance.",
+  "main": "Index.ets",
+  "author": {
+    "name": "Monkey0803",
+    "email": "monkey0803@example.com",
+    "url": "https://gitee.com/monkey0803/keyboard-kit"
+  },
+  "license": "Apache-2.0",
+  "repository": "https://gitee.com/monkey0803/keyboard-kit",
+  "keywords": [
+    "harmonyos",
+    "arkts",
+    "keyboard",
+    "ime",
+    "har"
+  ],
+  "dependencies": {}
+}

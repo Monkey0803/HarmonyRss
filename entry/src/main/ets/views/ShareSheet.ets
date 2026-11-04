@@ -20,7 +20,7 @@ import { feedViewModel } from '../viewmodel/FeedViewModel';
 import { highlightStore, articleRepository } from '../service/ArticleServices';
 import { AppMenu } from '../common/components/AppMenu';
 import { MenuItemSpec, MenuSpec } from '../common/components/MenuSpec';
-import { Toast } from '@rss/toast-kit';
+import { Toast } from '@monkey0803/toast-kit';
 import { MaterialController } from '../service/MaterialController';
 import { appSettings } from '../model/AppSettings';
 import { ShareRow, ShareTemplateRow } from './ShareSheetRows';

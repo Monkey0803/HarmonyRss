@@ -18,7 +18,7 @@ import { shareViewModel } from '../viewmodel/ShareViewModel';
 import { CommonConstants } from '../common/constants/CommonConstants';
 import { AppMenu } from '../common/components/AppMenu';
 import { MenuItemSpec, MenuSpec } from '../common/components/MenuSpec';
-import { Toast } from '@rss/toast-kit';
+import { Toast } from '@monkey0803/toast-kit';
 import { safeArea } from '../service/SafeAreaController';
 import { appSettings } from '../model/AppSettings';
 import { MaterialController } from '../service/MaterialController';

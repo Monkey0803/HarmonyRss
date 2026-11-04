@@ -26,7 +26,7 @@ import {
   HdsTabsFloatingStyle,
   HdsBarWidthRangeOptions
 } from '@kit.UIDesignKit';
-import { display, KeyboardAvoidMode } from '@kit.ArkUI';
+import { display } from '@kit.ArkUI';
 import { KeyCode } from '@kit.InputKit';
 import { Article } from '../model/Feed';
 import { GroupSource } from '../model/Dedupe';
@@ -38,7 +38,8 @@ import { CommonConstants } from '../common/constants/CommonConstants';
 import { articleActions } from '../service/ArticleActions';
 import { settingsViewModel } from '../viewmodel/SettingsViewModel';
 import { ReadSettingsSheet } from './ReadSettingsSheet';
-import { Toast } from '@rss/toast-kit';
+import { Toast } from '@monkey0803/toast-kit';
+import { Keyboard } from '@monkey0803/keyboard-kit';
 import { toPlainText } from '../common/utils/HtmlText';
 import { UrlText } from '../common/utils/UrlText';
 import { ArticleLinkTarget, articleLinkTarget, isWebLink } from '../service/LinkNavigation';
@@ -281,7 +282,6 @@ export struct ArticleDetailView {
   @Local findCount: number = 0;
   @Local findIndex: number = 0;
   @Local findInputActivated: boolean = false;
-  private previousKeyboardAvoidMode: KeyboardAvoidMode | undefined = undefined;
   /** 当前文章纯文本缓存（复制正文 / 分享正文 / 朗读用）：按文章 id 失效。 */
   private plainTextCache: string = '';
   private plainTextCacheId: string = '';
@@ -357,12 +357,11 @@ export struct ArticleDetailView {
     return this.viewMode === MODE_WEB ? this.webController : this.readerController;
   }
 
-  /** 进入底部查找模式；输入框由用户点按后才唤起键盘。 */
+  /** 进入查找状态；打开查找条本身不弹键盘，由用户点击输入框后触发。 */
   private enterFindMode(): void {
     this.findInputActivated = false;
-    if (this.previousKeyboardAvoidMode === undefined) {
-      this.previousKeyboardAvoidMode = this.getUIContext().getKeyboardAvoidMode();
-      this.getUIContext().setKeyboardAvoidMode(KeyboardAvoidMode.RESIZE);
+    if (!this.findOpen) {
+      Keyboard.avoidResize();
     }
     this.findOpen = true;
     this.syncFindBottomInset();
@@ -478,16 +477,12 @@ export struct ArticleDetailView {
       });
   }
 
-  /** 关闭查找条：清掉高亮。 */
+  /** 关闭查找条：收起键盘、恢复避让模式并清掉高亮。 */
   private closeFind(): void {
     this.findOpen = false;
     this.findInputActivated = false;
-    this.getUIContext().getFocusController().clearFocus();
-    const previous: KeyboardAvoidMode | undefined = this.previousKeyboardAvoidMode;
-    if (previous !== undefined) {
-      this.getUIContext().setKeyboardAvoidMode(previous);
-      this.previousKeyboardAvoidMode = undefined;
-    }
+    Keyboard.dismiss();
+    Keyboard.popAvoidMode();
     this.clearFind();
     this.syncFindBottomInset();
   }
@@ -2730,12 +2725,7 @@ export struct ArticleDetailView {
                 if (!this.findOpen || !this.findInputActivated) {
                   return;
                 }
-                try {
-                  this.getUIContext().getFocusController().requestFocus('articleFindInput');
-                } catch (err) {
-                  const error: BusinessError = err as BusinessError;
-                  hilog.warn(DOMAIN, TAG, 'find input focus failed: %{public}d', error.code);
-                }
+                Keyboard.requestFocus('articleFindInput');
               }, 80);
             }
           })

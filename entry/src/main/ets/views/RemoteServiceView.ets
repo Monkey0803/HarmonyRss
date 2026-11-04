@@ -9,7 +9,7 @@ import { RemoteErrorCode, SyncResult } from '../model/Remote';
 import { remoteAccountViewModel } from '../viewmodel/RemoteAccountViewModel';
 import { remoteSyncService } from '../service/remote/RemoteSyncService';
 import { safeArea } from '../service/SafeAreaController';
-import { Toast } from '@rss/toast-kit';
+import { Toast } from '@monkey0803/toast-kit';
 import { appSettings } from '../model/AppSettings';
 import { settingsStore } from '../service/SettingsStore';
 import { AUTO_REFRESH_OPTIONS } from '../model/SettingsOptions';

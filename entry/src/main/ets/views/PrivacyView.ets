@@ -10,7 +10,7 @@
 import { common } from '@kit.AbilityKit';
 import { privacyViewModel } from '../viewmodel/PrivacyViewModel';
 import { safeArea } from '../service/SafeAreaController';
-import { Toast } from '@rss/toast-kit';
+import { Toast } from '@monkey0803/toast-kit';
 import { RouterConstants } from '../common/constants/RouterConstants';
 import { themePalette } from '../model/ThemePalette';
 

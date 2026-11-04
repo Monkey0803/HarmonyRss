@@ -16,7 +16,7 @@ import { MaterialController } from '../service/MaterialController';
 import { appSettings } from '../model/AppSettings';
 import { safeArea } from '../service/SafeAreaController';
 import { DateUtil } from '../common/utils/DateUtil';
-import { Toast } from '@rss/toast-kit';
+import { Toast } from '@monkey0803/toast-kit';
 import { themePalette } from '../model/ThemePalette';
 
 @ComponentV2

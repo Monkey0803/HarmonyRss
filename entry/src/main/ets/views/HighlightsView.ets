@@ -12,7 +12,7 @@ import { articleActions } from '../service/ArticleActions';
 import { toJson, toMarkdown } from '../service/HighlightExport';
 import { RouterConstants } from '../common/constants/RouterConstants';
 import { safeArea } from '../service/SafeAreaController';
-import { Toast } from '@rss/toast-kit';
+import { Toast } from '@monkey0803/toast-kit';
 import { common } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { AppSheet } from '../common/components/AppSheet';

@@ -10,7 +10,8 @@ import { shareHandoff } from '../service/ShareHandoff';
 import { diagnostics } from '../service/DiagnosticsService';
 import { readingContinuation } from '../service/ReadingContinuation';
 import { themePalette } from '../model/ThemePalette';
-import { Toast } from '@rss/toast-kit';
+import { Toast } from '@monkey0803/toast-kit';
+import { Keyboard } from '@monkey0803/keyboard-kit';
 import { setupToast } from '../common/utils/ToastSetup';
 
 const DOMAIN: number = 0x0000;
@@ -89,6 +90,7 @@ export default class EntryAbility extends UIAbility {
   onWindowStageCreate(windowStage: window.WindowStage): void {
     // 全局 Toast：主窗口上下文一次注册，页面内直接 Toast.show 即可。
     Toast.init(windowStage);
+    Keyboard.init(windowStage);
     setupToast();
     windowStage.loadContent('pages/Index', (err) => {
       if (err.code) {
@@ -122,6 +124,7 @@ export default class EntryAbility extends UIAbility {
 
   onDestroy(): void {
     Toast.release();
+    Keyboard.release();
     safeArea.detach();
     hilog.info(DOMAIN, TAG, 'onDestroy');
   }

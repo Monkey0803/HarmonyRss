@@ -19,7 +19,7 @@ import { aiTranslateSecretStore } from '../service/TranslateSecretStore';
 import { settingsStore } from '../service/SettingsStore';
 import { settingsViewModel } from '../viewmodel/SettingsViewModel';
 import { safeArea } from '../service/SafeAreaController';
-import { Toast } from '@rss/toast-kit';
+import { Toast } from '@monkey0803/toast-kit';
 import { translationErrorText, languageText } from '../common/utils/TranslationText';
 import { themePalette } from '../model/ThemePalette';
 

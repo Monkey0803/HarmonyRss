@@ -53,18 +53,6 @@
   },
   "modules": [
     {
-      "name": "toast_kit",
-      "srcPath": "./toast-kit",
-      "targets": [
-        {
-          "name": "default",
-          "applyToProducts": [
-            "default"
-          ]
-        }
-      ]
-    },
-    {
       "name": "entry",
       "srcPath": "./entry",
       "targets": [

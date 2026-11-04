@@ -12,7 +12,7 @@ import { FeedPreview, PreviewItem, BatchResult } from '../model/FeedPreview';
 import { feedViewModel } from '../viewmodel/FeedViewModel';
 import { FeedError } from '../common/constants/RssConstants';
 import { FeedErrorText } from '../common/utils/FeedErrorText';
-import { Toast } from '@rss/toast-kit';
+import { Toast } from '@monkey0803/toast-kit';
 import { UrlText } from '../common/utils/UrlText';
 import { DateUtil } from '../common/utils/DateUtil';
 import { clipboardService } from '../service/ClipboardService';

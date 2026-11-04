@@ -24,7 +24,8 @@ import { BatchResult } from '../model/FeedPreview';
 import { appSettings } from '../model/AppSettings';
 import { settingsStore } from '../service/SettingsStore';
 import { safeArea } from '../service/SafeAreaController';
-import { Toast } from '@rss/toast-kit';
+import { Toast } from '@monkey0803/toast-kit';
+import { Keyboard } from '@monkey0803/keyboard-kit';
 import { FeedErrorText } from '../common/utils/FeedErrorText';
 import { UrlText } from '../common/utils/UrlText';
 import { feedAvatarColor, feedInitial } from '../common/utils/FeedAvatar';
@@ -97,14 +98,9 @@ export struct DiscoverView {
     return DiscoverService.sections(this.category, this.keyword, feedViewModel.feeds, 6);
   }
 
-  /** 点击其他控件前先清掉输入焦点，顺带收起软键盘。 */
-  private dismissKeyboard(): void {
-    this.getUIContext().getFocusController().clearFocus();
-  }
-
   /** 网站主页与 RSSHub 路由都先真实抓取并预览，再由用户确认订阅。 */
   private async inspectAddress(address: string): Promise<void> {
-    this.dismissKeyboard();
+    Keyboard.dismiss();
     if (this.checkingWebsite) {
       return;
     }
@@ -277,7 +273,7 @@ export struct DiscoverView {
 
   /** 生成 RSSHub 候选：先保存实例（归一化脏值），再按地址推导路由。 */
   private generateRoutes(): void {
-    this.dismissKeyboard();
+    Keyboard.dismiss();
     this.persistBase();
     const base: string = this.rsshubBase;
 
@@ -328,7 +324,7 @@ export struct DiscoverView {
         ? $r('app.color.hm_card_background')
         : $r('app.color.hm_page_transparent'))
       .onClick(() => {
-        this.dismissKeyboard();
+        Keyboard.dismiss();
         this.category = id;
       })
   }
@@ -397,7 +393,7 @@ export struct DiscoverView {
         right: $r('app.float.space_l')
       })
       .onClick(() => {
-        this.dismissKeyboard();
+        Keyboard.dismiss();
         this.addOpen = !this.addOpen;
       })
 
@@ -664,7 +660,7 @@ export struct DiscoverView {
         .height($r('app.float.search_field_height'))
         .flexShrink(0)
         .onClick(() => {
-          this.dismissKeyboard();
+          Keyboard.dismiss();
           this.keyword = '';
           this.category = DiscoverCategory.ALL;
         })
@@ -699,7 +695,7 @@ export struct DiscoverView {
           .iconColor($r('app.color.hm_on_brand'))
           .backgroundColor(themePalette.fill())
           .onClick((event: ClickEvent, result: PasteButtonOnClickResult) => {
-            this.dismissKeyboard();
+            Keyboard.dismiss();
             if (this.importing) {
               return;
             }

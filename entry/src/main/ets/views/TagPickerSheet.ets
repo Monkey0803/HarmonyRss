@@ -10,7 +10,7 @@
 
 import { TagWithCount } from '../model/Tag';
 import { tagViewModel } from '../viewmodel/TagViewModel';
-import { Toast } from '@rss/toast-kit';
+import { Toast } from '@monkey0803/toast-kit';
 import { themePalette } from '../model/ThemePalette';
 
 @ComponentV2
