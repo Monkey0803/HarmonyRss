@@ -25,7 +25,9 @@ import { DedupeKeys } from '../service/DedupeKeys';
 import { dedupeService } from '../service/DedupeService';
 import { CommonConstants } from '../common/constants/CommonConstants';
 import { UrlText } from '../common/utils/UrlText';
-import { ArticleDataSource, ArticleGroup } from './ArticleDataSource';
+import { ArticleGroup } from './ArticleDataSource';
+import { buildArticleGroups } from './FeedGroupProjection';
+import { passesArticleFilter, isArchivedArticle } from './FeedArticleFilter';
 import { buildFeedRows } from './FeedRowBuilder';
 import { articleContentService } from '../service/ArticleContentService';
 import { ParsedArticle, ParsedFeed } from '../service/RssParser';
@@ -48,7 +50,6 @@ import { offlineDownloadService } from '../service/OfflineDownloadService';
 import { HttpDefaults } from '../service/HttpClient';
 
 /** 复用一个 Date 实例：日期分桶在列表滚动时会被频繁调用，避免每次都分配对象。 */
-const SCRATCH_DATE: Date = new Date();
 
 const MINUTE_MS: number = 60 * 1000;
 
@@ -2124,7 +2125,7 @@ export class FeedViewModel {
     } else {
       // 分组模式不再分页：列表本身已经虚拟化，切成组头视图时也不该被「只加载了 50 条」截断。
       this.articles = visible;
-      this.groups = this.buildGroups(visible);
+      this.groups = buildArticleGroups(visible, this.groupMode);
     }
     this.feedArticles = this.collectFeedArticles();
     this.recomputeUnread();
@@ -2198,89 +2199,6 @@ export class FeedViewModel {
     this.publish();
   }
 
-  /**
-   * 把（已筛选并排好序的）列表按当前分组方式切分成组。
-   * 组顺序沿用列表顺序：按订阅源时是「出现顺序」，按日期时是「时间顺序」。
-   */
-  private buildGroups(list: Article[]): ArticleGroup[] {
-    const order: string[] = [];
-    const buckets: Map<string, Article[]> = new Map<string, Article[]>();
-    const titles: Map<string, ResourceStr> = new Map<string, ResourceStr>();
-    for (let i = 0; i < list.length; i += 1) {
-      const item: Article = list[i];
-      const key: string = this.groupMode === GroupMode.FEED
-        ? item.feedId
-        : FeedViewModel.dateBucket(item.publishedAt);
-      let bucket: Article[] | undefined = buckets.get(key);
-      if (bucket === undefined) {
-        bucket = [];
-        buckets.set(key, bucket);
-        order.push(key);
-        titles.set(key, this.groupMode === GroupMode.FEED
-          ? item.feedTitle
-          : FeedViewModel.dateBucketTitle(key));
-      }
-      bucket.push(item);
-    }
-
-    const result: ArticleGroup[] = [];
-    for (let i = 0; i < order.length; i += 1) {
-      const items: Article[] | undefined = buckets.get(order[i]);
-      const title: ResourceStr | undefined = titles.get(order[i]);
-      if (items === undefined || title === undefined) {
-        continue;
-      }
-      let unread: number = 0;
-      for (let j = 0; j < items.length; j += 1) {
-        if (!items[j].read) {
-          unread += 1;
-        }
-      }
-      const source: ArticleDataSource = new ArticleDataSource();
-      source.setItems(items);
-      result.push(new ArticleGroup(order[i], title, unread, items.length, source));
-    }
-    return result;
-  }
-
-  /** 日期桶：今天 / 昨天 / 本周 / 更早（以周一为一周之始）。 */
-  private static dateBucket(ts: number): string {
-    const today: number = FeedViewModel.startOfDay(Date.now());
-    if (ts >= today) {
-      return 'today';
-    }
-    if (ts >= today - FeedViewModel.DAY_MS) {
-      return 'yesterday';
-    }
-    SCRATCH_DATE.setTime(today);
-    const weekday: number = (SCRATCH_DATE.getDay() + 6) % 7;
-    if (ts >= today - weekday * FeedViewModel.DAY_MS) {
-      return 'this_week';
-    }
-    return 'earlier';
-  }
-
-  /** 时间戳所在自然日的 00:00。 */
-  private static startOfDay(ts: number): number {
-    SCRATCH_DATE.setTime(ts);
-    SCRATCH_DATE.setHours(0, 0, 0, 0);
-    return SCRATCH_DATE.getTime();
-  }
-
-  /** 日期桶标题。 */
-  private static dateBucketTitle(key: string): ResourceStr {
-    if (key === 'today') {
-      return $r('app.string.group_today');
-    }
-    if (key === 'yesterday') {
-      return $r('app.string.group_yesterday');
-    }
-    if (key === 'this_week') {
-      return $r('app.string.group_this_week');
-    }
-    return $r('app.string.group_earlier');
-  }
-
   /** 回到第一页（筛选 / 关键词 / 范围 / 刷新后调用）。 */
   resetPaging(): void {
     this.visibleCount = CommonConstants.LIST_PAGE_SIZE;
@@ -2288,33 +2206,7 @@ export class FeedViewModel {
 
   /** 单条是否落在当前范围（订阅源 + 筛选 + 关键词）内。 */
   private passesFilter(item: Article): boolean {
-    if (this.scopeFeedId.length > 0 && item.feedId !== this.scopeFeedId) {
-      return false;
-    }
-    // 隐藏口径优先：HIDDEN 筛选只保留被规则隐藏的文章；其余筛选一律排除隐藏文章。
-    if (this.filter === ArticleFilter.HIDDEN) {
-      return item.hidden;
-    }
-    if (item.hidden) {
-      return false;
-    }
-    if (this.filter === ArticleFilter.ARCHIVED) {
-      return this.isArchived(item);
-    }
-    // 归档的文章只在「归档」里出现；其余视图一律排除（否则规则形同虚设）。
-    if (this.isArchived(item)) {
-      return false;
-    }
-    if (this.filter === ArticleFilter.UNREAD && item.read) {
-      return false;
-    }
-    if (this.filter === ArticleFilter.STARRED && !item.starred) {
-      return false;
-    }
-    if (this.filter === ArticleFilter.SAVED && !item.saved) {
-      return false;
-    }
-    return true;
+    return passesArticleFilter(item, this.filter, this.scopeFeedId);
   }
 
   /**
@@ -2323,11 +2215,7 @@ export class FeedViewModel {
    * 发布时间缺失（0）的保守视为不归档。
    */
   private isArchived(item: Article): boolean {
-    const days: number = ArchiveDays.of(appSettings.archiveRule);
-    if (days <= 0 || item.saved || !item.read || item.publishedAt <= 0) {
-      return false;
-    }
-    return Date.now() - item.publishedAt > days * FeedViewModel.DAY_MS;
+    return isArchivedArticle(item);
   }
 
   /** 当前筛选下被判为归档的条数（设置页 / 筛选条提示用）。 */

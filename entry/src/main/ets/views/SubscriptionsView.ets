@@ -23,8 +23,6 @@ import { Toast } from '@rss/toast-kit';
 import { RouterConstants } from '../common/constants/RouterConstants';
 import { MaterialController } from '../service/MaterialController';
 import { appSettings } from '../model/AppSettings';
-import { DateUtil } from '../common/utils/DateUtil';
-import { UrlText } from '../common/utils/UrlText';
 import { tagViewModel } from '../viewmodel/TagViewModel';
 import { smartFolderViewModel } from '../viewmodel/SmartFolderViewModel';
 import { ruleViewModel } from '../viewmodel/RuleViewModel';
@@ -35,6 +33,7 @@ import { themePalette } from '../model/ThemePalette';
 import { LibraryQuickAccess } from './LibraryTiles';
 import { SubscriptionsGroupHeader } from './SubscriptionsGroupHeader';
 import { FeedIcon } from './FeedIcon';
+import { SubscriptionCountBadge, SubscriptionFeedStatus } from './SubscriptionFeedStatus';
 
 /**
  * 列表头部固定合并成 1 个 ListItem。
@@ -451,32 +450,6 @@ export struct SubscriptionsView {
     return MenuSpec.fromItems(items);
   }
 
-  /** 未读徽标；没有未读时不再显示「0 篇文章」，把标题空间留给源名。 */
-  @Builder
-  CountBadge(feed: FeedSource) {
-    if (feed.unreadCount > 0) {
-      Text(feed.unreadCount.toString())
-        .fontSize($r('app.float.font_size_caption'))
-        .fontColor(themePalette.accent())
-        .padding({
-          left: $r('app.float.space_s'),
-          right: $r('app.float.space_s'),
-          top: $r('app.float.space_xxs'),
-          bottom: $r('app.float.space_xxs')
-        })
-        .backgroundColor(themePalette.tint())
-        .borderRadius($r('app.float.radius_chip'))
-        .accessibilityText($r('app.string.home_unread_count', feed.unreadCount))
-        .flexShrink(0)
-    }
-  }
-
-  /** 行副标题用的站点域名；解析不出主机名时退回原地址。 */
-  private feedHost(feed: FeedSource): string {
-    const host: string = UrlText.host(feed.url);
-    return host.length > 0 ? host : feed.url;
-  }
-
   /** 订阅行卡片圆角：只有组内最后一行圆下面两角，其余行与组头 / 上一行相接。 */
   private feedRowCorners(feed: FeedSource): BorderRadiuses {
     const radius: Resource = $r('app.float.radius_card');
@@ -582,55 +555,12 @@ export struct SubscriptionsView {
                   .maxLines(1)
                   .textOverflow({ overflow: TextOverflow.Ellipsis })
                   .layoutWeight(1)
-                this.CountBadge(feed)
+                SubscriptionCountBadge({ feed: feed })
               }
               .width('100%')
             }
 
-            // 一行元信息：站点域名 + 健康状态（正常时只显示紧凑时间，完整时间交给无障碍文案）。
-            Row({ space: $r('app.float.space_xs') }) {
-              Text(this.feedHost(feed))
-                .fontSize($r('app.float.font_size_caption'))
-                .fontColor($r('app.color.hm_text_secondary'))
-                .maxLines(1)
-                .textOverflow({ overflow: TextOverflow.Ellipsis })
-                .layoutWeight(1)
-              if (!feed.enabled) {
-                Text($r('app.string.feed_settings_disabled'))
-                  .fontSize($r('app.float.font_size_caption'))
-                  .fontColor($r('app.color.hm_text_secondary'))
-                  .flexShrink(0)
-              } else if (feed.failureCount > 0) {
-                Text($r('app.string.health_failure_count', feed.failureCount))
-                  .fontSize($r('app.float.font_size_caption'))
-                  .fontColor($r('app.color.hm_danger'))
-                  .flexShrink(0)
-              } else if (feed.lastUpdated > 0) {
-                Text(DateUtil.formatShort(feed.lastUpdated))
-                  .fontSize($r('app.float.font_size_caption'))
-                  .fontColor($r('app.color.hm_text_secondary'))
-                  .maxLines(1)
-                  .flexShrink(0)
-                  .accessibilityText($r('app.string.health_last_success', DateUtil.format(feed.lastUpdated)))
-              } else {
-                Text($r('app.string.health_never'))
-                  .fontSize($r('app.float.font_size_caption'))
-                  .fontColor($r('app.color.hm_text_secondary'))
-                  .maxLines(1)
-                  .flexShrink(0)
-              }
-            }
-            .width('100%')
-
-            // 抓取错误：只保留一行，详情去单源设置页看。
-            if (feed.lastError.length > 0) {
-              Text(FeedErrorText.of(feed.lastErrorCode))
-                .fontSize($r('app.float.font_size_caption'))
-                .fontColor($r('app.color.hm_danger'))
-                .maxLines(1)
-                .textOverflow({ overflow: TextOverflow.Ellipsis })
-                .width('100%')
-            }
+            SubscriptionFeedStatus({ feed: feed })
           }
           .layoutWeight(1)
           .alignItems(HorizontalAlign.Start)

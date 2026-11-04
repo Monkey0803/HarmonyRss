@@ -68,6 +68,7 @@ import { imageAtPointScript } from '../service/ReaderImage';
 import { readerImageSave } from '../service/ReaderImageSave';
 import { ReaderImageViewer } from './ReaderImageViewer';
 import { ReaderBodyView } from './reader/ReaderBodyView';
+import { ReaderProgressQueue } from '../service/ReaderProgressQueue';
 import { WebBodyView } from './reader/WebBodyView';
 import { ArticleActionBar } from './reader/ArticleActionBar';
 import {
@@ -222,14 +223,15 @@ export struct ArticleDetailView {
   @Local progressRatio: number = 0;
   /** 恢复位置时忽略脚本产生的中间滚动，避免把未恢复完成的位置写回。 */
   private progressReadyAt: number = 0;
-  private progressSaveTimer: number = -1;
+  private progressQueue: ReaderProgressQueue = new ReaderProgressQueue(
+    (articleId: string, position: ReaderPosition): void => {
+      feedViewModel.saveProgress(articleId, position.y, position.ratio);
+    },
+    (): boolean => this.finished);
   private progressPollTimer: number = -1;
   private progressPollVersion: number = 0;
   private lastPolledY: number = -1;
-  private pendingProgress: ReaderPosition | undefined = undefined;
-  private pendingProgressArticleId: string = '';
   /** 当前会话内分别记住 Reader 与网页原文的位置，切回原模式时不复用另一种排版的坐标。 */
-  private modePositions: Map<string, ReaderPosition> = new Map<string, ReaderPosition>();
   /** 正文里选中的文本（Web 的 onTextSelectionChange 回调）；非空时显示「复制/分享选段」浮条。 */
   @Local selectedText: string = '';
   /** 当前文章的标注（本地库读出；正文里靠注入脚本重放高亮）。 */
@@ -439,50 +441,23 @@ export struct ArticleDetailView {
     feedViewModel.markFinished(article.id);
   }
 
-  private positionKey(articleId: string, mode: string): string {
-    return articleId + '|' + mode;
-  }
+
 
   private clearModePositions(articleId: string): void {
-    this.modePositions.delete(this.positionKey(articleId, MODE_READER));
-    this.modePositions.delete(this.positionKey(articleId, MODE_WEB));
+    this.progressQueue.clearArticle(articleId, MODE_READER, MODE_WEB);
   }
 
   /** 滚动时最多每 1.2 秒写一次；切文和离开页面时立即冲刷最后的位置。 */
   private queueProgress(articleId: string, position: ReaderPosition): void {
-    this.modePositions.set(this.positionKey(articleId, this.viewMode), position);
-    this.pendingProgressArticleId = articleId;
-    this.pendingProgress = position;
-    if (this.progressSaveTimer >= 0) {
-      return;
-    }
-    this.progressSaveTimer = setTimeout(() => {
-      this.progressSaveTimer = -1;
-      this.flushProgress();
-    }, 1200);
+    this.progressQueue.queue(articleId, this.viewMode, position);
   }
 
   private flushProgress(): void {
-    if (this.progressSaveTimer >= 0) {
-      clearTimeout(this.progressSaveTimer);
-      this.progressSaveTimer = -1;
-    }
-    const position: ReaderPosition | undefined = this.pendingProgress;
-    const articleId: string = this.pendingProgressArticleId;
-    this.pendingProgress = undefined;
-    this.pendingProgressArticleId = '';
-    if (position !== undefined && articleId.length > 0 && !this.finished) {
-      feedViewModel.saveProgress(articleId, position.y, position.ratio);
-    }
+    this.progressQueue.flush();
   }
 
   private clearQueuedProgress(): void {
-    if (this.progressSaveTimer >= 0) {
-      clearTimeout(this.progressSaveTimer);
-      this.progressSaveTimer = -1;
-    }
-    this.pendingProgress = undefined;
-    this.pendingProgressArticleId = '';
+    this.progressQueue.clear();
   }
 
   /** 下一个 / 上一个命中项（循环）。 */
@@ -1909,7 +1884,7 @@ export struct ArticleDetailView {
     if (article === undefined) {
       return;
     }
-    const position: ReaderPosition = this.modePositions.get(this.positionKey(article.id, this.viewMode)) ??
+    const position: ReaderPosition = this.progressQueue.positionOf(article.id, this.viewMode) ??
       new ReaderPosition(article.progress, article.progressRatio);
     if (position.y <= 0 && position.ratio <= 0) {
       return;
@@ -2115,7 +2090,7 @@ export struct ArticleDetailView {
         return;
       }
       const position: ReaderPosition = parsePosition(value);
-      this.modePositions.set(this.positionKey(articleId, mode), position);
+      this.progressQueue.remember(articleId, mode, position);
       feedViewModel.saveProgress(articleId, position.y, position.ratio);
     });
   }

@@ -7,12 +7,10 @@ import { Article } from '../model/Feed';
 import { WEB_PAGE_FEED_ID } from '../model/WebPagePreview';
 import { WebPagePayload } from '../model/Sync';
 import {
-  ArticleStatePatch,
   BackupArticle,
   BackupArticleTag,
   BackupHighlight
 } from '../model/Backup';
-import { mergeArticleState } from './BackupCodec';
 import { DedupeCandidate, GroupSource } from '../model/Dedupe';
 import { appSettings } from '../model/AppSettings';
 import { Highlight, HighlightLibraryItem } from '../model/Highlight';
@@ -42,7 +40,9 @@ import { decodeEnclosures, encodeEnclosures } from './EnclosureCodec';
 import { Enclosure } from '../model/Enclosure';
 
 import { ArticleSearchStore } from './ArticleSearchStore';
-import { DOMAIN, TAG, SavedWebPageResult, BODY_COLUMNS, LIST_COLUMNS, DEDUPE_KEY_BATCH, SQL_INSERT, BACKUP_BATCH_SIZE, SQL_SELECT_BACKUP_ARTICLES, SQL_SELECT_BACKUP_ARTICLE_STATE, SQL_INSERT_BACKUP_ARTICLE, SQL_UPDATE_BACKUP_ARTICLE_STATE, SQL_SELECT_BACKUP_ARTICLE_TAGS, SQL_INSERT_BACKUP_ARTICLE_TAG, SQL_SELECT_LIST, SQL_SELECT_FETCHED_SINCE, SQL_SELECT_BODY, SQL_UPSERT_REMOTE_MAP, ArticleBody, CacheStats, SummaryFix, WidgetSnapshot, placeholders, BackupMergeCount } from './ArticleSchema';
+import { ArticleBackupRepository } from './ArticleBackupRepository';
+import { ArticleDedupeStore } from './ArticleDedupeStore';
+import { DOMAIN, TAG, SavedWebPageResult, BODY_COLUMNS, LIST_COLUMNS, DEDUPE_KEY_BATCH, SQL_INSERT, SQL_SELECT_BACKUP_ARTICLE_TAGS, SQL_INSERT_BACKUP_ARTICLE_TAG, SQL_SELECT_LIST, SQL_SELECT_FETCHED_SINCE, SQL_SELECT_BODY, SQL_UPSERT_REMOTE_MAP, ArticleBody, CacheStats, SummaryFix, WidgetSnapshot, placeholders, BackupMergeCount } from './ArticleSchema';
 
 export class ArticleRepository extends ArticleSearchStore {
   /** 本地缓存条数（后台任务用它做插入前后的差值，得到真正的新增数）。 */
@@ -1340,127 +1340,23 @@ export class ArticleRepository extends ArticleSearchStore {
    * @returns 被提升为主条的 id（调用方负责补 FTS / 中文索引）。
    */
   private promoteBeforeRemoval(ids: string[]): string[] {
-    const store: relationalStore.RdbStore | undefined = this.store;
-    if (store === undefined || ids.length === 0) {
-      return [];
-    }
-    const removing: Set<string> = new Set<string>();
-    const roots: string[] = [];
-    try {
-      // 一次查出本批的挂靠状态：只有 canonical_id 为空的主条才需要提升。
-      for (let start = 0; start < ids.length; start += DEDUPE_KEY_BATCH) {
-        const slice: string[] = ids.slice(start, start + DEDUPE_KEY_BATCH);
-        for (let i = 0; i < slice.length; i += 1) {
-          removing.add(slice[i]);
-        }
-        const rs: relationalStore.ResultSet = store.querySqlSync(
-          'SELECT id, canonical_id FROM ' + ArticleDbConstants.TABLE_ARTICLES +
-          ' WHERE id IN (' + placeholders(slice.length) + ')', slice);
-        try {
-          while (rs.goToNextRow()) {
-            if (rs.getString(rs.getColumnIndex('canonical_id')).length === 0) {
-              roots.push(rs.getString(rs.getColumnIndex('id')));
-            }
-          }
-        } finally {
-          rs.close();
-        }
-      }
-    } catch (err) {
-      const error: BusinessError = err as BusinessError;
-      hilog.warn(DOMAIN, TAG, 'promote prepare failed: %{public}d', error.code);
-      return [];
-    }
-    return this.promoteRoots(store, roots, removing);
+    return new ArticleDedupeStore(this.store).promoteBeforeRemoval(ids);
   }
 
   /** 给定「即将离开的主条」与「一起离开的 id 集合」，逐组提升 + 重指向。 */
   private promoteRoots(store: relationalStore.RdbStore, roots: string[],
     removing: Set<string>): string[] {
-    const promoted: string[] = [];
-    if (roots.length === 0) {
-      return promoted;
-    }
-    try {
-      // 按批取出这些主条的成员：几千条清理也只需要十几次查询。
-      const membersByRoot: Map<string, DedupeCandidate[]> = new Map<string, DedupeCandidate[]>();
-      for (let start = 0; start < roots.length; start += DEDUPE_KEY_BATCH) {
-        const slice: string[] = roots.slice(start, start + DEDUPE_KEY_BATCH);
-        const rs: relationalStore.ResultSet = store.querySqlSync(
-          'SELECT id, feed_id, canonical_id, link_key, title_key, published_at FROM ' +
-          ArticleDbConstants.TABLE_ARTICLES +
-          ' WHERE canonical_id IN (' + placeholders(slice.length) + ')', slice);
-        try {
-          while (rs.goToNextRow()) {
-            const root: string = rs.getString(rs.getColumnIndex('canonical_id'));
-            const candidate: DedupeCandidate = new DedupeCandidate(
-              rs.getString(rs.getColumnIndex('id')),
-              rs.getString(rs.getColumnIndex('feed_id')),
-              root,
-              rs.getString(rs.getColumnIndex('link_key')),
-              rs.getString(rs.getColumnIndex('title_key')),
-              rs.getLong(rs.getColumnIndex('published_at')));
-            const bucket: DedupeCandidate[] | undefined = membersByRoot.get(root);
-            if (bucket === undefined) {
-              membersByRoot.set(root, [candidate]);
-            } else {
-              bucket.push(candidate);
-            }
-          }
-        } finally {
-          rs.close();
-        }
-      }
-      for (let i = 0; i < roots.length; i += 1) {
-        const root: string = roots[i];
-        const members: DedupeCandidate[] | undefined = membersByRoot.get(root);
-        const remaining: DedupeCandidate[] = [];
-        if (members !== undefined) {
-          for (let j = 0; j < members.length; j += 1) {
-            if (!removing.has(members[j].id)) {
-              remaining.push(members[j]);
-            }
-          }
-        }
-        const nextRoot: string = DedupeService.pickPromotion(remaining);
-        if (nextRoot.length === 0) {
-          continue;
-        }
-        store.executeSync('UPDATE ' + ArticleDbConstants.TABLE_ARTICLES +
-          ' SET canonical_id = \'\' WHERE id = ?', [nextRoot]);
-        store.executeSync('UPDATE ' + ArticleDbConstants.TABLE_ARTICLES +
-          ' SET canonical_id = ? WHERE canonical_id = ? AND id <> ?', [nextRoot, root, nextRoot]);
-        promoted.push(nextRoot);
-        hilog.info(DOMAIN, TAG, 'canonical promoted, group size=%{public}d',
-          remaining.length + 1);
-      }
-    } catch (err) {
-      const error: BusinessError = err as BusinessError;
-      hilog.warn(DOMAIN, TAG, 'promote canonical failed: %{public}d', error.code);
-    }
-    return promoted;
+    return new ArticleDedupeStore(this.store).promoteRoots(store, roots, removing);
   }
 
   /** 读一条文章的 canonical_id（不存在返回空串）。 */
   private canonicalOfSync(store: relationalStore.RdbStore, id: string): string {
-    const rs: relationalStore.ResultSet = store.querySqlSync(
-      'SELECT canonical_id FROM ' + ArticleDbConstants.TABLE_ARTICLES + ' WHERE id = ?', [id]);
-    try {
-      return rs.goToNextRow() ? rs.getString(rs.getColumnIndex('canonical_id')) : '';
-    } finally {
-      rs.close();
-    }
+    return new ArticleDedupeStore(this.store).canonicalOfSync(store, id);
   }
 
   /** 某篇文章是否还在主表里。 */
   private rowExistsSync(store: relationalStore.RdbStore, id: string): boolean {
-    const rs: relationalStore.ResultSet = store.querySqlSync(
-      'SELECT 1 AS ok FROM ' + ArticleDbConstants.TABLE_ARTICLES + ' WHERE id = ?', [id]);
-    try {
-      return rs.goToNextRow();
-    } finally {
-      rs.close();
-    }
+    return new ArticleDedupeStore(this.store).rowExistsSync(store, id);
   }
 
   /**
@@ -1468,90 +1364,16 @@ export class ArticleRepository extends ArticleSearchStore {
    * 传入的若是重复项，先解析到根主条；查不到时退回 [id]（幂等，不抛错）。
    */
   async groupIdsOf(id: string): Promise<string[]> {
-    const store: relationalStore.RdbStore | undefined = this.store;
-    const result: string[] = [];
-    if (store === undefined || id.length === 0) {
-      return result;
-    }
-    try {
-      const root: string = await this.rootOf(store, id);
-      const args: Array<relationalStore.ValueType> = [root, root];
-      const rs: relationalStore.ResultSet = await store.querySql(
-        'SELECT id FROM ' + ArticleDbConstants.TABLE_ARTICLES +
-        ' WHERE id = ? OR canonical_id = ? ORDER BY published_at ASC, id ASC', args);
-      try {
-        while (rs.goToNextRow()) {
-          result.push(rs.getString(rs.getColumnIndex('id')));
-        }
-      } finally {
-        rs.close();
-      }
-    } catch (err) {
-      const error: BusinessError = err as BusinessError;
-      hilog.warn(DOMAIN, TAG, 'groupIdsOf failed: %{public}d', error.code);
-      return [id];
-    }
-    if (result.length === 0) {
-      result.push(id);
-    }
-    return result;
+    return await new ArticleDedupeStore(this.store).groupIdsOf(id);
   }
 
   /** 组内来源清单（详情页来源区用）：按发布时间升序，主条在前面的概率更高。 */
   async loadGroupSources(articleId: string): Promise<GroupSource[]> {
-    const store: relationalStore.RdbStore | undefined = this.store;
-    const result: GroupSource[] = [];
-    if (store === undefined || articleId.length === 0) {
-      return result;
-    }
-    try {
-      const root: string = await this.rootOf(store, articleId);
-      const args: Array<relationalStore.ValueType> = [root, root];
-      const rs: relationalStore.ResultSet = await store.querySql(
-        'SELECT id, feed_title, link, published_at FROM ' + ArticleDbConstants.TABLE_ARTICLES +
-        ' WHERE id = ? OR canonical_id = ? ORDER BY published_at ASC, id ASC', args);
-      try {
-        while (rs.goToNextRow()) {
-          result.push(new GroupSource(
-            rs.getString(rs.getColumnIndex('id')),
-            rs.getString(rs.getColumnIndex('feed_title')),
-            rs.getString(rs.getColumnIndex('link')),
-            rs.getLong(rs.getColumnIndex('published_at'))));
-        }
-      } finally {
-        rs.close();
-      }
-    } catch (err) {
-      const error: BusinessError = err as BusinessError;
-      hilog.warn(DOMAIN, TAG, 'loadGroupSources failed: %{public}d', error.code);
-    }
-    return result;
+    return await new ArticleDedupeStore(this.store).loadGroupSources(articleId);
   }
 
   /** 解析根主条：沿 canonical_id 逐跳上溯，最多 8 跳（防御脏数据造成的环）。 */
-  private async rootOf(store: relationalStore.RdbStore, id: string): Promise<string> {
-    let current: string = id;
-    for (let depth = 0; depth < 8; depth += 1) {
-      const args: Array<relationalStore.ValueType> = [current];
-      const rs: relationalStore.ResultSet = await store.querySql(
-        'SELECT canonical_id FROM ' + ArticleDbConstants.TABLE_ARTICLES + ' WHERE id = ?', args);
-      let next: string = '';
-      let found: boolean = false;
-      try {
-        found = rs.goToNextRow();
-        if (found) {
-          next = rs.getString(rs.getColumnIndex('canonical_id'));
-        }
-      } finally {
-        rs.close();
-      }
-      if (!found || next.length === 0 || next === current) {
-        break;
-      }
-      current = next;
-    }
-    return current;
-  }
+
 
   /** 清理过期回收站条目（deleted_at < beforeTs）；这些文章真正消失，标签关联一并清理。 */
   async purgeTrash(beforeTs: number): Promise<number> {
@@ -2017,30 +1839,7 @@ export class ArticleRepository extends ArticleSearchStore {
 
   /** 导出文章段（仅元数据 + 阅读状态列，不含正文缓存）。 */
   async allArticlesForBackup(): Promise<BackupArticle[]> {
-    const store: relationalStore.RdbStore | undefined = this.store;
-    const result: BackupArticle[] = [];
-    if (store === undefined) {
-      return result;
-    }
-    try {
-      const rs: relationalStore.ResultSet = await store.querySql(SQL_SELECT_BACKUP_ARTICLES);
-      try {
-        while (rs.goToNextRow()) {
-          result.push(new BackupArticle(
-            rs.getString(0), rs.getString(1), rs.getString(2), rs.getString(3),
-            rs.getString(4), rs.getString(5), rs.getString(6), rs.getLong(7),
-            rs.getString(8), rs.getLong(9) === 1, rs.getLong(10) === 1,
-            rs.getLong(11) === 1, rs.getLong(14) === 1, rs.getDouble(12),
-            rs.getDouble(13), rs.getString(15), rs.getString(16), rs.getString(17)));
-        }
-      } finally {
-        rs.close();
-      }
-    } catch (err) {
-      const message: string = err instanceof Error ? err.message : 'unknown error';
-      hilog.error(DOMAIN, TAG, 'allArticlesForBackup failed: %{public}s', message);
-    }
-    return result;
+    return await new ArticleBackupRepository(this.store).allArticlesForBackup();
   }
 
   /**
@@ -2055,94 +1854,7 @@ export class ArticleRepository extends ArticleSearchStore {
    */
   async mergeArticlesForBackup(records: BackupArticle[],
     validFeedIds: string[]): Promise<BackupMergeCount> {
-    const counts: BackupMergeCount = new BackupMergeCount();
-    const store: relationalStore.RdbStore | undefined = this.store;
-    if (store === undefined || records.length === 0) {
-      return counts;
-    }
-    const allowed: Set<string> = new Set<string>();
-    // 独立保存的网页没有订阅源记录，但属于可备份的本地文章。
-    allowed.add(WEB_PAGE_FEED_ID);
-    for (let i = 0; i < validFeedIds.length; i += 1) {
-      allowed.add(validFeedIds[i]);
-    }
-    const now: number = Date.now();
-    for (let start = 0; start < records.length; start += BACKUP_BATCH_SIZE) {
-      const end: number = Math.min(start + BACKUP_BATCH_SIZE, records.length);
-      let batchAdded: number = 0;
-      let batchUpdated: number = 0;
-      let batchSkipped: number = 0;
-      try {
-        store.beginTransaction();
-        try {
-          for (let i = start; i < end; i += 1) {
-            const record: BackupArticle = records[i];
-            if (record.id.length === 0 || !allowed.has(record.feedId)) {
-              batchSkipped += 1;
-              continue;
-            }
-            const existing: ArticleStatePatch | undefined =
-              this.readBackupArticleState(store, record.id);
-            if (existing === undefined) {
-              store.executeSync(SQL_INSERT_BACKUP_ARTICLE, [
-                record.id, record.feedId, record.feedTitle, record.title, record.link,
-                record.summary, '', record.publishedAt,
-                record.read ? 1 : 0, record.starred ? 1 : 0, record.saved ? 1 : 0,
-                record.hidden ? 1 : 0, now, record.imageUrl, record.author,
-                record.progress, record.progressRatio, record.linkKey, record.titleKey,
-                record.canonicalId
-              ]);
-              batchAdded += 1;
-            } else {
-              const merged: ArticleStatePatch = mergeArticleState(existing, record);
-              store.executeSync(SQL_UPDATE_BACKUP_ARTICLE_STATE, [
-                merged.read ? 1 : 0, merged.starred ? 1 : 0, merged.saved ? 1 : 0,
-                merged.hidden ? 1 : 0, merged.progress, merged.progressRatio,
-                merged.canonicalId, record.id
-              ]);
-              batchUpdated += 1;
-            }
-          }
-          store.commit();
-        } catch (inner) {
-          store.rollBack();
-          throw inner as Error;
-        }
-        counts.added += batchAdded;
-        counts.updated += batchUpdated;
-        counts.skipped += batchSkipped;
-      } catch (err) {
-        const message: string = err instanceof Error ? err.message : 'unknown error';
-        hilog.error(DOMAIN, TAG, 'mergeArticlesForBackup batch failed: %{public}s', message);
-      }
-      if (end < records.length) {
-        // 事务已结束才让出 UI 任务；下一批继续时仍保持逐批提交与回滚语义。
-        await new Promise<void>((resolve: () => void) => setTimeout(resolve, 0));
-      }
-    }
-    return counts;
+    return await new ArticleBackupRepository(this.store).mergeArticlesForBackup(records, validFeedIds);
   }
-
-  /** 读已有文章的状态列；不存在返回 undefined（同步查询，事务内不会被其它等待打断）。 */
-  private readBackupArticleState(store: relationalStore.RdbStore,
-    id: string): ArticleStatePatch | undefined {
-    const rs: relationalStore.ResultSet = store.querySqlSync(SQL_SELECT_BACKUP_ARTICLE_STATE, [id]);
-    try {
-      if (!rs.goToNextRow()) {
-        return undefined;
-      }
-      return new ArticleStatePatch(
-        rs.getLong(1) === 1,
-        rs.getLong(2) === 1,
-        rs.getLong(3) === 1,
-        rs.getLong(4) === 1,
-        rs.getDouble(5),
-        rs.getDouble(6),
-        rs.getString(7));
-    } finally {
-      rs.close();
-    }
-  }
-
 
 }

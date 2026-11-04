@@ -15,6 +15,7 @@ import { MaterialController } from '../service/MaterialController';
 import { feedViewModel } from '../viewmodel/FeedViewModel';
 import { CommonConstants } from '../common/constants/CommonConstants';
 import { ArticleListItem } from './ArticleListItem';
+import { HomeEmptyState } from './HomeEmptyState';
 import { DateUtil } from '../common/utils/DateUtil';
 import { RouterConstants } from '../common/constants/RouterConstants';
 import { ArticleFilter, FeedError, GroupMode } from '../common/constants/RssConstants';
@@ -130,15 +131,7 @@ export struct HomeTabView {
     this.openSheet('share');
   }
 
-  private emptyTitle(): ResourceStr {
-    if (feedViewModel.filter === ArticleFilter.UNREAD) {
-      return $r('app.string.filter_empty_unread');
-    }
-    if (feedViewModel.filter === ArticleFilter.STARRED) {
-      return $r('app.string.filter_empty_starred');
-    }
-    return $r('app.string.home_empty_title');
-  }
+
 
   /**
    * 列表首条：刷新 + 同步时间 + 未读数 + 全部已读 + 排序 / 搜索。
@@ -322,32 +315,7 @@ export struct HomeTabView {
     this.getUIContext().showAlertDialog(MaterialController.dialogParams(params, appSettings.immersiveOn));
   }
 
-  @Builder
-  EmptyState() {
-    Column({ space: $r('app.float.space_m') }) {
-      Text(this.emptyTitle())
-        .fontSize($r('app.float.font_size_title'))
-        .fontColor($r('app.color.hm_text_primary'))
 
-      if (feedViewModel.filter === ArticleFilter.ALL) {
-        Text($r('app.string.home_empty_hint'))
-          .fontSize($r('app.float.font_size_caption'))
-          .fontColor($r('app.color.hm_text_secondary'))
-          .textAlign(TextAlign.Center)
-        Button($r('app.string.home_empty_action'))
-          .buttonStyle(ButtonStyleMode.NORMAL)
-          .fontColor($r('app.color.hm_on_brand'))
-          .backgroundColor(themePalette.fill())
-          .onClick(() => {
-            // 「添加订阅源」入口现在挂在悬浮页签栏的 miniBar 上（见 Index），这里只上报请求。
-            this.onAddFeedRequest();
-          })
-      }
-    }
-    .width('100%')
-    .padding($r('app.float.space_2xl'))
-    .alignItems(HorizontalAlign.Center)
-  }
 
   /**
    * 排序 / 分组菜单：两个分区（排序方向、分组方式）各带小标题、各只有一个高亮行。
@@ -663,7 +631,10 @@ export struct HomeTabView {
           }
         } else if (feedViewModel.articles.length === 0) {
           ListItem() {
-            this.EmptyState()
+            HomeEmptyState({
+              filter: feedViewModel.filter,
+              onAddFeed: () => this.onAddFeedRequest()
+            })
           }
         } else {
           if (feedViewModel.groupMode === GroupMode.NONE) {

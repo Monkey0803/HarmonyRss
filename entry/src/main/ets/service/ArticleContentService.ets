@@ -27,9 +27,6 @@ import {
   ReaderNeedsJsError,
   ReaderPlaceholderError
 } from './ReaderContentGuard';
-import { imageCache, InlineImagesResult } from './ImageCache';
-import { ReaderBudget } from './ReaderBudget';
-import { NetworkStatus } from './NetworkStatus';
 import {
   ReaderState,
   RssConstants,
@@ -39,6 +36,7 @@ import {
   FeedFetchError
 } from '../common/constants/RssConstants';
 import { FullTextMode } from '../common/constants/SettingsConstants';
+import { ReaderInlineQueue } from './ReaderInlineQueue';
 import {
   HttpError,
   HttpErrorKind,
@@ -68,7 +66,6 @@ const READER_MARKER_PARTIAL: string = '<!--hrv9p-->';
 const LEGACY_READER_MARKER: string = '<!--hrv8-->';
 const LEGACY_READER_MARKER_TEXT: string = '<!--hrv8t-->';
 /** 首屏渲染完成后再开始补图（避免与 Web 首次加载抢带宽与主线程）。 */
-const INLINE_DELAY_MS: number = 2000;
 /** 正文顶部「feed 简介」卡片的类名（配 ReaderDocument 里的 CSS）。 */
 export const FEED_SUMMARY_CLASS: string = 'hr-feed-summary';
 
@@ -133,13 +130,6 @@ function messageOf(err: Object): string {
   return error.message !== undefined && error.message.length > 0 ? error.message : 'network failed';
 }
 
-/** 延时（毫秒）。 */
-function delay(ms: number): Promise<void> {
-  return new Promise<void>((resolve: () => void) => {
-    setTimeout(resolve, ms);
-  });
-}
-
 /** 正文页抓取结果：notModified 为 true 时 html 为空（服务端说「没变」）。 */
 export class PageFetch {
   readonly html: string;
@@ -160,10 +150,9 @@ export class ArticleContentService {
   private inFlight: Map<string, Promise<string>> = new Map<string, Promise<string>>();
   /** 已核实不是旧版简介缓存的正文与 feed 正文；文章或任一内容改变时重新核实。 */
   private validatedReaderCache: WeakMap<Article, string[]> = new WeakMap<Article, string[]>();
-  /** 后台补图任务串行链：避免多篇同时下载图片抢带宽。 */
-  private inlineQueue: Promise<void> = Promise.resolve();
-  /** 按文章 ID 记录当前排队版本；相同正文的不同文章也各自补图。 */
-  private inlineScheduled: Map<string, string> = new Map<string, string>();
+  private inline: ReaderInlineQueue = new ReaderInlineQueue(
+    (article: Article, fragment: string, plain: string): void => this.persist(article, fragment, plain),
+    readerImageCacheMarker, READER_MARKER_TEXT);
 
   /**
    * 抓取正文页 HTML，带条件请求：带上 ETag / Last-Modified 时，页面没变服务端回 304，
@@ -263,7 +252,7 @@ export class ArticleContentService {
       // 文本已就绪：先把正文给到界面，图片交给后台补（不阻塞首屏）。
       article.readerState = ReaderState.READY;
       hilog.info(DOMAIN, TAG, 'reader text cache hit (%{public}d chars)', cached.length);
-      this.scheduleInline(article, cached.substring(READER_MARKER_TEXT.length), article.plainText);
+      this.inline.schedule(article, cached.substring(READER_MARKER_TEXT.length), article.plainText);
       return cached;
     }
 
@@ -411,7 +400,7 @@ export class ArticleContentService {
     this.persist(article, READER_MARKER_TEXT + fresh, plain);
     hilog.info(DOMAIN, TAG, 'perf fetch=%{public}dms extract=%{public}dms persist=%{public}dms chars=%{public}d',
       fetchMs, extractMs, Date.now() - persistStart, fresh.length);
-    this.scheduleInline(article, fresh, plain);
+    this.inline.schedule(article, fresh, plain);
     return article.readerHtml;
   }
 
@@ -433,61 +422,9 @@ export class ArticleContentService {
       return '';
     }
     this.persist(article, READER_MARKER_TEXT + fresh, plain);
-    this.scheduleInline(article, fresh, plain);
+    this.inline.schedule(article, fresh, plain);
     hilog.info(DOMAIN, TAG, 'adopted rendered dom (%{public}d chars)', fresh.length);
     return article.readerHtml;
-  }
-
-  /**
-   * 排队把正文图片内联为 data URI（离线可读）。
-   * 串行执行：预取与当前文章可能同时具备补图条件，并行下载只会互相抢带宽。
-   * 延迟 INLINE_DELAY_MS 再开始，让首屏先渲染出来。
-   */
-  private scheduleInline(article: Article, fresh: string, plain: string): void {
-    const token: string = READER_MARKER_TEXT + fresh;
-    if (!NetworkStatus.isOnline() || this.inlineScheduled.get(article.id) === token) {
-      return;
-    }
-    this.inlineScheduled.set(article.id, token);
-    this.inlineQueue = this.inlineQueue
-      .then(() => this.inlineLater(article, fresh, plain, token))
-      .catch((err: BusinessError) => {
-        hilog.warn(DOMAIN, TAG, 'inline queue failed: %{public}d', err.code);
-      });
-  }
-
-  /** 后台补图：只在正文未被替换（重提取 / 切文）时写回。 */
-  private async inlineLater(article: Article, fresh: string, plain: string, token: string): Promise<void> {
-    try {
-      await delay(INLINE_DELAY_MS);
-      if (article.readerHtml !== token) {
-        return;
-      }
-      const start: number = Date.now();
-      const result: InlineImagesResult = await imageCache.inlineImages(fresh);
-      if (article.readerHtml !== token) {
-        return;
-      }
-      // 最后一道总预算：超限则退回未内联的正文，保证单篇体积有界。
-      const fitted: string = ReaderBudget.fit(fresh, result.html);
-      const budgetRejected: boolean = fitted !== result.html;
-      const marker: string = readerImageCacheMarker(result.remainingRemote, result.retryable, budgetRejected);
-      const fragment: string = marker + fitted;
-      if (fragment === token) {
-        // 全部下载失败且仍可重试；保留文本标记，下一次联网打开再补。
-        return;
-      }
-      hilog.info(DOMAIN, TAG, 'perf inline=%{public}dms inlined=%{public}d chars',
-        Date.now() - start, fragment.length);
-      this.persist(article, fragment, plain);
-    } catch (err) {
-      const error: BusinessError = err as BusinessError;
-      hilog.warn(DOMAIN, TAG, 'inline images failed: %{public}d', error.code);
-    } finally {
-      if (this.inlineScheduled.get(article.id) === token) {
-        this.inlineScheduled.delete(article.id);
-      }
-    }
   }
 
   /** 落库：正文片段 + 已算好的纯文本（plain 为空时沿用文章已有的，避免覆盖成空串）。 */
