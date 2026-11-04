@@ -16,7 +16,7 @@ import { MaterialController } from '../service/MaterialController';
 import { appSettings } from '../model/AppSettings';
 import { safeArea } from '../service/SafeAreaController';
 import { DateUtil } from '../common/utils/DateUtil';
-import { ToastUtil } from '../common/utils/ToastUtil';
+import { Toast } from '@rss/toast-kit';
 import { themePalette } from '../model/ThemePalette';
 
 @ComponentV2
@@ -54,7 +54,7 @@ export struct RulesView {
   private runTest(rule: Rule): void {
     this.testedRuleId = rule.id;
     ruleViewModel.testRun(rule.id, RuleConstants.RULE_TEST_SAMPLE).catch((err: Error) => {
-      ToastUtil.show(this.getUIContext(), $r('app.string.rule_action_failed'));
+      Toast.show($r('app.string.rule_action_failed'));
     });
   }
 
@@ -62,13 +62,13 @@ export struct RulesView {
   private toggleEnabled(rule: Rule, enabled: boolean): void {
     rule.enabled = enabled;
     ruleViewModel.setEnabled(rule.id, enabled).catch((err: Error) => {
-      ToastUtil.show(this.getUIContext(), $r('app.string.rule_action_failed'));
+      Toast.show($r('app.string.rule_action_failed'));
     });
   }
 
   private moveRule(rule: Rule, delta: number): void {
     ruleViewModel.move(rule.id, delta).catch((err: Error) => {
-      ToastUtil.show(this.getUIContext(), $r('app.string.rule_action_failed'));
+      Toast.show($r('app.string.rule_action_failed'));
     });
   }
 
@@ -84,7 +84,7 @@ export struct RulesView {
       fontColor: $r('app.color.hm_danger'),
       action: () => {
         ruleViewModel.remove(rule.id).catch((err: Error) => {
-          ToastUtil.show(this.getUIContext(), $r('app.string.rule_action_failed'));
+          Toast.show($r('app.string.rule_action_failed'));
         });
       }
     };

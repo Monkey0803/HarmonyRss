@@ -81,6 +81,18 @@
       "value": "20"
     },
     {
+      "name": "search_field_height",
+      "value": "44"
+    },
+    {
+      "name": "radius_search",
+      "value": "22"
+    },
+    {
+      "name": "discover_avatar_size",
+      "value": "32"
+    },
+    {
       "name": "image_preview_height",
       "value": "320"
     },

@@ -1,0 +1,9 @@
+{
+  "name": "@rss/toast-kit",
+  "version": "1.0.0",
+  "description": "Reusable HarmonyOS toast library built on promptAction.showToast.",
+  "main": "Index.ets",
+  "author": "",
+  "license": "Apache-2.0",
+  "dependencies": {}
+}

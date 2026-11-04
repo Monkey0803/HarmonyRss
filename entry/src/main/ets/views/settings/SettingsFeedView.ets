@@ -30,7 +30,7 @@ import { OpmlEntry, parseOpml } from '../../service/OpmlCodec';
 import { RouterConstants } from '../../common/constants/RouterConstants';
 import { safeArea } from '../../service/SafeAreaController';
 import { DateUtil } from '../../common/utils/DateUtil';
-import { ToastUtil } from '../../common/utils/ToastUtil';
+import { Toast } from '@rss/toast-kit';
 import {
   ActionSettingRow,
   NavSettingRow,
@@ -73,7 +73,7 @@ export struct SettingsFeedView {
   private async toggleNotify(value: boolean): Promise<void> {
     const granted: boolean = await settingsViewModel.setNotifyNewArticles(value, this.hostContext());
     if (value && !granted) {
-      ToastUtil.show(this.getUIContext(), $r('app.string.toast_notify_denied'));
+      Toast.show($r('app.string.toast_notify_denied'));
     }
   }
 
@@ -85,11 +85,11 @@ export struct SettingsFeedView {
     }
     const entries: OpmlEntry[] = parseOpml(text);
     if (entries.length === 0) {
-      ToastUtil.show(this.getUIContext(), $r('app.string.subs_import_empty'));
+      Toast.show($r('app.string.subs_import_empty'));
       return;
     }
     const added: number = await feedViewModel.importFeeds(entries);
-    ToastUtil.show(this.getUIContext(), added > 0
+    Toast.show(added > 0
       ? $r('app.string.subs_import_result', added)
       : $r('app.string.subs_import_duplicate'));
   }
@@ -97,19 +97,19 @@ export struct SettingsFeedView {
   /** 导出 OPML：把当前订阅写进用户选定的文件。 */
   private async exportOpml(): Promise<void> {
     if (feedViewModel.feeds.length === 0) {
-      ToastUtil.show(this.getUIContext(), $r('app.string.subs_export_empty'));
+      Toast.show($r('app.string.subs_export_empty'));
       return;
     }
     const ok: boolean = await opmlService.exportToFile(this.hostContext(), feedViewModel.exportOpml());
     if (ok) {
-      ToastUtil.show(this.getUIContext(), $r('app.string.subs_export_success'));
+      Toast.show($r('app.string.subs_export_success'));
     }
   }
 
   /** 手动刷新：抓取全部订阅源，完成后用 SnackBar 反馈。 */
   private refreshNow(): void {
     if (feedViewModel.loading) {
-      ToastUtil.show(this.getUIContext(), $r('app.string.toast_refreshing'));
+      Toast.show($r('app.string.toast_refreshing'));
       return;
     }
     feedViewModel.refreshAll(true).then(() => {

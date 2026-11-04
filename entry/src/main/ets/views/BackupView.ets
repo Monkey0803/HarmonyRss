@@ -17,7 +17,7 @@ import { appSettings } from '../model/AppSettings';
 import { MaterialController } from '../service/MaterialController';
 import { safeArea } from '../service/SafeAreaController';
 import { DateUtil } from '../common/utils/DateUtil';
-import { ToastUtil } from '../common/utils/ToastUtil';
+import { Toast } from '@rss/toast-kit';
 import { themePalette } from '../model/ThemePalette';
 
 /** 首次进页面快照列表为空时的补读延迟（毫秒）：等启动时的自动快照把文件写完。 */
@@ -272,10 +272,10 @@ export struct BackupView {
     }
     backupViewModel.exportNow(context).then((ok: boolean) => {
       if (ok) {
-        ToastUtil.show(this.getUIContext(), $r('app.string.backup_toast_exported'));
+        Toast.show($r('app.string.backup_toast_exported'));
         return;
       }
-      ToastUtil.show(this.getUIContext(), backupViewModel.lastCancelled
+      Toast.show(backupViewModel.lastCancelled
         ? $r('app.string.backup_export_cancelled')
         : this.errorText());
     });
@@ -289,10 +289,10 @@ export struct BackupView {
     }
     backupViewModel.importNow(context).then((summary: BackupSummary | undefined) => {
       if (summary !== undefined) {
-        ToastUtil.show(this.getUIContext(), $r('app.string.backup_toast_imported'));
+        Toast.show($r('app.string.backup_toast_imported'));
         return;
       }
-      ToastUtil.show(this.getUIContext(), backupViewModel.lastCancelled
+      Toast.show(backupViewModel.lastCancelled
         ? $r('app.string.backup_import_cancelled')
         : this.errorText());
     });
@@ -305,7 +305,7 @@ export struct BackupView {
       return;
     }
     backupViewModel.snapshotNow(context).then((ok: boolean) => {
-      ToastUtil.show(this.getUIContext(), ok
+      Toast.show(ok
         ? $r('app.string.backup_toast_snapshot_created')
         : this.errorText());
     });
@@ -318,7 +318,7 @@ export struct BackupView {
       return;
     }
     backupViewModel.backupToCloud(context).then((ok: boolean) => {
-      ToastUtil.show(this.getUIContext(), ok
+      Toast.show(ok
         ? $r('app.string.backup_toast_cloud_saved')
         : this.errorText());
     });
@@ -357,7 +357,7 @@ export struct BackupView {
       return;
     }
     backupViewModel.restoreFromCloud(context).then((summary: BackupSummary | undefined) => {
-      ToastUtil.show(this.getUIContext(), summary !== undefined
+      Toast.show(summary !== undefined
         ? $r('app.string.backup_toast_restored')
         : this.errorText());
     });
@@ -396,7 +396,7 @@ export struct BackupView {
       return;
     }
     backupViewModel.restore(context, info).then((ok: boolean) => {
-      ToastUtil.show(this.getUIContext(), ok
+      Toast.show(ok
         ? $r('app.string.backup_toast_restored')
         : this.errorText());
     });
@@ -435,7 +435,7 @@ export struct BackupView {
       return;
     }
     backupViewModel.remove(context, info).then((ok: boolean) => {
-      ToastUtil.show(this.getUIContext(), ok
+      Toast.show(ok
         ? $r('app.string.backup_toast_deleted')
         : this.errorText());
     });

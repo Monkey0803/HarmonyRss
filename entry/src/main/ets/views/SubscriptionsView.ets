@@ -19,7 +19,7 @@ import { feedViewModel } from '../viewmodel/FeedViewModel';
 import { FeedErrorText } from '../common/utils/FeedErrorText';
 import { safeArea } from '../service/SafeAreaController';
 import { CommonConstants } from '../common/constants/CommonConstants';
-import { ToastUtil } from '../common/utils/ToastUtil';
+import { Toast } from '@rss/toast-kit';
 import { RouterConstants } from '../common/constants/RouterConstants';
 import { MaterialController } from '../service/MaterialController';
 import { appSettings } from '../model/AppSettings';
@@ -155,10 +155,6 @@ export struct SubscriptionsView {
       top: $r('app.float.space_l'),
       bottom: $r('app.float.space_xs')
     })
-  }
-
-  private toast(message: ResourceStr): void {
-    ToastUtil.show(this.getUIContext(), message);
   }
 
   /** 是否处于就地编辑（重命名 / 分组 / 地址）。 */
@@ -335,7 +331,7 @@ export struct SubscriptionsView {
     const ok: boolean = await feedViewModel.replaceFeedUrl(feedId, this.draftUrl);
     this.urlEditId = '';
     if (!ok) {
-      this.toast(FeedErrorText.of(feedViewModel.errorCode));
+      Toast.show(FeedErrorText.of(feedViewModel.errorCode));
     }
   }
 

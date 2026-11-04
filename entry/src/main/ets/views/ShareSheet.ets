@@ -20,7 +20,7 @@ import { feedViewModel } from '../viewmodel/FeedViewModel';
 import { highlightStore, articleRepository } from '../service/ArticleServices';
 import { AppMenu } from '../common/components/AppMenu';
 import { MenuItemSpec, MenuSpec } from '../common/components/MenuSpec';
-import { ToastUtil } from '../common/utils/ToastUtil';
+import { Toast } from '@rss/toast-kit';
 import { MaterialController } from '../service/MaterialController';
 import { appSettings } from '../model/AppSettings';
 
@@ -301,7 +301,7 @@ export struct ShareSheet {
   /** 统一反馈：提示 + 关闭面板（busy 提示不关闭，用户可继续点）。 */
   private report(result: ShareResult): void {
     if (result.messageKey.length > 0) {
-      ToastUtil.show(this.getUIContext(), this.messageOf(result.messageKey));
+      Toast.show(this.messageOf(result.messageKey));
     }
     if (result.messageKey !== 'share_toast_busy') {
       this.onClose();
@@ -322,13 +322,13 @@ export struct ShareSheet {
   private async toggleSaved(): Promise<void> {
     const articleId: string = this.ctx().articleId;
     if (articleId.length === 0) {
-      ToastUtil.show(this.getUIContext(), $r('app.string.share_toast_nothing_to_share'));
+      Toast.show($r('app.string.share_toast_nothing_to_share'));
       return;
     }
     const wasSaved: boolean = this.savedAlready;
     const result: ShareResult = await shareViewModel.runTarget(ShareTargetId.SAVED, this.ability);
     if (result.messageKey === 'share_toast_busy') {
-      ToastUtil.show(this.getUIContext(), this.messageOf(result.messageKey));
+      Toast.show(this.messageOf(result.messageKey));
       return;
     }
     if (feedViewModel.hasArticle(articleId)) {
@@ -338,7 +338,7 @@ export struct ShareSheet {
       articleRepository.setSaved(articleId, !wasSaved);
     }
     this.savedAlready = !wasSaved;
-    ToastUtil.show(this.getUIContext(), wasSaved
+    Toast.show(wasSaved
       ? $r('app.string.share_toast_unsaved')
       : $r('app.string.share_toast_saved'));
     this.onClose();
@@ -353,7 +353,7 @@ export struct ShareSheet {
   /** 导出本篇高亮（无高亮时按钮已置灰，这里再兜一次提示）。 */
   private async exportThisArticle(): Promise<void> {
     if (this.articleHighlightCount === 0) {
-      ToastUtil.show(this.getUIContext(), $r('app.string.share_disabled_no_highlights'));
+      Toast.show($r('app.string.share_disabled_no_highlights'));
       return;
     }
     const result: ShareResult = await shareViewModel.exportThisArticle(this.ability);

@@ -21,7 +21,7 @@ import { articleRepository, CacheStats } from '../service/ArticleServices';
 import { appSettings } from '../model/AppSettings';
 import { settingsStore } from '../service/SettingsStore';
 import { DateUtil } from '../common/utils/DateUtil';
-import { ToastUtil } from '../common/utils/ToastUtil';
+import { Toast } from '@rss/toast-kit';
 import { FeedErrorText } from '../common/utils/FeedErrorText';
 import { safeArea } from '../service/SafeAreaController';
 import { RouterConstants } from '../common/constants/RouterConstants';
@@ -151,7 +151,7 @@ export struct DiagnosticsView {
     feedViewModel.refreshAll(true).then(() => {
       this.retrying = false;
       this.loadStorageStats();
-      ToastUtil.show(this.getUIContext(),
+      Toast.show(
         $r('app.string.diagnostics_retry_done',
           diagnostics.lastFetchTotal, diagnostics.lastFetchFailed));
     }).catch(() => {
@@ -161,7 +161,7 @@ export struct DiagnosticsView {
 
   private clearRecords(): void {
     diagnostics.clear();
-    ToastUtil.show(this.getUIContext(), $r('app.string.diagnostics_cleared'));
+    Toast.show($r('app.string.diagnostics_cleared'));
   }
 
   private openFeed(feed: FeedSource): void {

@@ -3650,11 +3650,23 @@
     },
     {
       "name": "discover_desc",
-      "value": "Hand-picked feeds, local recommendations, RSSHub routes and clipboard import. Nothing is fetched until you tap Subscribe."
+      "value": "Curated feeds are built in. Network access only when you check an address or subscribe."
     },
     {
       "name": "discover_search_hint",
-      "value": "Search curated feeds"
+      "value": "Search title, URL or tag"
+    },
+    {
+      "name": "discover_clear",
+      "value": "Clear"
+    },
+    {
+      "name": "discover_checking",
+      "value": "Checking…"
+    },
+    {
+      "name": "discover_subscribe_a11y",
+      "value": "Subscribe to %s"
     },
     {
       "name": "discover_category_all",
@@ -3694,7 +3706,7 @@
     },
     {
       "name": "discover_recommend_hint",
-      "value": "Based on topics of feeds you already follow (computed locally)."
+      "value": "Based on topics of feeds you follow. Computed locally, never uploaded."
     },
     {
       "name": "discover_section_popular",

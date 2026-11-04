@@ -14,7 +14,7 @@ import { SmartFolderError, validateSmartFolder } from '../service/SmartFolderSto
 import { DateUtil } from '../common/utils/DateUtil';
 import { safeArea } from '../service/SafeAreaController';
 import { RouterConstants } from '../common/constants/RouterConstants';
-import { ToastUtil } from '../common/utils/ToastUtil';
+import { Toast } from '@rss/toast-kit';
 import { AppSheet } from '../common/components/AppSheet';
 import { SHEET_SAVE_FOLDER_HEIGHT } from '../common/components/SheetDetents';
 import { FilterCapsule } from './FilterCapsule';
@@ -134,7 +134,7 @@ export struct SearchView {
   /** 打开保存面板：查询为空先提示，不弹面板。 */
   private openSaveSheet(): void {
     if (searchViewModel.currentRaw().length === 0) {
-      ToastUtil.show(this.getUIContext(), $r('app.string.smart_folder_query_empty'));
+      Toast.show($r('app.string.smart_folder_query_empty'));
       return;
     }
     this.folderName = '';
@@ -157,7 +157,7 @@ export struct SearchView {
       return;
     }
     this.showSaveSheet = false;
-    ToastUtil.show(this.getUIContext(), $r('app.string.smart_folder_saved'));
+    Toast.show($r('app.string.smart_folder_saved'));
   }
 
   /** 保存面板内容（宿主为统一 AppSheet）。 */

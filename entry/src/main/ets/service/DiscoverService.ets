@@ -26,6 +26,17 @@ class ScoredFeed {
   }
 }
 
+/** 发现页一次渲染所需的两段列表：推荐不重复出现在目录里。 */
+export class DiscoverSections {
+  readonly recommended: DiscoverFeed[];
+  readonly catalog: DiscoverFeed[];
+
+  constructor(recommended: DiscoverFeed[], catalog: DiscoverFeed[]) {
+    this.recommended = recommended;
+    this.catalog = catalog;
+  }
+}
+
 /** 解析地址的主机名；失败返回空串。 */
 function hostOf(raw: string): string {
   const trimmed: string = raw.trim();
@@ -104,6 +115,33 @@ export class DiscoverService {
       result.sort((a: DiscoverFeed, b: DiscoverFeed) => b.popularity - a.popularity);
     }
     return result;
+  }
+
+  /**
+   * 发现页两段列表：仅在「全部 + 无关键词」时给出推荐，并把推荐项从目录里移除，
+   * 避免同一订阅源在首屏上下各出现一次。筛选 / 搜索时推荐为空，目录保持完整。
+   */
+  static sections(category: string, keyword: string,
+    existing: FeedSource[], limit: number): DiscoverSections {
+    const showRecommended: boolean =
+      category === DiscoverCategory.ALL && keyword.trim().length === 0;
+    const recommended: DiscoverFeed[] =
+      showRecommended ? DiscoverService.recommendations(existing, limit) : [];
+    const catalog: DiscoverFeed[] = DiscoverService.filter(category, keyword);
+    if (recommended.length === 0) {
+      return new DiscoverSections(recommended, catalog);
+    }
+    const excluded: Set<string> = new Set();
+    for (let i = 0; i < recommended.length; i += 1) {
+      excluded.add(normalizeFeedKey(recommended[i].feedUrl));
+    }
+    const result: DiscoverFeed[] = [];
+    for (let i = 0; i < catalog.length; i += 1) {
+      if (!excluded.has(normalizeFeedKey(catalog[i].feedUrl))) {
+        result.push(catalog[i]);
+      }
+    }
+    return new DiscoverSections(recommended, result);
   }
 
   /** 分类命中：主题分类按主分类或标签匹配；all / hot 全收。 */

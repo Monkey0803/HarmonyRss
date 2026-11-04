@@ -4,7 +4,7 @@ import { webPageSaveService, normalizeWebPageUrl } from '../service/WebPageSaveS
 import { feedViewModel } from '../viewmodel/FeedViewModel';
 import { UrlText } from '../common/utils/UrlText';
 import { clipboardService } from '../service/ClipboardService';
-import { ToastUtil } from '../common/utils/ToastUtil';
+import { Toast } from '@rss/toast-kit';
 import { themePalette } from '../model/ThemePalette';
 
 @ComponentV2
@@ -49,7 +49,7 @@ export struct SaveWebPagePanel {
       this.inputText = urls[0];
       this.clearPreview();
     } else {
-      ToastUtil.show(this.getUIContext(), $r('app.string.save_web_invalid_url'));
+      Toast.show($r('app.string.save_web_invalid_url'));
     }
   }
 
@@ -68,14 +68,14 @@ export struct SaveWebPagePanel {
     }
     this.clearPreview();
     if (normalizeWebPageUrl(this.inputText).length === 0) {
-      ToastUtil.show(this.getUIContext(), $r('app.string.save_web_invalid_url'));
+      Toast.show($r('app.string.save_web_invalid_url'));
       return;
     }
     this.loading = true;
     try {
       const result: WebPagePreview | undefined = await webPageSaveService.preview(this.inputText);
       if (result === undefined) {
-        ToastUtil.show(this.getUIContext(), $r('app.string.save_web_invalid_url'));
+        Toast.show($r('app.string.save_web_invalid_url'));
         return;
       }
       this.pending = result;
@@ -85,7 +85,7 @@ export struct SaveWebPagePanel {
       this.previewUrl = result.url;
       this.hasOfflineBody = result.readerHtml.length > 0;
     } catch (err) {
-      ToastUtil.show(this.getUIContext(), $r('app.string.save_web_fetch_failed'));
+      Toast.show($r('app.string.save_web_fetch_failed'));
     } finally {
       this.loading = false;
     }
@@ -100,14 +100,14 @@ export struct SaveWebPagePanel {
     try {
       const result = await feedViewModel.saveWebPage(preview);
       if (result === undefined) {
-        ToastUtil.show(this.getUIContext(), $r('app.string.save_web_save_failed'));
+        Toast.show($r('app.string.save_web_save_failed'));
         return;
       }
-      ToastUtil.show(this.getUIContext(), $r('app.string.save_web_saved'));
+      Toast.show($r('app.string.save_web_saved'));
       this.clearPreview();
       this.onSaved(result.articleId);
     } catch (err) {
-      ToastUtil.show(this.getUIContext(), $r('app.string.save_web_save_failed'));
+      Toast.show($r('app.string.save_web_save_failed'));
     } finally {
       this.loading = false;
     }
@@ -156,7 +156,7 @@ export struct SaveWebPagePanel {
             if (result === PasteButtonOnClickResult.SUCCESS && !this.loading) {
               this.paste();
             } else if (result !== PasteButtonOnClickResult.SUCCESS) {
-              ToastUtil.show(this.getUIContext(), $r('app.string.subs_paste_denied'));
+              Toast.show($r('app.string.subs_paste_denied'));
             }
           })
         Blank()

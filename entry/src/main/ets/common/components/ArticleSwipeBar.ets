@@ -25,7 +25,7 @@ import { Article } from '../../model/Feed';
 import { appSettings } from '../../model/AppSettings';
 import { feedViewModel } from '../../viewmodel/FeedViewModel';
 import { MaterialController } from '../../service/MaterialController';
-import { ToastUtil } from '../utils/ToastUtil';
+import { Toast } from '@rss/toast-kit';
 import { AppMenu } from './AppMenu';
 import { MenuItemSpec, MenuSectionSpec, MenuSpec } from './MenuSpec';
 import { SwipeOverflowId, swipeOverflowIds } from './SwipeActionPlan';
@@ -160,20 +160,20 @@ export struct ArticleSwipeBar {
   /** 离线下载 / 重试（retry=true 时清掉已缓存的正文重新抓）。 */
   private downloadOffline(retry: boolean): void {
     feedViewModel.downloadArticleOffline(this.article.id, retry).then((state: string) => {
-      ToastUtil.show(this.getUIContext(), state === 'full' ? $r('app.string.offline_full') :
+      Toast.show(state === 'full' ? $r('app.string.offline_full') :
         (state === 'none' ? $r('app.string.offline_single_failed') : $r('app.string.offline_partial')));
     }).catch(() => {
-      ToastUtil.show(this.getUIContext(), $r('app.string.offline_single_failed'));
+      Toast.show($r('app.string.offline_single_failed'));
     });
   }
 
   /** 清除该文章的离线副本。 */
   private clearOffline(): void {
     feedViewModel.clearArticleOffline(this.article.id).then((ok: boolean) => {
-      ToastUtil.show(this.getUIContext(), ok ? $r('app.string.offline_single_cleared') :
+      Toast.show(ok ? $r('app.string.offline_single_cleared') :
         $r('app.string.offline_single_failed'));
     }).catch(() => {
-      ToastUtil.show(this.getUIContext(), $r('app.string.offline_single_failed'));
+      Toast.show($r('app.string.offline_single_failed'));
     });
   }
 

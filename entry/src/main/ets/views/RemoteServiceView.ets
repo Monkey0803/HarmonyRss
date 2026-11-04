@@ -9,7 +9,7 @@ import { RemoteErrorCode, SyncResult } from '../model/Remote';
 import { remoteAccountViewModel } from '../viewmodel/RemoteAccountViewModel';
 import { remoteSyncService } from '../service/remote/RemoteSyncService';
 import { safeArea } from '../service/SafeAreaController';
-import { ToastUtil } from '../common/utils/ToastUtil';
+import { Toast } from '@rss/toast-kit';
 import { appSettings } from '../model/AppSettings';
 import { settingsStore } from '../service/SettingsStore';
 import { AUTO_REFRESH_OPTIONS } from '../model/SettingsOptions';
@@ -67,9 +67,9 @@ export struct RemoteServiceView {
       if (!ok) {
         return;
       }
-      ToastUtil.show(this.getUIContext(), $r('app.string.remote_connected'));
+      Toast.show($r('app.string.remote_connected'));
       if (remoteAccountViewModel.warningCode !== RemoteErrorCode.NONE) {
-        ToastUtil.show(this.getUIContext(),
+        Toast.show(
           remoteAccountViewModel.errorText(remoteAccountViewModel.warningCode));
       }
       if (remoteAccountViewModel.needsMigration) {
@@ -111,14 +111,14 @@ export struct RemoteServiceView {
       if (result === undefined) {
         return;
       }
-      ToastUtil.show(this.getUIContext(),
+      Toast.show(
         $r('app.string.remote_sync_summary', result.feedsAdded, result.articlesAdded, result.statesPushed));
     });
   }
 
   private confirmLogout(clearSyncData: boolean): void {
     remoteAccountViewModel.logout(clearSyncData).then(() => {
-      ToastUtil.show(this.getUIContext(), $r('app.string.remote_logout_done'));
+      Toast.show($r('app.string.remote_logout_done'));
     });
   }
 

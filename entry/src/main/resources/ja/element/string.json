@@ -3650,11 +3650,23 @@
     },
     {
       "name": "discover_desc",
-      "value": "厳選フィード・ローカルのおすすめ・RSSHub ルート・クリップボードからの読み込み。購読をタップするまで何も取得しません。"
+      "value": "厳選フィードは内蔵済み。URL の確認または購読時のみ通信します。"
     },
     {
       "name": "discover_search_hint",
-      "value": "厳選フィードを検索"
+      "value": "タイトル、URL、タグを検索"
+    },
+    {
+      "name": "discover_clear",
+      "value": "クリア"
+    },
+    {
+      "name": "discover_checking",
+      "value": "確認中…"
+    },
+    {
+      "name": "discover_subscribe_a11y",
+      "value": "%s を購読"
     },
     {
       "name": "discover_category_all",
@@ -3694,7 +3706,7 @@
     },
     {
       "name": "discover_recommend_hint",
-      "value": "購読中のフィードの話題に基づきます（端末内で計算）。"
+      "value": "購読中のフィードの話題に基づき、端末内で計算します。アップロードはしません。"
     },
     {
       "name": "discover_section_popular",

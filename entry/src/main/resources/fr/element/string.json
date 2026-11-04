@@ -3650,11 +3650,23 @@
     },
     {
       "name": "discover_desc",
-      "value": "Flux sélectionnés, recommandations locales, routes RSSHub et import depuis le presse-papiers. Rien n'est récupéré avant d'appuyer sur S'abonner."
+      "value": "Les flux sélectionnés sont intégrés. Réseau uniquement lors de la vérification d'une adresse ou d'un abonnement."
     },
     {
       "name": "discover_search_hint",
-      "value": "Rechercher dans les flux sélectionnés"
+      "value": "Rechercher un titre, une URL ou un tag"
+    },
+    {
+      "name": "discover_clear",
+      "value": "Effacer"
+    },
+    {
+      "name": "discover_checking",
+      "value": "Vérification…"
+    },
+    {
+      "name": "discover_subscribe_a11y",
+      "value": "S'abonner à %s"
     },
     {
       "name": "discover_category_all",
@@ -3694,7 +3706,7 @@
     },
     {
       "name": "discover_recommend_hint",
-      "value": "Basé sur les thèmes de vos flux suivis (calcul local)."
+      "value": "Basé sur les thèmes de vos flux suivis. Calcul local, jamais envoyé."
     },
     {
       "name": "discover_section_popular",

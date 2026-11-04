@@ -18,7 +18,7 @@ import { shareViewModel } from '../viewmodel/ShareViewModel';
 import { CommonConstants } from '../common/constants/CommonConstants';
 import { AppMenu } from '../common/components/AppMenu';
 import { MenuItemSpec, MenuSpec } from '../common/components/MenuSpec';
-import { ToastUtil } from '../common/utils/ToastUtil';
+import { Toast } from '@rss/toast-kit';
 import { safeArea } from '../service/SafeAreaController';
 import { appSettings } from '../model/AppSettings';
 import { MaterialController } from '../service/MaterialController';
@@ -179,7 +179,7 @@ export struct ShareSettingsView {
     this.errorKey = '';
     if (shareViewModel.templates.length >= CommonConstants.SHARE_TEMPLATE_MAX) {
       this.errorKey = 'tpl_err_max';
-      ToastUtil.show(this.getUIContext(), $r('app.string.tpl_err_max'));
+      Toast.show($r('app.string.tpl_err_max'));
       return;
     }
     this.editingId = '';
@@ -238,7 +238,7 @@ export struct ShareSettingsView {
       return;
     }
     this.closeEditor();
-    ToastUtil.show(this.getUIContext(), $r('app.string.tpl_toast_saved'));
+    Toast.show($r('app.string.tpl_toast_saved'));
   }
 
   /** 删除（二次确认）：确认后落库并刷新。 */
@@ -276,9 +276,9 @@ export struct ShareSettingsView {
     const ok: boolean = await shareTemplates.remove(id);
     await shareViewModel.reloadTemplates();
     if (ok) {
-      ToastUtil.show(this.getUIContext(), $r('app.string.tpl_toast_deleted'));
+      Toast.show($r('app.string.tpl_toast_deleted'));
     } else {
-      ToastUtil.show(this.getUIContext(), $r('app.string.tpl_err_save_failed'));
+      Toast.show($r('app.string.tpl_err_save_failed'));
     }
   }
 

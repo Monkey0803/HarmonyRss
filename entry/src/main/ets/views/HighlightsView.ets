@@ -12,7 +12,7 @@ import { articleActions } from '../service/ArticleActions';
 import { toJson, toMarkdown } from '../service/HighlightExport';
 import { RouterConstants } from '../common/constants/RouterConstants';
 import { safeArea } from '../service/SafeAreaController';
-import { ToastUtil } from '../common/utils/ToastUtil';
+import { Toast } from '@rss/toast-kit';
 import { common } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { AppSheet } from '../common/components/AppSheet';
@@ -57,14 +57,14 @@ export struct HighlightsView {
       ? toMarkdown(this.items, emptyHint)
       : toJson(this.items);
     if (this.items.length === 0) {
-      ToastUtil.show(this.getUIContext(), $r('app.string.hl_export_empty'));
+      Toast.show($r('app.string.hl_export_empty'));
       return;
     }
     const ok: boolean = await articleActions.shareText(this.hostContext(),
       markdown ? '源见 RSS 标注（Markdown）' : '源见 RSS 标注（JSON）', text);
     if (!ok) {
       hilog.warn(DOMAIN, TAG, 'share export failed');
-      ToastUtil.show(this.getUIContext(), $r('app.string.toast_action_failed'));
+      Toast.show($r('app.string.toast_action_failed'));
     }
   }
 
@@ -82,18 +82,18 @@ export struct HighlightsView {
   private openHighlight(entry: HighlightLibraryItem): void {
     const articleId: string = entry.highlight.articleId;
     if (!feedViewModel.hasArticle(articleId)) {
-      ToastUtil.show(this.getUIContext(), $r('app.string.hl_article_gone'));
+      Toast.show($r('app.string.hl_article_gone'));
       return;
     }
     feedViewModel.pendingHighlightId = entry.highlight.id;
     feedViewModel.openArticleById(articleId).then((ok: boolean) => {
       if (!ok) {
-        ToastUtil.show(this.getUIContext(), $r('app.string.hl_article_gone'));
+        Toast.show($r('app.string.hl_article_gone'));
         return;
       }
       this.navPathStack.pushPath(new NavPathInfo(RouterConstants.PAGE_ARTICLE, ''));
     }).catch(() => {
-      ToastUtil.show(this.getUIContext(), $r('app.string.hl_article_gone'));
+      Toast.show($r('app.string.hl_article_gone'));
     });
   }
 

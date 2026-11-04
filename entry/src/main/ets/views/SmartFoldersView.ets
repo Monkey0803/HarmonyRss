@@ -14,7 +14,7 @@ import { MenuItemSpec, MenuSpec } from '../common/components/MenuSpec';
 import { MaterialController } from '../service/MaterialController';
 import { appSettings } from '../model/AppSettings';
 import { safeArea } from '../service/SafeAreaController';
-import { ToastUtil } from '../common/utils/ToastUtil';
+import { Toast } from '@rss/toast-kit';
 import { themePalette } from '../model/ThemePalette';
 
 @ComponentV2
@@ -89,7 +89,7 @@ export struct SmartFoldersView {
   /** 打开：写入 pendingQuery 后跳搜索页（校验失败说明记录已失效）。 */
   private openFolder(folder: SmartFolder): void {
     if (!smartFolderViewModel.open(folder)) {
-      ToastUtil.show(this.getUIContext(), $r('app.string.smart_folder_open_failed'));
+      Toast.show($r('app.string.smart_folder_open_failed'));
       return;
     }
     this.navPathStack.pushPath(new NavPathInfo(RouterConstants.PAGE_SEARCH, ''));

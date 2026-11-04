@@ -12,7 +12,7 @@ import { FeedPreview, PreviewItem, BatchResult } from '../model/FeedPreview';
 import { feedViewModel } from '../viewmodel/FeedViewModel';
 import { FeedError } from '../common/constants/RssConstants';
 import { FeedErrorText } from '../common/utils/FeedErrorText';
-import { ToastUtil } from '../common/utils/ToastUtil';
+import { Toast } from '@rss/toast-kit';
 import { UrlText } from '../common/utils/UrlText';
 import { DateUtil } from '../common/utils/DateUtil';
 import { clipboardService } from '../service/ClipboardService';
@@ -80,7 +80,7 @@ export struct AddFeedPanel {
     if (urls.length > 0) {
       this.inputText = urls.join('\n');
     } else {
-      ToastUtil.show(this.getUIContext(), $r('app.string.err_empty_url'));
+      Toast.show($r('app.string.err_empty_url'));
     }
   }
 
@@ -91,7 +91,7 @@ export struct AddFeedPanel {
     const input: string = this.inputText;
     const urls: string[] = UrlText.splitUrlLines(this.inputText);
     if (urls.length === 0) {
-      ToastUtil.show(this.getUIContext(), $r('app.string.err_empty_url'));
+      Toast.show($r('app.string.err_empty_url'));
       return;
     }
     // 单地址：进入预览确认；多地址：批量添加。
@@ -115,7 +115,7 @@ export struct AddFeedPanel {
     this.submitting = true;
     const result: BatchResult = await feedViewModel.addFeeds(this.inputText, this.draftGroup);
     this.submitting = false;
-    ToastUtil.show(this.getUIContext(),
+    Toast.show(
       $r('app.string.subs_batch_result', result.added, result.duplicate, result.failed));
     if (result.added > 0) {
       this.reset();
@@ -301,7 +301,7 @@ export struct AddFeedPanel {
               return;
             }
             if (result !== PasteButtonOnClickResult.SUCCESS) {
-              ToastUtil.show(this.getUIContext(), $r('app.string.subs_paste_denied'));
+              Toast.show($r('app.string.subs_paste_denied'));
               return;
             }
             this.fillFromClipboard();

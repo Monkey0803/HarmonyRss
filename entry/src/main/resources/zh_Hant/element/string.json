@@ -3650,11 +3650,23 @@
     },
     {
       "name": "discover_desc",
-      "value": "內建精選訂閱源、本地相似源推薦、RSSHub 路由助手與剪貼簿匯入；只有點選「訂閱」時才會發起抓取。"
+      "value": "精選目錄已內建；僅在偵測網址或訂閱時連網。"
     },
     {
       "name": "discover_search_hint",
-      "value": "搜尋精選訂閱源"
+      "value": "搜尋標題、網址或標籤"
+    },
+    {
+      "name": "discover_clear",
+      "value": "清除"
+    },
+    {
+      "name": "discover_checking",
+      "value": "偵測中…"
+    },
+    {
+      "name": "discover_subscribe_a11y",
+      "value": "訂閱 %s"
     },
     {
       "name": "discover_category_all",
@@ -3694,7 +3706,7 @@
     },
     {
       "name": "discover_recommend_hint",
-      "value": "根據你已訂閱源的主題標籤在本地計算，不上傳訂閱列表。"
+      "value": "根據已訂閱源的主題在本地計算，不上傳訂閱列表。"
     },
     {
       "name": "discover_section_popular",

@@ -24,7 +24,7 @@ import { CommonConstants } from '../common/constants/CommonConstants';
 import { notifyViewModel } from '../viewmodel/NotifyViewModel';
 import { settingsViewModel } from '../viewmodel/SettingsViewModel';
 import { safeArea } from '../service/SafeAreaController';
-import { ToastUtil } from '../common/utils/ToastUtil';
+import { Toast } from '@rss/toast-kit';
 import { themePalette } from '../model/ThemePalette';
 
 /** 关键词输入框的最大长度（字符）：只防手滑，真正的上限是关键词条数。 */
@@ -97,7 +97,7 @@ export struct NotifySettingsView {
       return;
     }
     this.deniedOnce = true;
-    ToastUtil.show(this.getUIContext(), $r('app.string.toast_notify_denied'));
+    Toast.show($r('app.string.toast_notify_denied'));
   }
 
   /**
@@ -119,7 +119,7 @@ export struct NotifySettingsView {
       if (value && !granted) {
         // setNotifyNewArticles 内部已把开关落回 false，界面会随之回退。
         this.deniedOnce = true;
-        ToastUtil.show(this.getUIContext(), $r('app.string.toast_notify_denied'));
+        Toast.show($r('app.string.toast_notify_denied'));
       }
     });
   }
@@ -183,13 +183,13 @@ export struct NotifySettingsView {
       return;
     }
     if (notifyViewModel.keywords.length >= CommonConstants.NOTIFY_KEYWORD_MAX) {
-      ToastUtil.show(this.getUIContext(),
+      Toast.show(
         $r('app.string.notify_keywords_full', CommonConstants.NOTIFY_KEYWORD_MAX));
       return;
     }
     if (!notifyViewModel.addKeyword(text)) {
       // 上限已在上面拦掉，这里只剩「已存在」。
-      ToastUtil.show(this.getUIContext(), $r('app.string.notify_keyword_exists'));
+      Toast.show($r('app.string.notify_keyword_exists'));
       return;
     }
     this.keywordDraft = '';
@@ -213,10 +213,10 @@ export struct NotifySettingsView {
     notifyViewModel.test(ability).then((ok: boolean) => {
       this.testing = false;
       if (ok) {
-        ToastUtil.show(this.getUIContext(), $r('app.string.notify_test_sent'));
+        Toast.show($r('app.string.notify_test_sent'));
         return;
       }
-      ToastUtil.show(this.getUIContext(), $r('app.string.notify_test_failed'));
+      Toast.show($r('app.string.notify_test_failed'));
       notifyViewModel.refreshPermission();
     });
   }

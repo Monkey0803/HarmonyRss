@@ -13,7 +13,7 @@ import { FeedStorageStat } from '../model/Search';
 import { storageViewModel } from '../viewmodel/StorageViewModel';
 import { safeArea } from '../service/SafeAreaController';
 import { MaterialController } from '../service/MaterialController';
-import { ToastUtil } from '../common/utils/ToastUtil';
+import { Toast } from '@rss/toast-kit';
 import { AppMenu } from '../common/components/AppMenu';
 import { choiceMenu } from '../common/components/ChoiceMenu';
 import { ChoiceValueChip } from '../common/components/ChoiceField';
@@ -120,7 +120,7 @@ export struct StorageView {
       fontColor: themePalette.accent(),
       action: () => {
         storageViewModel.cleanNow().then((cleaned: number) => {
-          ToastUtil.show(this.getUIContext(), $r('app.string.storage_clean_done', cleaned));
+          Toast.show($r('app.string.storage_clean_done', cleaned));
         });
       }
     };
@@ -139,7 +139,7 @@ export struct StorageView {
       return;
     }
     storageViewModel.restoreAll().then((restored: number) => {
-      ToastUtil.show(this.getUIContext(), $r('app.string.storage_restore_done', restored));
+      Toast.show($r('app.string.storage_restore_done', restored));
     });
   }
 
@@ -317,7 +317,7 @@ export struct StorageView {
           .enabled(!storageViewModel.rebuilding)
           .onClick(() => {
             storageViewModel.rebuildIndex().then(() => {
-              ToastUtil.show(this.getUIContext(), $r('app.string.storage_rebuild_done'));
+              Toast.show($r('app.string.storage_rebuild_done'));
             });
           })
       }

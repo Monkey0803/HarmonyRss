@@ -134,6 +134,33 @@ export default function discoverTest() {
       expect(empty.length).assertEqual(0);
     });
 
+    it('sections_hide_recommended_duplicates', 0, () => {
+      const existing: FeedSource[] = [
+        new FeedSource('1', 'The Verge', 'https://www.theverge.com/rss/index.xml', 'https://www.theverge.com'),
+        new FeedSource('2', 'Hacker News', 'https://news.ycombinator.com/rss', 'https://news.ycombinator.com')
+      ];
+      const all = DiscoverService.sections(DiscoverCategory.ALL, '', existing, 6);
+      expect(all.recommended.length > 0).assertTrue();
+      expect(all.recommended.length + all.catalog.length)
+        .assertEqual(DiscoverService.filter(DiscoverCategory.ALL, '').length);
+      const recommendedKeys: Set<string> = new Set();
+      for (let i = 0; i < all.recommended.length; i += 1) {
+        recommendedKeys.add(normalizeFeedKey(all.recommended[i].feedUrl));
+      }
+      for (let i = 0; i < all.catalog.length; i += 1) {
+        expect(recommendedKeys.has(normalizeFeedKey(all.catalog[i].feedUrl))).assertFalse();
+      }
+
+      const tech = DiscoverService.sections(DiscoverCategory.TECH, '', existing, 6);
+      expect(tech.recommended.length).assertEqual(0);
+      expect(tech.catalog.length)
+        .assertEqual(DiscoverService.filter(DiscoverCategory.TECH, '').length);
+
+      const search = DiscoverService.sections(DiscoverCategory.ALL, 'verge', existing, 6);
+      expect(search.recommended.length).assertEqual(0);
+      expect(search.catalog.length).assertEqual(1);
+    });
+
     it('rsshub_github', 0, () => {
       const list = routeList('https://github.com/openai/openai-node');
       expect(list.length).assertEqual(3);

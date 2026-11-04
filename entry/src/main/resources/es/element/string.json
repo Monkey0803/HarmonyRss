@@ -3650,11 +3650,23 @@
     },
     {
       "name": "discover_desc",
-      "value": "Fuentes seleccionadas, recomendaciones locales, rutas de RSSHub e importación desde el portapapeles. No se obtiene nada hasta que pulses Suscribirse."
+      "value": "Las fuentes seleccionadas están integradas. Solo se usa la red al comprobar una dirección o suscribirse."
     },
     {
       "name": "discover_search_hint",
-      "value": "Buscar fuentes seleccionadas"
+      "value": "Buscar título, URL o etiqueta"
+    },
+    {
+      "name": "discover_clear",
+      "value": "Borrar"
+    },
+    {
+      "name": "discover_checking",
+      "value": "Comprobando…"
+    },
+    {
+      "name": "discover_subscribe_a11y",
+      "value": "Suscribirse a %s"
     },
     {
       "name": "discover_category_all",
@@ -3694,7 +3706,7 @@
     },
     {
       "name": "discover_recommend_hint",
-      "value": "Basado en los temas de las fuentes que sigues (calculado localmente)."
+      "value": "Basado en los temas de las fuentes que sigues. Calculado localmente, nunca se sube."
     },
     {
       "name": "discover_section_popular",

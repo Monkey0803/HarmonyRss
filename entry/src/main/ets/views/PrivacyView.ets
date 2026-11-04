@@ -10,7 +10,7 @@
 import { common } from '@kit.AbilityKit';
 import { privacyViewModel } from '../viewmodel/PrivacyViewModel';
 import { safeArea } from '../service/SafeAreaController';
-import { ToastUtil } from '../common/utils/ToastUtil';
+import { Toast } from '@rss/toast-kit';
 import { RouterConstants } from '../common/constants/RouterConstants';
 import { themePalette } from '../model/ThemePalette';
 
@@ -69,7 +69,7 @@ export struct PrivacyView {
       return;
     }
     const cleared: number = await privacyViewModel.clearTranslationCache(context);
-    ToastUtil.show(this.getUIContext(), $r('app.string.privacy_cache_cleared', cleared));
+    Toast.show($r('app.string.privacy_cache_cleared', cleared));
   }
 
   private go(page: string): void {

@@ -19,7 +19,7 @@ import { aiTranslateSecretStore } from '../service/TranslateSecretStore';
 import { settingsStore } from '../service/SettingsStore';
 import { settingsViewModel } from '../viewmodel/SettingsViewModel';
 import { safeArea } from '../service/SafeAreaController';
-import { ToastUtil } from '../common/utils/ToastUtil';
+import { Toast } from '@rss/toast-kit';
 import { translationErrorText, languageText } from '../common/utils/TranslationText';
 import { themePalette } from '../model/ThemePalette';
 
@@ -96,7 +96,7 @@ export struct TranslateSettingsView {
     appSettings.translateEnabled = value;
     settingsStore.save();
     if (value && !this.keySet) {
-      ToastUtil.show(this.getUIContext(), $r('app.string.translate_api_key_unset'));
+      Toast.show($r('app.string.translate_api_key_unset'));
     }
   }
 
@@ -110,11 +110,11 @@ export struct TranslateSettingsView {
       await aiTranslateSecretStore.save(text);
       this.keyDraft = '';
       this.keySet = true;
-      ToastUtil.show(this.getUIContext(), $r('app.string.translate_api_key_set'));
+      Toast.show($r('app.string.translate_api_key_set'));
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       hilog.warn(DOMAIN, TAG, 'save key failed: %{public}d', error.code);
-      ToastUtil.show(this.getUIContext(), $r('app.string.translate_error_not_configured'));
+      Toast.show($r('app.string.translate_error_not_configured'));
     } finally {
       this.savingKey = false;
     }
@@ -132,7 +132,7 @@ export struct TranslateSettingsView {
       return;
     }
     if (!appSettings.translateEnabled) {
-      ToastUtil.show(this.getUIContext(), $r('app.string.translate_error_disabled_title'));
+      Toast.show($r('app.string.translate_error_disabled_title'));
       return;
     }
     this.saveEndpoint();
@@ -140,10 +140,10 @@ export struct TranslateSettingsView {
     this.testing = true;
     try {
       const text: string = await translationService.test(context);
-      ToastUtil.show(this.getUIContext(), $r('app.string.translate_test_ok', text));
+      Toast.show($r('app.string.translate_test_ok', text));
     } catch (err) {
       const code: string = err instanceof TranslationError ? err.code : '';
-      ToastUtil.show(this.getUIContext(), translationErrorText(code));
+      Toast.show(translationErrorText(code));
     } finally {
       this.testing = false;
     }
@@ -156,7 +156,7 @@ export struct TranslateSettingsView {
     }
     const cleared: number = await translationService.clearCache(context);
     this.cacheCount = 0;
-    ToastUtil.show(this.getUIContext(), $r('app.string.translate_cache_cleared', cleared));
+    Toast.show($r('app.string.translate_cache_cleared', cleared));
   }
 
   @Builder

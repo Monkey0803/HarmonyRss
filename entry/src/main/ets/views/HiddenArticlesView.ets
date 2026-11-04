@@ -11,7 +11,7 @@ import { feedViewModel } from '../viewmodel/FeedViewModel';
 import { ArticleListItem } from './ArticleListItem';
 import { RouterConstants } from '../common/constants/RouterConstants';
 import { safeArea } from '../service/SafeAreaController';
-import { ToastUtil } from '../common/utils/ToastUtil';
+import { Toast } from '@rss/toast-kit';
 import { themePalette } from '../model/ThemePalette';
 
 @ComponentV2
@@ -32,13 +32,13 @@ export struct HiddenArticlesView {
     feedViewModel.openArticleById(article.id).then((ok: boolean) => {
       this.opening = false;
       if (!ok) {
-        ToastUtil.show(this.getUIContext(), $r('app.string.hl_article_gone'));
+        Toast.show($r('app.string.hl_article_gone'));
         return;
       }
       this.navPathStack.pushPath(new NavPathInfo(RouterConstants.PAGE_ARTICLE, ''));
     }).catch(() => {
       this.opening = false;
-      ToastUtil.show(this.getUIContext(), $r('app.string.hl_article_gone'));
+      Toast.show($r('app.string.hl_article_gone'));
     });
   }
 
@@ -48,7 +48,7 @@ export struct HiddenArticlesView {
     // FeedViewModel 内存实例里同步 hidden=false 并重算列表 / 未读数（publish）。
     feedViewModel.setHidden([article.id], false);
     await ruleViewModel.refreshHiddenCount();
-    ToastUtil.show(this.getUIContext(), $r('app.string.hidden_unhide_done'));
+    Toast.show($r('app.string.hidden_unhide_done'));
   }
 
   @Builder

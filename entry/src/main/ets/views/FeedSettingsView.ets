@@ -20,7 +20,7 @@ import { appSettings } from '../model/AppSettings';
 import { safeArea } from '../service/SafeAreaController';
 import { MaterialController } from '../service/MaterialController';
 import { DateUtil } from '../common/utils/DateUtil';
-import { ToastUtil } from '../common/utils/ToastUtil';
+import { Toast } from '@rss/toast-kit';
 import { FeedErrorText } from '../common/utils/FeedErrorText';
 import { offlineDownloadService } from '../service/OfflineDownloadService';
 import { AppMenu } from '../common/components/AppMenu';
@@ -106,12 +106,12 @@ export struct FeedSettingsView {
     this.retrying = true;
     feedViewModel.retryFeed(feed.id).then(() => {
       this.retrying = false;
-      ToastUtil.show(this.getUIContext(), feed.lastError.length > 0
+      Toast.show(feed.lastError.length > 0
         ? $r('app.string.toast_action_failed')
         : $r('app.string.snack_refreshed'));
     }).catch(() => {
       this.retrying = false;
-      ToastUtil.show(this.getUIContext(), $r('app.string.toast_action_failed'));
+      Toast.show($r('app.string.toast_action_failed'));
     });
   }
 

@@ -4,7 +4,7 @@ import { common } from '@kit.AbilityKit';
 import { articleActions } from '../service/ArticleActions';
 import { isWebLink } from '../service/LinkNavigation';
 import { UrlText } from '../common/utils/UrlText';
-import { ToastUtil } from '../common/utils/ToastUtil';
+import { Toast } from '@rss/toast-kit';
 import { safeArea } from '../service/SafeAreaController';
 import { themePalette } from '../model/ThemePalette';
 
@@ -23,7 +23,7 @@ export struct LinkedWebView {
     const context: common.UIAbilityContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
     const url: string = this.currentUrl.length > 0 ? this.currentUrl : this.initialUrl;
     if (!await articleActions.openInBrowser(context, url)) {
-      ToastUtil.show(this.getUIContext(), $r('app.string.toast_action_failed'));
+      Toast.show($r('app.string.toast_action_failed'));
     }
   }
 
@@ -55,7 +55,7 @@ export struct LinkedWebView {
     const context: common.UIAbilityContext = this.getUIContext().getHostContext() as common.UIAbilityContext;
     articleActions.openInBrowser(context, link).then((ok: boolean): void => {
       if (!ok) {
-        ToastUtil.show(this.getUIContext(), $r('app.string.toast_action_failed'));
+        Toast.show($r('app.string.toast_action_failed'));
       }
     });
   }

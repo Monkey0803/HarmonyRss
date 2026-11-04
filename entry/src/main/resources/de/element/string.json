@@ -3650,11 +3650,23 @@
     },
     {
       "name": "discover_desc",
-      "value": "Handverlesene Feeds, lokale Empfehlungen, RSSHub-Routen und Import aus der Zwischenablage. Nichts wird abgerufen, bis du auf Abonnieren tippst."
+      "value": "Kuratierte Feeds sind integriert. Netzwerk nur beim Prüfen einer Adresse oder Abonnieren."
     },
     {
       "name": "discover_search_hint",
-      "value": "Kuratierte Feeds durchsuchen"
+      "value": "Titel, URL oder Tag suchen"
+    },
+    {
+      "name": "discover_clear",
+      "value": "Leeren"
+    },
+    {
+      "name": "discover_checking",
+      "value": "Wird geprüft…"
+    },
+    {
+      "name": "discover_subscribe_a11y",
+      "value": "%s abonnieren"
     },
     {
       "name": "discover_category_all",
@@ -3694,7 +3706,7 @@
     },
     {
       "name": "discover_recommend_hint",
-      "value": "Basierend auf Themen deiner abonnierten Feeds (lokal berechnet)."
+      "value": "Basierend auf Themen deiner abonnierten Feeds. Lokal berechnet, nie hochgeladen."
     },
     {
       "name": "discover_section_popular",

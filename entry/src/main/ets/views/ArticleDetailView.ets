@@ -38,7 +38,7 @@ import { CommonConstants } from '../common/constants/CommonConstants';
 import { articleActions } from '../service/ArticleActions';
 import { settingsViewModel } from '../viewmodel/SettingsViewModel';
 import { ReadSettingsSheet } from './ReadSettingsSheet';
-import { ToastUtil } from '../common/utils/ToastUtil';
+import { Toast } from '@rss/toast-kit';
 import { toPlainText } from '../common/utils/HtmlText';
 import { UrlText } from '../common/utils/UrlText';
 import { ArticleLinkTarget, articleLinkTarget, isWebLink } from '../service/LinkNavigation';
@@ -307,10 +307,6 @@ export struct ArticleDetailView {
     return context as common.UIAbilityContext;
   }
 
-  private toast(message: ResourceStr): void {
-    ToastUtil.show(this.getUIContext(), message);
-  }
-
   /** 当前文章；不存在返回空占位（供 @Builder 直接取字段）。 */
   private cur(): Article {
     const article: Article | undefined = feedViewModel.currentArticle();
@@ -554,12 +550,12 @@ export struct ArticleDetailView {
       ? segments.map((item: SpeechSegment) => item.text).join(' ')
       : this.plainText();
     if (text.length === 0) {
-      this.toast($r('app.string.article_no_content'));
+      Toast.show($r('app.string.article_no_content'));
       return;
     }
     const language: string = speechLanguageOf(text);
     if (language.length === 0) {
-      this.toast($r('app.string.toast_speech_language_unsupported'));
+      Toast.show($r('app.string.toast_speech_language_unsupported'));
       return;
     }
     // 与播客播放互斥：开始朗读前先暂停音频，避免同时出声。
@@ -584,7 +580,7 @@ export struct ArticleDetailView {
       }
     }, language, segments);
     if (!ok && feedViewModel.currentArticle()?.id === articleId) {
-      this.toast($r('app.string.toast_speech_unsupported'));
+      Toast.show($r('app.string.toast_speech_unsupported'));
     }
   }
 
@@ -631,26 +627,26 @@ export struct ArticleDetailView {
   private async copyBody(): Promise<void> {
     const text: string = this.plainText();
     if (text.length === 0) {
-      this.toast($r('app.string.article_no_content'));
+      Toast.show($r('app.string.article_no_content'));
       return;
     }
     const ok: boolean = await articleActions.copyText(text);
     if (ok) {
       this.snack($r('app.string.snack_body_copied'));
     } else {
-      this.toast($r('app.string.toast_action_failed'));
+      Toast.show($r('app.string.toast_action_failed'));
     }
   }
 
   private async shareBody(): Promise<void> {
     const text: string = this.plainText();
     if (text.length === 0) {
-      this.toast($r('app.string.article_no_content'));
+      Toast.show($r('app.string.article_no_content'));
       return;
     }
     const ok: boolean = await articleActions.shareText(this.hostContext(), this.cur().title, text);
     if (!ok) {
-      this.toast($r('app.string.toast_action_failed'));
+      Toast.show($r('app.string.toast_action_failed'));
     }
   }
 
@@ -660,7 +656,7 @@ export struct ArticleDetailView {
     if (ok) {
       this.snack($r('app.string.snack_selection_copied'));
     } else {
-      this.toast($r('app.string.toast_action_failed'));
+      Toast.show($r('app.string.toast_action_failed'));
     }
   }
 
@@ -669,7 +665,7 @@ export struct ArticleDetailView {
     this.selectedText = '';
     const ok: boolean = await articleActions.shareText(this.hostContext(), this.cur().title, text);
     if (!ok) {
-      this.toast($r('app.string.toast_action_failed'));
+      Toast.show($r('app.string.toast_action_failed'));
     }
   }
 
@@ -720,7 +716,7 @@ export struct ArticleDetailView {
   private openInBrowserUrl(url: string): void {
     articleActions.openInBrowser(this.hostContext(), url).then((ok: boolean) => {
       if (!ok) {
-        this.toast($r('app.string.toast_action_failed'));
+        Toast.show($r('app.string.toast_action_failed'));
       }
     });
   }
@@ -730,7 +726,7 @@ export struct ArticleDetailView {
     if (ok) {
       this.snack($r('app.string.snack_link_copied'));
     } else {
-      this.toast($r('app.string.toast_action_failed'));
+      Toast.show($r('app.string.toast_action_failed'));
     }
   }
 
@@ -740,7 +736,7 @@ export struct ArticleDetailView {
    */
   private scopeToThisFeed(article: Article): void {
     if (!feedViewModel.scopeToFeedById(article.feedId)) {
-      this.toast($r('app.string.toast_action_failed'));
+      Toast.show($r('app.string.toast_action_failed'));
       return;
     }
     this.navPathStack.popToIndex(0);
@@ -749,7 +745,7 @@ export struct ArticleDetailView {
   private async openInBrowser(article: Article): Promise<void> {
     const ok: boolean = await articleActions.openInBrowser(this.hostContext(), article.link);
     if (!ok) {
-      this.toast($r('app.string.toast_action_failed'));
+      Toast.show($r('app.string.toast_action_failed'));
     }
   }
 
@@ -790,7 +786,7 @@ export struct ArticleDetailView {
   private async playAudio(allFeeds: boolean): Promise<void> {
     const article: Article = this.cur();
     if (this.audioOf(article) === undefined) {
-      this.toast($r('app.string.media_error'));
+      Toast.show($r('app.string.media_error'));
       return;
     }
     const queue: Article[] = await feedViewModel.mediaQueue(article.feedId, allFeeds, true);
@@ -806,7 +802,7 @@ export struct ArticleDetailView {
     }
     const ok: boolean = await mediaPlayerService.playQueue(this.hostContext(), queue, article.id);
     if (!ok) {
-      this.toast($r('app.string.media_error'));
+      Toast.show($r('app.string.media_error'));
     }
   }
 
@@ -821,7 +817,7 @@ export struct ArticleDetailView {
       if (!ok) {
         articleActions.openInBrowser(this.hostContext(), video.url).then((opened: boolean) => {
           if (!opened) {
-            this.toast($r('app.string.toast_action_failed'));
+            Toast.show($r('app.string.toast_action_failed'));
           }
         });
       }
@@ -857,7 +853,7 @@ export struct ArticleDetailView {
   private async openSharePanel(): Promise<void> {
     const article: Article = this.cur();
     if (article.id.length === 0) {
-      this.toast($r('app.string.toast_action_failed'));
+      Toast.show($r('app.string.toast_action_failed'));
       return;
     }
     const ctx: ShareContext = await shareService.articleContext(article);
@@ -889,7 +885,7 @@ export struct ArticleDetailView {
         }
         const hasRemoteImage: boolean = /<img\b[^>]*\bsrc="https?:/i.test(html);
         if (hasRemoteImage && (html.startsWith('<!--hrv9p-->') || !NetworkStatus.isOnline())) {
-          this.toast($r('app.string.article_offline_images_pending'));
+          Toast.show($r('app.string.article_offline_images_pending'));
         }
         if (webMounted) {
           // Web 已挂载（原地切文）：直接换文档，避免销毁重建导致 controller 失效。
@@ -1034,7 +1030,7 @@ export struct ArticleDetailView {
       this.viewMode = MODE_READER;
       this.readerHtml = '';
       this.loading = false;
-      this.toast($r('app.string.article_offline_body_fallback'));
+      Toast.show($r('app.string.article_offline_body_fallback'));
       return;
     }
     if (article !== undefined && article.link.length > 0) {
@@ -1046,7 +1042,7 @@ export struct ArticleDetailView {
       this.viewMode = MODE_WEB;
       this.webFailed = false;
       this.loading = true;
-      this.toast(needsWebRender ? $r('app.string.article_reader_placeholder') : $r('app.string.article_reader_failed'));
+      Toast.show(needsWebRender ? $r('app.string.article_reader_placeholder') : $r('app.string.article_reader_failed'));
     } else {
       this.viewMode = MODE_READER;
       this.readerHtml = '';
@@ -1129,12 +1125,12 @@ export struct ArticleDetailView {
   /** 打开某个来源的原文链接（失败给即时提示）。 */
   private openSource(source: GroupSource): void {
     if (source.link.length === 0) {
-      this.toast($r('app.string.dedupe_open_failed'));
+      Toast.show($r('app.string.dedupe_open_failed'));
       return;
     }
     articleActions.openInBrowser(this.hostContext(), source.link).then((ok: boolean) => {
       if (!ok) {
-        this.toast($r('app.string.dedupe_open_failed'));
+        Toast.show($r('app.string.dedupe_open_failed'));
       }
     });
   }
@@ -1513,17 +1509,17 @@ export struct ArticleDetailView {
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       hilog.warn(DOMAIN, TAG, 'read rendered dom failed: %{public}d', error.code);
-      this.toast($r('app.string.article_reader_failed'));
+      Toast.show($r('app.string.article_reader_failed'));
       return;
     }
     const html: string = decodeJsResultString(raw);
     if (html.length === 0) {
-      this.toast($r('app.string.article_reader_failed'));
+      Toast.show($r('app.string.article_reader_failed'));
       return;
     }
     const fragment: string = feedViewModel.adoptRenderedHtml(articleId, html);
     if (fragment.length === 0) {
-      this.toast($r('app.string.article_reader_failed'));
+      Toast.show($r('app.string.article_reader_failed'));
       return;
     }
     if (feedViewModel.currentArticle()?.id !== articleId) {
@@ -1538,7 +1534,7 @@ export struct ArticleDetailView {
     this.shortBodyHintClosed = false;
     // 用户主动选择正文 → 记住该站点，并把全局偏好也切回阅读器。
     this.applyViewMode(MODE_READER);
-    this.toast($r('app.string.article_reader_ready'));
+    Toast.show($r('app.string.article_reader_ready'));
   }
 
   /**
@@ -1609,11 +1605,11 @@ export struct ArticleDetailView {
       this.offlineBusy = false;
     }
     if (state === 'full') {
-      this.toast($r('app.string.offline_full'));
+      Toast.show($r('app.string.offline_full'));
     } else if (state === 'text' || state === 'partial') {
-      this.toast($r('app.string.offline_partial'));
+      Toast.show($r('app.string.offline_partial'));
     } else {
-      this.toast($r('app.string.offline_single_failed'));
+      Toast.show($r('app.string.offline_single_failed'));
     }
   }
 
@@ -1631,7 +1627,7 @@ export struct ArticleDetailView {
     } finally {
       this.offlineBusy = false;
     }
-    this.toast(cleared ? $r('app.string.offline_single_cleared') : $r('app.string.offline_single_failed'));
+    Toast.show(cleared ? $r('app.string.offline_single_cleared') : $r('app.string.offline_single_failed'));
   }
 
   /** 重载失败的网页原文，不重置文章的阅读位置。 */
@@ -1967,10 +1963,10 @@ export struct ArticleDetailView {
       if (ok) {
         this.snack($r('app.string.image_saved'));
       } else {
-        this.toast($r('app.string.image_save_failed'));
+        Toast.show($r('app.string.image_save_failed'));
       }
     }).catch(() => {
-      this.toast($r('app.string.image_save_failed'));
+      Toast.show($r('app.string.image_save_failed'));
     });
   }
 
@@ -2196,7 +2192,7 @@ export struct ArticleDetailView {
       .then((raw: string) => {
         this.toc = this.parseToc(raw);
         if (this.toc.length === 0) {
-          this.toast($r('app.string.toc_empty'));
+          Toast.show($r('app.string.toc_empty'));
           return;
         }
         this.openSheet('toc');

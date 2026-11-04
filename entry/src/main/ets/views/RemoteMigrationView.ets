@@ -17,7 +17,7 @@ import {
   RemoteMigrationPreview,
   RemoteMigrationResult
 } from '../model/Remote';
-import { ToastUtil } from '../common/utils/ToastUtil';
+import { Toast } from '@rss/toast-kit';
 import { themePalette } from '../model/ThemePalette';
 
 @ComponentV2
@@ -55,15 +55,15 @@ export struct RemoteMigrationView {
         return;
       }
       if (result.failed > 0) {
-        ToastUtil.show(this.getUIContext(), $r('app.string.remote_migration_partial', result.failed));
+        Toast.show($r('app.string.remote_migration_partial', result.failed));
         return;
       }
       if (result.mode === RemoteMigrationMode.MIGRATED) {
-        ToastUtil.show(this.getUIContext(), $r('app.string.remote_migration_done_migrated', result.pushed));
+        Toast.show($r('app.string.remote_migration_done_migrated', result.pushed));
       } else if (result.mode === RemoteMigrationMode.REMOTE_ONLY) {
-        ToastUtil.show(this.getUIContext(), $r('app.string.remote_migration_done_remote_only', result.disabled));
+        Toast.show($r('app.string.remote_migration_done_remote_only', result.disabled));
       } else {
-        ToastUtil.show(this.getUIContext(), $r('app.string.remote_migration_done_merge'));
+        Toast.show($r('app.string.remote_migration_done_merge'));
       }
       this.navPathStack.pop();
     });

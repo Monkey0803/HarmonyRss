@@ -10,7 +10,7 @@
 
 import { TagWithCount } from '../model/Tag';
 import { tagViewModel } from '../viewmodel/TagViewModel';
-import { ToastUtil } from '../common/utils/ToastUtil';
+import { Toast } from '@rss/toast-kit';
 import { themePalette } from '../model/ThemePalette';
 
 @ComponentV2
@@ -56,14 +56,14 @@ export struct TagPickerSheet {
     }
     const name: string = this.draftName.trim();
     if (name.length === 0) {
-      ToastUtil.show(this.getUIContext(), $r('app.string.tag_name_invalid'));
+      Toast.show($r('app.string.tag_name_invalid'));
       return;
     }
     this.busy = true;
     const created: TagWithCount | undefined = await tagViewModel.create(name);
     this.busy = false;
     if (created === undefined) {
-      ToastUtil.show(this.getUIContext(), $r('app.string.tag_limit_reached'));
+      Toast.show($r('app.string.tag_limit_reached'));
       return;
     }
     this.draftName = '';

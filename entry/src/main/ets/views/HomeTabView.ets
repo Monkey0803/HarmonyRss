@@ -22,7 +22,7 @@ import { FeedErrorText } from '../common/utils/FeedErrorText';
 import { safeArea } from '../service/SafeAreaController';
 import { TagPickerSheet } from './TagPickerSheet';
 import { tagViewModel } from '../viewmodel/TagViewModel';
-import { ToastUtil } from '../common/utils/ToastUtil';
+import { Toast } from '@rss/toast-kit';
 import { common } from '@kit.AbilityKit';
 import { ShareSheet } from './ShareSheet';
 import { ShareContext } from '../model/Share';
@@ -571,7 +571,7 @@ export struct HomeTabView {
     for (let i = 0; i < tagIds.length; i += 1) {
       await tagViewModel.addTagsToArticles(ids, tagIds[i]);
     }
-    ToastUtil.show(this.getUIContext(), $r('app.string.tag_batch_done', ids.length));
+    Toast.show($r('app.string.tag_batch_done', ids.length));
     feedViewModel.exitSelect();
   }
 

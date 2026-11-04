@@ -14,7 +14,7 @@ import { MenuItemSpec, MenuSpec } from '../common/components/MenuSpec';
 import { MaterialController } from '../service/MaterialController';
 import { appSettings } from '../model/AppSettings';
 import { safeArea } from '../service/SafeAreaController';
-import { ToastUtil } from '../common/utils/ToastUtil';
+import { Toast } from '@rss/toast-kit';
 import { themePalette } from '../model/ThemePalette';
 
 @ComponentV2
@@ -41,7 +41,7 @@ export struct TagsView {
   private async createTag(): Promise<void> {
     const name: string = this.draftName.trim();
     if (name.length === 0) {
-      ToastUtil.show(this.getUIContext(), $r('app.string.tag_name_invalid'));
+      Toast.show($r('app.string.tag_name_invalid'));
       return;
     }
     if (this.busy) {
@@ -51,7 +51,7 @@ export struct TagsView {
     const created: TagWithCount | undefined = await tagViewModel.create(name);
     this.busy = false;
     if (created === undefined) {
-      ToastUtil.show(this.getUIContext(), $r('app.string.tag_limit_reached'));
+      Toast.show($r('app.string.tag_limit_reached'));
       return;
     }
     this.draftName = '';
@@ -61,7 +61,7 @@ export struct TagsView {
   private async saveRename(id: string): Promise<void> {
     const ok: boolean = await tagViewModel.rename(id, this.renameDraft);
     if (!ok) {
-      ToastUtil.show(this.getUIContext(), $r('app.string.tag_action_failed'));
+      Toast.show($r('app.string.tag_action_failed'));
       return;
     }
     this.renameId = '';
@@ -96,7 +96,7 @@ export struct TagsView {
   private async openResults(): Promise<void> {
     const ids: string[] = tagViewModel.selectedTagIds;
     if (ids.length === 0) {
-      ToastUtil.show(this.getUIContext(), $r('app.string.tag_select_hint'));
+      Toast.show($r('app.string.tag_select_hint'));
       return;
     }
     if (this.busy) {

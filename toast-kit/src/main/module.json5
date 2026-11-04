@@ -1,0 +1,10 @@
+{
+  "module": {
+    "name": "toast_kit",
+    "type": "har",
+    "deviceTypes": [
+      "phone",
+      "tablet"
+    ]
+  }
+}
