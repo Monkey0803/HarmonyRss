@@ -19,14 +19,10 @@ import { Rule, RuleAction, RuleDraft, RuleError, RuleField } from '../model/Rule
 import { ArticleDbConstants, RuleConstants } from '../common/constants/RssConstants';
 import { articleDatabase } from './ArticleServices';
 import { validateDraft } from './RuleEngine';
+import { RuleSampleStore } from './RuleSampleStore';
 
 const DOMAIN: number = 0x0000;
 const TAG: string = 'RuleStore';
-
-/** 试运行采样用的轻量列（含纯文本正文，正文列可按需截断）。 */
-const SAMPLE_COLUMNS: string =
-  'id, feed_id, feed_title, title, link, summary, published_at, is_read, is_starred, is_saved,' +
-  ' is_hidden, image_url, author, content, plain_text';
 
 /** 生成稳定 id：时间戳 + 随机后缀。 */
 function newRuleId(): string {
@@ -106,6 +102,7 @@ function movedIndex(index: number, delta: number, length: number): number {
 }
 
 export class RuleStore {
+  private readonly sampleStore: RuleSampleStore = new RuleSampleStore();
   private cachedRules: Rule[] | undefined = undefined;
   private rulesVersion: number = 0;
 
@@ -339,32 +336,9 @@ export class RuleStore {
     }
   }
 
-  /**
-   * 试运行采样：按发布时间倒序取最近 limit 篇（含正文纯文本，供 content 字段匹配）。
-   * 只读，不修改任何状态。
-   */
+  /** 试运行采样（只读）。 */
   async sampleArticles(limit: number): Promise<Article[]> {
-    const store: relationalStore.RdbStore | undefined = articleDatabase.getStore();
-    const result: Article[] = [];
-    if (store === undefined || limit <= 0) {
-      return result;
-    }
-    try {
-      const rs: relationalStore.ResultSet = await store.querySql(
-        'SELECT ' + SAMPLE_COLUMNS + ' FROM ' + ArticleDbConstants.TABLE_ARTICLES +
-        ' ORDER BY published_at DESC LIMIT ?', [limit]);
-      try {
-        while (rs.goToNextRow()) {
-          result.push(this.sampleRow(rs));
-        }
-      } finally {
-        rs.close();
-      }
-    } catch (err) {
-      const error: BusinessError = err as BusinessError;
-      hilog.error(DOMAIN, TAG, 'sampleArticles failed: %{public}d', error.code);
-    }
-    return result;
+    return this.sampleStore.sampleArticles(limit);
   }
 
   /** 关键词清洗：去空、按小写去重、最多 MAX_RULE_KEYWORDS。 */
@@ -508,28 +482,6 @@ export class RuleStore {
       decodeArray(rs.getString(rs.getColumnIndex('tag_ids'))),
       rs.getLong(rs.getColumnIndex('match_count')),
       rs.getLong(rs.getColumnIndex('last_hit_at')));
-  }
-
-  private sampleRow(rs: relationalStore.ResultSet): Article {
-    const content: string = rs.getString(rs.getColumnIndex('content'));
-    const plain: string = rs.getString(rs.getColumnIndex('plain_text'));
-    const article: Article = new Article(
-      rs.getString(rs.getColumnIndex('id')),
-      rs.getString(rs.getColumnIndex('feed_id')),
-      rs.getString(rs.getColumnIndex('feed_title')),
-      rs.getString(rs.getColumnIndex('title')),
-      rs.getString(rs.getColumnIndex('link')),
-      rs.getString(rs.getColumnIndex('summary')),
-      content,
-      rs.getLong(rs.getColumnIndex('published_at')));
-    article.plainText = plain;
-    article.imageUrl = rs.getString(rs.getColumnIndex('image_url'));
-    article.author = rs.getString(rs.getColumnIndex('author'));
-    article.read = rs.getLong(rs.getColumnIndex('is_read')) === 1;
-    article.starred = rs.getLong(rs.getColumnIndex('is_starred')) === 1;
-    article.saved = rs.getLong(rs.getColumnIndex('is_saved')) === 1;
-    article.hidden = rs.getLong(rs.getColumnIndex('is_hidden')) === 1;
-    return article;
   }
 
   /** 最近一条语句影响的行数（INSERT OR IGNORE 是否真的插入）。 */
