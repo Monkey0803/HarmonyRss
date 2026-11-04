@@ -69,6 +69,7 @@ import { SyncStore } from './SyncStore';
 import { DedupeKeys } from '../DedupeKeys';
 
 const DOMAIN: number = 0x0000;
+const SYNC_SETTINGS_KEYS: string[] = settingsWhitelist();
 const TAG: string = 'SyncCollector';
 
 /** 内置默认分享模板 id（与 ShareTemplates 内部常量一致；该模板未落库，不参与同步）。 */
@@ -158,6 +159,14 @@ export function mergeSnapshot(prior: ArticleStatePayload | undefined, read: bool
     pickField(prior.progress, progress));
 }
 
+/** 无变化时无需构造新载荷并重复 JSON 序列化。 */
+export function sameArticleSnapshot(prior: ArticleStatePayload | undefined, read: boolean, starred: boolean,
+  saved: boolean, progressRatio: number): boolean {
+  return prior !== undefined && prior.read.value === flag(read) &&
+    prior.starred.value === flag(starred) && prior.saved.value === flag(saved) &&
+    prior.progress.value === progressRatio.toString();
+}
+
 function pickField(prior: SyncField, current: SyncField): SyncField {
   return prior.value === current.value ? prior : current;
 }
@@ -190,7 +199,7 @@ function decodeSettings(text: string): BackupSettings | undefined {
 
 /** 白名单键逐个比较：任一不同就需要写回。 */
 function sameSettings(left: BackupSettings, right: BackupSettings): boolean {
-  const keys: string[] = settingsWhitelist();
+  const keys: string[] = SYNC_SETTINGS_KEYS;
   for (let i = 0; i < keys.length; i += 1) {
     if (left.get(keys[i]) !== right.get(keys[i])) {
       return false;
@@ -324,12 +333,11 @@ export class SyncCollector {
       const prior: SyncRecord | undefined = known.get(key);
       const priorPayload: ArticleStatePayload | undefined = prior !== undefined && !prior.deleted
         ? decodeArticleStatePayload(prior.payload) : undefined;
-      const payload: ArticleStatePayload =
-        mergeSnapshot(priorPayload, row.read, row.starred, row.saved, row.progressRatio, now);
-      if (priorPayload !== undefined &&
-        encodeArticleStatePayload(priorPayload) === encodeArticleStatePayload(payload)) {
+      if (sameArticleSnapshot(priorPayload, row.read, row.starred, row.saved, row.progressRatio)) {
         continue;
       }
+      const payload: ArticleStatePayload =
+        mergeSnapshot(priorPayload, row.read, row.starred, row.saved, row.progressRatio, now);
       this.store.upsert(new SyncRecord(key, SyncKinds.ARTICLE_STATE, latestFieldAt(payload), false,
         encodeArticleStatePayload(payload), this.origin), true);
       changed += 1;

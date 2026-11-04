@@ -158,6 +158,8 @@ export class PageFetch {
 export class ArticleContentService {
   /** 同一篇文章的进行中提取任务（预取与打开撞车时复用同一个 Promise）。 */
   private inFlight: Map<string, Promise<string>> = new Map<string, Promise<string>>();
+  /** 已核实不是旧版简介缓存的正文与 feed 正文；文章或任一内容改变时重新核实。 */
+  private validatedReaderCache: WeakMap<Article, string[]> = new WeakMap<Article, string[]>();
   /** 后台补图任务串行链：避免多篇同时下载图片抢带宽。 */
   private inlineQueue: Promise<void> = Promise.resolve();
   /** 按文章 ID 记录当前排队版本；相同正文的不同文章也各自补图。 */
@@ -212,6 +214,10 @@ export class ArticleContentService {
    *   never  —— 只用 feed 自带正文，不联网（没有正文则失败，由上层退网页原文）。
    */
   async ensureReaderHtml(article: Article, fullTextMode: string = FullTextMode.AUTO): Promise<string> {
+    const running: Promise<string> | undefined = this.inFlight.get(article.id);
+    if (running !== undefined) {
+      return await running;
+    }
     let cached: string = article.readerHtml;
     if (cached.length > 0 && isReaderPlaceholder(cached, article.link)) {
       // 旧版本曾将站点的脚本提示落库：先清掉，允许本次重新提取有效正文。
@@ -234,7 +240,12 @@ export class ArticleContentService {
     }
     // 旧版本把 feed 的「一句简介」当正文缓存了（典型：Show HN 的投稿说明）：
     // 按未命中处理，重新联网抓真实页面。cached 仍作为抓取失败时的兜底，不清库。
-    const staleSummary: boolean = this.isFeedSummaryCache(article, cached);
+    const validated: string[] | undefined = this.validatedReaderCache.get(article);
+    const staleSummary: boolean = validated !== undefined && validated[0] === cached &&
+      validated[1] === article.contentHtml ? false : this.isFeedSummaryCache(article, cached);
+    if (!staleSummary && cached.length > 0) {
+      this.validatedReaderCache.set(article, [cached, article.contentHtml]);
+    }
     if (staleSummary) {
       hilog.info(DOMAIN, TAG, 'reader cache holds feed summary, re-extracting');
     }
@@ -256,10 +267,6 @@ export class ArticleContentService {
       return cached;
     }
 
-    const running: Promise<string> | undefined = this.inFlight.get(article.id);
-    if (running !== undefined) {
-      return await running;
-    }
     const task: Promise<string> = this.buildReaderHtml(article, fullTextMode, cached, staleSummary);
     this.inFlight.set(article.id, task);
     try {

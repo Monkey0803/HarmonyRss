@@ -67,6 +67,7 @@ const SETTINGS_WHITELIST: string[] = [
   PreferencesConstants.KEY_DEDUPE_ENABLED,
   PreferencesConstants.KEY_REMOTE_AUTO_SYNC
 ];
+const SETTINGS_WHITELIST_SET: Set<string> = new Set<string>(SETTINGS_WHITELIST);
 
 // ---- JSON 原始结构（宽松，全部可选；parse 后逐字段收敛） ----
 
@@ -518,7 +519,7 @@ export function settingsWhitelist(): string[] {
 
 /** 某个偏好 key 是否允许写入备份 / 从备份恢复。 */
 export function isSettingsKeyAllowed(key: string): boolean {
-  return SETTINGS_WHITELIST.indexOf(key) >= 0;
+  return SETTINGS_WHITELIST_SET.has(key);
 }
 
 /**

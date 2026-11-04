@@ -67,6 +67,9 @@ import menuSpecTest from './MenuSpec.test';
 import swipeActionPlanTest from './SwipeActionPlan.test';
 import themeColorTest from './ThemeColor.test';
 import feedRowBuilderTest from './FeedRowBuilder.test';
+import articleDataSourceTest from './ArticleDataSource.test';
+import articleMigrationTest from './ArticleMigration.test';
+import backupFilesTest from './BackupFiles.test';
 import dateUtilTest from './DateUtil.test';
 import feedAvatarTest from './FeedAvatar.test';
 
@@ -130,6 +133,9 @@ export default function testsuite() {
   swipeActionPlanTest();
   themeColorTest();
   feedRowBuilderTest();
+  articleDataSourceTest();
+  articleMigrationTest();
+  backupFilesTest();
   dateUtilTest();
   feedAvatarTest();
 }

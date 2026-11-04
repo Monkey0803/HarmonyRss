@@ -58,36 +58,35 @@ export class SpeechProgress {
 function splitIntoChunks(text: string): string[] {
   const normalized: string = text.replace(SPACE_PATTERN, ' ').trim();
   const chunks: string[] = [];
-  let buffer: string = '';
+  let start: number = 0;
   for (let i = 0; i < normalized.length; i++) {
     const ch: string = normalized.charAt(i);
-    buffer += ch;
     if (SENTENCE_MARKS.indexOf(ch) >= 0) {
-      pushChunk(chunks, buffer);
-      buffer = '';
+      pushChunk(chunks, normalized.substring(start, i + 1));
+      start = i + 1;
       continue;
     }
-    if (buffer.length < SPEAK_CHUNK_CHARS) {
+    if (i + 1 - start < SPEAK_CHUNK_CHARS) {
       continue;
     }
     // 超长句：在末尾附近回退到逗号 / 空格，避免把词截断。
     let cut: number = -1;
-    for (let j = buffer.length - 1; j >= SPEAK_CHUNK_MIN; j--) {
-      const c: string = buffer.charAt(j);
+    for (let j = i; j >= start + SPEAK_CHUNK_MIN; j--) {
+      const c: string = normalized.charAt(j);
       if (c === '，' || c === ',' || c === '、' || c === '：' || c === ':' || c === ' ') {
         cut = j;
         break;
       }
     }
-    if (cut > 0) {
-      pushChunk(chunks, buffer.substring(0, cut + 1));
-      buffer = buffer.substring(cut + 1);
+    if (cut > start) {
+      pushChunk(chunks, normalized.substring(start, cut + 1));
+      start = cut + 1;
     } else {
-      pushChunk(chunks, buffer);
-      buffer = '';
+      pushChunk(chunks, normalized.substring(start, i + 1));
+      start = i + 1;
     }
   }
-  pushChunk(chunks, buffer);
+  pushChunk(chunks, normalized.substring(start));
   return chunks;
 }
 

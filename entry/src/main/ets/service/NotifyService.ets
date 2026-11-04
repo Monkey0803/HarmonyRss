@@ -160,16 +160,15 @@ export class NotifyService {
         feedIds.push(feedId);
       }
     });
-    const titles: Map<string, string> = this.feedTitles(articles);
-    const firstIds: Map<string, string> = this.firstArticleIds(articles);
+    const firstByFeed: Map<string, Article> = this.firstArticlesByFeed(articles);
     for (let i = 0; i < feedIds.length; i += 1) {
       const feedId: string = feedIds[i];
       const remaining: number = overflow.get(feedId) ?? 0;
       if (remaining <= 0) {
         continue;
       }
-      const feedTitle: string = titles.get(feedId) ?? '';
-      const firstArticleId: string = firstIds.get(feedId) ?? '';
+      const feedTitle: string = firstByFeed.get(feedId)?.feedTitle ?? '';
+      const firstArticleId: string = firstByFeed.get(feedId)?.id ?? '';
       await this.publishAggregate(context, feedTitle, feedId, remaining, firstArticleId);
     }
   }
@@ -181,8 +180,7 @@ export class NotifyService {
       const feedId: string = articles[i].feedId;
       counts.set(feedId, (counts.get(feedId) ?? 0) + 1);
     }
-    const titles: Map<string, string> = this.feedTitles(articles);
-    const firstIds: Map<string, string> = this.firstArticleIds(articles);
+    const firstByFeed: Map<string, Article> = this.firstArticlesByFeed(articles);
     const feedIds: string[] = [];
     counts.forEach((count: number, feedId: string) => {
       if (count > 0) {
@@ -195,31 +193,20 @@ export class NotifyService {
       if (count <= 0) {
         continue;
       }
-      await this.publishAggregate(context, titles.get(feedId) ?? '', feedId, count,
-        firstIds.get(feedId) ?? '');
+      await this.publishAggregate(context, firstByFeed.get(feedId)?.feedTitle ?? '', feedId, count,
+        firstByFeed.get(feedId)?.id ?? '');
     }
   }
 
-  /** feedId → 来源名（取该源第一篇文章的冗余 feedTitle）。 */
-  private feedTitles(articles: Article[]): Map<string, string> {
-    const titles: Map<string, string> = new Map<string, string>();
+  /** 每个来源只保存第一篇文章，聚合通知复用其名称和跳转 id。 */
+  private firstArticlesByFeed(articles: Article[]): Map<string, Article> {
+    const first: Map<string, Article> = new Map<string, Article>();
     for (let i = 0; i < articles.length; i += 1) {
-      if (!titles.has(articles[i].feedId)) {
-        titles.set(articles[i].feedId, articles[i].feedTitle);
+      if (!first.has(articles[i].feedId)) {
+        first.set(articles[i].feedId, articles[i]);
       }
     }
-    return titles;
-  }
-
-  /** feedId → 该源第一篇文章 id（聚合通知点击直达用）。 */
-  private firstArticleIds(articles: Article[]): Map<string, string> {
-    const ids: Map<string, string> = new Map<string, string>();
-    for (let i = 0; i < articles.length; i += 1) {
-      if (!ids.has(articles[i].feedId)) {
-        ids.set(articles[i].feedId, articles[i].id);
-      }
-    }
-    return ids;
+    return first;
   }
 
   /**

@@ -10,23 +10,15 @@
 import { common } from '@kit.AbilityKit';
 import {
   DynamicHideParams,
-  HideMode,
   BottomBuilderShowType,
   HdsTabs,
   HdsTabsController,
   HdsNavigation,
-  HdsNavDestination,
   HdsNavigationTitle,
   HdsNavigationTitleMode,
-  HdsNavDestinationTitleMode,
-  HdsNavigationTitleBarStyle,
-  ScrollEffectOptions,
-  ScrollEffectType,
   TitleBarContentOptions,
-  TitleBarStyleOptions,
   HdsNavigationTitleBarOptions,
   HdsTabsFloatingStyle,
-  SystemMaterialParams,
   HdsTabsMiniBar,
   HdsBarStyle,
   HdsTabsBarChangeMode,
@@ -35,15 +27,18 @@ import {
   HdsSideMenu,
   HdsSideMenuMainItem
 } from '@kit.UIDesignKit';
-import { LengthMetrics, SymbolGlyphModifier } from '@kit.ArkUI';
 import { appSettings } from '../model/AppSettings';
 import { settingsViewModel } from '../viewmodel/SettingsViewModel';
 import { settingsStore } from '../service/SettingsStore';
-import { MaterialController } from '../service/MaterialController';
 import { antiPeep } from '../service/AntiPeep';
 import { safeArea } from '../service/SafeAreaController';
 import { deviceService } from '../service/DeviceService';
-import { diagnostics } from '../service/DiagnosticsService';
+import { FirstFrameSampler } from '../service/FirstFrameSampler';
+import { buildIndexSideItems } from './IndexSideItems';
+import { indexDynamicHideParams, indexMaterialParams, indexMaterialTitleStyle,
+  indexTitleOptions } from './IndexTitleStyle';
+import { IndexRouteScrollers } from './IndexRouteScrollers';
+import { indexPageMap } from './IndexRoutes';
 import { backgroundImageService } from '../service/BackgroundImageService';
 import { CommonConstants } from '../common/constants/CommonConstants';
 import { TabIndex } from '../common/constants/NavigationConstants';
@@ -59,46 +54,16 @@ import { FilterSegmentBar } from '../views/FilterSegmentBar';
 import { FilterCapsule } from '../views/FilterCapsule';
 import { BrandTitle } from '../views/BrandTitle';
 import { SettingsTabView } from '../views/SettingsTabView';
-import { SettingsLookView } from '../views/settings/SettingsLookView';
-import { SettingsMaterialView } from '../views/settings/SettingsMaterialView';
-import { SettingsReadingView } from '../views/settings/SettingsReadingView';
-import { SettingsFeedView } from '../views/settings/SettingsFeedView';
-import { SettingsSystemView } from '../views/settings/SettingsSystemView';
 import { ImageTabView } from '../views/ImageTabView';
 import { PrivacyVeil } from '../views/PrivacyVeil';
-import { ArticleDetailView } from '../views/ArticleDetailView';
-import { LinkedWebView } from '../views/LinkedWebView';
-import { UrlText } from '../common/utils/UrlText';
 import { SubscriptionsView } from '../views/SubscriptionsView';
 import { ResponsiveContent } from '../views/ResponsiveContent';
-import { FeedArticlesView } from '../views/FeedArticlesView';
-import { EffectPreviewView } from '../views/EffectPreviewView';
 import { feedViewModel } from '../viewmodel/FeedViewModel';
 import { articleDatabase, articleRepository } from '../service/ArticleServices';
 import { articleActions } from '../service/ArticleActions';
 import { webPageSaveService } from '../service/WebPageSaveService';
 import { normalizeWebPageUrl } from '../service/WebPageSaveService';
 import { readingContinuation, ContinueRequest } from '../service/ReadingContinuation';
-import { HighlightsView } from '../views/HighlightsView';
-import { SearchView } from '../views/SearchView';
-import { StorageView } from '../views/StorageView';
-import { BackupView } from '../views/BackupView';
-import { FeedSettingsView } from '../views/FeedSettingsView';
-import { TagsView } from '../views/TagsView';
-import { TagArticlesView } from '../views/TagArticlesView';
-import { SmartFoldersView } from '../views/SmartFoldersView';
-import { RulesView } from '../views/RulesView';
-import { RuleEditView } from '../views/RuleEditView';
-import { HiddenArticlesView } from '../views/HiddenArticlesView';
-import { RemoteServiceView } from '../views/RemoteServiceView';
-import { RemoteMigrationView } from '../views/RemoteMigrationView';
-import { ShareSettingsView } from '../views/ShareSettingsView';
-import { NotifySettingsView } from '../views/NotifySettingsView';
-import { TranslateSettingsView } from '../views/TranslateSettingsView';
-import { PrivacyView } from '../views/PrivacyView';
-import { DiscoverView } from '../views/DiscoverView';
-import { DiagnosticsView } from '../views/DiagnosticsView';
-import { SyncView } from '../views/SyncView';
 import { remoteSyncService } from '../service/remote/RemoteSyncService';
 import { syncService } from '../service/SyncService';
 import { notifyService } from '../service/NotifyService';
@@ -129,39 +94,14 @@ struct Index {
   @Local pendingAddText: string = '';
   @Local navPathStack: NavPathStack = new NavPathStack();
   private continuationReady: boolean = false;
+  private firstFrameSampler: FirstFrameSampler = new FirstFrameSampler();
   private tabsController: HdsTabsController = new HdsTabsController();
   /** 每个页签独立的 Scroller：绑定给 HdsNavigation 做滚动联动，互不干扰。 */
   private homeScroller: Scroller = new Scroller();
   private subsScroller: Scroller = new Scroller();
   private settingsScroller: Scroller = new Scroller();
+  private routeScrollers: IndexRouteScrollers = new IndexRouteScrollers();
   /** 目的页各自的 Scroller：绑定给对应 HdsNavDestination，让标题栏材质随其滚动跟手渐变。 */
-  private feedArticlesScroller: Scroller = new Scroller();
-  private highlightsScroller: Scroller = new Scroller();
-  private articleScroller: Scroller = new Scroller();
-  private searchScroller: Scroller = new Scroller();
-  private storageScroller: Scroller = new Scroller();
-  private settingsLookScroller: Scroller = new Scroller();
-  private settingsMaterialScroller: Scroller = new Scroller();
-  private settingsReadingScroller: Scroller = new Scroller();
-  private settingsFeedScroller: Scroller = new Scroller();
-  private settingsSystemScroller: Scroller = new Scroller();
-  private backupScroller: Scroller = new Scroller();
-  private feedSettingsScroller: Scroller = new Scroller();
-  private tagsScroller: Scroller = new Scroller();
-  private tagArticlesScroller: Scroller = new Scroller();
-  private smartFoldersScroller: Scroller = new Scroller();
-  private rulesScroller: Scroller = new Scroller();
-  private ruleEditScroller: Scroller = new Scroller();
-  private hiddenScroller: Scroller = new Scroller();
-  private syncScroller: Scroller = new Scroller();
-  private remoteScroller: Scroller = new Scroller();
-  private remoteMigrationScroller: Scroller = new Scroller();
-  private shareSettingsScroller: Scroller = new Scroller();
-  private notifySettingsScroller: Scroller = new Scroller();
-  private translateSettingsScroller: Scroller = new Scroller();
-  private privacyScroller: Scroller = new Scroller();
-  private discoverScroller: Scroller = new Scroller();
-  private diagnosticsScroller: Scroller = new Scroller();
 
   /** 收到 Ability 的深链事件后消费（应用已在前台时点卡片的路径）。 */
   private onDeepLinkEvent: () => void = () => {
@@ -180,9 +120,11 @@ struct Index {
     settingsViewModel.init(context as common.Context);
     feedViewModel.init(context as common.Context).catch(() => {});
     feedViewModel.whenLocalReady().then(() => {
+      this.firstFrameSampler.markContentReady();
       this.continuationReady = true;
       this.consumeContinuation();
     }).catch(() => {
+      this.firstFrameSampler.markContentReady();
       this.continuationReady = true;
       this.consumeContinuation();
     });
@@ -192,10 +134,7 @@ struct Index {
     });
     // 分享进入：接收方解析出地址后（可能晚于本页挂载）打开添加面板并预填。
     this.observeSharedUrls();
-    // 首屏耗时：aboutToAppear 仍在首帧之前，推到当前任务之后记录（近似首帧完成时刻）。
-    setTimeout(() => {
-      diagnostics.markFirstScreen();
-    }, 0);
+    this.firstFrameSampler.start();
   }
 
   /** 每次分享消费后重新监听，保证应用已运行时连续分享也能打开面板。 */
@@ -242,6 +181,7 @@ struct Index {
   }
 
   aboutToDisappear(): void {
+    this.firstFrameSampler.stop();
     deviceService.stop();
     const context: common.Context | undefined = this.getUIContext().getHostContext();
     if (context !== undefined) {
@@ -414,10 +354,6 @@ struct Index {
     }
   }
 
-  private materialParams(): SystemMaterialParams {
-    return MaterialController.params(appSettings.materialType, appSettings.materialLevel, appSettings.immersiveOn);
-  }
-
   /** 只绑定当前页签的 Scroller，避免多页签互相干扰导致滚动模糊失效。 */
   private currentScroller(): Scroller {
     if (this.currentTab === TabIndex.SUBSCRIPTIONS) {
@@ -453,91 +389,6 @@ struct Index {
   }
 
   /**
-   * 标题栏 / 状态栏动态显隐：各由一个设置页开关控制（沉浸光感最佳实践建议都开，这里交给用户）。
-   * 标题栏：false（默认）固定不动、内容从标题栏下方滚过；true 滚动时收起。
-   * 状态栏：false（默认）常驻；true 滚动内容时一并收起。
-   */
-  private dynamicHideParams(): DynamicHideParams {
-    const params: DynamicHideParams = {
-      hideTitleArea: appSettings.titleBarScrollsWithContent,
-      hideStatusBar: appSettings.statusBarScrollsWithContent,
-      hideBottomBuilder: false,
-      mode: HideMode.SCROLL_UP_TO,
-      hideOffset: CommonConstants.TITLE_HIDE_OFFSET_VP
-    };
-    return params;
-  }
-
-  /**
-   * 标题栏背板底色。
-   *
-   * 沉浸光感的视觉层级在 backgroundColor 之下：材质会渲染时底色必须留透明，否则会盖住材质
-   * （见沉浸光感 FAQ「背景色或背景模糊遮挡材质效果」）；材质不可用（总开关关闭 / 设备不支持）时
-   * 才补一层系统灰底，保证内容从标题栏下方穿过时标题仍看得清。
-   */
-  private titleBackdropColor(): ResourceColor {
-    return MaterialController.immersiveActive(appSettings.immersiveOn)
-      ? Color.Transparent
-      : $r('sys.color.comp_background_gray');
-  }
-
-  /**
-   * 标题栏样式（全 App 统一）：沉浸光感材质（hdsMaterial）+ 跟手线性渐变。
-   *
-   * - 静止态（originalStyle）：背景全透明，标题栏与页面融为一体。
-   * - 滚动后（scrollEffectStyle）：露出沉浸光感材质背板（底色见 titleBackdropColor）。
-   * - enableScrollEffect: true + GRADIENT_BLUR：标题栏样式随内容区滚动偏移**线性跟手**过渡
-   *   （0 → TITLE_MATERIAL_FADE_VP），与底部悬浮页签栏同源材质。
-   *
-   * 需要各页用 bindToScrollable 绑定其可滚动容器，标题栏才能拿到滚动偏移。
-   */
-  private materialTitleStyle(): TitleBarStyleOptions {
-    const backdrop: ResourceColor = this.titleBackdropColor();
-    const original: HdsNavigationTitleBarStyle = {
-      backgroundStyle: { backgroundColor: Color.Transparent }
-    };
-    const scrolled: HdsNavigationTitleBarStyle = {
-      backgroundStyle: { backgroundColor: backdrop }
-    };
-    const scrollEffectOpts: ScrollEffectOptions = {
-      enableScrollEffect: true,
-      // 用 GRADIENT_BLUR（半透明 → 模糊）而不是 IMMERSIVE_GRADIENT_BLUR：
-      // 后者在浅色主题下会让系统把标题文字与状态栏图标切成白色（它假定深色底），
-      // 本 App 是浅色为主的阅读器，实测白字压在浅色壁纸上看不清，故保留更克制的变体。
-      scrollEffectType: ScrollEffectType.GRADIENT_BLUR,
-      blurEffectiveStartOffset: LengthMetrics.vp(0),
-      blurEffectiveEndOffset: LengthMetrics.vp(CommonConstants.TITLE_MATERIAL_FADE_VP)
-    };
-    const style: TitleBarStyleOptions = {
-      scrollEffectOpts: scrollEffectOpts,
-      originalStyle: original,
-      scrollEffectStyle: scrolled,
-      systemMaterialEffect: this.materialParams()
-    };
-    return style;
-  }
-
-  /**
-   * 标题栏配置（HdsNavigation / HdsNavDestination 共用，全 App 一套样式）。
-   *
-   * avoidLayoutSafeArea: true —— 标题栏自身避让系统状态栏（标题文字不被状态栏 / 挖孔遮挡）。
-   * enableComponentSafeArea: false —— 标题栏作为「浮层」叠在内容之上，内容区铺满可滚动区域，
-   *   滚动时内容穿过标题栏下方被材质衬托（各页在内容顶部补一个「状态栏 + 标题栏」高的占位，
-   *   保证首屏不被遮挡）。
-   */
-  private titleOptions(mainTitle: ResourceStr): HdsNavigationTitleBarOptions {
-    const title: HdsNavigationTitle = { mainTitle: mainTitle };
-    const content: TitleBarContentOptions = { title: title };
-    const options: HdsNavigationTitleBarOptions = {
-      avoidLayoutSafeArea: true,
-      enableComponentSafeArea: false,
-      content: content,
-      style: this.materialTitleStyle()
-    };
-    return options;
-  }
-
-  /**
    * 根标题栏配置：在「阅读」页签时，标题换成品牌行（logo + 源见 RSS），
    * 并在标题下方挂筛选分段控件。
    *
@@ -565,7 +416,7 @@ struct Index {
       avoidLayoutSafeArea: true,
       enableComponentSafeArea: false,
       content: content,
-      style: this.materialTitleStyle()
+      style: indexMaterialTitleStyle()
     };
     return options;
   }
@@ -629,7 +480,7 @@ struct Index {
       adaptToHandedness: appSettings.gripEnabled,
       // 悬浮页签栏默认距 HdsTabs 底部 0vp；全屏布局下会压住系统导航条，这里按避让高度上抬。
       barBottomMargin: safeArea.bottomInsetVp,
-      systemMaterialEffect: this.materialParams(),
+      systemMaterialEffect: indexMaterialParams(),
       // 背板蒙层默认是 #CCF1F3F5（浅色 80% 不透明）的整块浅灰板，会横跨满宽把全局壁纸压成
       // 一大块白，还盖住页签栏的沉浸光感材质。这里始终设全透明，让壁纸直接透到屏幕底部；
       // 页签文字的可读性交给页签栏自身的材质 / 胶囊底承担。
@@ -818,42 +669,7 @@ struct Index {
 
   /** 侧边栏条目（每次 build 重建，避免共享可变实例）。 */
   private sideItems(): HdsSideMenuMainItem[] {
-    const items: HdsSideMenuMainItem[] = [];
-    items.push(new HdsSideMenuMainItem({
-      itemId: 'home',
-      label: $r('app.string.tab_home'),
-      symbol: new SymbolGlyphModifier($r('sys.symbol.house')),
-      action: () => {
-        this.selectTab(TabIndex.HOME);
-      }
-    }));
-    items.push(new HdsSideMenuMainItem({
-      itemId: 'subs',
-      label: $r('app.string.tab_subs'),
-      symbol: new SymbolGlyphModifier($r('sys.symbol.folder')),
-      action: () => {
-        this.selectTab(TabIndex.SUBSCRIPTIONS);
-      }
-    }));
-    items.push(new HdsSideMenuMainItem({
-      itemId: 'settings',
-      label: $r('app.string.tab_settings'),
-      symbol: new SymbolGlyphModifier($r('sys.symbol.gearshape')),
-      action: () => {
-        this.selectTab(TabIndex.SETTINGS);
-      }
-    }));
-    if (IMAGE_DOMAIN) {
-      items.push(new HdsSideMenuMainItem({
-        itemId: 'images',
-        label: $r('app.string.tab_images'),
-        symbol: new SymbolGlyphModifier($r('sys.symbol.picture')),
-        action: () => {
-          this.selectTab(TabIndex.IMAGES);
-        }
-      }));
-    }
-    return items;
+    return buildIndexSideItems((index: number): void => this.selectTab(index));
   }
 
   /** 宽屏左侧栏底部入口：宽屏没有 miniBar，添加订阅源要在这里补一个。 */
@@ -995,331 +811,16 @@ struct Index {
     .justifyContent(FlexAlign.Center)
   }
 
+  /** 路由内容由 IndexRoutes 负责；根组件只提供标题配置与稳定的滚动容器。 */
   @Builder
   pageMap(name: string, pageInfos: Object) {
-    if (name === RouterConstants.PAGE_ARTICLE) {
-      HdsNavDestination() {
-        ArticleDetailView({
-          scroller: this.articleScroller,
-          navPathStack: this.navPathStack
-        })
-      }
-      // 标题栏为 HDS 原生（系统返回键 + 标题文字），背板常显（见 articleTitleOptions）：
-      // 正文滚动发生在 ArkWeb 内部，跟手渐变等不到触发时机，固定背板才能保证标题可读。
-      .titleBar(this.articleTitleOptions())
-      .titleMode(HdsNavDestinationTitleMode.MINI)
-      // 不透明背板：原生覆盖式 push 时不会透过新页看到上一页，也不再因淡出透出壁纸。
-      .backgroundColor($r('app.color.hm_web_surface'))
-      // 标题栏显隐与其它页同一机制（跟随滚动 + 两个设置）。正文模式滚动挂在 articleScroller 上能跟到；
-      // 网页原文由 ArkWeb 自己滚动、不出现在 Scroller 偏移里，那种情况下标题栏保持常驻。
-      .dynamicHideTitleBar(this.dynamicHideParams())
-      .bindToScrollable([this.articleScroller])
-    } else if (name === RouterConstants.PAGE_LINKED_WEB) {
-      HdsNavDestination() {
-        LinkedWebView({ initialUrl: pageInfos as string })
-      }
-      .titleBar(this.titleOptions(UrlText.host(pageInfos as string)))
-      .titleMode(HdsNavDestinationTitleMode.MINI)
-      .backgroundColor($r('app.color.hm_web_surface'))
-    } else if (name === RouterConstants.PAGE_FEED_ARTICLES) {
-      HdsNavDestination() {
-        ResponsiveContent() {
-          FeedArticlesView({ navPathStack: this.navPathStack, scroller: this.feedArticlesScroller })
-        }
-      }
-      .titleBar(this.titleOptions(feedViewModel.detailFeedTitle.length > 0
-        ? feedViewModel.detailFeedTitle
-        : $r('app.string.feed_articles_title')))
-      .titleMode(HdsNavDestinationTitleMode.MINI)
-      // 不透明背板：与详情页一致，走系统原生转场不穿透。
-      .backgroundColor($r('app.color.hm_web_surface'))
-      .dynamicHideTitleBar(this.dynamicHideParams())
-      .bindToScrollable([this.feedArticlesScroller])
-    } else if (name === RouterConstants.PAGE_HIGHLIGHTS) {
-      HdsNavDestination() {
-        ResponsiveContent() {
-          HighlightsView({ navPathStack: this.navPathStack, scroller: this.highlightsScroller })
-        }
-      }
-      .titleBar(this.titleOptions($r('app.string.hl_library_title')))
-      .titleMode(HdsNavDestinationTitleMode.MINI)
-      // 不透明背板：与详情页一致，走系统原生转场不穿透。
-      .backgroundColor($r('app.color.hm_web_surface'))
-      .dynamicHideTitleBar(this.dynamicHideParams())
-      .bindToScrollable([this.highlightsScroller])
-    } else if (name === RouterConstants.PAGE_EFFECT) {
-      HdsNavDestination() {
-        EffectPreviewView()
-      }
-      .titleBar(this.titleOptions($r('app.string.effect_title')))
-      .titleMode(HdsNavDestinationTitleMode.MINI)
-      // 不透明背板：与详情页一致，走系统原生转场不穿透。
-      .backgroundColor($r('app.color.hm_web_surface'))
-    } else if (name === RouterConstants.PAGE_SEARCH) {
-      HdsNavDestination() {
-        ResponsiveContent() {
-          SearchView({ navPathStack: this.navPathStack, scroller: this.searchScroller })
-        }
-      }
-      .titleBar(this.titleOptions($r('app.string.search_title')))
-      .titleMode(HdsNavDestinationTitleMode.MINI)
-      .backgroundColor($r('app.color.hm_web_surface'))
-      .dynamicHideTitleBar(this.dynamicHideParams())
-      .bindToScrollable([this.searchScroller])
-    } else if (name === RouterConstants.PAGE_STORAGE) {
-      HdsNavDestination() {
-        ResponsiveContent() {
-          StorageView({ navPathStack: this.navPathStack, scroller: this.storageScroller })
-        }
-      }
-      .titleBar(this.titleOptions($r('app.string.storage_title')))
-      .titleMode(HdsNavDestinationTitleMode.MINI)
-      .backgroundColor($r('app.color.hm_web_surface'))
-      .dynamicHideTitleBar(this.dynamicHideParams())
-      .bindToScrollable([this.storageScroller])
-    } else if (name === RouterConstants.PAGE_SETTINGS_LOOK) {
-      HdsNavDestination() {
-        ResponsiveContent() {
-          SettingsLookView({ navPathStack: this.navPathStack, scroller: this.settingsLookScroller })
-        }
-      }
-      .titleBar(this.titleOptions($r('app.string.settings_entry_look')))
-      .titleMode(HdsNavDestinationTitleMode.MINI)
-      .backgroundColor($r('app.color.hm_web_surface'))
-      .dynamicHideTitleBar(this.dynamicHideParams())
-      .bindToScrollable([this.settingsLookScroller])
-    } else if (name === RouterConstants.PAGE_SETTINGS_MATERIAL) {
-      HdsNavDestination() {
-        ResponsiveContent() {
-          SettingsMaterialView({ navPathStack: this.navPathStack, scroller: this.settingsMaterialScroller })
-        }
-      }
-      .titleBar(this.titleOptions($r('app.string.settings_entry_material')))
-      .titleMode(HdsNavDestinationTitleMode.MINI)
-      .backgroundColor($r('app.color.hm_web_surface'))
-      .dynamicHideTitleBar(this.dynamicHideParams())
-      .bindToScrollable([this.settingsMaterialScroller])
-    } else if (name === RouterConstants.PAGE_SETTINGS_READING) {
-      HdsNavDestination() {
-        ResponsiveContent() {
-          SettingsReadingView({ navPathStack: this.navPathStack, scroller: this.settingsReadingScroller })
-        }
-      }
-      .titleBar(this.titleOptions($r('app.string.settings_entry_reading')))
-      .titleMode(HdsNavDestinationTitleMode.MINI)
-      .backgroundColor($r('app.color.hm_web_surface'))
-      .dynamicHideTitleBar(this.dynamicHideParams())
-      .bindToScrollable([this.settingsReadingScroller])
-    } else if (name === RouterConstants.PAGE_SETTINGS_FEED) {
-      HdsNavDestination() {
-        ResponsiveContent() {
-          SettingsFeedView({ navPathStack: this.navPathStack, scroller: this.settingsFeedScroller })
-        }
-      }
-      .titleBar(this.titleOptions($r('app.string.settings_entry_feed')))
-      .titleMode(HdsNavDestinationTitleMode.MINI)
-      .backgroundColor($r('app.color.hm_web_surface'))
-      .dynamicHideTitleBar(this.dynamicHideParams())
-      .bindToScrollable([this.settingsFeedScroller])
-    } else if (name === RouterConstants.PAGE_SETTINGS_SYSTEM) {
-      HdsNavDestination() {
-        ResponsiveContent() {
-          SettingsSystemView({ navPathStack: this.navPathStack, scroller: this.settingsSystemScroller })
-        }
-      }
-      .titleBar(this.titleOptions($r('app.string.settings_entry_system')))
-      .titleMode(HdsNavDestinationTitleMode.MINI)
-      .backgroundColor($r('app.color.hm_web_surface'))
-      .dynamicHideTitleBar(this.dynamicHideParams())
-      .bindToScrollable([this.settingsSystemScroller])
-    } else if (name === RouterConstants.PAGE_BACKUP) {
-      HdsNavDestination() {
-        ResponsiveContent() {
-          BackupView({ navPathStack: this.navPathStack, scroller: this.backupScroller })
-        }
-      }
-      .titleBar(this.titleOptions($r('app.string.backup_title')))
-      .titleMode(HdsNavDestinationTitleMode.MINI)
-      .backgroundColor($r('app.color.hm_web_surface'))
-      .dynamicHideTitleBar(this.dynamicHideParams())
-      .bindToScrollable([this.backupScroller])
-    } else if (name === RouterConstants.PAGE_FEED_SETTINGS) {
-      HdsNavDestination() {
-        ResponsiveContent() {
-          FeedSettingsView({ navPathStack: this.navPathStack, scroller: this.feedSettingsScroller })
-        }
-      }
-      .titleBar(this.titleOptions(feedViewModel.settingsFeedTitle()))
-      .titleMode(HdsNavDestinationTitleMode.MINI)
-      .backgroundColor($r('app.color.hm_web_surface'))
-      .dynamicHideTitleBar(this.dynamicHideParams())
-      .bindToScrollable([this.feedSettingsScroller])
-    } else if (name === RouterConstants.PAGE_TAGS) {
-      HdsNavDestination() {
-        ResponsiveContent() {
-          TagsView({ navPathStack: this.navPathStack, scroller: this.tagsScroller })
-        }
-      }
-      .titleBar(this.titleOptions($r('app.string.tag_title')))
-      .titleMode(HdsNavDestinationTitleMode.MINI)
-      .backgroundColor($r('app.color.hm_web_surface'))
-      .dynamicHideTitleBar(this.dynamicHideParams())
-      .bindToScrollable([this.tagsScroller])
-    } else if (name === RouterConstants.PAGE_TAG_ARTICLES) {
-      HdsNavDestination() {
-        ResponsiveContent() {
-          TagArticlesView({ navPathStack: this.navPathStack, scroller: this.tagArticlesScroller })
-        }
-      }
-      .titleBar(this.titleOptions($r('app.string.tag_articles_title')))
-      .titleMode(HdsNavDestinationTitleMode.MINI)
-      .backgroundColor($r('app.color.hm_web_surface'))
-      .dynamicHideTitleBar(this.dynamicHideParams())
-      .bindToScrollable([this.tagArticlesScroller])
-    } else if (name === RouterConstants.PAGE_SMART_FOLDERS) {
-      HdsNavDestination() {
-        ResponsiveContent() {
-          SmartFoldersView({ navPathStack: this.navPathStack, scroller: this.smartFoldersScroller })
-        }
-      }
-      .titleBar(this.titleOptions($r('app.string.smart_folder_title')))
-      .titleMode(HdsNavDestinationTitleMode.MINI)
-      .backgroundColor($r('app.color.hm_web_surface'))
-      .dynamicHideTitleBar(this.dynamicHideParams())
-      .bindToScrollable([this.smartFoldersScroller])
-    } else if (name === RouterConstants.PAGE_RULES) {
-      HdsNavDestination() {
-        ResponsiveContent() {
-          RulesView({ navPathStack: this.navPathStack, scroller: this.rulesScroller })
-        }
-      }
-      .titleBar(this.titleOptions($r('app.string.rule_title')))
-      .titleMode(HdsNavDestinationTitleMode.MINI)
-      .backgroundColor($r('app.color.hm_web_surface'))
-      .dynamicHideTitleBar(this.dynamicHideParams())
-      .bindToScrollable([this.rulesScroller])
-    } else if (name === RouterConstants.PAGE_RULE_EDIT) {
-      HdsNavDestination() {
-        ResponsiveContent() {
-          RuleEditView({ navPathStack: this.navPathStack, scroller: this.ruleEditScroller })
-        }
-      }
-      .titleBar(this.titleOptions($r('app.string.rule_edit_title')))
-      .titleMode(HdsNavDestinationTitleMode.MINI)
-      .backgroundColor($r('app.color.hm_web_surface'))
-      .dynamicHideTitleBar(this.dynamicHideParams())
-      .bindToScrollable([this.ruleEditScroller])
-    } else if (name === RouterConstants.PAGE_HIDDEN) {
-      HdsNavDestination() {
-        ResponsiveContent() {
-          HiddenArticlesView({ navPathStack: this.navPathStack, scroller: this.hiddenScroller })
-        }
-      }
-      .titleBar(this.titleOptions($r('app.string.hidden_title')))
-      .titleMode(HdsNavDestinationTitleMode.MINI)
-      .backgroundColor($r('app.color.hm_web_surface'))
-      .dynamicHideTitleBar(this.dynamicHideParams())
-      .bindToScrollable([this.hiddenScroller])
-    } else if (name === RouterConstants.PAGE_SYNC) {
-      HdsNavDestination() {
-        ResponsiveContent() {
-          SyncView({ navPathStack: this.navPathStack, scroller: this.syncScroller })
-        }
-      }
-      .titleBar(this.titleOptions($r('app.string.sync_entry_title')))
-      .titleMode(HdsNavDestinationTitleMode.MINI)
-      .backgroundColor($r('app.color.hm_web_surface'))
-      .dynamicHideTitleBar(this.dynamicHideParams())
-      .bindToScrollable([this.syncScroller])
-    } else if (name === RouterConstants.PAGE_REMOTE) {
-      HdsNavDestination() {
-        ResponsiveContent() {
-          RemoteServiceView({ navPathStack: this.navPathStack, scroller: this.remoteScroller })
-        }
-      }
-      .titleBar(this.titleOptions($r('app.string.remote_title')))
-      .titleMode(HdsNavDestinationTitleMode.MINI)
-      .backgroundColor($r('app.color.hm_web_surface'))
-      .dynamicHideTitleBar(this.dynamicHideParams())
-      .bindToScrollable([this.remoteScroller])
-    } else if (name === RouterConstants.PAGE_REMOTE_MIGRATION) {
-      HdsNavDestination() {
-        ResponsiveContent() {
-          RemoteMigrationView({ navPathStack: this.navPathStack, scroller: this.remoteMigrationScroller })
-        }
-      }
-      .titleBar(this.titleOptions($r('app.string.remote_migration_title')))
-      .titleMode(HdsNavDestinationTitleMode.MINI)
-      .backgroundColor($r('app.color.hm_web_surface'))
-      .dynamicHideTitleBar(this.dynamicHideParams())
-      .bindToScrollable([this.remoteMigrationScroller])
-    } else if (name === RouterConstants.PAGE_SHARE_SETTINGS) {
-      HdsNavDestination() {
-        ResponsiveContent() {
-          ShareSettingsView({ navPathStack: this.navPathStack, scroller: this.shareSettingsScroller })
-        }
-      }
-      .titleBar(this.titleOptions($r('app.string.share_settings_title')))
-      .titleMode(HdsNavDestinationTitleMode.MINI)
-      .backgroundColor($r('app.color.hm_web_surface'))
-      .dynamicHideTitleBar(this.dynamicHideParams())
-      .bindToScrollable([this.shareSettingsScroller])
-    } else if (name === RouterConstants.PAGE_NOTIFY_SETTINGS) {
-      HdsNavDestination() {
-        ResponsiveContent() {
-          NotifySettingsView({ navPathStack: this.navPathStack, scroller: this.notifySettingsScroller })
-        }
-      }
-      .titleBar(this.titleOptions($r('app.string.notify_settings_title')))
-      .titleMode(HdsNavDestinationTitleMode.MINI)
-      .backgroundColor($r('app.color.hm_web_surface'))
-      .dynamicHideTitleBar(this.dynamicHideParams())
-      .bindToScrollable([this.notifySettingsScroller])
-    } else if (name === RouterConstants.PAGE_TRANSLATE_SETTINGS) {
-      HdsNavDestination() {
-        ResponsiveContent() {
-          TranslateSettingsView({ navPathStack: this.navPathStack, scroller: this.translateSettingsScroller })
-        }
-      }
-      .titleBar(this.titleOptions($r('app.string.translate_settings_title')))
-      .titleMode(HdsNavDestinationTitleMode.MINI)
-      .backgroundColor($r('app.color.hm_web_surface'))
-      .dynamicHideTitleBar(this.dynamicHideParams())
-      .bindToScrollable([this.translateSettingsScroller])
-    } else if (name === RouterConstants.PAGE_PRIVACY) {
-      HdsNavDestination() {
-        ResponsiveContent() {
-          PrivacyView({ navPathStack: this.navPathStack, scroller: this.privacyScroller })
-        }
-      }
-      .titleBar(this.titleOptions($r('app.string.privacy_settings_title')))
-      .titleMode(HdsNavDestinationTitleMode.MINI)
-      .backgroundColor($r('app.color.hm_web_surface'))
-      .dynamicHideTitleBar(this.dynamicHideParams())
-      .bindToScrollable([this.privacyScroller])
-    } else if (name === RouterConstants.PAGE_DISCOVER) {
-      HdsNavDestination() {
-        ResponsiveContent() {
-          DiscoverView({ scroller: this.discoverScroller })
-        }
-      }
-      .titleBar(this.titleOptions($r('app.string.discover_title')))
-      .titleMode(HdsNavDestinationTitleMode.MINI)
-      .backgroundColor($r('app.color.hm_web_surface'))
-      .dynamicHideTitleBar(this.dynamicHideParams())
-      .bindToScrollable([this.discoverScroller])
-    } else if (name === RouterConstants.PAGE_DIAGNOSTICS) {
-      HdsNavDestination() {
-        ResponsiveContent() {
-          DiagnosticsView({ navPathStack: this.navPathStack, scroller: this.diagnosticsScroller })
-        }
-      }
-      .titleBar(this.titleOptions($r('app.string.diagnostics_title')))
-      .titleMode(HdsNavDestinationTitleMode.MINI)
-      .backgroundColor($r('app.color.hm_web_surface'))
-      .dynamicHideTitleBar(this.dynamicHideParams())
-      .bindToScrollable([this.diagnosticsScroller])
-    }
+    indexPageMap(name, pageInfos, {
+      navPathStack: this.navPathStack,
+      scrollers: this.routeScrollers,
+      titleOptions: (title: ResourceStr): HdsNavigationTitleBarOptions => indexTitleOptions(title),
+      articleTitleOptions: (): HdsNavigationTitleBarOptions => this.articleTitleOptions(),
+      dynamicHideParams: (): DynamicHideParams => indexDynamicHideParams()
+    });
   }
 
   build() {
@@ -1351,7 +852,7 @@ struct Index {
       .navDestination(this.pageMap)
       // 先声明动态显隐，再绑定可滚动容器 —— 顺序不能反：真机上「先 bindToScrollable 后 dynamicHideTitleBar」
       // 会导致动态显隐完全不生效（已实测），官方样例也是这个顺序。
-      .dynamicHideTitleBar(this.dynamicHideParams())
+      .dynamicHideTitleBar(indexDynamicHideParams())
       .bindToScrollable([this.currentScroller()])
       .width('100%')
       .height('100%')

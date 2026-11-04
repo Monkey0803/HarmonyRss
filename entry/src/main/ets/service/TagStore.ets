@@ -596,6 +596,9 @@ export class TagStore {
         const message: string = err instanceof Error ? err.message : 'unknown error';
         hilog.error(DOMAIN, TAG, 'mergeArticleTagsForBackup batch failed: %{public}s', message);
       }
+      if (end < records.length) {
+        await new Promise<void>((resolve: () => void) => setTimeout(resolve, 0));
+      }
     }
     return added;
   }

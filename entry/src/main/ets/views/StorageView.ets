@@ -73,7 +73,8 @@ export struct StorageView {
   }
 
   /** 按源占用展示列表（默认前 8 条）。 */
-  private visibleFeeds(): FeedStorageStat[] {
+  @Computed
+  get visibleFeeds(): FeedStorageStat[] {
     const all: FeedStorageStat[] = storageViewModel.stats.perFeed;
     return this.showAllFeeds || all.length <= 8 ? all : all.slice(0, 8);
   }
@@ -234,7 +235,7 @@ export struct StorageView {
   @Builder
   PerFeedCard() {
     Column() {
-      ForEach(this.visibleFeeds(), (stat: FeedStorageStat) => {
+      ForEach(this.visibleFeeds, (stat: FeedStorageStat) => {
         Row({ space: $r('app.float.space_s') }) {
           Text(stat.title.length > 0 ? stat.title : stat.feedId)
             .fontSize($r('app.float.font_size_caption'))

@@ -230,6 +230,9 @@ export enum ReaderTheme {
  * 字号与行距改成**连续值**（详情页「阅读排版」面板用 Slider 调），
  * 旧的 small/medium/large、compact/normal/loose 只作为快捷预设与老设置的迁移锚点。
  */
+const FONT_PRESETS: string[] = [ReaderFontSize.SMALL, ReaderFontSize.MEDIUM, ReaderFontSize.LARGE];
+const LINE_PRESETS: string[] = [ReaderLineHeight.COMPACT, ReaderLineHeight.NORMAL, ReaderLineHeight.LOOSE];
+
 export class ReaderTypography {
   /** 字号基准（px）：scale = 1 时正文字号。 */
   static readonly FONT_BASE_PX: number = 17;
@@ -265,10 +268,9 @@ export class ReaderTypography {
 
   /** 倍数 → 最接近的字号预设（设置页档位行要显示当前档位）。 */
   static fontPresetOfScale(scale: number): string {
-    const presets: string[] = [ReaderFontSize.SMALL, ReaderFontSize.MEDIUM, ReaderFontSize.LARGE];
     let best: string = ReaderFontSize.MEDIUM;
     let bestGap: number = Number.MAX_VALUE;
-    for (const id of presets) {
+    for (const id of FONT_PRESETS) {
       const gap: number = Math.abs(ReaderTypography.fontScaleOfPreset(id) - scale);
       if (gap < bestGap) {
         bestGap = gap;
@@ -291,10 +293,9 @@ export class ReaderTypography {
 
   /** 倍数 → 最接近的行距预设。 */
   static linePresetOfScale(scale: number): string {
-    const presets: string[] = [ReaderLineHeight.COMPACT, ReaderLineHeight.NORMAL, ReaderLineHeight.LOOSE];
     let best: string = ReaderLineHeight.NORMAL;
     let bestGap: number = Number.MAX_VALUE;
-    for (const id of presets) {
+    for (const id of LINE_PRESETS) {
       const gap: number = Math.abs(ReaderTypography.lineScaleOfPreset(id) - scale);
       if (gap < bestGap) {
         bestGap = gap;

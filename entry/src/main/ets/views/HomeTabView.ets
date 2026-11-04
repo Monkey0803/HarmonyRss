@@ -58,8 +58,9 @@ export struct HomeTabView {
    * 列表内容变化时同步到数据源：ViewModel 负责筛选/排序/分页，这里只管把结果灌进去。
    * 必须每次都灌：文章的已读 / 收藏是原地改字段，数组引用不变，只比较引用会漏掉这类变更。
    */
-  private syncArticles: () => void = () => {
-    this.dataSource.setItems(feedViewModel.articles);
+  private syncArticles: (appended: boolean, changedIndex?: number) => void =
+    (appended: boolean, changedIndex?: number) => {
+      this.dataSource.setItems(feedViewModel.articles, appended, changedIndex === undefined ? -1 : changedIndex);
   };
 
   aboutToAppear(): void {

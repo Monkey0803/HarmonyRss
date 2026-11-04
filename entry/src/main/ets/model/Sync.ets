@@ -380,7 +380,12 @@ export function changedPayloadFields(remotePayload: string, mergedPayload: strin
   const keys: string[] = Object.keys(merged);
   for (let i = 0; i < keys.length; i += 1) {
     const key: string = keys[i];
-    if (JSON.stringify(remote[key]) !== JSON.stringify(merged[key]) && fields.indexOf(key) < 0) {
+    const remoteValue: Object = remote[key];
+    const mergedValue: Object = merged[key];
+    if (remoteValue === mergedValue) {
+      continue;
+    }
+    if (JSON.stringify(remoteValue) !== JSON.stringify(mergedValue)) {
       fields.push(key);
     }
   }

@@ -20,7 +20,7 @@ export const BODY_COLUMNS: string =
   'content, content_html, reader_html, plain_text, page_etag, page_last_modified';
 
 /** 轻量列表列：不含任何正文 HTML / 纯文本。列名带 `a.` 前缀，调用方一律 `FROM articles a`。 */
-export const LIST_COLUMNS: string =
+const LIST_COMMON_COLUMNS: string =
   'a.id, a.feed_id, a.feed_title, a.title, a.link, a.summary, a.published_at, a.is_read, a.is_starred, a.is_saved,' +
   ' a.is_hidden, a.image_url, a.author, a.progress, a.progress_ratio,' +
   ' (CASE WHEN a.reader_html <> \'\' THEN 1 ELSE 0 END) AS has_reader,' +
@@ -30,10 +30,15 @@ export const LIST_COLUMNS: string =
   ' ELSE \'none\' END) AS offline_state,' +
   ' a.canonical_id,' +
   // 媒体附件与音频进度：列表显示播客 / 视频标识，详情页恢复播放位置。
-  ' a.enclosures, a.media_progress,' +
+  ' a.enclosures, a.media_progress';
+
+export const LIST_COLUMNS: string = LIST_COMMON_COLUMNS + ',' +
   // 组内来源数（含主条自己）：主条列表行据此显示「N 个来源」。
   ' (SELECT COUNT(*) FROM ' + ArticleDbConstants.TABLE_ARTICLES +
   ' d WHERE d.canonical_id = a.id) AS dup_count';
+
+/** 首次加载时由 ArticleRepository 一次性填入来源数，避免每行执行相关子查询。 */
+export const LIST_FAST_COLUMNS: string = LIST_COMMON_COLUMNS + ', 0 AS dup_count';
 
 export const SQL_CREATE: string =
   'CREATE TABLE IF NOT EXISTS ' + ArticleDbConstants.TABLE_ARTICLES + ' (' +
@@ -189,7 +194,7 @@ export const SQL_INSERT_BACKUP_ARTICLE_TAG: string =
 
 /** 列表：轻量列，按发布时间倒序；只取主条（重复项不进主表列表）。 */
 export const SQL_SELECT_LIST: string =
-  'SELECT ' + LIST_COLUMNS + ' FROM ' + ArticleDbConstants.TABLE_ARTICLES + ' a' +
+  'SELECT ' + LIST_FAST_COLUMNS + ' FROM ' + ArticleDbConstants.TABLE_ARTICLES + ' a' +
   ' WHERE a.canonical_id = \'\' ORDER BY a.published_at DESC';
 
 /**

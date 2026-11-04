@@ -51,7 +51,10 @@ export struct RuleEditView {
       this.tagIds = draft.tagIds.slice();
       this.ruleEnabled = draft.enabled;
     }
-    tagViewModel.load();
+    // 规则列表进入编辑页时已经触发标签加载；直达编辑页才补一次读取。
+    if (!tagViewModel.loading && tagViewModel.revision === 0) {
+      tagViewModel.load();
+    }
   }
 
   private isCreate(): boolean {

@@ -65,11 +65,8 @@ export struct NotifySettingsView {
     if (context === undefined) {
       return;
     }
-    // init 打开通知偏好库 + 设置库并读出策略；whenReady 之后系统授权状态才是准的。
+    // init 内部在偏好库与设置就绪后读取授权状态，避免重复查询与重绘。
     notifyViewModel.init(context);
-    notifyViewModel.whenReady().then(() => {
-      notifyViewModel.refreshPermission();
-    });
   }
 
   /** 宿主 Ability 上下文（申请授权 / 发测试通知要用 UIAbilityContext）。 */

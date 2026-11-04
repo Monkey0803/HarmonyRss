@@ -45,6 +45,7 @@ export struct SyncView {
   @Local cloudErrorCode: number = 0;
   /** 上次同步自动合并的记录概要（最多 CONFLICT_DETAILS 条）。 */
   @Local conflictItems: SyncConflict[] = [];
+  private refreshToken: number = 0;
 
   /** 状态变化回调：自动同步 / 云端变更完成后，页面上的时间与条数实时刷新。 */
   private onStatusChanged: () => void = () => {
@@ -57,6 +58,7 @@ export struct SyncView {
   }
 
   aboutToDisappear(): void {
+    this.refreshToken += 1;
     syncService.unsubscribeStatus(this.onStatusChanged);
   }
 
@@ -70,7 +72,11 @@ export struct SyncView {
     if (context === undefined) {
       return;
     }
+    const token: number = ++this.refreshToken;
     syncService.status(context).then((status: SyncStatus) => {
+      if (token !== this.refreshToken) {
+        return;
+      }
       this.syncOn = status.enabled;
       this.wifiOnly = status.wifiOnly;
       this.cloudBackend = status.backend === 'Cloud';

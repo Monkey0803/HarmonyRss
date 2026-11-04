@@ -45,6 +45,7 @@ import { ruleService } from '../service/RuleService';
 import { RuleApplyResult } from '../model/Rule';
 import { diagnostics } from '../service/DiagnosticsService';
 import { offlineDownloadService } from '../service/OfflineDownloadService';
+import { HttpDefaults } from '../service/HttpClient';
 
 /** 复用一个 Date 实例：日期分桶在列表滚动时会被频繁调用，避免每次都分配对象。 */
 const SCRATCH_DATE: Date = new Date();
@@ -190,12 +191,14 @@ export class FeedViewModel {
 
   /** 全量文章（缓存 + 本次抓取），未读统计与筛选都基于它。 */
   private all: Article[] = [];
+  /** 最近一次筛选和排序的结果；触底续页只扩展窗口，不重新扫描全库。 */
+  private sortedVisible: Article[] = [];
   /**
    * 列表内容变化的订阅者（视图用 LazyForEach 时，需要显式把最新数组灌进数据源）。
    * 说明：这里只用 @Trace 属性驱动「直接渲染」的视图；虚拟化列表拿不到这个时机，
    * 所以额外提供显式订阅，避免依赖框架对全局单例的监听行为。
    */
-  private articleListeners: Array<() => void> = [];
+  private articleListeners: Array<(appended: boolean, changedIndex?: number) => void> = [];
   private started: boolean = false;
   /** 是否已完成「完整启动装配」（回填 + 联网抓取），避免重复触发。 */
   private initialized: boolean = false;
@@ -222,6 +225,7 @@ export class FeedViewModel {
       return;
     }
     this.started = true;
+    const startedAt: number = Date.now();
     this.context = context;
     // 列表展示偏好（排序 / 分组）是异步从偏好库恢复的，先等它就绪再对齐，
     // 否则首屏会先按默认值渲染一次（换偏好后重启看到顺序被重置）。
@@ -257,6 +261,8 @@ export class FeedViewModel {
     this.observedDataVersion = articleRepository.dataVersion();
     retentionService.configure(context, this.feeds);
     this.publish();
+    console.info('startup feedReady=' + (Date.now() - startedAt).toString() + 'ms articles=' +
+      this.all.length.toString());
   }
 
   /** 启动装配：订阅源 → 本地缓存（离线可读）→ 联网抓取。 */
@@ -265,8 +271,9 @@ export class FeedViewModel {
       return;
     }
     this.initialized = true;
-    this.localReadyTask = this.ensureReady(context);
-    await this.localReadyTask;
+    const ready: Promise<void> = this.ensureReady(context);
+    this.localReadyTask = ready;
+    await ready;
     // 老数据补一次正文纯文本（有上限）：让检索能命中「之前已提取过正文」的那些文章。
     await articleRepository.backfillPlainText(BACKFILL_PLAIN_TEXT_LIMIT);
     // 摘要清洗规则升级：按新规则重算库里已有摘要（正文由 Reader 缓存版本触发按需重提取）。
@@ -415,37 +422,59 @@ export class FeedViewModel {
 
   /** 逐源抓取；返回失败数量，错误记录在各自 feed.lastError 上，不影响其他源。 */
   private async fetchFeeds(targets: FeedSource[], fresh: Article[]): Promise<number> {
-    let failed: number = 0;
     diagnostics.beginFetch(targets.length);
+    const batches: Article[][] = [];
+    const errors: FeedError[] = [];
     for (let i = 0; i < targets.length; i += 1) {
-      const feed: FeedSource = targets[i];
-      const startedAt: number = Date.now();
-      try {
-        const result: FeedFetchResult =
-          await feedService.fetchFeed(feed.url, feed.etag, feed.lastModified);
-        this.rememberValidators(feed, result.etag, result.lastModified);
-        if (result.notModified) {
-          // 304：内容没变，连解析都省了（仍算一次成功抓取）。
-          console.info('feed not modified (304): ' + feed.url);
+      batches.push([]);
+      errors.push(FeedError.NONE);
+    }
+    let cursor: number = 0;
+    const worker = async (): Promise<void> => {
+      while (cursor < targets.length) {
+        const index: number = cursor;
+        cursor += 1;
+        const feed: FeedSource = targets[index];
+        const startedAt: number = Date.now();
+        try {
+          const result: FeedFetchResult =
+            await feedService.fetchFeed(feed.url, feed.etag, feed.lastModified);
+          this.rememberValidators(feed, result.etag, result.lastModified);
+          if (result.notModified) {
+            console.info('feed not modified (304): ' + feed.url);
+          } else if (result.parsed === undefined) {
+            errors[index] = FeedError.PARSE_ERROR;
+            this.markFeedFailure(feed, 'document is not a feed', FeedError.PARSE_ERROR);
+            diagnostics.recordFeed(feed.id, feed.title, Date.now() - startedAt, false, FeedError.PARSE_ERROR);
+            continue;
+          } else {
+            toArticles(feed, result.parsed, batches[index]);
+          }
           this.markFeedSuccess(feed);
           diagnostics.recordFeed(feed.id, feed.title, Date.now() - startedAt, true, FeedError.NONE);
-          continue;
+        } catch (err) {
+          const error: BusinessError = err as BusinessError;
+          const code: FeedError = errorCodeOf(err);
+          errors[index] = code;
+          this.markFeedFailure(feed, describeError(error), code);
+          diagnostics.recordFeed(feed.id, feed.title, Date.now() - startedAt, false, code);
         }
-        if (result.parsed === undefined) {
-          failed += 1;
-          this.markFeedFailure(feed, 'document is not a feed', FeedError.PARSE_ERROR);
-          diagnostics.recordFeed(feed.id, feed.title, Date.now() - startedAt, false, FeedError.PARSE_ERROR);
-          continue;
-        }
-        toArticles(feed, result.parsed, fresh);
-        this.markFeedSuccess(feed);
-        diagnostics.recordFeed(feed.id, feed.title, Date.now() - startedAt, true, FeedError.NONE);
-      } catch (err) {
-        const error: BusinessError = err as BusinessError;
-        const code: FeedError = errorCodeOf(err);
+      }
+    };
+    const workers: Promise<void>[] = [];
+    const concurrency: number = Math.min(targets.length, HttpDefaults.MAX_CONCURRENT);
+    for (let i = 0; i < concurrency; i += 1) {
+      workers.push(worker());
+    }
+    await Promise.all(workers);
+    let failed: number = 0;
+    for (let i = 0; i < targets.length; i += 1) {
+      if (errors[i] !== FeedError.NONE) {
         failed += 1;
-        this.markFeedFailure(feed, describeError(error), code);
-        diagnostics.recordFeed(feed.id, feed.title, Date.now() - startedAt, false, code);
+        this.lastFailureCode = errors[i];
+      }
+      for (let j = 0; j < batches[i].length; j += 1) {
+        fresh.push(batches[i][j]);
       }
     }
     diagnostics.endFetch();
@@ -744,7 +773,6 @@ export class FeedViewModel {
     }
     this.currentArticleId = articleId;
     retentionService.setProtectedArticle(articleId);
-    this.publish();
     return true;
   }
 
@@ -1553,7 +1581,6 @@ export class FeedViewModel {
     retentionService.setProtectedArticle(articleId);
     const article: Article | undefined = this.findArticle(articleId);
     if (article !== undefined && this.markReadOnScrollEffective(article.feedId)) {
-      this.publish();
       return;
     }
     this.markRead(articleId);
@@ -1606,7 +1633,7 @@ export class FeedViewModel {
         break;
       }
     }
-    this.publish();
+    this.publishState(articleId);
   }
 
   /**
@@ -1629,7 +1656,7 @@ export class FeedViewModel {
         break;
       }
     }
-    this.publish();
+    this.publishState(articleId);
   }
 
   /** 批量：已读 / 未读。 */
@@ -1827,7 +1854,7 @@ export class FeedViewModel {
         break;
       }
     }
-    this.publish();
+    this.publishState(articleId);
   }
 
   /**
@@ -1854,7 +1881,6 @@ export class FeedViewModel {
     const stats: CacheStats = await articleRepository.cacheStats();
     this.cachedArticles = stats.articles;
     this.cachedChars = stats.bytes;
-    this.publish();
   }
 
   /** 清理未收藏文章的正文缓存，返回清理条数；内存里的正文一并失效。 */
@@ -2053,6 +2079,27 @@ export class FeedViewModel {
     this.publish();
   }
 
+  /** 仅行状态变化且不影响当前成员资格时，通知对应行，避免重排全量列表。 */
+  private publishState(articleId: string): void {
+    if (this.filter !== ArticleFilter.ALL || this.groupMode !== GroupMode.NONE ||
+      ArchiveDays.of(appSettings.archiveRule) > 0) {
+      this.publish();
+      return;
+    }
+    this.recomputeUnread();
+    let changedIndex: number = -1;
+    for (let i = 0; i < this.articles.length; i += 1) {
+      if (this.articles[i].id === articleId) {
+        changedIndex = i;
+        break;
+      }
+    }
+    this.articlesRevision += 1;
+    for (let i = 0; i < this.articleListeners.length; i += 1) {
+      this.articleListeners[i](false, changedIndex);
+    }
+  }
+
   /**
    * 依据全量列表重算筛选结果与未读数。
    *
@@ -2069,6 +2116,7 @@ export class FeedViewModel {
     visible.sort((a: Article, b: Article) => {
       return this.newestFirst ? b.publishedAt - a.publishedAt : a.publishedAt - b.publishedAt;
     });
+    this.sortedVisible = visible;
     this.articlesTotal = visible.length;
     if (this.groupMode === GroupMode.NONE) {
       this.groups = [];
@@ -2082,7 +2130,7 @@ export class FeedViewModel {
     this.recomputeUnread();
     this.articlesRevision += 1;
     for (let i = 0; i < this.articleListeners.length; i += 1) {
-      this.articleListeners[i]();
+      this.articleListeners[i](false);
     }
   }
 
@@ -2093,14 +2141,14 @@ export class FeedViewModel {
   }
 
   /** 订阅列表内容变化（组件 aboutToAppear 调用）。 */
-  subscribeArticles(listener: () => void): void {
+  subscribeArticles(listener: (appended: boolean, changedIndex?: number) => void): void {
     if (this.articleListeners.indexOf(listener) < 0) {
       this.articleListeners.push(listener);
     }
   }
 
   /** 退订列表内容变化（组件 aboutToDisappear 调用）。 */
-  unsubscribeArticles(listener: () => void): void {
+  unsubscribeArticles(listener: (appended: boolean, changedIndex?: number) => void): void {
     const index: number = this.articleListeners.indexOf(listener);
     if (index >= 0) {
       this.articleListeners.splice(index, 1);
@@ -2109,11 +2157,15 @@ export class FeedViewModel {
 
   /** 触底续页：多加载一屏（列表用 LazyForEach 虚拟化，不怕条数多）。 */
   loadMore(): void {
-    if (this.visibleCount >= this.articlesTotal) {
+    if (this.groupMode !== GroupMode.NONE || this.visibleCount >= this.articlesTotal) {
       return;
     }
     this.visibleCount += CommonConstants.LIST_PAGE_SIZE;
-    this.publish();
+    this.articles = this.sortedVisible.slice(0, this.visibleCount);
+    this.articlesRevision += 1;
+    for (let i = 0; i < this.articleListeners.length; i += 1) {
+      this.articleListeners[i](true);
+    }
   }
 
   /** 还有未加载的条目（界面用来显示「加载更多」尾行）。 */

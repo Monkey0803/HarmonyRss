@@ -16,7 +16,6 @@
 import { LengthMetrics } from '@kit.ArkUI';
 import { FeedListItem, FeedSource } from '../model/Feed';
 import { feedViewModel } from '../viewmodel/FeedViewModel';
-import { isLastFeedInGroup } from '../viewmodel/FeedRowBuilder';
 import { FeedErrorText } from '../common/utils/FeedErrorText';
 import { safeArea } from '../service/SafeAreaController';
 import { CommonConstants } from '../common/constants/CommonConstants';
@@ -485,7 +484,7 @@ export struct SubscriptionsView {
   /** 订阅行卡片圆角：只有组内最后一行圆下面两角，其余行与组头 / 上一行相接。 */
   private feedRowCorners(feed: FeedSource): BorderRadiuses {
     const radius: Resource = $r('app.float.radius_card');
-    const last: boolean = isLastFeedInGroup(feedViewModel.feeds, feed.id);
+    const last: boolean = this.lastFeedIds.has(feed.id);
     return {
       topLeft: 0,
       topRight: 0,
@@ -742,10 +741,27 @@ export struct SubscriptionsView {
       const collapsed: string = feedViewModel.isGroupCollapsed(row.groupName) ? 'c' : 'e';
       return 'g:' + row.groupName + ':' + collapsed;
     }
-    const last: string = isLastFeedInGroup(feedViewModel.feeds, row.feed.id) ? 'l' : 'm';
+    const last: string = this.lastFeedIds.has(row.feed.id) ? 'l' : 'm';
     const select: string = this.selecting ? 's' : 'n';
     const edit: string = this.isEditing(row.feed.id) ? 'e' : 'n';
     return 'f:' + row.feed.id + ':' + last + ':' + select + ':' + edit;
+  }
+
+  /** 只在订阅或折叠状态变化时重建分组行，避免未读数刷新重复分桶。 */
+  @Computed
+  get displayRows(): FeedListItem[] {
+    return feedViewModel.displayRows();
+  }
+
+  /** 每组末行只扫描一次；行键值与圆角共享结果。 */
+  @Computed
+  get lastFeedIds(): Set<string> {
+    const byGroup: Map<string, string> = new Map<string, string>();
+    for (let i = 0; i < feedViewModel.feeds.length; i += 1) {
+      const feed: FeedSource = feedViewModel.feeds[i];
+      byGroup.set(feed.group, feed.id);
+    }
+    return new Set<string>(byGroup.values());
   }
 
   build() {
@@ -762,7 +778,7 @@ export struct SubscriptionsView {
               this.EmptyState()
             }
           } else {
-            ForEach(feedViewModel.displayRows(), (row: FeedListItem) => {
+            ForEach(this.displayRows, (row: FeedListItem) => {
               ListItem() {
                 if (row.isGroup) {
                   SubscriptionsGroupHeader({

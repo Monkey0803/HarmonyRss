@@ -106,6 +106,20 @@ function movedIndex(index: number, delta: number, length: number): number {
 }
 
 export class RuleStore {
+  private cachedRules: Rule[] | undefined = undefined;
+  private rulesVersion: number = 0;
+
+  private invalidateRules(): void {
+    this.rulesVersion += 1;
+    this.cachedRules = undefined;
+  }
+
+  private copyRules(rules: Rule[]): Rule[] {
+    return rules.map((rule: Rule): Rule => new Rule(rule.id, rule.name, rule.enabled, rule.priority,
+      rule.keywords.slice(), rule.fields.slice(), rule.feedIds.slice(), rule.actions.slice(),
+      rule.tagIds.slice(), rule.matchCount, rule.lastHitAt));
+  }
+
   /** 全部规则（按 priority 升序；同优先级按创建时间）。库不可用时返回空数组。 */
   async list(): Promise<Rule[]> {
     await articleDatabase.whenReady();
@@ -114,6 +128,10 @@ export class RuleStore {
     if (store === undefined) {
       return result;
     }
+    if (this.cachedRules !== undefined) {
+      return this.copyRules(this.cachedRules);
+    }
+    const version: number = this.rulesVersion;
     try {
       const rs: relationalStore.ResultSet = await store.querySql(
         'SELECT id, name, enabled, priority, keywords, fields, feed_ids, actions, tag_ids,' +
@@ -126,11 +144,14 @@ export class RuleStore {
       } finally {
         rs.close();
       }
+      if (version === this.rulesVersion) {
+        this.cachedRules = result;
+      }
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       hilog.error(DOMAIN, TAG, 'list failed: %{public}d', error.code);
     }
-    return result;
+    return this.copyRules(result);
   }
 
   /**
@@ -168,6 +189,7 @@ export class RuleStore {
         ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         [id, name, draft.enabled ? 1 : 0, nextPriority, JSON.stringify(keywords), fields,
           feedIds, actions, tagIds, 0, 0, now, now]);
+      this.invalidateRules();
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       hilog.error(DOMAIN, TAG, 'create failed: %{public}d', error.code);
@@ -198,6 +220,7 @@ export class RuleStore {
           encodeArray(draft.feedIds),
           encodeCodes(draft.actions, (v: string): boolean => RuleAction.isValid(v)),
           encodeArray(draft.tagIds), Date.now(), id]);
+      this.invalidateRules();
       return true;
     } catch (err) {
       const error: BusinessError = err as BusinessError;
@@ -214,6 +237,7 @@ export class RuleStore {
     }
     try {
       store.executeSync('DELETE FROM ' + ArticleDbConstants.TABLE_RULES + ' WHERE id = ?', [id]);
+      this.invalidateRules();
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       hilog.error(DOMAIN, TAG, 'remove failed: %{public}d', error.code);
@@ -229,6 +253,7 @@ export class RuleStore {
     try {
       store.executeSync('UPDATE ' + ArticleDbConstants.TABLE_RULES +
         ' SET enabled = ?, updated_at = ? WHERE id = ?', [enabled ? 1 : 0, Date.now(), id]);
+      this.invalidateRules();
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       hilog.error(DOMAIN, TAG, 'setEnabled failed: %{public}d', error.code);
@@ -271,6 +296,7 @@ export class RuleStore {
             ' SET priority = ? WHERE id = ?', [i, reordered[i].id]);
         }
         store.commit();
+        this.invalidateRules();
       } catch (inner) {
         store.rollBack();
         throw inner as Error;
@@ -302,6 +328,7 @@ export class RuleStore {
             [count, at, ruleId]);
         });
         store.commit();
+        this.invalidateRules();
       } catch (inner) {
         store.rollBack();
         throw inner as Error;
@@ -452,6 +479,7 @@ export class RuleStore {
           }
         }
         store.commit();
+        this.invalidateRules();
       } catch (inner) {
         store.rollBack();
         throw inner as Error;

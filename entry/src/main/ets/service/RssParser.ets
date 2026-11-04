@@ -58,23 +58,26 @@ export class ParsedFeed {
 }
 
 function replaceAllLiteral(source: string, search: string, value: string): string {
-  return source.split(search).join(value);
+  return source.indexOf(search) < 0 ? source : source.split(search).join(value);
 }
 
 /** 解码十进制 / 十六进制数字实体（&#39; / &#x27;）。 */
 function replaceNumericEntities(source: string): string {
-  let out: string = '';
+  if (source.indexOf('&#') < 0) {
+    return source;
+  }
+  const parts: string[] = [];
   let index: number = 0;
   while (index < source.length) {
     const start: number = source.indexOf('&#', index);
     if (start < 0) {
-      out += source.substring(index);
+      parts.push(source.substring(index));
       break;
     }
-    out += source.substring(index, start);
+    parts.push(source.substring(index, start));
     const semi: number = source.indexOf(';', start);
     if (semi < 0) {
-      out += source.substring(start);
+      parts.push(source.substring(start));
       break;
     }
     const body: string = source.substring(start + 2, semi);
@@ -85,13 +88,13 @@ function replaceNumericEntities(source: string): string {
       code = Number.parseInt(body, 10);
     }
     if (Number.isNaN(code) || code < 0) {
-      out += source.substring(start, semi + 1);
+      parts.push(source.substring(start, semi + 1));
     } else {
-      out += String.fromCharCode(code);
+      parts.push(String.fromCharCode(code));
     }
     index = semi + 1;
   }
-  return out;
+  return parts.join('');
 }
 
 /** 解码常见 XML 实体；&amp; 放在最后，避免二次解码。 */

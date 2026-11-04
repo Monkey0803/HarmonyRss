@@ -181,9 +181,14 @@ export class RemoteSyncService {
       return;
     }
     dedupeService.groupIds(articleId).then((ids: string[]) => {
-      for (let i = 0; i < ids.length; i += 1) {
-        this.enqueueState(ids[i], read, starred);
-      }
+      return this.ensureAccount().then((account: RemoteAccount | undefined) => {
+        if (account === undefined) {
+          return;
+        }
+        for (let i = 0; i < ids.length; i += 1) {
+          remoteAccountStore.enqueueState(ids[i], read, starred);
+        }
+      });
     }).catch((err: Error) => {
       hilog.warn(DOMAIN, TAG, 'group enqueue failed: %{public}s', err.message);
     });

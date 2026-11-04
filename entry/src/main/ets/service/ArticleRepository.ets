@@ -116,6 +116,7 @@ export class ArticleRepository extends ArticleSearchStore {
    * 列表规模可能上万条，正文必须走 loadBody 按需加载。
    */
   async loadForList(): Promise<Article[]> {
+    const startedAt: number = Date.now();
     const store: relationalStore.RdbStore | undefined = this.store;
     const result: Article[] = [];
     if (store === undefined) {
@@ -130,10 +131,26 @@ export class ArticleRepository extends ArticleSearchStore {
       } finally {
         rs.close();
       }
+      const duplicateCounts: Map<string, number> = new Map<string, number>();
+      const counts: relationalStore.ResultSet = await store.querySql(
+        'SELECT canonical_id, COUNT(*) AS c FROM ' + ArticleDbConstants.TABLE_ARTICLES +
+        ' WHERE canonical_id <> \'\' GROUP BY canonical_id');
+      try {
+        while (counts.goToNextRow()) {
+          duplicateCounts.set(counts.getString(0), counts.getLong(1));
+        }
+      } finally {
+        counts.close();
+      }
+      for (let i = 0; i < result.length; i += 1) {
+        result[i].duplicateCount = 1 + (duplicateCounts.get(result[i].id) ?? 0);
+      }
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       hilog.error(DOMAIN, TAG, 'loadForList failed: %{public}d', error.code);
     }
+    hilog.info(DOMAIN, TAG, 'startup listLoad=%{public}dms rows=%{public}d',
+      Date.now() - startedAt, result.length);
     return result;
   }
 
@@ -251,34 +268,36 @@ export class ArticleRepository extends ArticleSearchStore {
    * 正文列不在列表查询里，正文由 loadBody 按需加载。
    */
   private articleFromListRow(rs: relationalStore.ResultSet): Article {
+    // LIST_COLUMNS 和 LIST_FAST_COLUMNS 使用相同的固定列序。
+    // 逐行按名称查列会在万篇列表上执行数十万次 getColumnIndex。
     const article: Article = new Article(
-      rs.getString(rs.getColumnIndex('id')),
-      rs.getString(rs.getColumnIndex('feed_id')),
-      rs.getString(rs.getColumnIndex('feed_title')),
-      rs.getString(rs.getColumnIndex('title')),
-      rs.getString(rs.getColumnIndex('link')),
-      rs.getString(rs.getColumnIndex('summary')),
+      rs.getString(0),
+      rs.getString(1),
+      rs.getString(2),
+      rs.getString(3),
+      rs.getString(4),
+      rs.getString(5),
       '',
-      rs.getLong(rs.getColumnIndex('published_at'))
+      rs.getLong(6)
     );
-    article.imageUrl = rs.getString(rs.getColumnIndex('image_url'));
-    article.author = rs.getString(rs.getColumnIndex('author'));
-    article.read = rs.getLong(rs.getColumnIndex('is_read')) === 1;
-    article.starred = rs.getLong(rs.getColumnIndex('is_starred')) === 1;
-    article.saved = rs.getLong(rs.getColumnIndex('is_saved')) === 1;
-    article.hidden = rs.getLong(rs.getColumnIndex('is_hidden')) === 1;
+    article.imageUrl = rs.getString(11);
+    article.author = rs.getString(12);
+    article.read = rs.getLong(7) === 1;
+    article.starred = rs.getLong(8) === 1;
+    article.saved = rs.getLong(9) === 1;
+    article.hidden = rs.getLong(10) === 1;
     // 用 getDouble 读：老数据里可能残留小数（列是 INTEGER，但 SQLite 动态类型允许 REAL）。
-    article.progress = rs.getDouble(rs.getColumnIndex('progress'));
-    article.progressRatio = rs.getDouble(rs.getColumnIndex('progress_ratio'));
-    article.readerState = rs.getLong(rs.getColumnIndex('has_reader')) === 1
+    article.progress = rs.getDouble(13);
+    article.progressRatio = rs.getDouble(14);
+    article.readerState = rs.getLong(15) === 1
       ? ReaderState.READY
       : ReaderState.NONE;
-    article.offlineState = rs.getString(rs.getColumnIndex('offline_state'));
+    article.offlineState = rs.getString(16);
     // 跨源去重：canonical_id 空串 = 主条；duplicateCount 是「含自己的组内来源数」。
-    article.canonicalId = rs.getString(rs.getColumnIndex('canonical_id'));
-    article.duplicateCount = 1 + rs.getLong(rs.getColumnIndex('dup_count'));
-    article.enclosures = decodeEnclosures(rs.getString(rs.getColumnIndex('enclosures')));
-    article.mediaProgress = rs.getLong(rs.getColumnIndex('media_progress'));
+    article.canonicalId = rs.getString(17);
+    article.duplicateCount = 1 + rs.getLong(20);
+    article.enclosures = decodeEnclosures(rs.getString(18));
+    article.mediaProgress = rs.getLong(19);
     return article;
   }
 
@@ -2008,24 +2027,11 @@ export class ArticleRepository extends ArticleSearchStore {
       try {
         while (rs.goToNextRow()) {
           result.push(new BackupArticle(
-            rs.getString(rs.getColumnIndex('id')),
-            rs.getString(rs.getColumnIndex('feed_id')),
-            rs.getString(rs.getColumnIndex('feed_title')),
-            rs.getString(rs.getColumnIndex('title')),
-            rs.getString(rs.getColumnIndex('link')),
-            rs.getString(rs.getColumnIndex('summary')),
-            rs.getString(rs.getColumnIndex('author')),
-            rs.getLong(rs.getColumnIndex('published_at')),
-            rs.getString(rs.getColumnIndex('image_url')),
-            rs.getLong(rs.getColumnIndex('is_read')) === 1,
-            rs.getLong(rs.getColumnIndex('is_starred')) === 1,
-            rs.getLong(rs.getColumnIndex('is_saved')) === 1,
-            rs.getLong(rs.getColumnIndex('is_hidden')) === 1,
-            rs.getDouble(rs.getColumnIndex('progress')),
-            rs.getDouble(rs.getColumnIndex('progress_ratio')),
-            rs.getString(rs.getColumnIndex('canonical_id')),
-            rs.getString(rs.getColumnIndex('link_key')),
-            rs.getString(rs.getColumnIndex('title_key'))));
+            rs.getString(0), rs.getString(1), rs.getString(2), rs.getString(3),
+            rs.getString(4), rs.getString(5), rs.getString(6), rs.getLong(7),
+            rs.getString(8), rs.getLong(9) === 1, rs.getLong(10) === 1,
+            rs.getLong(11) === 1, rs.getLong(14) === 1, rs.getDouble(12),
+            rs.getDouble(13), rs.getString(15), rs.getString(16), rs.getString(17)));
         }
       } finally {
         rs.close();
@@ -2109,6 +2115,10 @@ export class ArticleRepository extends ArticleSearchStore {
         const message: string = err instanceof Error ? err.message : 'unknown error';
         hilog.error(DOMAIN, TAG, 'mergeArticlesForBackup batch failed: %{public}s', message);
       }
+      if (end < records.length) {
+        // 事务已结束才让出 UI 任务；下一批继续时仍保持逐批提交与回滚语义。
+        await new Promise<void>((resolve: () => void) => setTimeout(resolve, 0));
+      }
     }
     return counts;
   }
@@ -2122,13 +2132,13 @@ export class ArticleRepository extends ArticleSearchStore {
         return undefined;
       }
       return new ArticleStatePatch(
-        rs.getLong(rs.getColumnIndex('is_read')) === 1,
-        rs.getLong(rs.getColumnIndex('is_starred')) === 1,
-        rs.getLong(rs.getColumnIndex('is_saved')) === 1,
-        rs.getLong(rs.getColumnIndex('is_hidden')) === 1,
-        rs.getDouble(rs.getColumnIndex('progress')),
-        rs.getDouble(rs.getColumnIndex('progress_ratio')),
-        rs.getString(rs.getColumnIndex('canonical_id')));
+        rs.getLong(1) === 1,
+        rs.getLong(2) === 1,
+        rs.getLong(3) === 1,
+        rs.getLong(4) === 1,
+        rs.getDouble(5),
+        rs.getDouble(6),
+        rs.getString(7));
     } finally {
       rs.close();
     }

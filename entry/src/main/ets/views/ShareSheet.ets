@@ -162,9 +162,14 @@ export struct ShareSheet {
   @Local savedAlready: boolean = false;
   /** 本篇高亮条数（0 = 「导出本篇高亮」置灰）。 */
   @Local articleHighlightCount: number = 0;
+  private refreshToken: number = 0;
 
   aboutToAppear(): void {
     this.refreshForContext();
+  }
+
+  aboutToDisappear(): void {
+    this.refreshToken += 1;
   }
 
   /**
@@ -172,6 +177,7 @@ export struct ShareSheet {
    * bindSheet 的内容组件可能被复用，所以根节点 onAppear 也会再跑一次（幂等，读本地库）。
    */
   private refreshForContext(): void {
+    const token: number = ++this.refreshToken;
     const ctx: ShareContext = shareViewModel.context;
     this.savedAlready = false;
     this.articleHighlightCount = 0;
@@ -184,23 +190,31 @@ export struct ShareSheet {
       // 高亮页的文章可能不在当前列表（筛选 / 分页 / 已删除）：回库读一次，
       // 否则「加入 / 取消稍后读」的文案与实际状态会不一致。
       articleRepository.loadById(ctx.articleId).then((article: Article | undefined) => {
-        this.savedAlready = article !== undefined && article.saved;
+        if (token === this.refreshToken) {
+          this.savedAlready = article !== undefined && article.saved;
+        }
       }).catch(() => {
-        this.savedAlready = false;
+        if (token === this.refreshToken) {
+          this.savedAlready = false;
+        }
       });
     }
-    this.loadHighlightCount(ctx);
+    this.loadHighlightCount(ctx, token);
   }
 
   /** 预读本篇高亮条数：读取失败按 0 处理（点击时服务层还会再判一次）。 */
-  private loadHighlightCount(ctx: ShareContext): void {
+  private loadHighlightCount(ctx: ShareContext, token: number): void {
     if (ctx.kind !== ShareKind.ARTICLE || ctx.articleId.length === 0) {
       return;
     }
     highlightStore.listHighlights(ctx.articleId).then((items: Highlight[]) => {
-      this.articleHighlightCount = items.length;
+      if (token === this.refreshToken) {
+        this.articleHighlightCount = items.length;
+      }
     }).catch(() => {
-      this.articleHighlightCount = 0;
+      if (token === this.refreshToken) {
+        this.articleHighlightCount = 0;
+      }
     });
   }
 

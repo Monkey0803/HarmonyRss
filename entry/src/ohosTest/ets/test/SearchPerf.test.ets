@@ -20,11 +20,12 @@ import { parse } from '../../../main/ets/service/SearchQueryParser';
 import { ArticleRepository } from '../../../main/ets/service/ArticleRepository';
 import { SQL_CREATE, SQL_CREATE_FEEDS } from '../../../main/ets/service/ArticleSchema';
 import { Article } from '../../../main/ets/model/Feed';
+import { BackupArticle } from '../../../main/ets/model/Backup';
 import { SearchPage } from '../../../main/ets/model/Search';
 
 const TOTAL: number = 10000;
 const BATCH: number = 500;
-const ROUNDS: number = 5;
+const ROUNDS: number = 6;
 const PAGE_SIZE: number = 30;
 const DOUBLE_LIMIT_MS: number = 800;
 const SINGLE_LIMIT_MS: number = 1000;
@@ -220,6 +221,10 @@ export default function searchPerfTest() {
         console.info('PERF inserted total=' + count);
         expect(count).assertEqual(TOTAL);
         expect(await countOf(db, 'SELECT COUNT(*) AS c FROM feeds', [])).assertEqual(500);
+        db.executeSync('INSERT INTO articles (id, feed_id, canonical_id, published_at) VALUES (?,?,?,?)',
+          ['bench_dup_1', 'bench_feed_0', 'bench_0', now]);
+        db.executeSync('INSERT INTO articles (id, feed_id, canonical_id, published_at) VALUES (?,?,?,?)',
+          ['bench_dup_2', 'bench_feed_0', 'bench_0', now]);
 
         // 与应用共用的 Repository/检索实现；首轮预热，不计入均值。
         const repository: ArticleRepository = new ArticleRepository(dbName);
@@ -235,6 +240,12 @@ export default function searchPerfTest() {
           const list: Article[] = await repository.loadForList();
           const listMs: number = Date.now() - listStarted;
           expect(list.length).assertEqual(TOTAL);
+          expect(list[0].duplicateCount).assertEqual(3);
+
+          const backupStarted: number = Date.now();
+          const backupRows: BackupArticle[] = await repository.allArticlesForBackup();
+          const backupMs: number = Date.now() - backupStarted;
+          expect(backupRows.length).assertEqual(TOTAL + 2);
 
           const cjkStarted: number = Date.now();
           const cjkPage: SearchPage = await repository.search(parse('荣耀发布'), 0, PAGE_SIZE);
@@ -245,13 +256,21 @@ export default function searchPerfTest() {
           const ftsPage: SearchPage = await repository.search(parse('harmony'), 0, PAGE_SIZE);
           const ftsMs: number = Date.now() - ftsStarted;
           expect(ftsPage.total > 0).assertTrue();
+          expect(cjkPage.hits.length > 0).assertTrue();
+          expect(cjkPage.hits[0].feedTitle).assertEqual('压测源');
+          expect(cjkPage.hits[0].title.length > 0).assertTrue();
+          expect(cjkPage.hits[0].snippet.length > 0).assertTrue();
+          expect(ftsPage.hits.length > 0).assertTrue();
+          expect(ftsPage.hits[0].feedTitle).assertEqual('压测源');
           if (round > 0) {
+            console.info('PERF production round=' + round + ' listMs=' + listMs +
+              ' backupMs=' + backupMs + ' cjkMs=' + cjkMs + ' ftsMs=' + ftsMs);
             listTotalMs += listMs;
             searchCjkTotalMs += cjkMs;
             searchFtsTotalMs += ftsMs;
           }
         }
-        console.info('PERF production rows=10000 feeds=500 warmup=1 rounds=4' +
+        console.info('PERF production rows=10000 feeds=500 warmup=1 rounds=5' +
           ' listAvgMs=' + Math.round(listTotalMs / (ROUNDS - 1)) +
           ' cjkAvgMs=' + Math.round(searchCjkTotalMs / (ROUNDS - 1)) +
           ' ftsAvgMs=' + Math.round(searchFtsTotalMs / (ROUNDS - 1)));

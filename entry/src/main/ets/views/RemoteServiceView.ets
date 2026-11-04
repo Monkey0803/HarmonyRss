@@ -44,12 +44,13 @@ export struct RemoteServiceView {
     return remoteAccountViewModel.errorText(remoteAccountViewModel.status.lastError);
   }
 
-  private isFeedbin(): boolean {
+  @Computed
+  get isFeedbin(): boolean {
     return remoteAccountViewModel.serviceType === RemoteSyncConstants.SERVICE_TYPE_FEEDBIN;
   }
 
   private serviceLabel(): ResourceStr {
-    return this.isFeedbin()
+    return this.isFeedbin
       ? $r('app.string.remote_service_feedbin')
       : $r('app.string.remote_service_greader');
   }
@@ -180,7 +181,7 @@ export struct RemoteServiceView {
         .fontColor($r('app.color.hm_text_secondary'))
         .width('100%')
       TextInput({ text: remoteAccountViewModel.baseUrl,
-        placeholder: this.isFeedbin()
+        placeholder: this.isFeedbin
           ? $r('app.string.remote_feedbin_base_hint')
           : $r('app.string.remote_field_base_url_hint') })
         .type(InputType.Normal)
@@ -189,7 +190,7 @@ export struct RemoteServiceView {
           remoteAccountViewModel.baseUrl = value;
         })
 
-      Text(this.isFeedbin()
+      Text(this.isFeedbin
         ? $r('app.string.remote_field_username_email')
         : $r('app.string.remote_field_username'))
         .fontSize($r('app.float.font_size_caption'))
@@ -213,7 +214,7 @@ export struct RemoteServiceView {
           remoteAccountViewModel.password = value;
         })
 
-      if (!this.isFeedbin()) {
+      if (!this.isFeedbin) {
         Row() {
           Text($r('app.string.remote_allow_http'))
             .fontSize($r('app.float.font_size_body'))
@@ -255,7 +256,7 @@ export struct RemoteServiceView {
           .width('100%')
       }
 
-      Text(this.isFeedbin()
+      Text(this.isFeedbin
         ? $r('app.string.remote_feedbin_hint')
         : $r('app.string.remote_form_hint'))
         .fontSize($r('app.float.font_size_caption'))
@@ -289,7 +290,7 @@ export struct RemoteServiceView {
       $r('app.string.remote_service_feedbin'), (): void => {
         remoteAccountViewModel.chooseService(RemoteSyncConstants.SERVICE_TYPE_FEEDBIN);
       });
-    if (this.isFeedbin()) {
+    if (this.isFeedbin) {
       feedbin.markSelected();
     } else {
       greader.markSelected();

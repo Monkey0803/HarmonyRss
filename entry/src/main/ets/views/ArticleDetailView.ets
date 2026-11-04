@@ -300,6 +300,7 @@ export struct ArticleDetailView {
   private barTabsController: HdsTabsController = new HdsTabsController();
   /** 上一次注入到文档里的顶部让位（CSS px）；值没变就不重复重排。 */
   private appliedTopPad: number = -1;
+  private insetUpdateTimer: number = -1;
 
   private hostContext(): common.UIAbilityContext {
     const context: common.Context | undefined = this.getUIContext().getHostContext();
@@ -964,6 +965,16 @@ export struct ArticleDetailView {
   }
 
   /** chips 异步就绪 / 变化后重新注入顶部让位（幂等：值没变直接返回）。 */
+  private scheduleReaderInset(): void {
+    if (this.insetUpdateTimer >= 0) {
+      clearTimeout(this.insetUpdateTimer);
+    }
+    this.insetUpdateTimer = setTimeout(() => {
+      this.insetUpdateTimer = -1;
+      this.syncReaderInset();
+    }, 16);
+  }
+
   private syncReaderInset(): void {
     const next: number = this.readerTopPad();
     if (next === this.appliedTopPad) {
@@ -1856,6 +1867,10 @@ export struct ArticleDetailView {
   /** 离开详情页：恢复系统息屏策略，并按当前模式取一次滚动位置写回。 */
   aboutToDisappear(): void {
     readingContinuation.setDetailVisible(false);
+    if (this.insetUpdateTimer >= 0) {
+      clearTimeout(this.insetUpdateTimer);
+      this.insetUpdateTimer = -1;
+    }
     if (this.findOpen) {
       this.closeFind();
     }
@@ -3500,7 +3515,7 @@ export struct ArticleDetailView {
     })
     // 旋转 / 折叠 / 分栏后状态栏高度会变：文档里的顶部让位要按新值重新注入。
     .onAreaChange((oldValue: Area, newValue: Area) => {
-      this.syncReaderInset();
+      this.scheduleReaderInset();
     })
     .backgroundColor($r('app.color.hm_page_transparent'))
   }

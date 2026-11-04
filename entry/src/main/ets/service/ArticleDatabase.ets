@@ -23,6 +23,8 @@ export abstract class ArticleDatabase {
   protected ftsReady: boolean = false;
   /** 中文二元组索引是否可用（建表失败时为 false，中文检索降级为 LIKE）。 */
   protected cjkReady: boolean = false;
+  /** 最新版库的全量索引计数校验延后到首屏之后。 */
+  private verifyIndexesLater: boolean = false;
   /** 设备中文分词能力（启动探针结论：文本 MATCH 是否真的可用）。 */
   protected cjkFtsCapable: boolean = false;
   /** 最近一次统计的中文索引条数。 */
@@ -44,6 +46,7 @@ export abstract class ArticleDatabase {
 
   /** 打开（必要时建表 / 迁移）本地库。失败时降级为「无缓存」而不是崩溃。 */
   async open(context: common.Context): Promise<void> {
+    const startedAt: number = Date.now();
     this.openStarted = true;
     try {
       const config: relationalStore.StoreConfig = {
@@ -75,25 +78,11 @@ export abstract class ArticleDatabase {
         this.store = await relationalStore.getRdbStore(context, fallback);
         hilog.warn(DOMAIN, TAG, 'open with icu tokenizer failed, fell back to default');
       }
+      hilog.info(DOMAIN, TAG, 'startup dbConnection=%{public}dms', Date.now() - startedAt);
       this.store.executeSync(SQL_CREATE);
-      this.addColumnIfNeeded(SQL_ADD_IMAGE);
-      this.addColumnIfNeeded(SQL_ADD_AUTHOR);
-      this.addColumnIfNeeded(SQL_ADD_PROGRESS);
-      this.addColumnIfNeeded(SQL_ADD_PROGRESS_RATIO);
-      this.addColumnIfNeeded(SQL_ADD_READER);
-      this.addColumnIfNeeded(SQL_ADD_CONTENT_HTML);
-      this.addColumnIfNeeded(SQL_ADD_PLAIN_TEXT);
-      this.addColumnIfNeeded(SQL_ADD_PAGE_ETAG);
-      this.addColumnIfNeeded(SQL_ADD_PAGE_LAST_MODIFIED);
-      this.addColumnIfNeeded(SQL_ADD_SAVED);
-      this.addColumnIfNeeded(SQL_ADD_HIDDEN);
-      // v7 跨源去重三列：即使库已是最新版本也补一次（自愈：上次 ALTER 被打断）。
-      this.addColumnIfNeeded(SQL_ADD_LINK_KEY);
-      this.addColumnIfNeeded(SQL_ADD_TITLE_KEY);
-      this.addColumnIfNeeded(SQL_ADD_CANONICAL);
-      // v8 媒体附件 / 音频进度：同样自愈补列。
-      this.addColumnIfNeeded(SQL_ADD_ENCLOSURES);
-      this.addColumnIfNeeded(SQL_ADD_MEDIA_PROGRESS);
+      // 一次读取现有列，仅对缺列执行 ALTER；保留升级被打断后的逐列自愈能力。
+      this.ensureArticleColumns();
+      hilog.info(DOMAIN, TAG, 'startup dbColumns=%{public}dms', Date.now() - startedAt);
       this.store.executeSync(SQL_CREATE_HIGHLIGHTS);
       // 标签 / 智能文件夹：即使库已是最新版本也执行一遍（自愈：上次建表失败 / 被打断）。
       this.createTagTables();
@@ -105,6 +94,7 @@ export abstract class ArticleDatabase {
       this.createRuleTables();
       // v7 去重索引同理：最新版本也自愈（缺索引只是慢，功能不受影响）。
       this.createDedupeIndexes();
+      hilog.info(DOMAIN, TAG, 'startup dbTables=%{public}dms', Date.now() - startedAt);
       // 结构迁移失败不删库：仅降级（无检索 / 无回收站），下次启动会重试。
       try {
         await this.migrate();
@@ -112,11 +102,7 @@ export abstract class ArticleDatabase {
         const error: BusinessError = err as BusinessError;
         hilog.error(DOMAIN, TAG, 'migrate failed, degraded: %{public}d', error.code);
       }
-      // 迁移完成后用真实中文样本探测一次 MATCH 能力（只有命中才算可用，结论进诊断状态）。
-      this.cjkFtsCapable = await this.probeCjkFts();
-      hilog.info(DOMAIN, TAG, 'CJKIDX probe result=%{public}s',
-        this.cjkFtsCapable ? 'capable' : 'unavailable');
-      await this.logIndexSchema();
+      hilog.info(DOMAIN, TAG, 'startup dbMigrate=%{public}dms', Date.now() - startedAt);
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       hilog.error(DOMAIN, TAG, 'open failed: %{public}d', error.code);
@@ -125,6 +111,18 @@ export abstract class ArticleDatabase {
       this.cjkReady = false;
     }
     this.markReady();
+    // 分词能力与 DDL 日志仅供诊断，不参与列表加载和搜索路径选择。
+    // 首屏后再探测，避免启动时为临时 FTS 表建删和日志查询等待数据库。
+    if (this.store !== undefined) {
+      setTimeout(() => {
+        this.verifySearchIndexes().then(() => this.probeCjkFts()).then((capable: boolean) => {
+          this.cjkFtsCapable = capable;
+          hilog.info(DOMAIN, TAG, 'CJKIDX probe result=%{public}s', capable ? 'capable' : 'unavailable');
+          this.logIndexSchema().catch(() => {});
+        }).catch(() => {});
+      }, 500);
+    }
+    hilog.info(DOMAIN, TAG, 'startup databaseOpen=%{public}dms', Date.now() - startedAt);
   }
 
   /**
@@ -165,20 +163,17 @@ export abstract class ArticleDatabase {
       version = 0;
     }
     if (version >= ArticleDbConstants.SCHEMA_VERSION) {
-      // 已是最新版本：仍确认两张索引真的可用（上次可能建表失败 / 重建被打断），必要时补建并在后台重建。
-      // v4 / v5 / v6 的表已在 open() 里用 CREATE TABLE IF NOT EXISTS 自愈过，这里再补一次（幂等）。
-      this.createRemoteTables();
-      this.createRuleTables();
-      this.createFeedTables();
-      this.createDedupeIndexes();
-      const mainStale: boolean = await this.ensureMainIndex();
-      const cjkStale: boolean = await this.ensureCjkIndex();
-      if (mainStale) {
-        this.backgroundRebuildMain();
+      // 表的自愈仍在启动时完成；索引是否可查询立即确认，保证新文章写入索引。
+      // 全量条数校验可能扫描大量文章，留到首屏之后执行。
+      this.ftsReady = await this.detectFts();
+      if (!this.ftsReady) {
+        await this.createFts();
       }
-      if (cjkStale) {
-        this.backgroundRebuildCjk();
+      this.cjkReady = await this.detectCjk();
+      if (!this.cjkReady) {
+        this.createCjk();
       }
+      this.verifyIndexesLater = true;
       return;
     }
     // 结构升级（v1 → v2 → v3 → v4，语句都可重复执行）。
@@ -205,6 +200,22 @@ export abstract class ArticleDatabase {
       hilog.warn(DOMAIN, TAG, 'set version failed: %{public}d', error.code);
     }
     // 首次升级：把已有文章灌进索引（后台分批，避免拖慢冷启动）。
+    if (mainStale) {
+      this.backgroundRebuildMain();
+    }
+    if (cjkStale) {
+      this.backgroundRebuildCjk();
+    }
+  }
+
+  /** 对最新版库补做条数校验；遗漏或中断的索引仍按原逻辑后台重建。 */
+  private async verifySearchIndexes(): Promise<void> {
+    if (!this.verifyIndexesLater) {
+      return;
+    }
+    this.verifyIndexesLater = false;
+    const mainStale: boolean = await this.ensureMainIndex();
+    const cjkStale: boolean = await this.ensureCjkIndex();
     if (mainStale) {
       this.backgroundRebuildMain();
     }
@@ -582,6 +593,43 @@ export abstract class ArticleDatabase {
       }
     } catch (err) {
       return 0;
+    }
+  }
+
+  /** 一次检查所有列，避免正常启动时为每个已存在的列抛异常。 */
+  protected ensureArticleColumns(): void {
+    const store: relationalStore.RdbStore | undefined = this.store;
+    if (store === undefined) {
+      return;
+    }
+    const migrations: string[] = [
+      SQL_ADD_IMAGE, SQL_ADD_AUTHOR, SQL_ADD_PROGRESS, SQL_ADD_PROGRESS_RATIO,
+      SQL_ADD_READER, SQL_ADD_CONTENT_HTML, SQL_ADD_PLAIN_TEXT, SQL_ADD_PAGE_ETAG,
+      SQL_ADD_PAGE_LAST_MODIFIED, SQL_ADD_SAVED, SQL_ADD_HIDDEN, SQL_ADD_LINK_KEY,
+      SQL_ADD_TITLE_KEY, SQL_ADD_CANONICAL, SQL_ADD_ENCLOSURES, SQL_ADD_MEDIA_PROGRESS
+    ];
+    const columns: Set<string> = new Set<string>();
+    let inspected: boolean = false;
+    try {
+      const rs: relationalStore.ResultSet = store.querySqlSync(
+        'PRAGMA table_info(' + ArticleDbConstants.TABLE_ARTICLES + ')');
+      try {
+        while (rs.goToNextRow()) {
+          columns.add(rs.getString(rs.getColumnIndex('name')));
+        }
+        inspected = columns.size > 0;
+      } finally {
+        rs.close();
+      }
+    } catch (err) {
+      hilog.warn(DOMAIN, TAG, 'column inspection failed, falling back to ALTER checks');
+    }
+    for (let i = 0; i < migrations.length; i += 1) {
+      const sql: string = migrations[i];
+      const column: string = sql.split(' ADD COLUMN ')[1].split(' ')[0];
+      if (!inspected || !columns.has(column)) {
+        this.addColumnIfNeeded(sql);
+      }
     }
   }
 

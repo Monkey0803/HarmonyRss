@@ -108,13 +108,14 @@ export function classifyCloudProgressCode(code: number): CloudAvailability {
 }
 
 function recordFromRow(rs: relationalStore.ResultSet): SyncRecord {
+  // 三处读取使用同一列序，分页同步时避免逐记录查六次列名。
   return new SyncRecord(
-    rs.getString(rs.getColumnIndex('recordKey')),
-    rs.getString(rs.getColumnIndex('kind')),
-    Number(rs.getString(rs.getColumnIndex('updatedAt'))),
-    rs.getLong(rs.getColumnIndex('deleted')) === 1,
-    rs.getString(rs.getColumnIndex('payload')),
-    rs.getString(rs.getColumnIndex('origin')));
+    rs.getString(0),
+    rs.getString(1),
+    Number(rs.getString(3)),
+    rs.getLong(4) === 1,
+    rs.getString(2),
+    rs.getString(5));
 }
 
 export class CloudStore {

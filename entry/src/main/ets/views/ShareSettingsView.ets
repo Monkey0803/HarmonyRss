@@ -127,6 +127,7 @@ export struct ShareSettingsView {
   /** 校验 / 落库失败的资源 key（空串 = 无错误）。 */
   @Local errorKey: string = '';
   @Local saving: boolean = false;
+  private previewCache: Map<string, string> = new Map<string, string>();
 
   aboutToAppear(): void {
     const context: common.Context | undefined = this.getUIContext().getHostContext();
@@ -162,7 +163,16 @@ export struct ShareSettingsView {
 
   /** 内容摘要：压成一行（多行内容在列表里最多显示两行）。 */
   private previewOf(content: string): string {
-    return content.replace(/\s+/g, ' ').trim();
+    const cached: string | undefined = this.previewCache.get(content);
+    if (cached !== undefined) {
+      return cached;
+    }
+    const preview: string = content.replace(/\s+/g, ' ').trim();
+    if (this.previewCache.size >= CommonConstants.SHARE_TEMPLATE_MAX * 2) {
+      this.previewCache.clear();
+    }
+    this.previewCache.set(content, preview);
+    return preview;
   }
 
   private startCreate(): void {

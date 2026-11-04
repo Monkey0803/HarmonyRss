@@ -358,16 +358,11 @@ export class ArticleSearchStore extends ArticleDatabase {
     try {
       const rs: relationalStore.ResultSet = await store.querySql(sql, args);
       try {
+        // 三条检索路径共用固定 SELECT 列序，逐行读取时避免重复按列名查找。
         while (rs.goToNextRow()) {
           hits.push(new SearchHit(
-            rs.getString(rs.getColumnIndex('id')),
-            rs.getString(rs.getColumnIndex('title')),
-            rs.getString(rs.getColumnIndex('snippet')),
-            rs.getString(rs.getColumnIndex('feed_title')),
-            rs.getLong(rs.getColumnIndex('published_at')),
-            rs.getLong(rs.getColumnIndex('is_read')) === 1,
-            rs.getLong(rs.getColumnIndex('is_starred')) === 1,
-            rs.getLong(rs.getColumnIndex('is_saved')) === 1));
+            rs.getString(0), rs.getString(1), rs.getString(7), rs.getString(2),
+            rs.getLong(3), rs.getLong(4) === 1, rs.getLong(5) === 1, rs.getLong(6) === 1));
         }
       } finally {
         rs.close();

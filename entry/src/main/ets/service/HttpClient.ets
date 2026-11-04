@@ -286,11 +286,14 @@ export class HttpClient {
       return;
     }
     const last: number = this.hostLastStart.get(hostKey) ?? 0;
-    const wait: number = last + minIntervalMs - Date.now();
+    const now: number = Date.now();
+    const scheduled: number = Math.max(now, last + minIntervalMs);
+    // 在等待前预留时段，避免多个并发请求同时读到同一上次开始时间。
+    this.hostLastStart.set(hostKey, scheduled);
+    const wait: number = scheduled - now;
     if (wait > 0) {
       await delay(wait);
     }
-    this.hostLastStart.set(hostKey, Date.now());
   }
 
   /** 补默认头（只在调用方没设置时）。 */

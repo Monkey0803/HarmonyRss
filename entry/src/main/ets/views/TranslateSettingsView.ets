@@ -17,6 +17,7 @@ import { TranslationError } from '../model/Translation';
 import { translationService } from '../service/TranslationService';
 import { aiTranslateSecretStore } from '../service/TranslateSecretStore';
 import { settingsStore } from '../service/SettingsStore';
+import { settingsViewModel } from '../viewmodel/SettingsViewModel';
 import { safeArea } from '../service/SafeAreaController';
 import { ToastUtil } from '../common/utils/ToastUtil';
 import { translationErrorText, languageText } from '../common/utils/TranslationText';
@@ -47,7 +48,7 @@ export struct TranslateSettingsView {
     }
     this.endpointDraft = appSettings.translateAiEndpoint;
     this.modelDraft = appSettings.translateAiModel;
-    settingsStore.load(context).then(() => {
+    settingsViewModel.whenReady().then(() => {
       this.endpointDraft = appSettings.translateAiEndpoint;
       this.modelDraft = appSettings.translateAiModel;
     });

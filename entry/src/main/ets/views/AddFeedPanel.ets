@@ -61,11 +61,16 @@ export struct AddFeedPanel {
   @Local draftNewGroup: string = '';
   /** 待确认的预览对象（普通字段，不参与观察；确认落库时复用其已解析结果）。 */
   private pending: FeedPreview | undefined = undefined;
+  private previewRequest: number = 0;
 
   aboutToAppear(): void {
     if (this.initialText.length > 0) {
       this.inputText = this.initialText;
     }
+  }
+
+  aboutToDisappear(): void {
+    this.previewRequest += 1;
   }
 
   /** 读剪贴板：仅在用户点击粘贴控件（已获得临时授权）后调用。 */
@@ -80,6 +85,10 @@ export struct AddFeedPanel {
   }
 
   private async submit(): Promise<void> {
+    if (this.submitting) {
+      return;
+    }
+    const input: string = this.inputText;
     const urls: string[] = UrlText.splitUrlLines(this.inputText);
     if (urls.length === 0) {
       ToastUtil.show(this.getUIContext(), $r('app.string.err_empty_url'));
@@ -88,8 +97,15 @@ export struct AddFeedPanel {
     // 单地址：进入预览确认；多地址：批量添加。
     if (urls.length === 1) {
       this.submitting = true;
+      const request: number = ++this.previewRequest;
       const choices: FeedPreview[] = await feedViewModel.previewFeeds(urls[0]);
+      if (request !== this.previewRequest) {
+        return;
+      }
       this.submitting = false;
+      if (input !== this.inputText) {
+        return;
+      }
       if (choices.length > 0) {
         this.previewChoices = choices;
         this.selectPreview(choices[0]);
@@ -132,6 +148,8 @@ export struct AddFeedPanel {
   }
 
   private cancelPreview(): void {
+    this.previewRequest += 1;
+    this.submitting = false;
     this.pending = undefined;
     this.hasPreview = false;
     this.previewItems = [];
@@ -142,6 +160,8 @@ export struct AddFeedPanel {
   }
 
   private reset(): void {
+    this.previewRequest += 1;
+    this.submitting = false;
     this.inputText = '';
     this.pending = undefined;
     this.hasPreview = false;
@@ -453,6 +473,7 @@ export struct AddFeedPanel {
               .padding($r('app.float.space_xs'))
               .accessibilityText($r('app.string.dialog_cancel'))
               .onClick(() => {
+                this.cancelPreview();
                 this.onClose();
               })
           }

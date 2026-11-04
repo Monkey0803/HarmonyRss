@@ -218,6 +218,7 @@ export struct BackupView {
    * 避免用户第一次进来看到「暂无快照」而实际上快照马上就写好了。
    */
   aboutToAppear(): void {
+    this.disposed = false;
     const context: common.Context | undefined = this.hostContext();
     if (context === undefined) {
       return;

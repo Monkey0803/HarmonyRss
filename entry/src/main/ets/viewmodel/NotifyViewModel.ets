@@ -12,6 +12,7 @@ import { clampDigestHour, clampMinuteOfDay, normalizeKeywords, normalizePolicy }
 import { notifyStore } from '../service/NotifyStore';
 import { notifyService } from '../service/NotifyService';
 import { settingsStore } from '../service/SettingsStore';
+import { settingsViewModel } from './SettingsViewModel';
 
 @ObservedV2
 export class NotifyViewModel {
@@ -49,7 +50,7 @@ export class NotifyViewModel {
 
   private async load(context: common.Context): Promise<void> {
     await notifyStore.open(context);
-    await settingsStore.load(context);
+    await settingsViewModel.whenReady();
     this.applyPolicy(notifyStore.loadPolicy());
     this.refreshPermission();
   }

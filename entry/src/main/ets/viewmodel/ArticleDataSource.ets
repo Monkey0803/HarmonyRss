@@ -19,7 +19,7 @@ import { Article } from '../model/Feed';
  */
 export function articleRowKey(item: Article): string {
   return item.id + '_' + (item.read ? '1' : '0') + '_' + (item.starred ? '1' : '0') +
-    '_' + Math.round(item.progressRatio * 100);
+    '_' + (item.saved ? '1' : '0') + '_' + Math.round(item.progressRatio * 100);
 }
 
 /** 列表数据源：持有一份不可变数组，替换时通知刷新。 */
@@ -27,11 +27,20 @@ export class ArticleDataSource implements IDataSource {
   private items: object[] = [];
   private listeners: DataChangeListener[] = [];
 
-  /** 用新数组整体替换（列表会重新按需构建可见项）。 */
-  setItems(next: object[]): void {
+  /** 替换数据；仅在调用方确认是尾部续页时逐条通知新增。 */
+  setItems(next: object[], appended: boolean = false, changedIndex: number = -1): void {
+    const priorLength: number = this.items.length;
     this.items = next;
     for (let i = 0; i < this.listeners.length; i += 1) {
-      this.listeners[i].onDataReloaded();
+      if (changedIndex >= 0 && next.length === priorLength && changedIndex < next.length) {
+        this.listeners[i].onDataChange(changedIndex);
+      } else if (appended && next.length > priorLength) {
+        for (let index = priorLength; index < next.length; index += 1) {
+          this.listeners[i].onDataAdd(index);
+        }
+      } else {
+        this.listeners[i].onDataReloaded();
+      }
     }
   }
 

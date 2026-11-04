@@ -79,13 +79,15 @@ export struct DiscoverView {
   }
 
   /** 当前分类 / 关键词下的目录。 */
-  private visibleFeeds(): DiscoverFeed[] {
+  @Computed
+  get visibleFeeds(): DiscoverFeed[] {
     const revision: number = this.catalogRevision;
     return DiscoverService.filter(this.category, this.keyword);
   }
 
   /** 本地相似源推荐（最多 6 条；没有主题信号时为空）。 */
-  private recommendedFeeds(): DiscoverFeed[] {
+  @Computed
+  get recommendedFeeds(): DiscoverFeed[] {
     const revision: number = this.catalogRevision;
     return DiscoverService.recommendations(feedViewModel.feeds, 6);
   }
@@ -616,28 +618,28 @@ export struct DiscoverView {
         }
 
         if (this.category === DiscoverCategory.ALL && this.keyword.trim().length === 0) {
-          if (this.recommendedFeeds().length > 0) {
+          if (this.recommendedFeeds.length > 0) {
             this.SectionTitle($r('app.string.discover_section_recommended'))
             Text($r('app.string.discover_recommend_hint'))
               .fontSize($r('app.float.font_size_caption'))
               .fontColor($r('app.color.hm_text_secondary'))
               .width('100%')
               .padding({ left: $r('app.float.space_xs'), bottom: $r('app.float.space_s') })
-            ForEach(this.recommendedFeeds(), (feed: DiscoverFeed) => {
+            ForEach(this.recommendedFeeds, (feed: DiscoverFeed) => {
               this.FeedCard(feed, 0)
             }, (feed: DiscoverFeed) => 'r:' + feed.feedUrl)
           }
         }
 
         this.SectionTitle(this.sectionTitle())
-        if (this.visibleFeeds().length === 0) {
+        if (this.visibleFeeds.length === 0) {
           Text($r('app.string.discover_empty'))
             .fontSize($r('app.float.font_size_caption'))
             .fontColor($r('app.color.hm_text_secondary'))
             .width('100%')
             .padding($r('app.float.space_l'))
         } else {
-          ForEach(this.visibleFeeds(), (feed: DiscoverFeed, index: number) => {
+          ForEach(this.visibleFeeds, (feed: DiscoverFeed, index: number) => {
             this.FeedCard(feed, this.category === DiscoverCategory.HOT ? index + 1 : 0)
           }, (feed: DiscoverFeed) => feed.feedUrl)
         }

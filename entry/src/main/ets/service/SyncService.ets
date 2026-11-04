@@ -381,11 +381,17 @@ export class SyncService {
       return new SyncSummary(0, 0, 0, 0, 0, 'busy');
     }
     this.syncingFlag = true;
+    const startedAt: number = Date.now();
+    let collectMs: number = 0;
+    let transferMs: number = 0;
+    let applyMs: number = 0;
     try {
       await articleDatabase.whenReady();
       const origin: string = await this.nodeId(context);
       const collector: SyncCollector = new SyncCollector(syncStore, origin);
+      const collectStarted: number = Date.now();
       await collector.collect(context, Date.now());
+      collectMs = Date.now() - collectStarted;
       let backend: SyncBackend;
       if (await this.isCloudBackend(context)) {
         const ready: boolean = await this.prepareCloud(context);
@@ -403,9 +409,13 @@ export class SyncService {
         backend = new MockSyncBackend(context);
       }
       const engine: SyncEngine = new SyncEngine(backend, syncStore, origin);
+      const transferStarted: number = Date.now();
       const summary: SyncSummary = await engine.run();
+      transferMs = Date.now() - transferStarted;
       if (summary.error.length === 0) {
+        const applyStarted: number = Date.now();
         await collector.apply(context);
+        applyMs = Date.now() - applyStarted;
         await this.rememberLastSync(context, summary.at);
         await this.rememberConflicts(context, summary.conflicts, engine.conflictDetails());
         // 已推送的旧墓碑按保留期清理，避免云表随删除操作无限增长。
@@ -425,6 +435,8 @@ export class SyncService {
       return new SyncSummary(0, 0, 0, await syncStore.pendingCount(), 0, 'unknown');
     } finally {
       this.syncingFlag = false;
+      hilog.info(DOMAIN, TAG, 'perf sync total=%{public}dms collect=%{public}dms transfer=%{public}dms apply=%{public}dms',
+        Date.now() - startedAt, collectMs, transferMs, applyMs);
     }
   }
 

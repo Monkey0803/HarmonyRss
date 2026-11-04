@@ -114,13 +114,13 @@ export async function writeSnapshot(context: common.Context, name: string,
   }
   const path: string = dir + '/' + fileName;
   try {
-    const file: fileIo.File = fileIo.openSync(path,
+    const file: fileIo.File = await fileIo.open(path,
       fileIo.OpenMode.READ_WRITE | fileIo.OpenMode.CREATE | fileIo.OpenMode.TRUNC);
     try {
-      fileIo.writeSync(file.fd, content);
+      await fileIo.write(file.fd, content);
       return path;
     } finally {
-      closeQuietly(file);
+      await fileIo.close(file);
     }
   } catch (err) {
     logFailure('writeSnapshot', err as Object);
@@ -178,23 +178,23 @@ export async function readSnapshot(path: string): Promise<string> {
   if (path.length === 0) {
     return '';
   }
-  return readText(path, 'readSnapshot');
+  return await readText(path, 'readSnapshot');
 }
 
 /** 读文本（选择器 URI 与沙箱路径都要支持）。 */
-function readText(uriOrPath: string, action: string): string {
+async function readText(uriOrPath: string, action: string): Promise<string> {
   if (uriOrPath.length === 0) {
     return '';
   }
-  // 选择器返回的是 `file://docs/...` 这类 URI，readTextSync 只认沙箱路径，
+  // 选择器返回的是 `file://docs/...` 这类 URI，readText 只认沙箱路径，
   // 直接传 URI 会报 "No such file or directory"。必须先 open 拿到 fd 再按字节读。
   let file: fileIo.File | undefined = undefined;
   try {
-    file = fileIo.openSync(uriOrPath, fileIo.OpenMode.READ_ONLY);
-    const size: number = fileIo.statSync(file.fd).size;
+    file = await fileIo.open(uriOrPath, fileIo.OpenMode.READ_ONLY);
+    const size: number = (await fileIo.stat(file.fd)).size;
     if (size > 0) {
       const buffer: ArrayBuffer = new ArrayBuffer(size);
-      const readLen: number = fileIo.readSync(file.fd, buffer);
+      const readLen: number = await fileIo.read(file.fd, buffer);
       if (readLen > 0) {
         const bytes: Uint8Array = new Uint8Array(buffer, 0, readLen);
         return util.TextDecoder.create('utf-8').decodeToString(bytes);
@@ -204,12 +204,16 @@ function readText(uriOrPath: string, action: string): string {
     logFailure(action, err as Object);
   } finally {
     if (file !== undefined) {
-      closeQuietly(file);
+      try {
+        await fileIo.close(file);
+      } catch (err) {
+        logFailure('close', err as Object);
+      }
     }
   }
-  // 兜底：沙箱内路径（快照）仍走 readTextSync，避免多一次 open/close。
+  // 兜底：沙箱内路径（快照）仍走 readText。
   try {
-    return fileIo.readTextSync(uriOrPath, { encoding: 'utf-8' });
+    return await fileIo.readText(uriOrPath, { encoding: 'utf-8' });
   } catch (err) {
     logFailure(action, err as Object);
     return '';
@@ -217,15 +221,15 @@ function readText(uriOrPath: string, action: string): string {
 }
 
 /** 把文本写进选择器给出的 URI；失败返回 false。 */
-function writeText(uri: string, content: string): boolean {
+async function writeText(uri: string, content: string): Promise<boolean> {
   try {
-    const file: fileIo.File = fileIo.openSync(uri,
+    const file: fileIo.File = await fileIo.open(uri,
       fileIo.OpenMode.READ_WRITE | fileIo.OpenMode.TRUNC);
     try {
-      fileIo.writeSync(file.fd, content);
+      await fileIo.write(file.fd, content);
       return true;
     } finally {
-      closeQuietly(file);
+      await fileIo.close(file);
     }
   } catch (err) {
     logFailure('writeText', err as Object);
@@ -248,7 +252,7 @@ export async function saveViaPicker(context: common.Context, content: string): P
     if (uris.length === 0) {
       return PickerStatus.CANCELLED;
     }
-    return writeText(uris[0], content) ? PickerStatus.DONE : PickerStatus.FAILED;
+    return await writeText(uris[0], content) ? PickerStatus.DONE : PickerStatus.FAILED;
   } catch (err) {
     logFailure('saveViaPicker', err as Object);
     return PickerStatus.FAILED;
@@ -269,7 +273,7 @@ export async function selectViaPicker(context: common.Context): Promise<PickerOu
     if (uris.length === 0) {
       return new PickerOutput(PickerStatus.CANCELLED);
     }
-    const text: string = readText(uris[0], 'selectViaPicker');
+    const text: string = await readText(uris[0], 'selectViaPicker');
     if (text.length === 0) {
       return new PickerOutput(PickerStatus.FAILED);
     }

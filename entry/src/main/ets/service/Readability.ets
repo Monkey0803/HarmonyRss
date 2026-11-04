@@ -485,6 +485,7 @@ export function feedBodyKind(html: string): FeedBodyKind {
  * baseUrl 用于把相对图片 / 链接绝对化。
  */
 export function extractReadable(html: string, baseUrl: string): string {
+  const startedAt: number = Date.now();
   const source: string = html.length > ReaderConstants.MAX_SOURCE_HTML_CHARS
     ? html.substring(0, ReaderConstants.MAX_SOURCE_HTML_CHARS)
     : html;
@@ -494,6 +495,7 @@ export function extractReadable(html: string, baseUrl: string): string {
   } catch (err) {
     return '';
   }
+  const parsedAt: number = Date.now();
   const body: HtmlNode = bodyOf(root);
   // 一次后序遍历把每个节点的文本 / 标点 / 链接长度算好，下面快路径 / 打分 / 长度判断共用。
   const metrics: Map<HtmlNode, NodeMetrics> = collectMetrics(body);
@@ -506,6 +508,7 @@ export function extractReadable(html: string, baseUrl: string): string {
       candidate = refineCandidate(body, candidate, metrics);
     }
   }
+  const selectedAt: number = Date.now();
 
   let fragment: string = '';
   if (candidate !== undefined) {
@@ -518,7 +521,12 @@ export function extractReadable(html: string, baseUrl: string): string {
     // 兜底：整页去壳，保留块结构（仍远优于纯文本）。
     fragment = sanitizeFragment(body, baseUrl);
   }
-  return truncateHtml(fragment);
+  const result: string = truncateHtml(fragment);
+  if (source.length > 10000) {
+    console.info('perf reader parse=' + (parsedAt - startedAt) + 'ms select=' +
+      (selectedAt - parsedAt) + 'ms sanitize=' + (Date.now() - selectedAt) + 'ms');
+  }
+  return result;
 }
 
 /** 片段超长时按字符截断（尽量在标签外截断，避免破坏结构）。 */

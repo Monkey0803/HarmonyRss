@@ -420,10 +420,13 @@ export class MediaPlayerService {
     });
     player.on('timeUpdate', (time: number) => {
       const seconds: number = Math.max(0, Math.floor(time / 1000));
-      this.positionSeconds = seconds;
       if (seconds > this.durationSeconds) {
         this.durationSeconds = seconds;
       }
+      if (seconds === this.positionSeconds) {
+        return;
+      }
+      this.positionSeconds = seconds;
       if (seconds - this.lastSavedSecond >= SAVE_INTERVAL_SECONDS) {
         this.lastSavedSecond = seconds;
         this.saveProgress();

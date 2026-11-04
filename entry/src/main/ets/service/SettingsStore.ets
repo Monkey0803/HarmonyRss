@@ -7,6 +7,7 @@
 import { preferences } from '@kit.ArkData';
 import { common } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 import { appSettings } from '../model/AppSettings';
 import { ARCHIVE_OPTIONS, LIST_DENSITY_OPTIONS, ROW_LAYOUT_OPTIONS, SUMMARY_LINES_OPTIONS, THEME_OPTIONS, LANGUAGE_OPTIONS, MATERIAL_TYPE_OPTIONS, MATERIAL_LEVEL_OPTIONS, BACKGROUND_OPTIONS, LOGO_OPTIONS, AUTO_REFRESH_OPTIONS, READER_FONT_OPTIONS, READER_LINE_OPTIONS, READER_FAMILY_OPTIONS, READER_WIDTH_OPTIONS, READER_ALIGN_OPTIONS, READER_THEME_OPTIONS, READER_INDENT_OPTIONS, RETENTION_MODE_OPTIONS, RETENTION_DAYS_OPTIONS } from '../model/SettingsOptions';
 import { PreferencesConstants } from '../common/constants/PreferencesConstants';
@@ -17,6 +18,8 @@ import { BackupScalar, BackupSettings } from '../model/Backup';
 import { settingsWhitelist } from './BackupCodec';
 import { NotifyDefaults } from '../model/Notify';
 import { clampDigestHour, clampMinuteOfDay, decodeKeywords, encodeKeywords, normalizeKeywords } from './NotifyPolicy';
+
+const BACKUP_SETTINGS_KEYS: string[] = settingsWhitelist();
 
 /** 远端自动同步间隔归一：脏值一律退回「关」。 */
 export function normalizeRemoteAutoSync(value: string): string {
@@ -154,6 +157,7 @@ export class SettingsStore {
 
   /** 打开偏好库并把已存的值读进 appSettings。首次运行读不到值就保持默认。 */
   async load(context: common.Context): Promise<void> {
+    const startedAt: number = Date.now();
     try {
       const store: preferences.Preferences = await preferences.getPreferences(context, PreferencesConstants.STORE_NAME);
       this.store = store;
@@ -304,6 +308,8 @@ export class SettingsStore {
     } catch (err) {
       const error: BusinessError = err as BusinessError;
       console.error('SettingsStore.load failed: ' + error.code.toString());
+    } finally {
+      hilog.info(0x0000, 'SettingsStore', 'startup settingsLoad=%{public}dms', Date.now() - startedAt);
     }
   }
 
@@ -313,7 +319,7 @@ export class SettingsStore {
    */
   exportWhitelisted(): BackupSettings {
     const settings: BackupSettings = new BackupSettings();
-    const keys: string[] = settingsWhitelist();
+    const keys: string[] = BACKUP_SETTINGS_KEYS;
     for (let i = 0; i < keys.length; i += 1) {
       const key: string = keys[i];
       switch (key) {
@@ -426,7 +432,7 @@ export class SettingsStore {
    * 这里只改状态与落盘。
    */
   applyWhitelisted(settings: BackupSettings): void {
-    const keys: string[] = settingsWhitelist();
+    const keys: string[] = BACKUP_SETTINGS_KEYS;
     for (let i = 0; i < keys.length; i += 1) {
       const key: string = keys[i];
       if (!settings.has(key)) {

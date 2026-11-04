@@ -283,13 +283,13 @@ export class RemoteAccountStore {
         ' FROM ' + ArticleDbConstants.TABLE_SYNC_OUTBOX + ' WHERE article_id = ?', [articleId]);
       try {
         if (rs.goToNextRow()) {
-          item.setRead = rs.getLong(rs.getColumnIndex('set_read')) === 1;
-          item.readValue = rs.getLong(rs.getColumnIndex('read_value')) === 1;
-          item.setStarred = rs.getLong(rs.getColumnIndex('set_starred')) === 1;
-          item.starredValue = rs.getLong(rs.getColumnIndex('starred_value')) === 1;
-          item.updatedAt = rs.getLong(rs.getColumnIndex('updated_at'));
-          item.retries = rs.getLong(rs.getColumnIndex('retries'));
-          item.lastError = rs.getString(rs.getColumnIndex('last_error'));
+          item.setRead = rs.getLong(0) === 1;
+          item.readValue = rs.getLong(1) === 1;
+          item.setStarred = rs.getLong(2) === 1;
+          item.starredValue = rs.getLong(3) === 1;
+          item.updatedAt = rs.getLong(4);
+          item.retries = rs.getLong(5);
+          item.lastError = rs.getString(6);
         }
       } finally {
         rs.close();
@@ -313,14 +313,14 @@ export class RemoteAccountStore {
         ' FROM ' + ArticleDbConstants.TABLE_SYNC_OUTBOX + ' ORDER BY updated_at ASC LIMIT ?', [limit]);
       try {
         while (rs.goToNextRow()) {
-          const item: OutboxItem = new OutboxItem(rs.getString(rs.getColumnIndex('article_id')));
-          item.setRead = rs.getLong(rs.getColumnIndex('set_read')) === 1;
-          item.readValue = rs.getLong(rs.getColumnIndex('read_value')) === 1;
-          item.setStarred = rs.getLong(rs.getColumnIndex('set_starred')) === 1;
-          item.starredValue = rs.getLong(rs.getColumnIndex('starred_value')) === 1;
-          item.updatedAt = rs.getLong(rs.getColumnIndex('updated_at'));
-          item.retries = rs.getLong(rs.getColumnIndex('retries'));
-          item.lastError = rs.getString(rs.getColumnIndex('last_error'));
+          const item: OutboxItem = new OutboxItem(rs.getString(0));
+          item.setRead = rs.getLong(1) === 1;
+          item.readValue = rs.getLong(2) === 1;
+          item.setStarred = rs.getLong(3) === 1;
+          item.starredValue = rs.getLong(4) === 1;
+          item.updatedAt = rs.getLong(5);
+          item.retries = rs.getLong(6);
+          item.lastError = rs.getString(7);
           result.push(item);
         }
       } finally {

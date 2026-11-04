@@ -68,6 +68,9 @@ function isVoidOut(tag: string): boolean {
 
 /** HTML 文本转义（用于文本节点与属性值）。 */
 export function escapeHtml(value: string): string {
+  if (!/[&<>"]/.test(value)) {
+    return value;
+  }
   let out: string = value;
   out = out.split('&').join('&amp;');
   out = out.split('<').join('&lt;');

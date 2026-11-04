@@ -17,7 +17,7 @@ import {
   encodeArticleStatePayload,
   encodeFeedPayload
 } from '../../../main/ets/model/Sync';
-import { mergeSnapshot, sameFeed } from '../../../main/ets/service/sync/SyncCollector';
+import { mergeSnapshot, sameArticleSnapshot, sameFeed } from '../../../main/ets/service/sync/SyncCollector';
 
 function feedRecord(payload: FeedPayload): SyncRecord {
   return new SyncRecord('feed:https://example.com/feed', SyncKinds.FEED, 100, false,
@@ -75,6 +75,14 @@ export default function syncCollectorTest() {
       expect(payload.saved.value).assertEqual('0');
       expect(payload.progress.value).assertEqual('0.5');
       expect(payload.progress.at).assertEqual(500);
+    });
+
+    it('sameArticleSnapshot_skips_only_identical_values', 0, () => {
+      const prior: ArticleStatePayload = statePayload('1', '0', '1', '0.4', 100);
+      expect(sameArticleSnapshot(prior, true, false, true, 0.4)).assertTrue();
+      expect(sameArticleSnapshot(prior, false, false, true, 0.4)).assertFalse();
+      expect(sameArticleSnapshot(prior, true, false, true, 0.5)).assertFalse();
+      expect(sameArticleSnapshot(undefined, true, false, true, 0.4)).assertFalse();
     });
 
     it('mergeSnapshot_keeps_timestamps_when_nothing_changed', 0, () => {

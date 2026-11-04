@@ -127,8 +127,13 @@ export class BackupService {
     }
     this.busy = true;
     try {
+      const collectStarted: number = Date.now();
       const doc: BackupDocument = await this.collect(context);
+      const collectMs: number = Date.now() - collectStarted;
+      const serializeStarted: number = Date.now();
       const text: string = serialize(doc);
+      hilog.info(DOMAIN, TAG, 'perf export collect=%{public}dms serialize=%{public}dms chars=%{public}d',
+        collectMs, Date.now() - serializeStarted, text.length);
       if (text.length === 0) {
         hilog.warn(DOMAIN, TAG, 'export aborted: serialize produced empty text');
         return BackupRunStatus.FAILED;
@@ -165,12 +170,17 @@ export class BackupService {
       if (picked.status !== PickerStatus.DONE) {
         return new BackupImportResult(BackupRunStatus.FAILED);
       }
+      const parseStarted: number = Date.now();
       const doc: BackupDocument | undefined = parse(picked.text);
+      const parseMs: number = Date.now() - parseStarted;
       if (doc === undefined) {
         hilog.warn(DOMAIN, TAG, 'import aborted: unparsable or version mismatch');
         return new BackupImportResult(BackupRunStatus.FAILED);
       }
+      const applyStarted: number = Date.now();
       const summary: BackupSummary = await this.applyDocument(context, doc, restoreSettings);
+      hilog.info(DOMAIN, TAG, 'perf import parse=%{public}dms apply=%{public}dms chars=%{public}d',
+        parseMs, Date.now() - applyStarted, picked.text.length);
       return new BackupImportResult(BackupRunStatus.DONE, summary);
     } catch (err) {
       logFailure('importFromFile', err as Object);
@@ -312,7 +322,8 @@ export class BackupService {
     }
 
     // 文章 id 快照：高亮与标签关联都要求文章存在（含刚插入的那些）。
-    const articleIds: Set<string> = await this.existingArticleIds();
+    const needsArticleIds: boolean = doc.highlights.length > 0 || doc.articleTags.length > 0;
+    const articleIds: Set<string> = needsArticleIds ? await this.existingArticleIds() : new Set<string>();
 
     // 3) 高亮：文章不存在的条目跳过并计入 skipped。
     try {

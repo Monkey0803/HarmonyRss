@@ -37,7 +37,8 @@ struct SnippetText {
   @Param text: string = '';
   @Param term: string = '';
 
-  private segments(): SnippetSegment[] {
+  @Computed
+  get segments(): SnippetSegment[] {
     const result: SnippetSegment[] = [];
     const source: string = this.text;
     const term: string = this.term.trim();
@@ -69,7 +70,7 @@ struct SnippetText {
 
   build() {
     Text() {
-      ForEach(this.segments(), (segment: SnippetSegment, index: number) => {
+      ForEach(this.segments, (segment: SnippetSegment, index: number) => {
         Span(segment.text)
           .fontColor(segment.hit ? themePalette.accent() : $r('app.color.hm_text_secondary'))
           .fontWeight(segment.hit ? FontWeight.Medium : FontWeight.Regular)

@@ -37,6 +37,7 @@ export struct DiagnosticsView {
   @Local cachedArticles: number = 0;
   @Local cachedChars: number = 0;
   @Local retrying: boolean = false;
+  private statsToken: number = 0;
 
   aboutToAppear(): void {
     const context: common.Context | undefined = this.getUIContext().getHostContext();
@@ -46,9 +47,18 @@ export struct DiagnosticsView {
     this.loadStorageStats();
   }
 
+  aboutToDisappear(): void {
+    this.statsToken += 1;
+  }
+
   private async loadStorageStats(): Promise<void> {
-    this.articleCount = await articleRepository.countAll();
+    const token: number = ++this.statsToken;
+    const count: number = await articleRepository.countAll();
     const stats: CacheStats = await articleRepository.cacheStats();
+    if (token !== this.statsToken) {
+      return;
+    }
+    this.articleCount = count;
     this.cachedArticles = stats.articles;
     this.cachedChars = stats.bytes;
   }
@@ -120,7 +130,8 @@ export struct DiagnosticsView {
   }
 
   /** 当前失败源：连续失败次数降序。 */
-  private failingFeeds(): FeedSource[] {
+  @Computed
+  get failingFeeds(): FeedSource[] {
     const list: FeedSource[] = [];
     for (let i = 0; i < feedViewModel.feeds.length; i += 1) {
       const feed: FeedSource = feedViewModel.feeds[i];
@@ -313,14 +324,14 @@ export struct DiagnosticsView {
   @Builder
   HealthCard() {
     Column() {
-      if (this.failingFeeds().length === 0) {
+      if (this.failingFeeds.length === 0) {
         Text($r('app.string.diagnostics_health_ok'))
           .fontSize($r('app.float.font_size_caption'))
           .fontColor($r('app.color.hm_text_secondary'))
           .width('100%')
           .padding($r('app.float.space_m'))
       } else {
-        ForEach(this.failingFeeds(), (feed: FeedSource, index: number) => {
+        ForEach(this.failingFeeds, (feed: FeedSource, index: number) => {
           if (index > 0) {
             Divider().color($r('app.color.hm_divider'))
           }
