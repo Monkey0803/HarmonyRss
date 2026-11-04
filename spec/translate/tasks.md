@@ -12,3 +12,4 @@
 - [X] T010 中英文案
 - [X] T011 `arkts_check` / 纯 V2 自查 / `build_project` / ohosTest
 - [X] T012 更新 README / TODO
+- [X] T013 目标语言可选（设置页 + 翻译面板双入口，默认跟随应用语言；简→繁放行；7 locale 文案与单测）

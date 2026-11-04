@@ -89,11 +89,35 @@ export class TranslationViewModel {
     this.articleId = '';
     this.sourceText = '';
     this.selectionOriginal = splitParagraphs(text.trim()).join('\n\n');
+    await this.runSelection();
+  }
+
+  /** 目标语言切换后重新翻译：选段与整篇都按新目标刷新，整篇优先命中该目标缓存。 */
+  async reload(): Promise<void> {
+    const context: common.Context | undefined = this.context;
+    if (context === undefined) {
+      return;
+    }
+    if (this.selectionOriginal.length > 0) {
+      await this.runSelection();
+    }
+    if (this.articleId.length > 0) {
+      this.status = STATUS_LOADING;
+      this.errorCode = '';
+      await this.run(false);
+    }
+  }
+
+  private async runSelection(): Promise<void> {
+    const context: common.Context | undefined = this.context;
+    if (context === undefined || this.selectionOriginal.length === 0) {
+      return;
+    }
     this.selectionTranslated = '';
     this.selectionError = '';
     this.selectionStatus = STATUS_LOADING;
     try {
-      const translated: string = await translationService.translateSelection(context, text);
+      const translated: string = await translationService.translateSelection(context, this.selectionOriginal);
       this.selectionTranslated = translated;
       this.selectionStatus = STATUS_READY;
     } catch (err) {

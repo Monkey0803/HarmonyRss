@@ -40,8 +40,11 @@ export function translationErrorText(code: string): ResourceStr {
 
 /** 语言代码 → 本地化名称。 */
 export function languageText(code: string): ResourceStr {
-  if (code === 'zh') {
+  if (code === 'zh' || code === 'zh-hans') {
     return $r('app.string.translate_lang_zh');
+  }
+  if (code === 'zh-hant') {
+    return $r('app.string.translate_lang_zh_hant');
   }
   if (code === 'ja') {
     return $r('app.string.translate_lang_ja');
@@ -54,6 +57,15 @@ export function languageText(code: string): ResourceStr {
   }
   if (code === 'ar') {
     return $r('app.string.translate_lang_ar');
+  }
+  if (code === 'de') {
+    return $r('app.string.translate_lang_de');
+  }
+  if (code === 'fr') {
+    return $r('app.string.translate_lang_fr');
+  }
+  if (code === 'es') {
+    return $r('app.string.translate_lang_es');
   }
   if (code === 'und') {
     return $r('app.string.translate_lang_und');

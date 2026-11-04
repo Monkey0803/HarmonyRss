@@ -117,6 +117,8 @@ export class PreferencesConstants {
   static readonly KEY_TRANSLATE_ENABLED: string = 'translateEnabled';
   static readonly KEY_TRANSLATE_AI_ENDPOINT: string = 'translateAiEndpoint';
   static readonly KEY_TRANSLATE_AI_MODEL: string = 'translateAiModel';
+  /** 翻译目标语言：'auto' | 'zh' | 'zh-hant' | 'en' | 'ja' | 'de' | 'fr' | 'es'。 */
+  static readonly KEY_TRANSLATE_TARGET_LANG: string = 'translateTargetLang';
   // ---- 发现与推荐 ----
   /** RSSHub 实例根地址（发现页路由助手）。 */
   static readonly KEY_RSSHUB_BASE: string = 'rsshubBase';

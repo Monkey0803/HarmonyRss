@@ -3357,6 +3357,22 @@
       "value": "Arabe"
     },
     {
+      "name": "translate_lang_zh_hant",
+      "value": "Chinois traditionnel"
+    },
+    {
+      "name": "translate_lang_de",
+      "value": "Allemand"
+    },
+    {
+      "name": "translate_lang_fr",
+      "value": "Français"
+    },
+    {
+      "name": "translate_lang_es",
+      "value": "Espagnol"
+    },
+    {
       "name": "translate_lang_und",
       "value": "Détection automatique"
     },

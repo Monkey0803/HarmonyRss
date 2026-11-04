@@ -20,8 +20,13 @@ import { settingsStore } from '../service/SettingsStore';
 import { settingsViewModel } from '../viewmodel/SettingsViewModel';
 import { safeArea } from '../service/SafeAreaController';
 import { Toast } from '@monkey0803/toast-kit';
-import { translationErrorText, languageText } from '../common/utils/TranslationText';
+import { translationErrorText } from '../common/utils/TranslationText';
 import { themePalette } from '../model/ThemePalette';
+import { TRANSLATE_TARGET_OPTIONS } from '../model/SettingsOptions';
+import { AppMenu } from '../common/components/AppMenu';
+import { choiceMenu } from '../common/components/ChoiceMenu';
+import { ChoiceValueChip } from '../common/components/ChoiceField';
+import { MaterialController } from '../service/MaterialController';
 
 const DOMAIN: number = 0x0000;
 const TAG: string = 'TranslateSettingsView';
@@ -157,6 +162,22 @@ export struct TranslateSettingsView {
     const cleared: number = await translationService.clearCache(context);
     this.cacheCount = 0;
     Toast.show($r('app.string.translate_cache_cleared', cleared));
+  }
+
+  /** 目标语言选项：选中即保存，翻译服务每次请求都会读最新值。 */
+  private pickTarget(id: string): void {
+    if (id === appSettings.translateTargetLang) {
+      return;
+    }
+    appSettings.translateTargetLang = id;
+    settingsStore.save();
+  }
+
+  @Builder
+  TargetMenu() {
+    AppMenu(choiceMenu(TRANSLATE_TARGET_OPTIONS, appSettings.translateTargetLang, (id: string) => {
+      this.pickTarget(id);
+    }));
   }
 
   @Builder
@@ -342,13 +363,13 @@ export struct TranslateSettingsView {
                 .fontSize($r('app.float.font_size_body'))
                 .fontColor($r('app.color.hm_text_primary'))
               Blank()
-              Text(languageText(translationService.targetLanguage()))
-                .fontSize($r('app.float.font_size_body'))
-                .fontColor($r('app.color.hm_text_secondary'))
+              ChoiceValueChip({ label: TRANSLATE_TARGET_OPTIONS.labelOf(appSettings.translateTargetLang) })
             }
             .width('100%')
             .height($r('app.float.row_height'))
             .padding({ left: $r('app.float.space_m'), right: $r('app.float.space_m') })
+            .bindMenu(this.TargetMenu(),
+              MaterialController.menuOptions({ placement: Placement.BottomRight }, appSettings.immersiveOn))
           }
           .width('100%')
           .backgroundColor($r('app.color.hm_card_background'))

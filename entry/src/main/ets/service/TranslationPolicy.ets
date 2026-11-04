@@ -121,6 +121,46 @@ export function targetLanguageOf(appLanguage: string, systemLanguage: string): s
   return appLanguage;
 }
 
+/** 用户可显式选择的目标语言（'auto' 表示跟随应用语言，不在此表）。 */
+const EXPLICIT_TARGETS: string[] = ['zh', 'zh-hant', 'en', 'ja', 'de', 'fr', 'es'];
+
+/** 目标语言：显式选择优先；'auto' / 脏值回退到「跟随应用语言」。 */
+export function resolveTargetLanguage(explicitTarget: string, appLanguage: string,
+  systemLanguage: string): string {
+  for (let i = 0; i < EXPLICIT_TARGETS.length; i += 1) {
+    if (explicitTarget === EXPLICIT_TARGETS[i]) {
+      return explicitTarget;
+    }
+  }
+  return targetLanguageOf(appLanguage, systemLanguage);
+}
+
+/** 目标语言代码 → AI 提示词里的英文语言名（不把 'zh-hant' 这种代码直接丢给模型）。 */
+export function targetPromptName(target: string): string {
+  if (target === 'zh') {
+    return 'Simplified Chinese';
+  }
+  if (target === 'zh-hant') {
+    return 'Traditional Chinese';
+  }
+  if (target === 'en') {
+    return 'English';
+  }
+  if (target === 'ja') {
+    return 'Japanese';
+  }
+  if (target === 'de') {
+    return 'German';
+  }
+  if (target === 'fr') {
+    return 'French';
+  }
+  if (target === 'es') {
+    return 'Spanish';
+  }
+  return target;
+}
+
 /** 中文（含繁体）与目标语言是否同一语言：同语言不必翻译。 */
 export function isSameLanguage(source: string, target: string): boolean {
   if (source.length === 0 || source === 'und') {
@@ -129,6 +169,17 @@ export function isSameLanguage(source: string, target: string): boolean {
   const sourceBase: string = source === 'zh-hant' || source === 'zh-hans' ? 'zh' : source;
   const targetBase: string = target === 'zh-hant' || target === 'zh-hans' ? 'zh' : target;
   return sourceBase === targetBase;
+}
+
+/**
+ * 是否需要翻译：同语言跳过；但「简体 → 繁體」例外放行。
+ * 本地识别只能判断「中文」，无法区分简繁，而简繁转换正是用户显式选择繁體时的诉求。
+ */
+export function needsTranslation(source: string, target: string): boolean {
+  if (source === 'zh' && target === 'zh-hant') {
+    return true;
+  }
+  return !isSameLanguage(source, target);
 }
 
 /** 句末标点（中英文）。 */

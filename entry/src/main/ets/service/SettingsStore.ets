@@ -10,7 +10,7 @@ import { BusinessError } from '@kit.BasicServicesKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { appSettings } from '../model/AppSettings';
 import { ReaderSitePreferenceStore } from './ReaderSitePreferenceStore';
-import { ARCHIVE_OPTIONS, LIST_DENSITY_OPTIONS, ROW_LAYOUT_OPTIONS, SUMMARY_LINES_OPTIONS, THEME_OPTIONS, LANGUAGE_OPTIONS, MATERIAL_TYPE_OPTIONS, MATERIAL_LEVEL_OPTIONS, BACKGROUND_OPTIONS, LOGO_OPTIONS, AUTO_REFRESH_OPTIONS, READER_FONT_OPTIONS, READER_LINE_OPTIONS, READER_FAMILY_OPTIONS, READER_WIDTH_OPTIONS, READER_ALIGN_OPTIONS, READER_THEME_OPTIONS, READER_INDENT_OPTIONS, RETENTION_MODE_OPTIONS, RETENTION_DAYS_OPTIONS } from '../model/SettingsOptions';
+import { ARCHIVE_OPTIONS, LIST_DENSITY_OPTIONS, ROW_LAYOUT_OPTIONS, SUMMARY_LINES_OPTIONS, THEME_OPTIONS, LANGUAGE_OPTIONS, MATERIAL_TYPE_OPTIONS, MATERIAL_LEVEL_OPTIONS, BACKGROUND_OPTIONS, LOGO_OPTIONS, AUTO_REFRESH_OPTIONS, READER_FONT_OPTIONS, READER_LINE_OPTIONS, READER_FAMILY_OPTIONS, READER_WIDTH_OPTIONS, READER_ALIGN_OPTIONS, READER_THEME_OPTIONS, READER_INDENT_OPTIONS, RETENTION_MODE_OPTIONS, RETENTION_DAYS_OPTIONS, TRANSLATE_TARGET_OPTIONS } from '../model/SettingsOptions';
 import { PreferencesConstants } from '../common/constants/PreferencesConstants';
 import { DEFAULT_THEME_COLOR, ReaderTypography } from '../common/constants/SettingsConstants';
 import { ThemeColorMath } from '../common/utils/ThemeColorMath';
@@ -246,6 +246,8 @@ export class SettingsStore {
         store.getSync(PreferencesConstants.KEY_TRANSLATE_AI_ENDPOINT, appSettings.translateAiEndpoint) as string;
       appSettings.translateAiModel =
         store.getSync(PreferencesConstants.KEY_TRANSLATE_AI_MODEL, appSettings.translateAiModel) as string;
+      appSettings.translateTargetLang = TRANSLATE_TARGET_OPTIONS.normalize(
+        store.getSync(PreferencesConstants.KEY_TRANSLATE_TARGET_LANG, appSettings.translateTargetLang) as string);
       // 发现页 RSSHub 实例：老库没有该 key 时读出来就是默认公共实例。
       appSettings.rsshubBase =
         store.getSync(PreferencesConstants.KEY_RSSHUB_BASE, appSettings.rsshubBase) as string;
@@ -568,6 +570,7 @@ export class SettingsStore {
       store.putSync(PreferencesConstants.KEY_TRANSLATE_ENABLED, appSettings.translateEnabled);
       store.putSync(PreferencesConstants.KEY_TRANSLATE_AI_ENDPOINT, appSettings.translateAiEndpoint.trim());
       store.putSync(PreferencesConstants.KEY_TRANSLATE_AI_MODEL, appSettings.translateAiModel.trim());
+      store.putSync(PreferencesConstants.KEY_TRANSLATE_TARGET_LANG, appSettings.translateTargetLang);
       store.putSync(PreferencesConstants.KEY_RSSHUB_BASE, appSettings.rsshubBase.trim());
       store.putSync(PreferencesConstants.KEY_DIAGNOSTICS_ENABLED, appSettings.diagnosticsEnabled);
     } catch (err) {

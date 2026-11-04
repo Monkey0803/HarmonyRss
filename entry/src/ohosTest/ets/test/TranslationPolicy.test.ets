@@ -17,8 +17,11 @@ import {
   chunkParagraphs,
   detectLanguage,
   isSameLanguage,
+  needsTranslation,
+  resolveTargetLanguage,
   splitParagraphs,
-  targetLanguageOf
+  targetLanguageOf,
+  targetPromptName
 } from '../../../main/ets/service/TranslationPolicy';
 
 function completion(content: string, finish: string = 'stop'): string {
@@ -58,6 +61,28 @@ export default function translationPolicyTest() {
       expect(isSameLanguage('en', 'zh')).assertFalse();
       expect(isSameLanguage('und', 'zh')).assertFalse();
       expect(isSameLanguage('', 'zh')).assertFalse();
+    });
+
+    it('target_language_explicit_override', 0, () => {
+      expect(resolveTargetLanguage('zh', AppLanguage.EN, 'en-US')).assertEqual('zh');
+      expect(resolveTargetLanguage('zh-hant', AppLanguage.EN, 'en-US')).assertEqual('zh-hant');
+      expect(resolveTargetLanguage('de', AppLanguage.ZH, 'zh-Hans')).assertEqual('de');
+      expect(resolveTargetLanguage('auto', AppLanguage.JA, 'zh-Hans')).assertEqual('ja');
+      expect(resolveTargetLanguage('ko', AppLanguage.EN, 'en-US')).assertEqual('en');
+    });
+
+    it('needs_translation_allows_simplified_to_traditional', 0, () => {
+      expect(needsTranslation('zh', 'zh')).assertFalse();
+      expect(needsTranslation('en', 'en')).assertFalse();
+      expect(needsTranslation('zh', 'zh-hant')).assertTrue();
+      expect(needsTranslation('en', 'zh')).assertTrue();
+      expect(needsTranslation('und', 'zh')).assertTrue();
+    });
+
+    it('target_prompt_name_is_readable', 0, () => {
+      expect(targetPromptName('zh')).assertEqual('Simplified Chinese');
+      expect(targetPromptName('zh-hant')).assertEqual('Traditional Chinese');
+      expect(targetPromptName('de')).assertEqual('German');
     });
 
     it('split_paragraphs_skips_blank_lines', 0, () => {

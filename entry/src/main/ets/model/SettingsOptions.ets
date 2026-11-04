@@ -243,3 +243,15 @@ export const TRI_STATE_OPTIONS: ChoiceSet = new ChoiceSet([
   new ChoiceOption(TriState.ON, $r('app.string.feed_settings_on')),
   new ChoiceOption(TriState.OFF, $r('app.string.feed_settings_off'))
 ], TriState.GLOBAL);
+
+/** 翻译目标语言：跟随应用语言 / 简体中文 / 繁體中文 / English / 日本語 / Deutsch / Français / Español。 */
+export const TRANSLATE_TARGET_OPTIONS: ChoiceSet = new ChoiceSet([
+  new ChoiceOption('auto', $r('app.string.translate_target_auto')),
+  new ChoiceOption('zh', $r('app.string.translate_lang_zh')),
+  new ChoiceOption('zh-hant', $r('app.string.translate_lang_zh_hant')),
+  new ChoiceOption('en', $r('app.string.translate_lang_en')),
+  new ChoiceOption('ja', $r('app.string.translate_lang_ja')),
+  new ChoiceOption('de', $r('app.string.translate_lang_de')),
+  new ChoiceOption('fr', $r('app.string.translate_lang_fr')),
+  new ChoiceOption('es', $r('app.string.translate_lang_es'))
+], 'auto');

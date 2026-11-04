@@ -23,9 +23,10 @@ import { HttpError, HttpMethod, HttpOptions, HttpResponse, httpClient } from './
 import {
   chunkParagraphs,
   detectLanguage,
-  isSameLanguage,
+  needsTranslation,
+  resolveTargetLanguage,
   splitParagraphs,
-  targetLanguageOf
+  targetPromptName
 } from './TranslationPolicy';
 import { translationStore } from './TranslationStore';
 import { aiTranslateSecretStore } from './TranslateSecretStore';
@@ -50,7 +51,7 @@ function shortMessage(text: string): string {
 }
 
 export class TranslationService {
-  /** 应用语言 → 目标语言（跟随系统时按系统语言决定中/英）。 */
+  /** 目标语言：用户显式选择优先，'auto' 时跟随应用语言。 */
   targetLanguage(): string {
     let system: string = 'en';
     try {
@@ -58,7 +59,7 @@ export class TranslationService {
     } catch (err) {
       system = 'en';
     }
-    return targetLanguageOf(appSettings.languageMode, system);
+    return resolveTargetLanguage(appSettings.translateTargetLang, appSettings.languageMode, system);
   }
 
   /** 是否已具备发起翻译的条件（开关 + 服务配置）。 */
@@ -85,7 +86,7 @@ export class TranslationService {
     }
     const target: string = this.targetLanguage();
     const source: string = detectLanguage(raw);
-    if (isSameLanguage(source, target)) {
+    if (!needsTranslation(source, target)) {
       throw new TranslationError(TranslationErrorCode.SAME_LANGUAGE, 'already target language');
     }
     const endpoint: string = aiEndpointOf(appSettings.translateAiEndpoint);
@@ -128,7 +129,7 @@ export class TranslationService {
     }
     const target: string = this.targetLanguage();
     const source: string = detectLanguage(raw);
-    if (isSameLanguage(source, target)) {
+    if (!needsTranslation(source, target)) {
       throw new TranslationError(TranslationErrorCode.SAME_LANGUAGE, 'already target language');
     }
     const paragraphs: string[] = splitParagraphs(raw);
@@ -140,8 +141,8 @@ export class TranslationService {
   /** 设置页「测试翻译」：翻译一句固定文本并返回结果。 */
   async test(context: common.Context): Promise<string> {
     const target: string = this.targetLanguage();
-    // 目标中文时用英文样本，目标英文时用中文样本：避免「同语言翻译」造成误报。
-    const sample: string = target === 'zh' ? 'Hello, world!' : '你好，世界！';
+    // 目标中文（简体 / 繁体）时用英文样本，其余用中文样本：避免「同语言翻译」造成误报。
+    const sample: string = target === 'zh' || target === 'zh-hant' ? 'Hello, world!' : '你好，世界！';
     const translated: string[] = await this.translateParagraphs([sample], target,
       aiEndpointOf(appSettings.translateAiEndpoint), aiModelOf(appSettings.translateAiModel));
     return translated.length > 0 ? translated[0] : '';
@@ -187,7 +188,7 @@ export class TranslationService {
   private async translateAi(texts: string[], target: string, endpoint: string,
     model: string, key: string): Promise<string[]> {
     const response: HttpResponse = await this.post(endpoint,
-      buildAiTranslationRequest(texts, target, model), key);
+      buildAiTranslationRequest(texts, targetPromptName(target), model), key);
     this.ensureOk(response, 'ai');
     return parseAiTranslationResponse(response.text, texts.length);
   }

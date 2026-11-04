@@ -12,6 +12,13 @@ import { translationViewModel } from '../viewmodel/TranslationViewModel';
 import { languageText, translationErrorText } from '../common/utils/TranslationText';
 import { themePalette } from '../model/ThemePalette';
 import { safeArea } from '../service/SafeAreaController';
+import { appSettings } from '../model/AppSettings';
+import { TRANSLATE_TARGET_OPTIONS } from '../model/SettingsOptions';
+import { settingsStore } from '../service/SettingsStore';
+import { MaterialController } from '../service/MaterialController';
+import { AppMenu } from '../common/components/AppMenu';
+import { choiceMenu } from '../common/components/ChoiceMenu';
+import { ChoiceValueChip } from '../common/components/ChoiceField';
 
 const STATUS_LOADING: string = 'loading';
 const STATUS_READY: string = 'ready';
@@ -42,6 +49,22 @@ export struct TranslateSheet {
       code === TranslationErrorCode.AUTH;
   }
 
+  private async pickTarget(id: string): Promise<void> {
+    if (id === appSettings.translateTargetLang) {
+      return;
+    }
+    appSettings.translateTargetLang = id;
+    settingsStore.save();
+    await translationViewModel.reload();
+  }
+
+  @Builder
+  TargetMenu() {
+    AppMenu(choiceMenu(TRANSLATE_TARGET_OPTIONS, appSettings.translateTargetLang, (id: string) => {
+      this.pickTarget(id);
+    }));
+  }
+
   @Builder
   Header() {
     Column({ space: $r('app.float.space_xs') }) {
@@ -53,6 +76,12 @@ export struct TranslateSheet {
           .fontSize($r('app.float.font_size_body'))
           .fontWeight(FontWeight.Medium)
           .fontColor($r('app.color.hm_text_primary'))
+          .layoutWeight(1)
+        Row() {
+          ChoiceValueChip({ label: TRANSLATE_TARGET_OPTIONS.labelOf(appSettings.translateTargetLang) })
+        }
+        .bindMenu(this.TargetMenu(),
+          MaterialController.menuOptions({ placement: Placement.BottomRight }, appSettings.immersiveOn))
       }
       .width('100%')
       if (translationViewModel.status === STATUS_READY) {

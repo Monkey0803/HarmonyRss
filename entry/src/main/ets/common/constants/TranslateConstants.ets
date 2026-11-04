@@ -10,6 +10,8 @@ export class TranslateDefaults {
   static readonly ENABLED: boolean = false;
   static readonly AI_ENDPOINT: string = 'https://api.openai.com/v1/chat/completions';
   static readonly AI_MODEL: string = 'gpt-4.1-mini';
+  /** 目标语言默认值：跟随应用语言（保持历史行为）。 */
+  static readonly AI_TARGET_LANG: string = 'auto';
 }
 
 export class TranslateLimits {

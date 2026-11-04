@@ -127,6 +127,8 @@ export class AppSettings {
   /** AI 翻译端点和模型；旧服务偏好留在存储中，但不再读取。 */
   @Trace translateAiEndpoint: string = TranslateDefaults.AI_ENDPOINT;
   @Trace translateAiModel: string = TranslateDefaults.AI_MODEL;
+  /** 目标语言：'auto'（跟随应用语言）| 'zh' | 'zh-hant' | 'en' | 'ja' | 'de' | 'fr' | 'es'。 */
+  @Trace translateTargetLang: string = TranslateDefaults.AI_TARGET_LANG;
 
   // ---- 发现与推荐 ----
 
