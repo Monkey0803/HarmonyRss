@@ -315,4 +315,4 @@ export async function prune(context: common.Context, keep: number): Promise<numb
   return removed;
 }
 
-export { CloudBackupInfo, cloudBackupInfo, writeCloudBackup, readCloudBackup } from './CloudBackupFiles';
+export { CloudBackupInfo, CloudBackupReason, cloudBackupInfo, writeCloudBackup, readCloudBackup } from './CloudBackupFiles';

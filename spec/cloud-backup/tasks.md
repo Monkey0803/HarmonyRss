@@ -9,3 +9,4 @@
 - [X] T007 `check-i18n` / `build_project` / ohosTest（369 例全通过）
 - [X] T008 README / PRIVACY / TODO 同步说明
 - [X] T009 每日自动快照后顺带写云空间（默认开、可关闭、24h 节流、不可用时跳过）
+- [X] T010 `app.json5` 开启 `cloudFileSyncEnabled`；可用性探测区分未配置 / 未开通 / IO 异常，页面支持重新检测

@@ -2730,7 +2730,19 @@
     },
     {
       "name": "backup_cloud_unavailable",
-      "value": "Cloud space is unavailable on this device. Requires HarmonyOS 6.0.0.115+ with Cloud 6.0.0.300+ and a signed-in HUAWEI ID."
+      "value": "Cannot access Cloud space. Sign in to your HUAWEI ID and make sure Cloud is enabled in Settings (requires HarmonyOS 6.0.0.115+ and Cloud 6.0.0.300+)."
+    },
+    {
+      "name": "backup_cloud_unavailable_config",
+      "value": "Cloud backup isn't enabled in this build. Update the app and try again."
+    },
+    {
+      "name": "backup_cloud_unavailable_io",
+      "value": "Failed to access Cloud space files. Try again later."
+    },
+    {
+      "name": "backup_cloud_retry",
+      "value": "Check again"
     },
     {
       "name": "backup_cloud_empty",

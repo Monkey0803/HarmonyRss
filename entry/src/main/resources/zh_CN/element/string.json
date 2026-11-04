@@ -2730,7 +2730,19 @@
     },
     {
       "name": "backup_cloud_unavailable",
-      "value": "当前设备不可用：需 HarmonyOS 6.0.0.115 及以上、云空间 6.0.0.300 及以上，并登录华为账号。"
+      "value": "无法访问云空间：请登录华为账号，并确认「设置 > 云空间」已开启（需 HarmonyOS 6.0.0.115 及以上、云空间 6.0.0.300 及以上）。"
+    },
+    {
+      "name": "backup_cloud_unavailable_config",
+      "value": "当前版本未启用云空间备份能力，请升级应用后重试。"
+    },
+    {
+      "name": "backup_cloud_unavailable_io",
+      "value": "云空间文件访问失败，请稍后重试。"
+    },
+    {
+      "name": "backup_cloud_retry",
+      "value": "重新检测"
     },
     {
       "name": "backup_cloud_empty",

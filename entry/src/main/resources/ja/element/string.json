@@ -2730,7 +2730,19 @@
     },
     {
       "name": "backup_cloud_unavailable",
-      "value": "この端末ではクラウドスペースを利用できません。HarmonyOS 6.0.0.115 以降、クラウド 6.0.0.300 以降、かつ HUAWEI ID へのサインインが必要です。"
+      "value": "クラウドスペースにアクセスできません。HUAWEI ID にサインインし、「設定 > クラウド」が有効か確認してください（HarmonyOS 6.0.0.115 以降、クラウド 6.0.0.300 以降が必要）。"
+    },
+    {
+      "name": "backup_cloud_unavailable_config",
+      "value": "このバージョンではクラウドバックアップが有効になっていません。アプリを更新してから再試行してください。"
+    },
+    {
+      "name": "backup_cloud_unavailable_io",
+      "value": "クラウドスペースのファイルへのアクセスに失敗しました。しばらくしてから再試行してください。"
+    },
+    {
+      "name": "backup_cloud_retry",
+      "value": "再確認"
     },
     {
       "name": "backup_cloud_empty",

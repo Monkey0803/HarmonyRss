@@ -2730,7 +2730,19 @@
     },
     {
       "name": "backup_cloud_unavailable",
-      "value": "Cloud-Speicher ist auf diesem Gerät nicht verfügbar. Erforderlich: HarmonyOS 6.0.0.115+, Cloud 6.0.0.300+ und Anmeldung mit HUAWEI ID."
+      "value": "Kein Zugriff auf den Cloud-Speicher. Melden Sie sich mit Ihrer HUAWEI ID an und prüfen Sie, ob „Cloud“ in den Einstellungen aktiviert ist (erfordert HarmonyOS 6.0.0.115+ und Cloud 6.0.0.300+)."
+    },
+    {
+      "name": "backup_cloud_unavailable_config",
+      "value": "Cloud-Backup ist in dieser Version nicht aktiviert. Aktualisieren Sie die App und versuchen Sie es erneut."
+    },
+    {
+      "name": "backup_cloud_unavailable_io",
+      "value": "Zugriff auf Cloud-Dateien fehlgeschlagen. Versuchen Sie es später erneut."
+    },
+    {
+      "name": "backup_cloud_retry",
+      "value": "Erneut prüfen"
     },
     {
       "name": "backup_cloud_empty",

@@ -13,7 +13,7 @@
 import { common } from '@kit.AbilityKit';
 import { BackupSummary, SnapshotInfo } from '../model/Backup';
 import { BackupImportResult, BackupRunStatus, backupService } from '../service/BackupService';
-import { CloudBackupInfo } from '../service/BackupFiles';
+import { CloudBackupInfo, CloudBackupReason } from '../service/BackupFiles';
 import { feedViewModel } from './FeedViewModel';
 import { tagViewModel } from './TagViewModel';
 import { ruleViewModel } from './RuleViewModel';
@@ -58,6 +58,8 @@ export class BackupViewModel {
   @Trace cloudExists: boolean = false;
   /** 云空间备份的最后修改时间（毫秒）；0 = 不存在。 */
   @Trace cloudAt: number = 0;
+  /** 云空间不可用的原因（cloudAvailable 为 true 时为 NONE）。 */
+  @Trace cloudReason: CloudBackupReason = CloudBackupReason.NONE;
   /** 每日自动快照后是否顺带写云空间（默认开）。 */
   @Trace cloudAuto: boolean = true;
 
@@ -156,6 +158,7 @@ export class BackupViewModel {
     this.cloudAvailable = info.available;
     this.cloudExists = info.exists;
     this.cloudAt = info.at;
+    this.cloudReason = info.reason;
     backupService.cloudAutoEnabled(context).then((enabled: boolean) => {
       this.cloudAuto = enabled;
     });

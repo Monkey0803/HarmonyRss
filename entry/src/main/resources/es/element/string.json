@@ -2730,7 +2730,19 @@
     },
     {
       "name": "backup_cloud_unavailable",
-      "value": "El espacio en la nube no está disponible en este dispositivo. Requiere HarmonyOS 6.0.0.115+, Cloud 6.0.0.300+ e iniciar sesión con un HUAWEI ID."
+      "value": "No se puede acceder al espacio en la nube. Inicia sesión con tu HUAWEI ID y comprueba que «Nube» esté activado en Ajustes (requiere HarmonyOS 6.0.0.115+ y Nube 6.0.0.300+)."
+    },
+    {
+      "name": "backup_cloud_unavailable_config",
+      "value": "La copia de seguridad en la nube no está activada en esta versión. Actualiza la aplicación e inténtalo de nuevo."
+    },
+    {
+      "name": "backup_cloud_unavailable_io",
+      "value": "No se pudo acceder a los archivos del espacio en la nube. Inténtalo más tarde."
+    },
+    {
+      "name": "backup_cloud_retry",
+      "value": "Comprobar de nuevo"
     },
     {
       "name": "backup_cloud_empty",

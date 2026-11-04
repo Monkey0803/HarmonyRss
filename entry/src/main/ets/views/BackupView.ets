@@ -13,6 +13,7 @@
 import { common } from '@kit.AbilityKit';
 import { BackupSummary, SnapshotInfo } from '../model/Backup';
 import { BackupError, backupViewModel } from '../viewmodel/BackupViewModel';
+import { CloudBackupReason } from '../service/BackupFiles';
 import { appSettings } from '../model/AppSettings';
 import { MaterialController } from '../service/MaterialController';
 import { safeArea } from '../service/SafeAreaController';
@@ -67,6 +68,25 @@ export struct BackupView {
 
   private hostContext(): common.Context | undefined {
     return this.getUIContext().getHostContext();
+  }
+
+  /** 云空间不可用的原因文案：可用时不会渲染，按探测结果区分「没配置 / 没开通 / IO 失败」。 */
+  private cloudUnavailableText(): ResourceStr {
+    if (backupViewModel.cloudReason === CloudBackupReason.NOT_CONFIGURED) {
+      return $r('app.string.backup_cloud_unavailable_config');
+    }
+    if (backupViewModel.cloudReason === CloudBackupReason.IO_ERROR) {
+      return $r('app.string.backup_cloud_unavailable_io');
+    }
+    return $r('app.string.backup_cloud_unavailable');
+  }
+
+  /** 用户登录账号 / 调整云空间后重新探测，不必退出页面。 */
+  private retryCloudCheck(): void {
+    const context: common.Context | undefined = this.hostContext();
+    if (context !== undefined) {
+      backupViewModel.refreshCloud(context);
+    }
   }
 
   /** 当前错误 key → 文案；没有错误时按导出失败兜底（快照/导入各有自己的 key）。 */
@@ -367,12 +387,20 @@ export struct BackupView {
         .fontColor($r('app.color.hm_text_secondary'))
         .width('100%')
 
-      // 云目录不可用（系统 / 云空间版本过低）：只说明原因，不提供按钮。
+      // 云目录不可用（应用未启用能力 / 账号或云空间未开通 / IO 失败）：说明原因，不提供备份按钮。
       if (!backupViewModel.cloudAvailable) {
-        Text($r('app.string.backup_cloud_unavailable'))
+        Text(this.cloudUnavailableText())
           .fontSize($r('app.float.font_size_caption'))
           .fontColor($r('app.color.hm_danger'))
           .width('100%')
+
+        Button($r('app.string.backup_cloud_retry'))
+          .buttonStyle(ButtonStyleMode.TEXTUAL)
+          .fontSize($r('app.float.font_size_caption'))
+          .fontColor(themePalette.accent())
+          .onClick(() => {
+            this.retryCloudCheck();
+          })
       } else {
         Text(backupViewModel.cloudExists
           ? $r('app.string.backup_cloud_last', DateUtil.format(backupViewModel.cloudAt))

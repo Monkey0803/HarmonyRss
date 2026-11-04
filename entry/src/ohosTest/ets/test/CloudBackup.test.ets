@@ -7,9 +7,10 @@
 
 import { describe, it, expect } from '@ohos/hypium';
 import { fileIo } from '@kit.CoreFileKit';
-import { common } from '@kit.AbilityKit';
+import { bundleManager, common } from '@kit.AbilityKit';
 import {
   CloudBackupInfo,
+  CloudBackupReason,
   cloudBackupInfo,
   readCloudBackup,
   writeCloudBackup
@@ -21,14 +22,20 @@ const CONTENT: string = '{"version":1,"kind":"test"}';
 
 export default function cloudBackupTest(): void {
   describe('CloudBackup', () => {
+    it('app_manifest_enables_cloud_file_sync', 0, () => {
+      const info: bundleManager.BundleInfo = bundleManager.getBundleInfoForSelfSync(
+        bundleManager.BundleFlag.GET_BUNDLE_INFO_WITH_APPLICATION);
+      expect(info.appInfo.cloudFileSyncEnabled).assertTrue();
+    });
+
     it('write_read_roundtrip_in_cloud_dir', 0, async () => {
       const context: common.UIAbilityContext | undefined = TestContext.value;
       if (context === undefined) {
         return;
       }
       const info: CloudBackupInfo = cloudBackupInfo(context);
-      if (!info.available) {
-        // 设备 / 系统不支持端云文件协同：跳过写入，只要求不抛异常。
+      if (info.reason !== CloudBackupReason.NONE) {
+        // 设备 / 账号 / 云空间条件不满足：跳过写入，只要求不抛异常。
         return;
       }
       const path: string = context.cloudFileDir + '/' + TEST_FILE;

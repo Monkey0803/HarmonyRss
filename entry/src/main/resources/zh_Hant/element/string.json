@@ -2730,7 +2730,19 @@
     },
     {
       "name": "backup_cloud_unavailable",
-      "value": "目前裝置不可用：需 HarmonyOS 6.0.0.115 以上、雲端空間 6.0.0.300 以上，並登入華為帳號。"
+      "value": "無法存取雲端空間：請登入華為帳號，並確認「設定 > 雲端空間」已開啟（需 HarmonyOS 6.0.0.115 以上、雲端空間 6.0.0.300 以上）。"
+    },
+    {
+      "name": "backup_cloud_unavailable_config",
+      "value": "目前版本未啟用雲端空間備份功能，請更新應用程式後再試。"
+    },
+    {
+      "name": "backup_cloud_unavailable_io",
+      "value": "雲端空間檔案存取失敗，請稍後再試。"
+    },
+    {
+      "name": "backup_cloud_retry",
+      "value": "重新偵測"
     },
     {
       "name": "backup_cloud_empty",
