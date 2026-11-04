@@ -16,6 +16,7 @@ import { appSettings } from '../model/AppSettings';
 import { safeArea } from '../service/SafeAreaController';
 import { Toast } from '@monkey0803/toast-kit';
 import { themePalette } from '../model/ThemePalette';
+import { ClearInputButton } from '../common/components/ClearInputButton';
 
 @ComponentV2
 export struct SmartFoldersView {
@@ -155,23 +156,45 @@ export struct SmartFoldersView {
         .fontColor($r('app.color.hm_text_primary'))
         .width('100%')
 
-      TextInput({ text: this.nameDraft, placeholder: $r('app.string.smart_folder_name_hint') })
-        .type(InputType.Normal)
-        .fontSize($r('app.float.font_size_body'))
-        .width('100%')
-        .onChange((value: string) => {
-          this.nameDraft = value;
-          this.errorText = '';
+      Stack({ alignContent: Alignment.End }) {
+        TextInput({ text: this.nameDraft, placeholder: $r('app.string.smart_folder_name_hint') })
+          .type(InputType.Normal)
+          .fontSize($r('app.float.font_size_body'))
+          .width('100%')
+          .padding({ left: $r('app.float.input_clear_text_inset'), right: $r('app.float.input_clear_inset') })
+          .onChange((value: string) => {
+            this.nameDraft = value;
+            this.errorText = '';
+          })
+        ClearInputButton({
+          visible: this.nameDraft.length > 0,
+          onClear: () => {
+            this.nameDraft = '';
+            this.errorText = '';
+          }
         })
+      }
+      .width('100%')
 
-      TextInput({ text: this.queryDraft, placeholder: $r('app.string.smart_folder_query_hint') })
-        .type(InputType.Normal)
-        .fontSize($r('app.float.font_size_body'))
-        .width('100%')
-        .onChange((value: string) => {
-          this.queryDraft = value;
-          this.errorText = '';
+      Stack({ alignContent: Alignment.End }) {
+        TextInput({ text: this.queryDraft, placeholder: $r('app.string.smart_folder_query_hint') })
+          .type(InputType.Normal)
+          .fontSize($r('app.float.font_size_body'))
+          .width('100%')
+          .padding({ left: $r('app.float.input_clear_text_inset'), right: $r('app.float.input_clear_inset') })
+          .onChange((value: string) => {
+            this.queryDraft = value;
+            this.errorText = '';
+          })
+        ClearInputButton({
+          visible: this.queryDraft.length > 0,
+          onClear: () => {
+            this.queryDraft = '';
+            this.errorText = '';
+          }
         })
+      }
+      .width('100%')
 
       Text($r('app.string.search_syntax_hint'))
         .fontSize($r('app.float.font_size_caption'))

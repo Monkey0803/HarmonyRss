@@ -125,6 +125,7 @@ import { AppMenu } from '../common/components/AppMenu';
 import { AppSheet } from '../common/components/AppSheet';
 import { MenuItemSpec, MenuSpec } from '../common/components/MenuSpec';
 import { themePalette } from '../model/ThemePalette';
+import { ClearInputButton } from '../common/components/ClearInputButton';
 
 const DOMAIN: number = 0x0000;
 const TAG: string = 'ArticleDetailView';
@@ -2317,13 +2318,23 @@ export struct ArticleDetailView {
         .backgroundColor($r('app.color.hm_value_chip_background'))
         .borderRadius($r('app.float.radius_menu_item'))
 
-      TextInput({ text: this.noteDraft, placeholder: $r('app.string.hl_note_hint') })
-        .type(InputType.Normal)
-        .fontSize($r('app.float.font_size_body'))
-        .width('100%')
-        .onChange((value: string) => {
-          this.noteDraft = value;
+      Stack({ alignContent: Alignment.End }) {
+        TextInput({ text: this.noteDraft, placeholder: $r('app.string.hl_note_hint') })
+          .type(InputType.Normal)
+          .fontSize($r('app.float.font_size_body'))
+          .width('100%')
+          .padding({ left: $r('app.float.input_clear_text_inset'), right: $r('app.float.input_clear_inset') })
+          .onChange((value: string) => {
+            this.noteDraft = value;
+          })
+        ClearInputButton({
+          visible: this.noteDraft.length > 0,
+          onClear: () => {
+            this.noteDraft = '';
+          }
         })
+      }
+      .width('100%')
 
       Row({ space: $r('app.float.space_m') }) {
         ForEach(this.colorOptions(), (color: string) => {

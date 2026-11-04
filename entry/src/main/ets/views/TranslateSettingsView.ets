@@ -23,6 +23,7 @@ import { Toast } from '@monkey0803/toast-kit';
 import { translationErrorText } from '../common/utils/TranslationText';
 import { themePalette } from '../model/ThemePalette';
 import { TRANSLATE_TARGET_OPTIONS } from '../model/SettingsOptions';
+import { ClearInputButton } from '../common/components/ClearInputButton';
 import { AppMenu } from '../common/components/AppMenu';
 import { choiceMenu } from '../common/components/ChoiceMenu';
 import { ChoiceValueChip } from '../common/components/ChoiceField';
@@ -201,19 +202,29 @@ export struct TranslateSettingsView {
         .fontColor($r('app.color.hm_text_primary'))
         .width('100%')
       Row({ space: $r('app.float.space_s') }) {
-        TextInput({
-          text: this.endpointDraft,
-          placeholder: $r('app.string.translate_endpoint_hint')
-        })
-          .type(InputType.Normal)
-          .fontSize($r('app.float.font_size_body'))
-          .layoutWeight(1)
-          .onChange((value: string) => {
-            this.endpointDraft = value;
+        Stack({ alignContent: Alignment.End }) {
+          TextInput({
+            text: this.endpointDraft,
+            placeholder: $r('app.string.translate_endpoint_hint')
           })
-          .onSubmit(() => {
-            this.saveEndpoint();
+            .type(InputType.Normal)
+            .fontSize($r('app.float.font_size_body'))
+            .width('100%')
+            .padding({ left: $r('app.float.input_clear_text_inset'), right: $r('app.float.input_clear_inset') })
+            .onChange((value: string) => {
+              this.endpointDraft = value;
+            })
+            .onSubmit(() => {
+              this.saveEndpoint();
+            })
+          ClearInputButton({
+            visible: this.endpointDraft.length > 0,
+            onClear: () => {
+              this.endpointDraft = '';
+            }
           })
+        }
+        .layoutWeight(1)
         Button($r('app.string.translate_endpoint_save'))
           .buttonStyle(ButtonStyleMode.NORMAL)
           .fontSize($r('app.float.font_size_caption'))
@@ -237,12 +248,22 @@ export struct TranslateSettingsView {
         .fontSize($r('app.float.font_size_body'))
         .fontColor($r('app.color.hm_text_primary'))
       Row({ space: $r('app.float.space_s') }) {
-        TextInput({ text: this.modelDraft, placeholder: $r('app.string.translate_ai_model_hint') })
-          .type(InputType.Normal)
-          .fontSize($r('app.float.font_size_body'))
-          .layoutWeight(1)
-          .onChange((value: string) => { this.modelDraft = value; })
-          .onSubmit(() => { this.saveModel(); })
+        Stack({ alignContent: Alignment.End }) {
+          TextInput({ text: this.modelDraft, placeholder: $r('app.string.translate_ai_model_hint') })
+            .type(InputType.Normal)
+            .fontSize($r('app.float.font_size_body'))
+            .width('100%')
+            .padding({ left: $r('app.float.input_clear_text_inset'), right: $r('app.float.input_clear_inset') })
+            .onChange((value: string) => { this.modelDraft = value; })
+            .onSubmit(() => { this.saveModel(); })
+          ClearInputButton({
+            visible: this.modelDraft.length > 0,
+            onClear: () => {
+              this.modelDraft = '';
+            }
+          })
+        }
+        .layoutWeight(1)
         Button($r('app.string.translate_endpoint_save'))
           .buttonStyle(ButtonStyleMode.NORMAL)
           .fontSize($r('app.float.font_size_caption'))
@@ -272,19 +293,30 @@ export struct TranslateSettingsView {
       }
       .width('100%')
 
-      TextInput({
-        text: this.keyDraft,
-        placeholder: $r('app.string.translate_api_key_hint')
-      })
-        .type(InputType.Password)
-        .fontSize($r('app.float.font_size_body'))
-        .width('100%')
-        .onChange((value: string) => {
-          this.keyDraft = value;
+      Stack({ alignContent: Alignment.End }) {
+        TextInput({
+          text: this.keyDraft,
+          placeholder: $r('app.string.translate_api_key_hint')
         })
-        .onSubmit(() => {
-          this.saveKey();
+          .type(InputType.Password)
+          .fontSize($r('app.float.font_size_body'))
+          .width('100%')
+          .padding({ left: $r('app.float.input_clear_text_inset'), right: $r('app.float.input_clear_password_inset') })
+          .onChange((value: string) => {
+            this.keyDraft = value;
+          })
+          .onSubmit(() => {
+            this.saveKey();
+          })
+        ClearInputButton({
+          visible: this.keyDraft.length > 0,
+          offsetRight: $r('app.float.input_clear_password_offset'),
+          onClear: () => {
+            this.keyDraft = '';
+          }
         })
+      }
+      .width('100%')
 
       Row({ space: $r('app.float.space_s') }) {
         Button($r('app.string.translate_api_key_save'))

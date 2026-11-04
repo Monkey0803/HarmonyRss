@@ -20,6 +20,7 @@ import { AppMenu } from '../common/components/AppMenu';
 import { choiceMenu } from '../common/components/ChoiceMenu';
 import { MenuItemSpec, MenuSpec } from '../common/components/MenuSpec';
 import { themePalette } from '../model/ThemePalette';
+import { ClearInputButton } from '../common/components/ClearInputButton';
 
 @ComponentV2
 export struct RemoteServiceView {
@@ -180,15 +181,26 @@ export struct RemoteServiceView {
         .fontSize($r('app.float.font_size_caption'))
         .fontColor($r('app.color.hm_text_secondary'))
         .width('100%')
-      TextInput({ text: remoteAccountViewModel.baseUrl,
-        placeholder: this.isFeedbin
-          ? $r('app.string.remote_feedbin_base_hint')
-          : $r('app.string.remote_field_base_url_hint') })
-        .type(InputType.Normal)
-        .fontSize($r('app.float.font_size_body'))
-        .onChange((value: string) => {
-          remoteAccountViewModel.baseUrl = value;
+      Stack({ alignContent: Alignment.End }) {
+        TextInput({ text: remoteAccountViewModel.baseUrl,
+          placeholder: this.isFeedbin
+            ? $r('app.string.remote_feedbin_base_hint')
+            : $r('app.string.remote_field_base_url_hint') })
+          .type(InputType.Normal)
+          .fontSize($r('app.float.font_size_body'))
+          .width('100%')
+          .padding({ left: $r('app.float.input_clear_text_inset'), right: $r('app.float.input_clear_inset') })
+          .onChange((value: string) => {
+            remoteAccountViewModel.baseUrl = value;
+          })
+        ClearInputButton({
+          visible: remoteAccountViewModel.baseUrl.length > 0,
+          onClear: () => {
+            remoteAccountViewModel.baseUrl = '';
+          }
         })
+      }
+      .width('100%')
 
       Text(this.isFeedbin
         ? $r('app.string.remote_field_username_email')
@@ -196,23 +208,46 @@ export struct RemoteServiceView {
         .fontSize($r('app.float.font_size_caption'))
         .fontColor($r('app.color.hm_text_secondary'))
         .width('100%')
-      TextInput({ text: remoteAccountViewModel.username })
-        .type(InputType.Normal)
-        .fontSize($r('app.float.font_size_body'))
-        .onChange((value: string) => {
-          remoteAccountViewModel.username = value;
+      Stack({ alignContent: Alignment.End }) {
+        TextInput({ text: remoteAccountViewModel.username })
+          .type(InputType.Normal)
+          .fontSize($r('app.float.font_size_body'))
+          .width('100%')
+          .padding({ left: $r('app.float.input_clear_text_inset'), right: $r('app.float.input_clear_inset') })
+          .onChange((value: string) => {
+            remoteAccountViewModel.username = value;
+          })
+        ClearInputButton({
+          visible: remoteAccountViewModel.username.length > 0,
+          onClear: () => {
+            remoteAccountViewModel.username = '';
+          }
         })
+      }
+      .width('100%')
 
       Text($r('app.string.remote_field_password'))
         .fontSize($r('app.float.font_size_caption'))
         .fontColor($r('app.color.hm_text_secondary'))
         .width('100%')
-      TextInput({ text: remoteAccountViewModel.password })
-        .type(InputType.Password)
-        .fontSize($r('app.float.font_size_body'))
-        .onChange((value: string) => {
-          remoteAccountViewModel.password = value;
+      Stack({ alignContent: Alignment.End }) {
+        TextInput({ text: remoteAccountViewModel.password })
+          .type(InputType.Password)
+          .fontSize($r('app.float.font_size_body'))
+          .width('100%')
+          .padding({ left: $r('app.float.input_clear_text_inset'), right: $r('app.float.input_clear_password_inset') })
+          .onChange((value: string) => {
+            remoteAccountViewModel.password = value;
+          })
+        ClearInputButton({
+          visible: remoteAccountViewModel.password.length > 0,
+          offsetRight: $r('app.float.input_clear_password_offset'),
+          onClear: () => {
+            remoteAccountViewModel.password = '';
+          }
         })
+      }
+      .width('100%')
 
       if (!this.isFeedbin) {
         Row() {

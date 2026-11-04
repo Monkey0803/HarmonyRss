@@ -36,6 +36,7 @@ import { DateUtil } from '../common/utils/DateUtil';
 import { AppSheet } from '../common/components/AppSheet';
 import { common } from '@kit.AbilityKit';
 import { themePalette } from '../model/ThemePalette';
+import { ClearInputButton } from '../common/components/ClearInputButton';
 import { DiscoverSearchField } from './DiscoverSearchField';
 
 /** 页面顶部的分类顺序（all / hot 固定在前）。 */
@@ -399,18 +400,29 @@ export struct DiscoverView {
 
       if (this.addOpen) {
         Column({ space: $r('app.float.space_s') }) {
-          TextInput({ text: this.websiteInput, placeholder: $r('app.string.discover_website_hint') })
-            .type(InputType.Normal)
-            .fontSize($r('app.float.font_size_body'))
-            .height($r('app.float.search_field_height'))
-            .backgroundColor($r('app.color.hm_value_chip_background'))
-            .borderRadius($r('app.float.radius_search'))
-            .onChange((value: string) => {
-              this.websiteInput = value;
+          Stack({ alignContent: Alignment.End }) {
+            TextInput({ text: this.websiteInput, placeholder: $r('app.string.discover_website_hint') })
+              .type(InputType.Normal)
+              .fontSize($r('app.float.font_size_body'))
+              .width('100%')
+              .height($r('app.float.search_field_height'))
+              .backgroundColor($r('app.color.hm_value_chip_background'))
+              .borderRadius($r('app.float.radius_search'))
+              .padding({ left: $r('app.float.input_clear_text_inset'), right: $r('app.float.input_clear_inset') })
+              .onChange((value: string) => {
+                this.websiteInput = value;
+              })
+              .onSubmit(() => {
+                this.inspectAddress(this.websiteInput);
+              })
+            ClearInputButton({
+              visible: this.websiteInput.length > 0,
+              onClear: () => {
+                this.websiteInput = '';
+              }
             })
-            .onSubmit(() => {
-              this.inspectAddress(this.websiteInput);
-            })
+          }
+          .width('100%')
           Button(this.checkingWebsite ? $r('app.string.discover_checking') :
             $r('app.string.discover_website_check'))
             .buttonStyle(ButtonStyleMode.NORMAL)
@@ -737,31 +749,55 @@ export struct DiscoverView {
         .fontSize($r('app.float.font_size_caption'))
         .fontColor($r('app.color.hm_text_secondary'))
         .width('100%')
-      TextInput({ text: this.rsshubBase, placeholder: DEFAULT_RSSHUB_BASE })
-        .type(InputType.Normal)
-        .fontSize($r('app.float.font_size_body'))
-        .height($r('app.float.search_field_height'))
-        .backgroundColor($r('app.color.hm_value_chip_background'))
-        .borderRadius($r('app.float.radius_search'))
-        .onChange((value: string) => {
-          this.rsshubBase = value;
+      Stack({ alignContent: Alignment.End }) {
+        TextInput({ text: this.rsshubBase, placeholder: DEFAULT_RSSHUB_BASE })
+          .type(InputType.Normal)
+          .fontSize($r('app.float.font_size_body'))
+          .width('100%')
+          .height($r('app.float.search_field_height'))
+          .backgroundColor($r('app.color.hm_value_chip_background'))
+          .borderRadius($r('app.float.radius_search'))
+          .padding({ left: $r('app.float.input_clear_text_inset'), right: $r('app.float.input_clear_inset') })
+          .onChange((value: string) => {
+            this.rsshubBase = value;
+          })
+          .onSubmit(() => {
+            this.persistBase();
+          })
+        ClearInputButton({
+          visible: this.rsshubBase.length > 0,
+          onClear: () => {
+            this.rsshubBase = '';
+          }
         })
-        .onSubmit(() => {
-          this.persistBase();
-        })
+      }
+      .width('100%')
 
-      TextInput({ text: this.rsshubInput, placeholder: $r('app.string.discover_rsshub_input_hint') })
-        .type(InputType.Normal)
-        .fontSize($r('app.float.font_size_body'))
-        .height($r('app.float.search_field_height'))
-        .backgroundColor($r('app.color.hm_value_chip_background'))
-        .borderRadius($r('app.float.radius_search'))
-        .onChange((value: string) => {
-          this.rsshubInput = value;
+      Stack({ alignContent: Alignment.End }) {
+        TextInput({ text: this.rsshubInput, placeholder: $r('app.string.discover_rsshub_input_hint') })
+          .type(InputType.Normal)
+          .fontSize($r('app.float.font_size_body'))
+          .width('100%')
+          .height($r('app.float.search_field_height'))
+          .backgroundColor($r('app.color.hm_value_chip_background'))
+          .borderRadius($r('app.float.radius_search'))
+          .padding({ left: $r('app.float.input_clear_text_inset'), right: $r('app.float.input_clear_inset') })
+          .onChange((value: string) => {
+            this.rsshubInput = value;
+          })
+          .onSubmit(() => {
+            this.generateRoutes();
+          })
+        ClearInputButton({
+          visible: this.rsshubInput.length > 0,
+          onClear: () => {
+            this.rsshubInput = '';
+            this.suggestions = [];
+            this.rsshubError = false;
+          }
         })
-        .onSubmit(() => {
-          this.generateRoutes();
-        })
+      }
+      .width('100%')
 
       Button($r('app.string.discover_rsshub_generate'))
         .buttonStyle(ButtonStyleMode.NORMAL)

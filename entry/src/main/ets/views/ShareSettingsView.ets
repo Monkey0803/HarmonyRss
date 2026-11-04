@@ -23,6 +23,7 @@ import { safeArea } from '../service/SafeAreaController';
 import { appSettings } from '../model/AppSettings';
 import { MaterialController } from '../service/MaterialController';
 import { themePalette } from '../model/ThemePalette';
+import { ClearInputButton } from '../common/components/ClearInputButton';
 import { TemplateManageRow } from './TemplateManageRow';
 
 /** 默认模板 id（与 ShareTemplates 内的虚拟默认模板一致；它不是落库数据，因此只读）。 */
@@ -224,15 +225,26 @@ export struct ShareSettingsView {
         .width('100%')
 
       this.SectionLabel($r('app.string.tpl_name_label'))
-      TextInput({ text: this.draftName, placeholder: $r('app.string.tpl_name_hint') })
-        .type(InputType.Normal)
-        .maxLength(CommonConstants.SHARE_TEMPLATE_NAME_MAX)
-        .fontSize($r('app.float.font_size_body'))
-        .width('100%')
-        .onChange((value: string) => {
-          this.draftName = value;
-          this.errorKey = '';
+      Stack({ alignContent: Alignment.End }) {
+        TextInput({ text: this.draftName, placeholder: $r('app.string.tpl_name_hint') })
+          .type(InputType.Normal)
+          .maxLength(CommonConstants.SHARE_TEMPLATE_NAME_MAX)
+          .fontSize($r('app.float.font_size_body'))
+          .width('100%')
+          .padding({ left: $r('app.float.input_clear_text_inset'), right: $r('app.float.input_clear_inset') })
+          .onChange((value: string) => {
+            this.draftName = value;
+            this.errorKey = '';
+          })
+        ClearInputButton({
+          visible: this.draftName.length > 0,
+          onClear: () => {
+            this.draftName = '';
+            this.errorKey = '';
+          }
         })
+      }
+      .width('100%')
 
       this.SectionLabel($r('app.string.tpl_content_label'))
       TextArea({ text: this.draftContent, placeholder: $r('app.string.tpl_content_hint') })

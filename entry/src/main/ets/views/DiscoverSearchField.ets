@@ -1,4 +1,6 @@
 /** 发现页搜索输入：草稿由父页持有，输入只通过 V2 事件上报。 */
+import { ClearInputButton } from '../common/components/ClearInputButton';
+
 @ComponentV2
 export struct DiscoverSearchField {
   @Param keyword: string = '';
@@ -26,19 +28,12 @@ export struct DiscoverSearchField {
           this.getUIContext().getFocusController().clearFocus();
         })
       if (this.keyword.length > 0) {
-        SymbolGlyph($r('sys.symbol.xmark'))
-          .fontSize($r('app.float.font_size_body'))
-          .fontColor([$r('app.color.hm_text_secondary')])
-          .padding({
-            left: $r('app.float.space_s'),
-            right: $r('app.float.space_m'),
-            top: $r('app.float.space_m'),
-            bottom: $r('app.float.space_m')
-          })
-          .accessibilityText($r('app.string.discover_clear'))
-          .onClick(() => {
+        ClearInputButton({
+          visible: true,
+          onClear: () => {
             this.onKeyword('');
-          })
+          }
+        })
       }
     }
     .width('100%')

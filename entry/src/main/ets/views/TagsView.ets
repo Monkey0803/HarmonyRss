@@ -16,6 +16,7 @@ import { appSettings } from '../model/AppSettings';
 import { safeArea } from '../service/SafeAreaController';
 import { Toast } from '@monkey0803/toast-kit';
 import { themePalette } from '../model/ThemePalette';
+import { ClearInputButton } from '../common/components/ClearInputButton';
 
 @ComponentV2
 export struct TagsView {
@@ -135,13 +136,23 @@ export struct TagsView {
         .fontColor([this.isSelected(tag.id) ? themePalette.accent() : $r('app.color.hm_text_secondary')])
 
       if (this.renameId === tag.id) {
-        TextInput({ text: this.renameDraft, placeholder: $r('app.string.tag_rename_hint') })
-          .type(InputType.Normal)
-          .fontSize($r('app.float.font_size_body'))
-          .layoutWeight(1)
-          .onChange((value: string) => {
-            this.renameDraft = value;
+        Stack({ alignContent: Alignment.End }) {
+          TextInput({ text: this.renameDraft, placeholder: $r('app.string.tag_rename_hint') })
+            .type(InputType.Normal)
+            .fontSize($r('app.float.font_size_body'))
+            .width('100%')
+            .padding({ left: $r('app.float.input_clear_text_inset'), right: $r('app.float.input_clear_inset') })
+            .onChange((value: string) => {
+              this.renameDraft = value;
+            })
+          ClearInputButton({
+            visible: this.renameDraft.length > 0,
+            onClear: () => {
+              this.renameDraft = '';
+            }
           })
+        }
+        .layoutWeight(1)
         Text($r('app.string.dialog_save'))
           .fontSize($r('app.float.font_size_caption'))
           .fontColor(themePalette.accent())
@@ -199,16 +210,26 @@ export struct TagsView {
       Row().width('100%').height(safeArea.contentTopInsetVp)
 
       Row({ space: $r('app.float.space_s') }) {
-        TextInput({ text: this.draftName, placeholder: $r('app.string.tag_new_hint') })
-          .type(InputType.Normal)
-          .fontSize($r('app.float.font_size_body'))
-          .layoutWeight(1)
-          .onChange((value: string) => {
-            this.draftName = value;
+        Stack({ alignContent: Alignment.End }) {
+          TextInput({ text: this.draftName, placeholder: $r('app.string.tag_new_hint') })
+            .type(InputType.Normal)
+            .fontSize($r('app.float.font_size_body'))
+            .width('100%')
+            .padding({ left: $r('app.float.input_clear_text_inset'), right: $r('app.float.input_clear_inset') })
+            .onChange((value: string) => {
+              this.draftName = value;
+            })
+            .onSubmit(() => {
+              this.createTag();
+            })
+          ClearInputButton({
+            visible: this.draftName.length > 0,
+            onClear: () => {
+              this.draftName = '';
+            }
           })
-          .onSubmit(() => {
-            this.createTag();
-          })
+        }
+        .layoutWeight(1)
         Button($r('app.string.tag_new'))
           .buttonStyle(ButtonStyleMode.NORMAL)
           .fontSize($r('app.float.font_size_caption'))

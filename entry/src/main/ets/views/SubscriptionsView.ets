@@ -30,6 +30,7 @@ import { ListDensityMetrics } from '../common/constants/SettingsConstants';
 import { AppMenu } from '../common/components/AppMenu';
 import { MenuItemSpec, MenuSpec } from '../common/components/MenuSpec';
 import { themePalette } from '../model/ThemePalette';
+import { ClearInputButton } from '../common/components/ClearInputButton';
 import { LibraryQuickAccess } from './LibraryTiles';
 import { SubscriptionsGroupHeader } from './SubscriptionsGroupHeader';
 import { FeedIcon } from './FeedIcon';
@@ -489,13 +490,23 @@ export struct SubscriptionsView {
           Column({ space: $r('app.float.space_xxs') }) {
             if (this.groupEditId === feed.id) {
               Row({ space: $r('app.float.space_s') }) {
-                TextInput({ text: this.draftGroup, placeholder: $r('app.string.group_hint') })
-                  .type(InputType.Normal)
-                  .fontSize($r('app.float.font_size_body'))
-                  .layoutWeight(1)
-                  .onChange((value: string) => {
-                    this.draftGroup = value;
+                Stack({ alignContent: Alignment.End }) {
+                  TextInput({ text: this.draftGroup, placeholder: $r('app.string.group_hint') })
+                    .type(InputType.Normal)
+                    .fontSize($r('app.float.font_size_body'))
+                    .width('100%')
+                    .padding({ left: $r('app.float.input_clear_text_inset'), right: $r('app.float.input_clear_inset') })
+                    .onChange((value: string) => {
+                      this.draftGroup = value;
+                    })
+                  ClearInputButton({
+                    visible: this.draftGroup.length > 0,
+                    onClear: () => {
+                      this.draftGroup = '';
+                    }
                   })
+                }
+                .layoutWeight(1)
                 Button($r('app.string.dialog_save'))
                   .buttonStyle(ButtonStyleMode.NORMAL)
                   .fontSize($r('app.float.font_size_caption'))
@@ -509,13 +520,23 @@ export struct SubscriptionsView {
               .width('100%')
             } else if (this.editingId === feed.id) {
               Row({ space: $r('app.float.space_s') }) {
-                TextInput({ text: this.draftTitle, placeholder: $r('app.string.subs_rename_hint') })
-                  .type(InputType.Normal)
-                  .fontSize($r('app.float.font_size_body'))
-                  .layoutWeight(1)
-                  .onChange((value: string) => {
-                    this.draftTitle = value;
+                Stack({ alignContent: Alignment.End }) {
+                  TextInput({ text: this.draftTitle, placeholder: $r('app.string.subs_rename_hint') })
+                    .type(InputType.Normal)
+                    .fontSize($r('app.float.font_size_body'))
+                    .width('100%')
+                    .padding({ left: $r('app.float.input_clear_text_inset'), right: $r('app.float.input_clear_inset') })
+                    .onChange((value: string) => {
+                      this.draftTitle = value;
+                    })
+                  ClearInputButton({
+                    visible: this.draftTitle.length > 0,
+                    onClear: () => {
+                      this.draftTitle = '';
+                    }
                   })
+                }
+                .layoutWeight(1)
                 Button($r('app.string.dialog_save'))
                   .buttonStyle(ButtonStyleMode.NORMAL)
                   .fontSize($r('app.float.font_size_caption'))
@@ -529,13 +550,23 @@ export struct SubscriptionsView {
               .width('100%')
             } else if (this.urlEditId === feed.id) {
               Row({ space: $r('app.float.space_s') }) {
-                TextInput({ text: this.draftUrl, placeholder: $r('app.string.subs_edit_url_hint') })
-                  .type(InputType.Normal)
-                  .fontSize($r('app.float.font_size_body'))
-                  .layoutWeight(1)
-                  .onChange((value: string) => {
-                    this.draftUrl = value;
+                Stack({ alignContent: Alignment.End }) {
+                  TextInput({ text: this.draftUrl, placeholder: $r('app.string.subs_edit_url_hint') })
+                    .type(InputType.Normal)
+                    .fontSize($r('app.float.font_size_body'))
+                    .width('100%')
+                    .padding({ left: $r('app.float.input_clear_text_inset'), right: $r('app.float.input_clear_inset') })
+                    .onChange((value: string) => {
+                      this.draftUrl = value;
+                    })
+                  ClearInputButton({
+                    visible: this.draftUrl.length > 0,
+                    onClear: () => {
+                      this.draftUrl = '';
+                    }
                   })
+                }
+                .layoutWeight(1)
                 Button($r('app.string.dialog_save'))
                   .buttonStyle(ButtonStyleMode.NORMAL)
                   .fontSize($r('app.float.font_size_caption'))

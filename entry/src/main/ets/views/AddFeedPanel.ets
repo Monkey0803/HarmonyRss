@@ -21,6 +21,7 @@ import { appSettings } from '../model/AppSettings';
 import { AppMenu } from '../common/components/AppMenu';
 import { MenuItemSpec, MenuSectionSpec, MenuSpec } from '../common/components/MenuSpec';
 import { themePalette } from '../model/ThemePalette';
+import { ClearInputButton } from '../common/components/ClearInputButton';
 import { FeedPreviewItems } from './FeedPreviewItems';
 
 @ComponentV2
@@ -229,13 +230,23 @@ export struct AddFeedPanel {
   GroupPicker() {
     if (this.groupEdit) {
       Row({ space: $r('app.float.space_s') }) {
-        TextInput({ text: this.draftNewGroup, placeholder: $r('app.string.group_hint') })
-          .type(InputType.Normal)
-          .fontSize($r('app.float.font_size_body'))
-          .layoutWeight(1)
-          .onChange((value: string) => {
-            this.draftNewGroup = value;
+        Stack({ alignContent: Alignment.End }) {
+          TextInput({ text: this.draftNewGroup, placeholder: $r('app.string.group_hint') })
+            .type(InputType.Normal)
+            .fontSize($r('app.float.font_size_body'))
+            .width('100%')
+            .padding({ left: $r('app.float.input_clear_text_inset'), right: $r('app.float.input_clear_inset') })
+            .onChange((value: string) => {
+              this.draftNewGroup = value;
+            })
+          ClearInputButton({
+            visible: this.draftNewGroup.length > 0,
+            onClear: () => {
+              this.draftNewGroup = '';
+            }
           })
+        }
+        .layoutWeight(1)
         Button($r('app.string.dialog_save'))
           .buttonStyle(ButtonStyleMode.NORMAL)
           .fontSize($r('app.float.font_size_caption'))
@@ -380,12 +391,23 @@ export struct AddFeedPanel {
       }
 
       // 标题可改写（留空则用 feed 自身标题）。
-      TextInput({ text: this.draftTitle, placeholder: $r('app.string.subs_rename_hint') })
-        .type(InputType.Normal)
-        .fontSize($r('app.float.font_size_body'))
-        .onChange((value: string) => {
-          this.draftTitle = value;
+      Stack({ alignContent: Alignment.End }) {
+        TextInput({ text: this.draftTitle, placeholder: $r('app.string.subs_rename_hint') })
+          .type(InputType.Normal)
+          .fontSize($r('app.float.font_size_body'))
+          .width('100%')
+          .padding({ left: $r('app.float.input_clear_text_inset'), right: $r('app.float.input_clear_inset') })
+          .onChange((value: string) => {
+            this.draftTitle = value;
+          })
+        ClearInputButton({
+          visible: this.draftTitle.length > 0,
+          onClear: () => {
+            this.draftTitle = '';
+          }
         })
+      }
+      .width('100%')
 
       Text(this.previewUrl)
         .fontSize($r('app.float.font_size_caption'))

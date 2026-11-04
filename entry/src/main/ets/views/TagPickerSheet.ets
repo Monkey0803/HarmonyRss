@@ -12,6 +12,7 @@ import { TagWithCount } from '../model/Tag';
 import { tagViewModel } from '../viewmodel/TagViewModel';
 import { Toast } from '@monkey0803/toast-kit';
 import { themePalette } from '../model/ThemePalette';
+import { ClearInputButton } from '../common/components/ClearInputButton';
 
 @ComponentV2
 export struct TagPickerSheet {
@@ -127,16 +128,26 @@ export struct TagPickerSheet {
       }
 
       Row({ space: $r('app.float.space_s') }) {
-        TextInput({ text: this.draftName, placeholder: $r('app.string.tag_new_hint') })
-          .type(InputType.Normal)
-          .fontSize($r('app.float.font_size_body'))
-          .layoutWeight(1)
-          .onChange((value: string) => {
-            this.draftName = value;
+        Stack({ alignContent: Alignment.End }) {
+          TextInput({ text: this.draftName, placeholder: $r('app.string.tag_new_hint') })
+            .type(InputType.Normal)
+            .fontSize($r('app.float.font_size_body'))
+            .width('100%')
+            .padding({ left: $r('app.float.input_clear_text_inset'), right: $r('app.float.input_clear_inset') })
+            .onChange((value: string) => {
+              this.draftName = value;
+            })
+            .onSubmit(() => {
+              this.createTag();
+            })
+          ClearInputButton({
+            visible: this.draftName.length > 0,
+            onClear: () => {
+              this.draftName = '';
+            }
           })
-          .onSubmit(() => {
-            this.createTag();
-          })
+        }
+        .layoutWeight(1)
         Button($r('app.string.tag_new'))
           .buttonStyle(ButtonStyleMode.NORMAL)
           .fontSize($r('app.float.font_size_caption'))

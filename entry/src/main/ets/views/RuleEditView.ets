@@ -16,6 +16,7 @@ import { tagViewModel } from '../viewmodel/TagViewModel';
 import { RuleConstants } from '../common/constants/RssConstants';
 import { safeArea } from '../service/SafeAreaController';
 import { themePalette } from '../model/ThemePalette';
+import { ClearInputButton } from '../common/components/ClearInputButton';
 
 @ComponentV2
 export struct RuleEditView {
@@ -371,15 +372,26 @@ export struct RuleEditView {
     Column({ space: $r('app.float.space_l') }) {
       Column({ space: $r('app.float.space_s') }) {
         this.SectionLabel($r('app.string.rule_edit_title'))
-        TextInput({ text: this.name, placeholder: $r('app.string.rule_name_hint') })
-          .type(InputType.Normal)
-          .maxLength(RuleConstants.MAX_RULE_NAME)
-          .fontSize($r('app.float.font_size_body'))
-          .width('100%')
-          .onChange((value: string) => {
-            this.name = value;
-            this.errorCode = '';
+        Stack({ alignContent: Alignment.End }) {
+          TextInput({ text: this.name, placeholder: $r('app.string.rule_name_hint') })
+            .type(InputType.Normal)
+            .maxLength(RuleConstants.MAX_RULE_NAME)
+            .fontSize($r('app.float.font_size_body'))
+            .width('100%')
+            .padding({ left: $r('app.float.input_clear_text_inset'), right: $r('app.float.input_clear_inset') })
+            .onChange((value: string) => {
+              this.name = value;
+              this.errorCode = '';
+            })
+          ClearInputButton({
+            visible: this.name.length > 0,
+            onClear: () => {
+              this.name = '';
+              this.errorCode = '';
+            }
           })
+        }
+        .width('100%')
         Row({ space: $r('app.float.space_s') }) {
           Text($r('app.string.rule_enabled'))
             .fontSize($r('app.float.font_size_body'))
@@ -398,14 +410,25 @@ export struct RuleEditView {
 
       Column({ space: $r('app.float.space_s') }) {
         this.SectionLabel($r('app.string.rule_keywords_label'))
-        TextInput({ text: this.keywordsText, placeholder: $r('app.string.rule_keywords_hint') })
-          .type(InputType.Normal)
-          .fontSize($r('app.float.font_size_body'))
-          .width('100%')
-          .onChange((value: string) => {
-            this.keywordsText = value;
-            this.errorCode = '';
+        Stack({ alignContent: Alignment.End }) {
+          TextInput({ text: this.keywordsText, placeholder: $r('app.string.rule_keywords_hint') })
+            .type(InputType.Normal)
+            .fontSize($r('app.float.font_size_body'))
+            .width('100%')
+            .padding({ left: $r('app.float.input_clear_text_inset'), right: $r('app.float.input_clear_inset') })
+            .onChange((value: string) => {
+              this.keywordsText = value;
+              this.errorCode = '';
+            })
+          ClearInputButton({
+            visible: this.keywordsText.length > 0,
+            onClear: () => {
+              this.keywordsText = '';
+              this.errorCode = '';
+            }
           })
+        }
+        .width('100%')
         Text($r('app.string.rule_keywords_limit_hint', RuleConstants.MAX_RULE_KEYWORDS))
           .fontSize($r('app.float.font_size_caption'))
           .fontColor($r('app.color.hm_text_secondary'))

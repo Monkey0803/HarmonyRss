@@ -6,6 +6,7 @@ import { UrlText } from '../common/utils/UrlText';
 import { clipboardService } from '../service/ClipboardService';
 import { Toast } from '@monkey0803/toast-kit';
 import { themePalette } from '../model/ThemePalette';
+import { ClearInputButton } from '../common/components/ClearInputButton';
 
 @ComponentV2
 export struct SaveWebPagePanel {
@@ -137,14 +138,26 @@ export struct SaveWebPagePanel {
         .alignItems(VerticalAlign.Center)
       }
 
-      TextInput({ text: this.inputText, placeholder: $r('app.string.save_web_hint') })
-        .type(InputType.URL)
-        .fontSize($r('app.float.font_size_body'))
-        .height(44)
-        .onChange((value: string) => {
-          this.inputText = value;
-          this.clearPreview();
+      Stack({ alignContent: Alignment.End }) {
+        TextInput({ text: this.inputText, placeholder: $r('app.string.save_web_hint') })
+          .type(InputType.URL)
+          .fontSize($r('app.float.font_size_body'))
+          .width('100%')
+          .height(44)
+          .padding({ left: $r('app.float.input_clear_text_inset'), right: $r('app.float.input_clear_inset') })
+          .onChange((value: string) => {
+            this.inputText = value;
+            this.clearPreview();
+          })
+        ClearInputButton({
+          visible: this.inputText.length > 0,
+          onClear: () => {
+            this.inputText = '';
+            this.clearPreview();
+          }
         })
+      }
+      .width('100%')
 
       Row({ space: $r('app.float.space_s') }) {
         PasteButton({ icon: PasteIconStyle.LINES, text: PasteDescription.PASTE,

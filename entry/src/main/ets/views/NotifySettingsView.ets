@@ -26,6 +26,7 @@ import { settingsViewModel } from '../viewmodel/SettingsViewModel';
 import { safeArea } from '../service/SafeAreaController';
 import { Toast } from '@monkey0803/toast-kit';
 import { themePalette } from '../model/ThemePalette';
+import { ClearInputButton } from '../common/components/ClearInputButton';
 import { NotifyPermissionCard } from './NotifyPermissionCard';
 
 /** 关键词输入框的最大长度（字符）：只防手滑，真正的上限是关键词条数。 */
@@ -289,20 +290,30 @@ export struct NotifySettingsView {
           .width('100%')
 
         Row({ space: $r('app.float.space_s') }) {
-          TextInput({
-            text: this.keywordDraft,
-            placeholder: $r('app.string.notify_keywords_placeholder')
-          })
-            .type(InputType.Normal)
-            .maxLength(KEYWORD_INPUT_MAX)
-            .fontSize($r('app.float.font_size_body'))
-            .layoutWeight(1)
-            .onChange((value: string) => {
-              this.keywordDraft = value;
+          Stack({ alignContent: Alignment.End }) {
+            TextInput({
+              text: this.keywordDraft,
+              placeholder: $r('app.string.notify_keywords_placeholder')
             })
-            .onSubmit(() => {
-              this.addKeyword();
+              .type(InputType.Normal)
+              .maxLength(KEYWORD_INPUT_MAX)
+              .fontSize($r('app.float.font_size_body'))
+              .width('100%')
+              .padding({ left: $r('app.float.input_clear_text_inset'), right: $r('app.float.input_clear_inset') })
+              .onChange((value: string) => {
+                this.keywordDraft = value;
+              })
+              .onSubmit(() => {
+                this.addKeyword();
+              })
+            ClearInputButton({
+              visible: this.keywordDraft.length > 0,
+              onClear: () => {
+                this.keywordDraft = '';
+              }
             })
+          }
+          .layoutWeight(1)
           Button($r('app.string.notify_keywords_add'))
             .buttonStyle(ButtonStyleMode.NORMAL)
             .fontSize($r('app.float.font_size_caption'))

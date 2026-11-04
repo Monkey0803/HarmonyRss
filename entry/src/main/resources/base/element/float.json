@@ -283,6 +283,22 @@
     {
       "name": "subs_avatar_radius",
       "value": "8"
+    },
+    {
+      "name": "input_clear_text_inset",
+      "value": "16"
+    },
+    {
+      "name": "input_clear_inset",
+      "value": "32"
+    },
+    {
+      "name": "input_clear_password_inset",
+      "value": "64"
+    },
+    {
+      "name": "input_clear_password_offset",
+      "value": "34"
     }
   ]
 }

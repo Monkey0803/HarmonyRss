@@ -19,6 +19,7 @@ import { AppSheet } from '../common/components/AppSheet';
 import { SHEET_SAVE_FOLDER_HEIGHT } from '../common/components/SheetDetents';
 import { FilterCapsule } from './FilterCapsule';
 import { themePalette } from '../model/ThemePalette';
+import { ClearInputButton } from '../common/components/ClearInputButton';
 import { SnippetText } from './SearchSnippetText';
 
 @ComponentV2
@@ -118,14 +119,25 @@ export struct SearchView {
         .backgroundColor($r('app.color.hm_value_chip_background'))
         .borderRadius($r('app.float.radius_menu_item'))
 
-      TextInput({ text: this.folderName, placeholder: $r('app.string.smart_folder_name_hint') })
-        .type(InputType.Normal)
-        .fontSize($r('app.float.font_size_body'))
-        .width('100%')
-        .onChange((value: string) => {
-          this.folderName = value;
-          this.saveError = SmartFolderError.NONE;
+      Stack({ alignContent: Alignment.End }) {
+        TextInput({ text: this.folderName, placeholder: $r('app.string.smart_folder_name_hint') })
+          .type(InputType.Normal)
+          .fontSize($r('app.float.font_size_body'))
+          .width('100%')
+          .padding({ left: $r('app.float.input_clear_text_inset'), right: $r('app.float.input_clear_inset') })
+          .onChange((value: string) => {
+            this.folderName = value;
+            this.saveError = SmartFolderError.NONE;
+          })
+        ClearInputButton({
+          visible: this.folderName.length > 0,
+          onClear: () => {
+            this.folderName = '';
+            this.saveError = SmartFolderError.NONE;
+          }
         })
+      }
+      .width('100%')
 
       if (this.saveError !== SmartFolderError.NONE) {
         Text(this.saveErrorText())
@@ -201,20 +213,31 @@ export struct SearchView {
   SearchHeader() {
     Column({ space: $r('app.float.space_s') }) {
       Row({ space: $r('app.float.space_s') }) {
-        TextInput({ text: this.draft, placeholder: $r('app.string.search_hint') })
-          .type(InputType.Normal)
-          .fontSize($r('app.float.font_size_body'))
-          .layoutWeight(1)
-          .enterKeyType(EnterKeyType.Search)
-          .onChange((value: string) => {
-            this.draft = value;
-            if (value.trim().length === 0) {
+        Stack({ alignContent: Alignment.End }) {
+          TextInput({ text: this.draft, placeholder: $r('app.string.search_hint') })
+            .type(InputType.Normal)
+            .fontSize($r('app.float.font_size_body'))
+            .width('100%')
+            .padding({ left: $r('app.float.input_clear_text_inset'), right: $r('app.float.input_clear_inset') })
+            .enterKeyType(EnterKeyType.Search)
+            .onChange((value: string) => {
+              this.draft = value;
+              if (value.trim().length === 0) {
+                searchViewModel.clearResults();
+              }
+            })
+            .onSubmit((enterKey: EnterKeyType) => {
+              this.submit(this.draft);
+            })
+          ClearInputButton({
+            visible: this.draft.length > 0,
+            onClear: () => {
+              this.draft = '';
               searchViewModel.clearResults();
             }
           })
-          .onSubmit((enterKey: EnterKeyType) => {
-            this.submit(this.draft);
-          })
+        }
+        .layoutWeight(1)
         SymbolGlyph($r('sys.symbol.magnifyingglass'))
           .fontSize($r('app.float.icon_size'))
           .fontColor([themePalette.accent()])
