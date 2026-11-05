@@ -9,6 +9,7 @@
 import { webview } from '@kit.ArkWeb';
 import { ReaderHighlightBridge } from '../../service/ReaderHighlight';
 import { ReaderSpeechScrollBridge } from '../../service/ReaderSpeechDocument';
+import { ReaderProgressBridge } from '../../service/ReaderProgress';
 
 @ComponentV2
 export struct ReaderBodyView {
@@ -18,6 +19,10 @@ export struct ReaderBodyView {
   @Param controller: webview.WebviewController = new webview.WebviewController();
   @Param speechBridge: ReaderSpeechScrollBridge =
     new ReaderSpeechScrollBridge(() => {
+    });
+  /** 文档内滚动 → 详情页的进度上报（取代定时轮询）。 */
+  @Param progressBridge: ReaderProgressBridge =
+    new ReaderProgressBridge((y: number, h: number, vh: number) => {
     });
   @Param highlightBridge: ReaderHighlightBridge = new ReaderHighlightBridge((id: string) => {
   });
@@ -33,6 +38,9 @@ export struct ReaderBodyView {
   };
   @Event onPageEnd: () => void = () => {
   };
+  /** 首次内容绘制耗时（ms，从文档开始导航算起）：详情页据此记一条打开耗时基线。 */
+  @Event onFirstPaint: (ms: number) => void = () => {
+  };
   @Event onOverScroll: (event: OnOverScrollEvent) => void = () => {
   };
   @Event onLoadIntercept: (event: OnLoadInterceptEvent) => boolean = () => false;
@@ -43,6 +51,25 @@ export struct ReaderBodyView {
   };
   @Event onPanEnd: (event: GestureEvent) => void = () => {
   };
+
+  /** 同一 Web 上多个 javaScriptProxy 会互相覆盖（实测只保留最后一个），其余走控制器注册。 */
+  private bridgesRegistered: boolean = false;
+
+  /** 注册滚动上报 / 朗读手动滚动两个代理（必须在 loadData 之前完成）。 */
+  private registerBridges(): void {
+    if (this.bridgesRegistered) {
+      return;
+    }
+    this.bridgesRegistered = true;
+    try {
+      this.controller.registerJavaScriptProxy(this.progressBridge, 'hrProgress', ['onScroll']);
+    } catch (err) {
+    }
+    try {
+      this.controller.registerJavaScriptProxy(this.speechBridge, 'hrSpeechScroll', ['onManualScroll']);
+    } catch (err) {
+    }
+  }
 
   build() {
     Web({ src: '', controller: this.controller })
@@ -84,10 +111,15 @@ export struct ReaderBodyView {
         this.onTouchEvent(event);
       })
       .onControllerAttached(() => {
+        this.registerBridges();
         this.onAttached();
       })
       .onPageEnd(() => {
         this.onPageEnd();
+      })
+      // 打开耗时埋点：文档导航 → 首次内容绘制，由详情页统一打日志。
+      .onFirstContentfulPaint((event: OnFirstContentfulPaintEvent): void => {
+        this.onFirstPaint(event.firstContentfulPaintMs);
       })
       .onOverScroll((event: OnOverScrollEvent) => {
         this.onOverScroll(event);

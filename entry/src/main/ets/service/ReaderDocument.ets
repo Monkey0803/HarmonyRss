@@ -84,13 +84,12 @@ function bodyRule(p: ReaderPalette): string {
 function elementRules(p: ReaderPalette, topPad: number, bottomPad: number): string {
   const align: string = ReaderTypography.textAlignCss(appSettings.readerAlign);
   const width: number = ReaderTypography.contentWidthPx(appSettings.readerWidth);
-  // 中文首行缩进：只作用于带文字开头的段落（图片 / 链接图片开头的段落不缩进，否则图片会跟着偏移）。
+  // 中文首行缩进：只作用于带文字开头的段落（图片 / 视频开头的段落不缩进，否则图片会跟着偏移）。
+  // 媒体段落由净化阶段打上 .hr-media-first（见 HtmlSanitizer），这里刻意不用 p:has(...)：
+  // :has() 会让每次排版变更（字号/行距/主题/栏宽）的整页样式重算明显变慢。
   const indent: string = appSettings.readerIndent === ReaderIndent.TWO
     ? '.reader p{text-indent:2em;}' +
-      '.reader p:has(>img:first-child),.reader p:has(>a:first-child>img:first-child),' +
-      '.reader p:has(>picture:first-child),.reader p:has(>video:first-child),' +
-      '.reader .hr-feed-summary p' +
-      '{text-indent:0;}'
+      '.reader p.hr-media-first,.reader .hr-feed-summary p{text-indent:0;}'
     : '';
   return '.reader{max-width:' + width + 'px;margin:0 auto;padding:' + (16 + topPad) + 'px 20px ' +
     (56 + bottomPad) + 'px;}' + indent +

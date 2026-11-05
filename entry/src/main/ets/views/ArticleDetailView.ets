@@ -97,7 +97,10 @@ import { highlightStore, articleRepository } from '../service/ArticleServices';
 import { readingContinuation } from '../service/ReadingContinuation';
 import {
   parsePosition,
+  positionFromMetrics,
+  progressObserverScript,
   ReaderPosition,
+  ReaderProgressBridge,
   readPositionScript,
   restorePositionScript
 } from '../service/ReaderProgress';
@@ -233,6 +236,12 @@ export struct ArticleDetailView {
   private progressPollTimer: number = -1;
   private progressPollVersion: number = 0;
   private lastPolledY: number = -1;
+  /** 上一次刷新进度条 UI 的时刻：滚动上报很密，进度条按 ~4 帧/秒节流，避免整页频繁重建。 */
+  private progressRatioAt: number = 0;
+  /** 本次文档是否已把标注注入过（净化文档里没有历史高亮时跳过注入，省两次 JS 往返）。 */
+  private highlightInjected: boolean = false;
+  /** 本次文档是否已收到过滚动上报（只打一条日志，便于确认桥接生效）。 */
+  private progressBridgeSeen: boolean = false;
   /** 当前会话内分别记住 Reader 与网页原文的位置，切回原模式时不复用另一种排版的坐标。 */
   /** 正文里选中的文本（Web 的 onTextSelectionChange 回调）；非空时显示「复制/分享选段」浮条。 */
   @Local selectedText: string = '';
@@ -271,6 +280,11 @@ export struct ArticleDetailView {
       this.speechFollow = false;
     }
   });
+  /** 文档内滚动上报（hrProgress.onScroll）：正文进度、进度条与「滚动即已读」都由它驱动。 */
+  private progressBridge: ReaderProgressBridge = new ReaderProgressBridge(
+    (y: number, h: number, vh: number): void => {
+      this.onProgressReported(y, h, vh);
+    });
   /** 短正文提示是否已被用户关掉（切文时复位；提示本身按当前文章内容实时判断）。 */
   @Local shortBodyHintClosed: boolean = false;
   /** 横向手势的起手点（px），用于避让系统边缘返回手势。 */
@@ -303,6 +317,10 @@ export struct ArticleDetailView {
   private barTabsController: HdsTabsController = new HdsTabsController();
   /** 上一次注入到文档里的顶部让位（CSS px）；值没变就不重复重排。 */
   private appliedTopPad: number = -1;
+  /** 打开耗时埋点：本次文档开始加载的时刻（ms）。 */
+  private docLoadAt: number = 0;
+  /** 打开耗时埋点：本次文档是否已记录过首帧（同一文档只记一条）。 */
+  private fcpLogged: boolean = false;
   private insetUpdateTimer: number = -1;
 
   private hostContext(): common.UIAbilityContext {
@@ -886,6 +904,7 @@ export struct ArticleDetailView {
     const topPad: number = this.readerTopPad();
     this.appliedTopPad = topPad;
     const doc: string = buildReaderDocument(this.readerHtml, topPad, this.contentBottomInsetVp());
+    this.beginDocLoad();
     try {
       this.readerController.loadData(doc, 'text/html', 'UTF-8', article.link);
       hilog.info(DOMAIN, TAG, 'perf docbuild=%{public}dms size=%{public}d',
@@ -894,6 +913,41 @@ export struct ArticleDetailView {
       const error: BusinessError = err as BusinessError;
       hilog.warn(DOMAIN, TAG, 'load reader doc failed: %{public}d', error.code);
     }
+  }
+
+  /** 打开耗时埋点：重置本次文档的计时起点，等 Web 回传首帧。 */
+  private beginDocLoad(): void {
+    this.docLoadAt = Date.now();
+    this.fcpLogged = false;
+    // 新文档里还没有任何标注标记：允许页面加载完成时跳过空标注注入。
+    this.highlightInjected = false;
+  }
+
+  /**
+   * 打开耗时埋点：Web 侧 navigationStart → 首次内容绘制（ms）。
+   * 同一文档只记一条；Web 的 FCP 是相对导航起点的绝对耗时，不依赖本地计时器。
+   */
+  private logFirstPaint(ms: number, mode: string): void {
+    if (this.fcpLogged) {
+      return;
+    }
+    this.fcpLogged = true;
+    const chars: number = mode === MODE_WEB ? 0 : this.readerHtml.length;
+    const sinceDoc: number = this.docLoadAt > 0 ? Date.now() - this.docLoadAt : -1;
+    hilog.info(DOMAIN, TAG, 'perf fcp=%{public}dms sinceDoc=%{public}dms chars=%{public}d mode=%{public}s',
+      ms, sinceDoc, chars, mode);
+  }
+
+  /** 首帧事件没有触发时（个别文档）用 pageEnd 兜底，保证基线里每篇都有数据。 */
+  private logPageEndFallback(mode: string): void {
+    if (this.fcpLogged) {
+      return;
+    }
+    this.fcpLogged = true;
+    const sinceDoc: number = this.docLoadAt > 0 ? Date.now() - this.docLoadAt : -1;
+    const chars: number = mode === MODE_WEB ? 0 : this.readerHtml.length;
+    hilog.info(DOMAIN, TAG, 'perf pageend=%{public}dms chars=%{public}d mode=%{public}s',
+      sinceDoc, chars, mode);
   }
 
   /**
@@ -1010,6 +1064,7 @@ export struct ArticleDetailView {
       if (needsWebRender) {
         settingsStore.rememberReaderSiteWeb(UrlText.host(article.link));
       }
+      this.preconnectWeb(article.link);
       this.viewMode = MODE_WEB;
       this.webFailed = false;
       this.loading = true;
@@ -1038,8 +1093,24 @@ export struct ArticleDetailView {
     const host: string = UrlText.host(article.link);
     if (mode === MODE_WEB) {
       settingsStore.rememberReaderSiteWeb(host);
+      this.preconnectWeb(article.link);
     } else {
       settingsStore.preferReaderSite(host);
+    }
+  }
+
+  /**
+   * 网页原文预连接：提前解析 + 建立 TCP 连接，首屏少等一轮 DNS / 握手。
+   * 只在 Web 模式或即将退回 Web 时调用；失败不影响正常加载。
+   */
+  private preconnectWeb(link: string): void {
+    if (link.length === 0) {
+      return;
+    }
+    try {
+      webview.WebviewController.prepareForPageLoad(link, true, 6);
+    } catch (err) {
+      // 预连接是尽力而为：URL 非法 / 引擎未就绪都直接忽略。
     }
   }
 
@@ -1180,6 +1251,12 @@ export struct ArticleDetailView {
       const h: Highlight = this.highlights[i];
       items.push(new HighlightItem(h.id, h.quote, h.color, h.note.length > 0));
     }
+    // 文档里本来就没有标记、也没有标注：跳过两次 JS 往返（打开文章时省掉一次跨语言调用）。
+    // 一旦注入过（含删除后需要清除的情况），即使 items 为空也要执行 apply 去清标记。
+    if (items.length === 0 && !this.highlightInjected) {
+      return;
+    }
+    this.highlightInjected = items.length > 0;
     try {
       controller.runJavaScript(highlightSupportScript())
         .then(() => controller.runJavaScript(applyHighlightsScript(items)))
@@ -1787,6 +1864,7 @@ export struct ArticleDetailView {
       this.startReader();
       return;
     }
+    this.preconnectWeb(article.link);
     this.viewMode = MODE_WEB;
     this.loading = true;
   }
@@ -1811,6 +1889,7 @@ export struct ArticleDetailView {
     const siteNeedsWeb: boolean = article !== undefined && article.link.length > 0 &&
       settingsStore.isReaderSiteWebPreferred(UrlText.host(article.link));
     if (appSettings.readerViewMode === MODE_WEB && article !== undefined && article.link.length > 0) {
+      this.preconnectWeb(article.link);
       this.viewMode = MODE_WEB;
       this.loading = true;
     } else if (siteNeedsWeb && article !== undefined) {
@@ -1941,7 +2020,10 @@ export struct ArticleDetailView {
     });
   }
 
-  /** ArkWeb 的 JS 代理在部分页面未暴露；定期读取当前文档位置更稳定。 */
+  /**
+   * 进度兜底轮询：正常情况下滚动由文档内 hrProgress.onScroll 实时上报（见 onProgressReported），
+   * 这里只做低频兜底 —— 某些页面（自定义滚动容器、脚本被拦截）拿不到滚动事件时仍能取到位置。
+   */
   private startProgressPolling(controller: webview.WebviewController): void {
     this.stopProgressPolling();
     const article: Article | undefined = feedViewModel.currentArticle();
@@ -1952,6 +2034,7 @@ export struct ArticleDetailView {
     const mode: string = this.viewMode;
     const version: number = this.progressPollVersion;
     this.lastPolledY = -1;
+    this.progressBridgeSeen = false;
     const poll = (): void => {
       if (version !== this.progressPollVersion || feedViewModel.currentArticle()?.id !== articleId ||
         this.viewMode !== mode || Date.now() < this.progressReadyAt) {
@@ -1965,23 +2048,49 @@ export struct ArticleDetailView {
         if (raw.indexOf('|') < 0) {
           return;
         }
-        const position: ReaderPosition = parsePosition(raw);
-        if (Math.abs(position.y - this.lastPolledY) < 1) {
-          return;
-        }
-        this.lastPolledY = position.y;
-        const next: number = Math.round(position.ratio * 100) / 100;
-        if (next !== this.progressRatio) {
-          this.progressRatio = next;
-        }
-        this.handleProgressRatio(position.ratio);
-        if (!this.finished) {
-          this.queueProgress(articleId, position);
-        }
+        this.applyProgressPosition(articleId, parsePosition(raw));
       }).catch(() => {});
     };
-    this.progressPollTimer = setInterval(poll, 1200);
+    this.progressPollTimer = setInterval(poll, 4000);
     poll();
+  }
+
+  /** 文档内滚动上报：算位置 → 更新进度条 / 已读判定 / 位置落库（滚动停 1.2 秒写一次）。 */
+  private onProgressReported(y: number, h: number, vh: number): void {
+    const article: Article | undefined = feedViewModel.currentArticle();
+    if (article === undefined || Date.now() < this.progressReadyAt) {
+      return;
+    }
+    if (!this.progressBridgeSeen) {
+      this.progressBridgeSeen = true;
+      hilog.info(DOMAIN, TAG, 'perf progress bridge attached mode=%{public}s', this.viewMode);
+    }
+    const position: ReaderPosition = positionFromMetrics(y, h, vh);
+    this.applyProgressPosition(article.id, position);
+  }
+
+  /** 轮询与滚动上报共用的落点逻辑（避免两套口径）。 */
+  private applyProgressPosition(articleId: string, position: ReaderPosition): void {
+    if (feedViewModel.currentArticle()?.id !== articleId) {
+      return;
+    }
+    // 位置没变就不重复更新时间戳 / 写库（轮询每 4 秒一次也算兜底，不能造成无谓写入）。
+    if (Math.abs(position.y - this.lastPolledY) < 1) {
+      return;
+    }
+    this.lastPolledY = position.y;
+    // 进度条是 @Local：滚动上报 5 次/秒，若每次都重建整页会反向拖慢滑动。
+    // 这里按 ~4 次/秒节流，且变化不足 1% 不刷新；写库用的位置不受影响。
+    const next: number = Math.round(position.ratio * 100) / 100;
+    const now: number = Date.now();
+    if (next !== this.progressRatio && (now - this.progressRatioAt >= 250 || Math.abs(next - this.progressRatio) >= 0.05)) {
+      this.progressRatioAt = now;
+      this.progressRatio = next;
+    }
+    this.handleProgressRatio(position.ratio);
+    if (!this.finished) {
+      this.queueProgress(articleId, position);
+    }
   }
 
   private stopProgressPolling(): void {
@@ -2490,11 +2599,15 @@ export struct ArticleDetailView {
   /** Reader 文档加载完成：收 loading、重放标注、恢复进度、预取下一篇。 */
   private onReaderPageEnd(): void {
     this.loading = false;
+    this.logPageEndFallback(MODE_READER);
     const article: Article | undefined = feedViewModel.currentArticle();
     this.progressReadyAt = article !== undefined &&
       (article.progress > 0 || article.progressRatio > 0) ? Date.now() + 5200 : 0;
     this.startProgressPolling(this.readerController);
     this.readerController.runJavaScript(speechManualScrollScript()).catch(() => {
+    });
+    // 滚动实时上报（幂等）：进度条跟手更新，轮询只做兜底。
+    this.readerController.runJavaScript(progressObserverScript()).catch(() => {
     });
     this.replayHighlights(this.readerController);
     this.syncReaderInset();
@@ -2513,6 +2626,7 @@ export struct ArticleDetailView {
       return;
     }
     this.loading = false;
+    this.logPageEndFallback(MODE_WEB);
     const article: Article | undefined = feedViewModel.currentArticle();
     this.progressReadyAt = article !== undefined &&
       (article.progress > 0 || article.progressRatio > 0) ? Date.now() + 5200 : 0;
@@ -2520,6 +2634,9 @@ export struct ArticleDetailView {
     this.appliedTopPad = topPad;
     readerStyle.apply(this.webController, topPad, this.contentBottomInsetVp());
     this.startProgressPolling(this.webController);
+    // 网页原文：同样注入滚动上报（站点自定义滚动容器也能拿到 window 滚动事件）。
+    this.webController.runJavaScript(progressObserverScript()).catch(() => {
+    });
     this.replayHighlights(this.webController);
     if (this.consumePendingSearch()) {
       this.webProgressRestored = true;
@@ -2540,6 +2657,7 @@ export struct ArticleDetailView {
             html: this.readerHtml,
             controller: this.readerController,
             speechBridge: this.speechScrollBridge,
+            progressBridge: this.progressBridge,
             highlightBridge: this.hlBridge,
             swipeDistance: SWIPE_DISTANCE_VP,
             onKey: (event: KeyEvent): boolean => this.handleShortcut(event),
@@ -2551,6 +2669,7 @@ export struct ArticleDetailView {
             onTouchEvent: (event: TouchEvent): void => this.handleBodyTouch(event),
             onAttached: (): void => this.loadReaderDocIntoWeb(),
             onPageEnd: (): void => this.onReaderPageEnd(),
+            onFirstPaint: (ms: number): void => this.logFirstPaint(ms, MODE_READER),
             onOverScroll: (event: OnOverScrollEvent): void => {
               if (Math.abs(event.yOffset) >= OVERSCROLL_TRIGGER_VP) {
                 this.checkReachedBottom(this.readerController);
@@ -2587,6 +2706,7 @@ export struct ArticleDetailView {
         WebBodyView({
           link: this.cur().link,
           controller: this.webController,
+          progressBridge: this.progressBridge,
           highlightBridge: this.hlBridge,
           swipeDistance: SWIPE_DISTANCE_VP,
           onLoadIntercept: (event: OnLoadInterceptEvent): boolean => this.handleLinkIntercept(event),
@@ -2599,6 +2719,8 @@ export struct ArticleDetailView {
           },
           onTouchEvent: (event: TouchEvent): void => this.handleBodyTouch(event),
           onPageEnd: (): void => this.onWebPageEnd(),
+          onPageBegin: (): void => this.beginDocLoad(),
+          onFirstPaint: (ms: number): void => this.logFirstPaint(ms, MODE_WEB),
           onOverScroll: (event: OnOverScrollEvent): void => {
             if (Math.abs(event.yOffset) >= OVERSCROLL_TRIGGER_VP) {
               this.checkReachedBottom(this.webController);

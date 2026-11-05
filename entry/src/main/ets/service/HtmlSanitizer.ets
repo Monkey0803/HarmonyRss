@@ -289,7 +289,7 @@ function serializeImage(node: HtmlNode, baseUrl: string): string {
   if (height.length > 0) {
     out += ' height="' + decodeAndEscape(height) + '"';
   }
-  out += ' loading="lazy">';
+  out += ' loading="lazy" decoding="async">';
   return out;
 }
 
@@ -390,7 +390,9 @@ function emitNode(node: HtmlNode, baseUrl: string, out: string[]): void {
     // 很多站点（含少数派）的正文用 div 当段落：纯文字的 div 归一成 p，
     // 这样段落间距与「首行缩进」等基于 p 的排版规则才能生效。
     const outTag: string = (tag === 'div' && !hasBlockMarkup(inner)) ? 'p' : tag;
-    out.push('<' + outTag + serializeAttrs(node, baseUrl) + '>' + inner + '</' + outTag + '>');
+    // 媒体开头的段落打上标记：阅读 CSS 用它替代 p:has(...)（:has 会拖慢整页样式重算）。
+    const mediaFirst: string = outTag === 'p' && startsWithMedia(inner) ? ' class="hr-media-first"' : '';
+    out.push('<' + outTag + serializeAttrs(node, baseUrl) + mediaFirst + '>' + inner + '</' + outTag + '>');
     return;
   }
   if (tag === 'img') {
@@ -411,6 +413,15 @@ function emitNode(node: HtmlNode, baseUrl: string, out: string[]): void {
   out.push('<' + tag + attrs + '>');
   emitChildren(node, baseUrl, out);
   out.push('</' + tag + '>');
+}
+
+/**
+ * 段落是否以媒体开头（图片 / picture / 视频）。
+ * 用于在净化阶段给段落打标记，替代阅读 CSS 里的 p:has(...)（:has 会拖慢整页样式重算）。
+ */
+function startsWithMedia(html: string): boolean {
+  const text: string = html.trim();
+  return text.startsWith('<img') || text.startsWith('<picture') || text.startsWith('<video');
 }
 
 /** 片段里是否含块级标签（决定 div 能否安全地归一成 p）。 */

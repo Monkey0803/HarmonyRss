@@ -5,8 +5,46 @@
  * 同一段文字对应的 px 会变，恢复位置就会漂。这里同时存一个 0–1 的比例
  * （y / (scrollHeight - innerHeight)），恢复时优先用比例换算，px 只作为老数据兜底。
  *
- * 详情页通过 WebviewController 定期读取位置；ArkWeb 在部分页面没有暴露 JS 代理对象。
+ * 位置主要靠文档内滚动监听实时上报（hrProgress.onScroll）；ArkTS 侧只保留低频轮询兜底，
+ * 用于拿不到滚动事件的页面。
  */
+
+/**
+ * 把「滚动位置上报」注入页面：滚动时按 200ms 节流回传，正文进度不再靠 ArkTS 定时轮询。
+ * 幂等：同一份文档重复注入只绑定一次监听。
+ */
+export function progressObserverScript(): string {
+  return '(function(){if(window.__hrProgressBound){return;}window.__hrProgressBound=true;' +
+    'var last=0;var send=function(){' +
+    'var d=document.documentElement;var y=window.scrollY||(document.body?document.body.scrollTop:0)||0;' +
+    'var h=d?d.scrollHeight:(document.body?document.body.scrollHeight:0);' +
+    'var vh=window.innerHeight||0;' +
+    'try{window.hrProgress.onScroll(y,h,vh);}catch(e){}};' +
+    'window.addEventListener("scroll",function(){var now=Date.now();' +
+    'if(now-last<200){return;}last=now;send();},{passive:true});' +
+    'send();})()';
+}
+
+/** 由 y / scrollHeight / innerHeight 算出位置（口径与 parsePosition 一致）。 */
+export function positionFromMetrics(y: number, h: number, vh: number): ReaderPosition {
+  const safeY: number = Number.isFinite(y) && y > 0 ? y : 0;
+  const span: number = Number.isFinite(h) && Number.isFinite(vh) ? h - vh : 0;
+  const ratio: number = span > 0 ? Math.min(1, Math.max(0, safeY / span)) : 0;
+  return new ReaderPosition(safeY, ratio);
+}
+
+/** 文档 → ArkTS 的滚动上报桥（javaScriptProxy 的 hrProgress.onScroll）。 */
+export class ReaderProgressBridge {
+  private readonly onReport: (y: number, h: number, vh: number) => void;
+
+  constructor(onReport: (y: number, h: number, vh: number) => void) {
+    this.onReport = onReport;
+  }
+
+  onScroll(y: number, h: number, vh: number): void {
+    this.onReport(y, h, vh);
+  }
+}
 
 /** 读取当前阅读位置：返回 "y|scrollHeight|innerHeight"。 */
 export function readPositionScript(): string {

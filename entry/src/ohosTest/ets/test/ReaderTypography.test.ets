@@ -10,6 +10,7 @@ import {
   ReaderFontFamily,
   ReaderWidth,
   ReaderAlign,
+  ReaderIndent,
   ReaderTheme
 } from '../../../main/ets/common/constants/SettingsConstants';
 import { buildReaderDocument, readerCss } from '../../../main/ets/service/ReaderDocument';
@@ -83,6 +84,16 @@ export default function readerTypographyTest() {
       appSettings.readerWidth = oldWidth;
       appSettings.readerAlign = oldAlign;
       appSettings.readerFontFamily = oldFamily;
+    });
+
+    it('indent_skips_media_paragraphs_without_has_selector', 0, () => {
+      const oldIndent: string = appSettings.readerIndent;
+      appSettings.readerIndent = ReaderIndent.TWO;
+      const css: string = readerCss();
+      // :has() 会让排版变更触发整页样式重算，改用净化阶段打好的 class。
+      expect(css.includes(':has(')).assertFalse();
+      expect(css).assertContain('p.hr-media-first');
+      appSettings.readerIndent = oldIndent;
     });
 
     it('system_theme_is_transparent_with_dark_override', 0, () => {

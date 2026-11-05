@@ -13,9 +13,12 @@ import { themePalette } from '../model/ThemePalette';
 import { Toast } from '@monkey0803/toast-kit';
 import { Keyboard } from '@monkey0803/keyboard-kit';
 import { setupToast } from '../common/utils/ToastSetup';
+import { webEnginePrewarm } from '../service/WebEnginePrewarm';
 
 const DOMAIN: number = 0x0000;
 const TAG: string = 'HdsEntry';
+/** 首帧后延迟预热 ArkWeb：避开冷启动关键路径，又不至于让用户点进阅读页时还没预热完。 */
+const PREWARM_DELAY_MS: number = 500;
 
 export default class EntryAbility extends UIAbility {
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {
@@ -110,6 +113,11 @@ export default class EntryAbility extends UIAbility {
       const colorValue: number = this.context.resourceManager.getColorSync($r('app.color.start_window_background').id);
       const fallback: string = '#' + (colorValue >>> 0).toString(16).padStart(8, '0').toUpperCase();
       mainWindow.setWindowBackgroundColor(fallback);
+      // 首帧后再预热 ArkWeb 内核：首个阅读页省掉引擎加载，冷启动关键路径不受影响。
+      // initializeWebEngine 必须走 UI 主线程；这里在 loadContent 回调里延时调用，满足该约束。
+      setTimeout((): void => {
+        webEnginePrewarm.warmUp();
+      }, PREWARM_DELAY_MS);
     });
   }
 

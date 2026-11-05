@@ -99,6 +99,26 @@ export default function htmlSanitizerTest() {
       expect(sanitize('<div><p>a</p><p>b</p></div>')).assertEqual('<div><p>a</p><p>b</p></div>');
     });
 
+    it('marks_paragraphs_that_start_with_media', 0, () => {
+      // 阅读 CSS 用 .hr-media-first 代替 p:has(...)：媒体开头的段落不做首行缩进。
+      const imageFirst: string = sanitize('<p><img src="/a.png">说明</p>', 'https://s.com/p');
+      expect(imageFirst).assertContain('class="hr-media-first"');
+      // 图片链接会被去壳成裸 <img>，同样算媒体开头。
+      const linkedImage: string = sanitize('<p><a href="/post"><img src="/b.png"></a></p>', 'https://s.com/p');
+      expect(linkedImage).assertContain('class="hr-media-first"');
+      // 视频开头的段落也不缩进。
+      const videoFirst: string = sanitize('<p><video src="/v.mp4"></video></p>', 'https://s.com/p');
+      expect(videoFirst).assertContain('class="hr-media-first"');
+      // 文字开头的段落不能带标记。
+      const textFirst: string = sanitize('<p>文字<img src="/c.png"></p>', 'https://s.com/p');
+      expect(textFirst.indexOf('hr-media-first')).assertEqual(-1);
+    });
+
+    it('asks_images_to_decode_asynchronously', 0, () => {
+      const out: string = sanitize('<img src="/a.png">', 'https://s.com/p');
+      expect(out).assertContain('decoding="async"');
+    });
+
     it('drops_blank_paragraphs_and_containers', 0, () => {
       expect(sanitize('<p> </p><div></div><p>ok</p>')).assertEqual('<p>ok</p>');
       // 只剩被丢弃的元素（svg / script）也视为空段落。
