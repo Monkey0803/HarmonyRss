@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from '@ohos/hypium';
-import { feedDiscovery } from '../../../main/ets/service/FeedDiscovery';
+import { feedDiscovery, isFeedDocument } from '../../../main/ets/service/FeedDiscovery';
 
 export default function feedDiscoveryTest() {
   describe('FeedDiscovery', () => {
@@ -69,6 +69,21 @@ export default function feedDiscoveryTest() {
       const html: string = '<link rel="alternate" type="application/feed+json" href="/feed.json">';
       const urls: string[] = feedDiscovery.candidateUrls(html, 'https://example.com/');
       expect(urls[0]).assertEqual('https://example.com/feed.json');
+    });
+
+    it('rejects_html_as_feed', 0, () => {
+      expect(isFeedDocument('<html><head><title>Multi Feed</title></head><body></body></html>')).assertFalse();
+      expect(isFeedDocument('<!DOCTYPE html><html><body>hi</body></html>')).assertFalse();
+    });
+
+    it('accepts_real_feed_documents', 0, () => {
+      expect(isFeedDocument('<rss version="2.0"><channel><title>A</title></channel></rss>')).assertTrue();
+      expect(isFeedDocument('<feed xmlns="http://www.w3.org/2005/Atom"><title>A</title></feed>')).assertTrue();
+      expect(isFeedDocument('{"version":"https://jsonfeed.org/version/1.1","items":[]}')).assertTrue();
+    });
+
+    it('rejects_plain_json', 0, () => {
+      expect(isFeedDocument('{"title":"not a feed"}')).assertFalse();
     });
   });
 }

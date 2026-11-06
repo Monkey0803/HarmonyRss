@@ -12,6 +12,7 @@
 
 import { FeedError, FeedFetchError, RssConstants } from '../common/constants/RssConstants';
 import { ParsedFeed, parseFeed } from './RssParser';
+import { isFeedDocument } from './FeedDiscovery';
 import { parseJsonFeed } from './JsonFeedParser';
 import {
   HttpError,
@@ -110,11 +111,14 @@ export class FeedService {
       throw new FeedFetchError(FeedError.EMPTY_RESPONSE, 'empty response body');
     }
     // JSON Feed（application/feed+json）与 XML feed 在内容层区分，界面无感。
+    // 解析器本身容错（HTML 也能解析出标题），这里再用文档特征确认一次，避免把网页当订阅源。
     let parsed: ParsedFeed | undefined = undefined;
-    try {
-      parsed = body.trim().startsWith('{') ? parseJsonFeed(body) : parseFeed(body);
-    } catch (err) {
-      parsed = undefined;
+    if (isFeedDocument(body)) {
+      try {
+        parsed = body.trim().startsWith('{') ? parseJsonFeed(body) : parseFeed(body);
+      } catch (err) {
+        parsed = undefined;
+      }
     }
     return new FeedFetchResult(false, parsed, body, nextEtag, nextModified);
   }

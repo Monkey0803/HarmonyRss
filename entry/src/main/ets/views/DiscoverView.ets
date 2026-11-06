@@ -73,6 +73,7 @@ export struct DiscoverView {
   @Local checkingWebsite: boolean = false;
   @Local previewTitle: string = '';
   @Local previewCount: number = 0;
+  @Local previewDuplicate: string = '';
   @Local previewChoices: FeedPreview[] = [];
   @Local catalogRevision: number = 0;
   private pendingPreview: FeedPreview | undefined = undefined;
@@ -109,6 +110,7 @@ export struct DiscoverView {
     this.pendingPreview = undefined;
     this.previewTitle = '';
     this.previewCount = 0;
+    this.previewDuplicate = '';
     this.previewChoices = [];
     const choices: FeedPreview[] = await feedViewModel.previewFeeds(address);
     this.checkingWebsite = false;
@@ -129,6 +131,7 @@ export struct DiscoverView {
     this.pendingPreview = preview;
     this.previewTitle = preview.title;
     this.previewCount = preview.itemCount;
+    this.previewDuplicate = preview.duplicateSiteTitle;
   }
 
   private cancelPreview(): void {
@@ -136,6 +139,7 @@ export struct DiscoverView {
     this.pendingPreview = undefined;
     this.previewTitle = '';
     this.previewCount = 0;
+    this.previewDuplicate = '';
     this.previewChoices = [];
   }
 
@@ -878,39 +882,49 @@ export struct DiscoverView {
           .fontSize($r('app.float.font_size_caption'))
           .fontColor($r('app.color.hm_text_secondary'))
           .width('100%')
-        Column({ space: $r('app.float.space_xs') }) {
-          ForEach(this.previewChoices, (choice: FeedPreview) => {
-            Column({ space: $r('app.float.space_xxs') }) {
-              Text(choice.title)
-                .fontSize($r('app.float.font_size_body'))
-                .fontColor($r('app.color.hm_text_primary'))
-                .maxLines(1)
-                .textOverflow({ overflow: TextOverflow.Ellipsis })
-              Text(choice.resolvedUrl)
-                .fontSize($r('app.float.font_size_caption'))
-                .fontColor($r('app.color.hm_text_secondary'))
-                .maxLines(1)
-                .textOverflow({ overflow: TextOverflow.Ellipsis })
-            }
-            .width('100%')
-            .alignItems(HorizontalAlign.Start)
-            .padding($r('app.float.space_m'))
-            .backgroundColor(this.pendingPreview?.resolvedUrl === choice.resolvedUrl
-              ? themePalette.tint()
-              : $r('app.color.hm_value_chip_background'))
-            .borderRadius($r('app.float.radius_chip'))
-            .onClick(() => {
-              this.selectPreview(choice);
-            })
-          }, (choice: FeedPreview) => choice.resolvedUrl)
+        Scroll() {
+          Column({ space: $r('app.float.space_xs') }) {
+            ForEach(this.previewChoices, (choice: FeedPreview) => {
+              Column({ space: $r('app.float.space_xxs') }) {
+                Text(choice.title)
+                  .fontSize($r('app.float.font_size_body'))
+                  .fontColor($r('app.color.hm_text_primary'))
+                  .maxLines(1)
+                  .textOverflow({ overflow: TextOverflow.Ellipsis })
+                Text(choice.resolvedUrl)
+                  .fontSize($r('app.float.font_size_caption'))
+                  .fontColor($r('app.color.hm_text_secondary'))
+                  .maxLines(1)
+                  .textOverflow({ overflow: TextOverflow.Ellipsis })
+              }
+              .width('100%')
+              .alignItems(HorizontalAlign.Start)
+              .padding($r('app.float.space_m'))
+              .backgroundColor(this.pendingPreview?.resolvedUrl === choice.resolvedUrl
+                ? themePalette.tint()
+                : $r('app.color.hm_value_chip_background'))
+              .borderRadius($r('app.float.radius_chip'))
+              .onClick(() => {
+                this.selectPreview(choice);
+              })
+            }, (choice: FeedPreview) => choice.resolvedUrl)
+          }
         }
         .width('100%')
+        .constraintSize({ maxHeight: 180 })
       }
 
       Text($r('app.string.discover_preview', this.previewTitle, this.previewCount))
         .fontSize($r('app.float.font_size_caption'))
         .fontColor($r('app.color.hm_text_secondary'))
         .width('100%')
+
+      if (this.previewDuplicate.length > 0) {
+        Text($r('app.string.subs_duplicate_site', this.previewDuplicate))
+          .fontSize($r('app.float.font_size_caption'))
+          .fontColor($r('app.color.hm_danger'))
+          .width('100%')
+      }
 
       Row({ space: $r('app.float.space_s') }) {
         Button($r('app.string.dialog_cancel'))

@@ -63,6 +63,27 @@ export class FeedDiscovery {
   }
 }
 
+/**
+ * 判断响应正文是否真的是一份订阅源文档。
+ *
+ * 解析器是容错的纯文本扫描：任何带 <title> 的 HTML 都会「成功」解析出一个 0 条目的
+ * ParsedFeed。若不在这里拦掉，站点主页会被当成订阅源直接返回，自动发现（多候选选择）
+ * 永远不会触发，预览还会显示成「站点标题 · 最近 0 篇」。
+ */
+export function isFeedDocument(body: string): boolean {
+  const head: string = body.slice(0, 8192).trim().toLowerCase();
+  if (head.length === 0) {
+    return false;
+  }
+  if (head.startsWith('{')) {
+    return body.indexOf('"items"') >= 0 || body.indexOf('jsonfeed.org/version') >= 0;
+  }
+  if (head.indexOf('<!doctype html') >= 0 || head.indexOf('<html') >= 0) {
+    return false;
+  }
+  return head.indexOf('<rss') >= 0 || head.indexOf('<feed') >= 0 || head.indexOf('<rdf:rdf') >= 0;
+}
+
 /** 解析页面里的 <base href>（相对传入 baseUrl ）；没有则返回 baseUrl。 */
 function resolveBase(document: string, baseUrl: string): string {
   const baseTag: RegExpMatchArray | null = document.match(BASE_PATTERN);
